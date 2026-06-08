@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Car } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { ensureDemoUser } from "@/lib/claims.functions";
+import { ensureDemoUser, getMyAccess } from "@/lib/claims.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
@@ -18,6 +18,7 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const ensureDemo = useServerFn(ensureDemoUser);
+  const fetchAccess = useServerFn(getMyAccess);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -32,8 +33,22 @@ function AuthPage() {
     e.preventDefault();
     setBusy(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setBusy(false);
+      return toast.error(error.message);
+    }
+    try {
+      const acc = await fetchAccess({});
+      if (!acc.approved) {
+        await supabase.auth.signOut();
+        setBusy(false);
+        return toast.error("Váš účet čeká na schválení super adminem.");
+      }
+    } catch (e) {
+      setBusy(false);
+      return toast.error((e as Error).message);
+    }
     setBusy(false);
-    if (error) return toast.error(error.message);
     navigate({ to: "/admin" });
   }
 
@@ -45,7 +60,7 @@ function AuthPage() {
     });
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Účet vytvořen. Můžete se přihlásit.");
+    toast.success("Účet vytvořen. Vyčkejte na schválení super adminem.");
   }
 
   async function demo() {
