@@ -44,7 +44,7 @@ export const createClaim = createServerFn({ method: "POST" })
         email: email || null,
         event_at: event_at || null,
       })
-      .select("id")
+      .select("id,pu_number,upload_token")
       .single();
     if (error) throw new Error(error.message);
     if (attachments && attachments.length) {
@@ -52,7 +52,23 @@ export const createClaim = createServerFn({ method: "POST" })
       const { error: aerr } = await supabaseAdmin.from("claim_attachments").insert(rows);
       if (aerr) throw new Error(aerr.message);
     }
-    return { id: claim.id };
+    return { id: claim.id, pu_number: claim.pu_number, upload_token: claim.upload_token };
+  });
+
+export const getPendingApprovalsCount = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: meRoles } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    if (!meRoles?.some((r) => r.role === "admin")) return { count: 0 };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { count } = await supabaseAdmin
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("approved", false);
+    return { count: count ?? 0 };
   });
 
 export const listClaims = createServerFn({ method: "GET" })
