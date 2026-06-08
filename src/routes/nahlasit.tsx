@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SignaturePad } from "@/components/SignaturePad";
@@ -48,19 +48,67 @@ const INSURERS = [
   "UNIQA pojišťovna",
 ];
 
+const DRAFT_KEY = "nahlasit_draft_v1";
+
+type Draft = {
+  form: Record<string, string>;
+  insurerChoice: string;
+  signature: string | null;
+  step: number;
+};
+
+function loadDraft(): Draft | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as Draft;
+  } catch {
+    return null;
+  }
+}
+
 function Page() {
   const navigate = useNavigate();
   const submit = useServerFn(createClaim);
-  const [signature, setSignature] = useState<string | null>(null);
+  const initial = typeof window !== "undefined" ? loadDraft() : null;
+  const [signature, setSignature] = useState<string | null>(initial?.signature ?? null);
   const [busy, setBusy] = useState(false);
   const [files, setFiles] = useState<Record<FileCategory, File[]>>({
     tp: [], rp: [], accident: [], damage: [], photos: [],
   });
-  const [form, setForm] = useState<Record<string, string>>({});
+  const [form, setForm] = useState<Record<string, string>>(initial?.form ?? {});
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
-  const [insurerChoice, setInsurerChoice] = useState<string>("");
-  const [step, setStep] = useState(0);
+  const [insurerChoice, setInsurerChoice] = useState<string>(initial?.insurerChoice ?? "");
+  const [step, setStep] = useState(initial?.step ?? 0);
+  const [hasDraft, setHasDraft] = useState<boolean>(!!initial);
   const steps = ["Kontakt", "Událost", "Přílohy", "Podpis"];
+
+  // Persist draft on changes
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const draft: Draft = { form, insurerChoice, signature, step };
+    const hasContent =
+      Object.values(form).some((v) => v && v.trim()) || !!signature || insurerChoice;
+    if (hasContent) {
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+        setHasDraft(true);
+      } catch {
+        // ignore quota errors
+      }
+    }
+  }, [form, insurerChoice, signature, step]);
+
+  function clearDraft() {
+    if (typeof window !== "undefined") localStorage.removeItem(DRAFT_KEY);
+    setForm({});
+    setInsurerChoice("");
+    setSignature(null);
+    setStep(0);
+    setHasDraft(false);
+    toast.success("Rozpracovaný formulář byl smazán.");
+  }
 
   const onFile = (cat: FileCategory, list: FileList | null, multiple = false) => {
     if (!list) return;
@@ -139,6 +187,7 @@ function Page() {
         },
       });
       toast.success("Pojistná událost byla odeslána.");
+      if (typeof window !== "undefined") localStorage.removeItem(DRAFT_KEY);
       navigate({ to: "/" });
     } catch (err) {
       toast.error((err as Error).message);
@@ -170,6 +219,21 @@ function Page() {
             Zavolejte +420 800 100 200
           </a>.
         </p>
+
+        {hasDraft && (
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2 text-sm">
+            <span className="text-foreground">
+              💾 Rozpracovaný formulář se automaticky ukládá do tohoto zařízení.
+            </span>
+            <button
+              type="button"
+              onClick={clearDraft}
+              className="text-xs font-medium text-muted-foreground underline hover:text-destructive"
+            >
+              Začít znovu
+            </button>
+          </div>
+        )}
 
         {/* Progress bar */}
         <div className="mt-6">
@@ -209,13 +273,13 @@ function Page() {
           <section className="rounded-xl border bg-card p-6">
             <h2 className="text-lg font-semibold">Kontaktní údaje</h2>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Jméno *" k="first_name" set={set} />
-              <Field label="Příjmení *" k="last_name" set={set} />
-              <Field label="Společnost" k="company" set={set} />
-              <Field label="IČ" k="ico" set={set} />
-              <Field label="Adresa" k="address" set={set} className="sm:col-span-2" />
-              <Field label="Telefon *" k="phone" set={set} />
-              <Field label="E-mail" k="email" set={set} type="email" />
+              <Field label="Jméno *" k="first_name" set={set} value={form.first_name} />
+              <Field label="Příjmení *" k="last_name" set={set} value={form.last_name} />
+              <Field label="Společnost" k="company" set={set} value={form.company} />
+              <Field label="IČ" k="ico" set={set} value={form.ico} />
+              <Field label="Adresa" k="address" set={set} value={form.address} className="sm:col-span-2" />
+              <Field label="Telefon *" k="phone" set={set} value={form.phone} />
+              <Field label="E-mail" k="email" set={set} value={form.email} type="email" />
             </div>
           </section>
           )}
@@ -241,19 +305,20 @@ function Page() {
                   <Input
                     className="mt-2"
                     placeholder="Zadejte název pojišťovny"
+                    defaultValue={form.insurer_other ?? ""}
                     onChange={(e) => set("insurer_other", e.target.value)}
                   />
                 )}
               </div>
-              <Field label="Číslo škody" k="claim_number" set={set} />
-              <Field label="Datum a čas události" k="event_at" set={set} type="datetime-local" />
-              <Field label="Místo události" k="location" set={set} />
-              <SelectField label="Způsob likvidace" k="liquidation_type" set={set}
+              <Field label="Číslo škody" k="claim_number" set={set} value={form.claim_number} />
+              <Field label="Datum a čas události" k="event_at" set={set} value={form.event_at} type="datetime-local" />
+              <Field label="Místo události" k="location" set={set} value={form.location} />
+              <SelectField label="Způsob likvidace" k="liquidation_type" set={set} value={form.liquidation_type}
                 options={[["havarijni","Havarijní pojištění"],["povinne_ruceni","Povinné ručení"]]} />
-              <SelectField label="Plátce DPH" k="vat_payer" set={set} options={yesNo} />
-              <SelectField label="Vozidlo na úvěr/leasing" k="loan_lease" set={set} options={yesNo} />
-              <SelectField label="Záznam o dopravní nehodě" k="accident_record" set={set} options={yesNo} />
-              <SelectField label="Záznam o poškození pojišťovnou" k="insurer_record" set={set} options={yesNo} />
+              <SelectField label="Plátce DPH" k="vat_payer" set={set} value={form.vat_payer} options={yesNo} />
+              <SelectField label="Vozidlo na úvěr/leasing" k="loan_lease" set={set} value={form.loan_lease} options={yesNo} />
+              <SelectField label="Záznam o dopravní nehodě" k="accident_record" set={set} value={form.accident_record} options={yesNo} />
+              <SelectField label="Záznam o poškození pojišťovnou" k="insurer_record" set={set} value={form.insurer_record} options={yesNo} />
               {form.accident_record === "ano" && (
                 <div className="sm:col-span-2 rounded-lg border border-dashed border-primary/40 bg-primary/5 p-4">
                   <Label>Soubor / fotografie záznamu o dopravní nehodě</Label>
@@ -273,7 +338,12 @@ function Page() {
               )}
               <div className="sm:col-span-2">
                 <Label>Doplňující informace</Label>
-                <Textarea className="mt-1" rows={4} onChange={(e) => set("notes", e.target.value)} />
+                <Textarea
+                  className="mt-1"
+                  rows={4}
+                  defaultValue={form.notes ?? ""}
+                  onChange={(e) => set("notes", e.target.value)}
+                />
               </div>
             </div>
           </section>
@@ -311,7 +381,7 @@ function Page() {
               Podpis bude vložen do plných mocí.
             </p>
             <div className="mt-4">
-              <SignaturePad onChange={setSignature} />
+              <SignaturePad onChange={setSignature} initialDataUrl={signature} />
             </div>
             <p className="mt-4 text-xs text-muted-foreground">
               Po odeslání se automaticky vygenerují předvyplněné plné moci.
@@ -381,24 +451,29 @@ function FilePreview({ list, onRemove }: { list: File[]; onRemove: (i: number) =
   );
 }
 
-function Field({ label, k, set, type = "text", className }: {
-  label: string; k: string; set: (k: string, v: string) => void; type?: string; className?: string;
+function Field({ label, k, set, value, type = "text", className }: {
+  label: string; k: string; set: (k: string, v: string) => void; value?: string; type?: string; className?: string;
 }) {
   return (
     <div className={className}>
       <Label>{label}</Label>
-      <Input type={type} className="mt-1" onChange={(e) => set(k, e.target.value)} />
+      <Input
+        type={type}
+        className="mt-1"
+        defaultValue={value ?? ""}
+        onChange={(e) => set(k, e.target.value)}
+      />
     </div>
   );
 }
 
-function SelectField({ label, k, set, options }: {
-  label: string; k: string; set: (k: string, v: string) => void; options: [string, string][];
+function SelectField({ label, k, set, value, options }: {
+  label: string; k: string; set: (k: string, v: string) => void; value?: string; options: [string, string][];
 }) {
   return (
     <div>
       <Label>{label}</Label>
-      <Select onValueChange={(v) => set(k, v)}>
+      <Select value={value ?? ""} onValueChange={(v) => set(k, v)}>
         <SelectTrigger className="mt-1"><SelectValue placeholder="Nevybráno" /></SelectTrigger>
         <SelectContent>
           {options.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
