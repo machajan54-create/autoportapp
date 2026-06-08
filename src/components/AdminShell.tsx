@@ -128,7 +128,7 @@ export function AdminShell({
             <LogOut className="h-4 w-4" />
           </Button>
         </header>
-        <main className="flex-1 overflow-x-hidden">{children}</main>
+        <main className="flex-1 overflow-x-hidden">{denied ?? children}</main>
       </div>
     </div>
   );
