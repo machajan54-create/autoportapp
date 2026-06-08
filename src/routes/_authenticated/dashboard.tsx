@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { AdminShell } from "@/components/AdminShell";
 import { listClaims, getMyAccess } from "@/lib/claims.functions";
 import { listVykupy, formatKc, marze } from "@/lib/vykupy";
+import { listEmployees } from "@/lib/claims.functions";
 import { FolderOpen, AlertCircle, Car, Coins, TrendingUp, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 function DashboardPage() {
   const fetchAccess = useServerFn(getMyAccess);
   const fetchClaims = useServerFn(listClaims);
+  const fetchEmployees = useServerFn(listEmployees);
   const { data: access, isLoading: aLoad } = useQuery({
     queryKey: ["my-access"],
     queryFn: () => fetchAccess({}),
@@ -29,6 +31,11 @@ function DashboardPage() {
   const { data: vykupy } = useQuery({
     queryKey: ["vykupy"],
     queryFn: () => listVykupy(),
+    enabled: isAdmin,
+  });
+  const { data: employees } = useQuery({
+    queryKey: ["employees"],
+    queryFn: () => fetchEmployees({}),
     enabled: isAdmin,
   });
 
@@ -102,6 +109,13 @@ function DashboardPage() {
             <Stat label="Obrat (prodáno)" value={formatKc(obrat)} icon={<Coins className="h-5 w-5 text-primary" />} tint="bg-primary/10" />
             <Stat label="Marže celkem" value={formatKc(totalMarze)} icon={<Coins className="h-5 w-5 text-emerald-600" />} tint="bg-emerald-100" />
           </div>
+
+          <div className="mt-6 rounded-xl border bg-card p-5">
+            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Výtěžnost podle cenaře (interní nacenění)
+            </h3>
+            <PricerLeaderboard rows={prodano} employees={employees ?? []} />
+          </div>
         </section>
       </div>
     </AdminShell>
@@ -126,6 +140,47 @@ function Stat({
         <p className="mt-1 text-2xl font-bold md:text-3xl">{value}</p>
       </div>
       <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg", tint)}>{icon}</div>
+    </div>
+  );
+}
+
+function PricerLeaderboard({
+  rows,
+  employees,
+}: {
+  rows: ReturnType<typeof Object>[] | any[];
+  employees: { id: string; name: string }[];
+}) {
+  const byUser = new Map<string, { name: string; deals: number; marze: number; obrat: number }>();
+  for (const v of rows) {
+    const uid: string | null = v.internal_priced_by_user_id ?? null;
+    if (!uid) continue;
+    const name = employees.find((e) => e.id === uid)?.name ?? "Neznámý";
+    const m = marze(v) ?? 0;
+    const cur = byUser.get(uid) ?? { name, deals: 0, marze: 0, obrat: 0 };
+    cur.deals += 1;
+    cur.marze += m;
+    cur.obrat += v.prodano_za ?? 0;
+    byUser.set(uid, cur);
+  }
+  const list = [...byUser.values()].sort((a, b) => b.marze - a.marze);
+  if (list.length === 0) {
+    return <p className="text-sm text-muted-foreground">Žádný prodaný výkup zatím nemá interní nacenění.</p>;
+  }
+  return (
+    <div className="divide-y">
+      {list.map((r) => (
+        <div key={r.name} className="flex items-center justify-between py-2 text-sm">
+          <span className="font-medium">{r.name}</span>
+          <span className="flex gap-4 tabular-nums text-muted-foreground">
+            <span>{r.deals} obchodů</span>
+            <span>obrat {formatKc(r.obrat)}</span>
+            <span className={cn("font-semibold", r.marze >= 0 ? "text-emerald-600" : "text-rose-600")}>
+              {formatKc(r.marze)}
+            </span>
+          </span>
+        </div>
+      ))}
     </div>
   );
 }

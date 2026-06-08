@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AdminShell } from "@/components/AdminShell";
@@ -15,6 +16,7 @@ import {
   getVykup, upsertVykup, formatKc, marze,
   ZNACKY, ZDROJE, STAVY, type Vykup,
 } from "@/lib/vykupy";
+import { listEmployees } from "@/lib/claims.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/vykupy/$id")({
@@ -37,6 +39,12 @@ type FormState = {
   datum_vykupu: string;
   stav: string;
   poznamka: string;
+  internal_priced_by_user_id: string;
+  internal_priced_amount: string;
+  internal_priced_at: string;
+  external_priced_by: string;
+  external_priced_amount: string;
+  external_priced_at: string;
 };
 
 const empty: FormState = {
@@ -45,6 +53,8 @@ const empty: FormState = {
   naceneno_od: "", vykoupeno_za: "", prodano_za: "", naklady: "0",
   datum_vykupu: new Date().toISOString().slice(0, 10),
   stav: "Nacenění", poznamka: "",
+  internal_priced_by_user_id: "", internal_priced_amount: "", internal_priced_at: "",
+  external_priced_by: "", external_priced_amount: "", external_priced_at: "",
 };
 
 function toNum(s: string): number | null {
@@ -66,6 +76,12 @@ function fromVykup(v: Vykup): FormState {
     naklady: (v.naklady ?? 0).toString(),
     datum_vykupu: v.datum_vykupu ?? "",
     stav: v.stav, poznamka: v.poznamka ?? "",
+    internal_priced_by_user_id: v.internal_priced_by_user_id ?? "",
+    internal_priced_amount: v.internal_priced_amount?.toString() ?? "",
+    internal_priced_at: v.internal_priced_at ? v.internal_priced_at.slice(0, 10) : "",
+    external_priced_by: v.external_priced_by ?? "",
+    external_priced_amount: v.external_priced_amount?.toString() ?? "",
+    external_priced_at: v.external_priced_at ? v.external_priced_at.slice(0, 10) : "",
   };
 }
 
@@ -76,6 +92,11 @@ function VykupForm() {
   const qc = useQueryClient();
   const [form, setForm] = useState<FormState>(empty);
   const [saving, setSaving] = useState(false);
+  const fetchEmployees = useServerFn(listEmployees);
+  const { data: employees } = useQuery({
+    queryKey: ["employees"],
+    queryFn: () => fetchEmployees({}),
+  });
 
   const { data: existing } = useQuery({
     queryKey: ["vykup", id],
@@ -121,6 +142,12 @@ function VykupForm() {
         datum_vykupu: form.datum_vykupu || null,
         stav: form.stav,
         poznamka: form.poznamka.trim() || null,
+        internal_priced_by_user_id: form.internal_priced_by_user_id || null,
+        internal_priced_amount: toNum(form.internal_priced_amount) ?? null,
+        internal_priced_at: form.internal_priced_at || null,
+        external_priced_by: form.external_priced_by.trim() || null,
+        external_priced_amount: toNum(form.external_priced_amount) ?? null,
+        external_priced_at: form.external_priced_at || null,
       };
       if (!isNew) payload.id = id;
       await upsertVykup(payload);
@@ -206,6 +233,41 @@ function VykupForm() {
                 <span className="tabular-nums font-bold">{liveMarze == null ? "vyplňte prodáno a vykoupeno" : formatKc(liveMarze)}</span>
               </div>
             </div>
+          </Section>
+
+          <Section title="Nacenění – interní">
+            <Field label="Kdo nacenil (zaměstnanec)">
+              <Select
+                value={form.internal_priced_by_user_id || "none"}
+                onValueChange={(v) => set("internal_priced_by_user_id", v === "none" ? "" : v)}
+              >
+                <SelectTrigger><SelectValue placeholder="Vyberte…" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— nezadáno —</SelectItem>
+                  {(employees ?? []).map((u) => (
+                    <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Interní nacenění (Kč)">
+              <Input type="number" value={form.internal_priced_amount} onChange={(e) => set("internal_priced_amount", e.target.value)} />
+            </Field>
+            <Field label="Datum interního nacenění">
+              <Input type="date" value={form.internal_priced_at} onChange={(e) => set("internal_priced_at", e.target.value)} />
+            </Field>
+          </Section>
+
+          <Section title="Nacenění – externí">
+            <Field label="Kdo nacenil (firma / jméno)">
+              <Input value={form.external_priced_by} onChange={(e) => set("external_priced_by", e.target.value)} placeholder="např. AAA Auto" />
+            </Field>
+            <Field label="Externí nacenění (Kč)">
+              <Input type="number" value={form.external_priced_amount} onChange={(e) => set("external_priced_amount", e.target.value)} />
+            </Field>
+            <Field label="Datum externího nacenění">
+              <Input type="date" value={form.external_priced_at} onChange={(e) => set("external_priced_at", e.target.value)} />
+            </Field>
           </Section>
 
           <Section title="Stav">

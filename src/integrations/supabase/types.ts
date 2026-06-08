@@ -410,7 +410,13 @@ export type Database = {
         Row: {
           created_at: string
           datum_vykupu: string | null
+          external_priced_amount: number | null
+          external_priced_at: string | null
+          external_priced_by: string | null
           id: string
+          internal_priced_amount: number | null
+          internal_priced_at: string | null
+          internal_priced_by_user_id: string | null
           klient: string
           model: string
           naceneno_od: number | null
@@ -429,7 +435,13 @@ export type Database = {
         Insert: {
           created_at?: string
           datum_vykupu?: string | null
+          external_priced_amount?: number | null
+          external_priced_at?: string | null
+          external_priced_by?: string | null
           id?: string
+          internal_priced_amount?: number | null
+          internal_priced_at?: string | null
+          internal_priced_by_user_id?: string | null
           klient: string
           model: string
           naceneno_od?: number | null
@@ -448,7 +460,13 @@ export type Database = {
         Update: {
           created_at?: string
           datum_vykupu?: string | null
+          external_priced_amount?: number | null
+          external_priced_at?: string | null
+          external_priced_by?: string | null
           id?: string
+          internal_priced_amount?: number | null
+          internal_priced_at?: string | null
+          internal_priced_by_user_id?: string | null
           klient?: string
           model?: string
           naceneno_od?: number | null
