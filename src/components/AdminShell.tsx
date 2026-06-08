@@ -9,14 +9,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyAccess, getPendingApprovalsCount } from "@/lib/claims.functions";
 
-type ModuleKey = "claims" | "vykupy" | "users" | "approvals" | "dashboard";
+type ModuleKey = "claims" | "vykupy" | "vykupy_external" | "users" | "approvals" | "dashboard";
 
 export function AdminShell({
   children,
   requireModule,
 }: {
   children: React.ReactNode;
-  requireModule?: ModuleKey;
+  requireModule?: ModuleKey | ModuleKey[];
 }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -37,6 +37,8 @@ export function AdminShell({
   const pendingCount = pending?.count ?? 0;
   const modules = (access?.modules ?? []) as ReadonlyArray<ModuleKey>;
   const can = (m: ModuleKey) => modules.includes(m);
+  const canAny = (m: ModuleKey | ModuleKey[]) =>
+    Array.isArray(m) ? m.some((x) => can(x)) : can(m);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? ""));
@@ -80,7 +82,7 @@ export function AdminShell({
     <nav className="flex-1 space-y-1 p-3">
       {(access?.isAdmin || can("dashboard")) && navItem("/dashboard", "Dashboard", LayoutDashboard)}
       {can("claims") && navItem("/admin", "Zakázky", FolderKanban)}
-      {can("vykupy") && navItem("/vykupy", "Ojeté vozy", Car)}
+      {(can("vykupy") || can("vykupy_external")) && navItem("/vykupy", "Ojeté vozy", Car)}
       {(access?.isAdmin || can("approvals")) && navItem("/approvals", "Schvalování", CheckSquare)}
       {access?.isAdmin && navItem("/admin/users", "Uživatelé", Users, pendingCount)}
       {access?.isAdmin && navItem("/admin/templates", "Šablony dokumentů", FileText)}
@@ -98,7 +100,7 @@ export function AdminShell({
           <LogOut className="mr-2 h-4 w-4" /> Odhlásit
         </Button>
       </div>
-    ) : requireModule && access && !can(requireModule) ? (
+    ) : requireModule && access && !canAny(requireModule) ? (
       <div className="mx-auto max-w-md px-4 py-20 text-center">
         <h2 className="text-lg font-semibold">Nemáte přístup k tomuto modulu</h2>
         <p className="mt-2 text-sm text-muted-foreground">

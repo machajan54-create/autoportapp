@@ -29,12 +29,13 @@ export const Route = createFileRoute("/_authenticated/admin/users")({
   component: UsersPage,
 });
 
-type ModuleKey = "claims" | "vykupy" | "users" | "approvals" | "dashboard";
+type ModuleKey = "claims" | "vykupy" | "vykupy_external" | "users" | "approvals" | "dashboard";
 
 const MODULE_LIST: { key: ModuleKey; label: string }[] = [
   { key: "dashboard", label: "Dashboard" },
   { key: "claims", label: "Zakázky" },
   { key: "vykupy", label: "Ojeté vozy" },
+  { key: "vykupy_external", label: "Ojeté vozy – jen externí nacenění" },
   { key: "approvals", label: "Schvalování" },
   { key: "users", label: "Uživatelé" },
 ];

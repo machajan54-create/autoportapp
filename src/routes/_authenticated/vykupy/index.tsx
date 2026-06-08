@@ -12,6 +12,8 @@ import { Plus, Search, Pencil, Trash2, Car, BarChart3 } from "lucide-react";
 import {
   listVykupy, deleteVykup, formatKc, formatDate, marze, stavBadge,
 } from "@/lib/vykupy";
+import { getMyAccess } from "@/lib/claims.functions";
+import { useServerFn } from "@tanstack/react-start";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/vykupy/")({
@@ -23,6 +25,10 @@ function VykupyList() {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
   const { data, isLoading } = useQuery({ queryKey: ["vykupy"], queryFn: listVykupy });
+  const fetchAccess = useServerFn(getMyAccess);
+  const { data: access } = useQuery({ queryKey: ["my-access"], queryFn: () => fetchAccess({}) });
+  const modules = (access?.modules ?? []) as string[];
+  const canFull = !!access?.isAdmin || modules.includes("vykupy");
 
   const rows = (data ?? []).filter((v) => {
     if (!q.trim()) return true;
@@ -42,7 +48,7 @@ function VykupyList() {
   }
 
   return (
-    <AdminShell requireModule="vykupy">
+    <AdminShell requireModule={["vykupy", "vykupy_external"]}>
       <div className="mx-auto max-w-6xl px-4 py-8 md:py-10">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Divize Ojeté Vozy
@@ -52,21 +58,23 @@ function VykupyList() {
             <Car className="h-7 w-7 text-orange-500" />
             Výkupy
           </h1>
-          <div className="flex gap-2">
-            <Button asChild variant="outline">
-              <Link to="/vykupy/dashboard">
-                <BarChart3 className="mr-1 h-4 w-4" />
-                Dashboard
-              </Link>
-            </Button>
-            <Button
-              onClick={() => navigate({ to: "/vykupy/$id", params: { id: "novy" } })}
-              className="bg-orange-500 text-white hover:bg-orange-600"
-            >
-              <Plus className="mr-1 h-4 w-4" />
-              Nový výkup
-            </Button>
-          </div>
+          {canFull && (
+            <div className="flex gap-2">
+              <Button asChild variant="outline">
+                <Link to="/vykupy/dashboard">
+                  <BarChart3 className="mr-1 h-4 w-4" />
+                  Dashboard
+                </Link>
+              </Button>
+              <Button
+                onClick={() => navigate({ to: "/vykupy/$id", params: { id: "novy" } })}
+                className="bg-orange-500 text-white hover:bg-orange-600"
+              >
+                <Plus className="mr-1 h-4 w-4" />
+                Nový výkup
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="mt-6 rounded-xl border bg-card p-3">
@@ -128,9 +136,11 @@ function VykupyList() {
                             <Pencil className="h-4 w-4" />
                           </Link>
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-rose-600" onClick={() => onDelete(v.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {canFull && (
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-rose-600" onClick={() => onDelete(v.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
