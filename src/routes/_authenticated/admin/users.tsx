@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AdminShell } from "@/components/AdminShell";
 import { Switch } from "@/components/ui/switch";
-import { listUsers, setUserRole, setUserModule } from "@/lib/claims.functions";
+import { listUsers, setUserRole, setUserModule, setUserApproved } from "@/lib/claims.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/users")({
@@ -15,6 +15,7 @@ function UsersPage() {
   const fetch = useServerFn(listUsers);
   const setRole = useServerFn(setUserRole);
   const setMod = useServerFn(setUserModule);
+  const setApproved = useServerFn(setUserApproved);
   const { data, isLoading } = useQuery({ queryKey: ["users"], queryFn: () => fetch({}) });
 
   async function toggle(user_id: string, role: "admin" | "employee", enable: boolean) {
@@ -41,6 +42,16 @@ function UsersPage() {
     }
   }
 
+  async function approve(user_id: string, approved: boolean) {
+    try {
+      await setApproved({ data: { user_id, approved } });
+      qc.invalidateQueries({ queryKey: ["users"] });
+      toast.success(approved ? "Účet schválen" : "Schválení odebráno");
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }
+
   return (
     <AdminShell requireModule="users">
       <main className="mx-auto max-w-5xl px-4 py-10">
@@ -59,14 +70,31 @@ function UsersPage() {
           {data?.map((u) => {
             const isAdmin = u.roles.includes("admin");
             const mods = u.modules ?? [];
+            const pending = !u.approved && !isAdmin;
             return (
               <div key={u.id} className="rounded-xl border bg-card p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <div className="font-medium">{u.email}</div>
+                    <div className="flex items-center gap-2 font-medium">
+                      {u.email}
+                      {pending && (
+                        <span className="rounded-md border border-amber-300 bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
+                          Čeká na schválení
+                        </span>
+                      )}
+                    </div>
                     <div className="text-xs text-muted-foreground">{u.full_name}</div>
                   </div>
                   <div className="flex items-center gap-4 text-sm">
+                    {!isAdmin && (
+                      <label className="flex items-center gap-2">
+                        Schváleno
+                        <Switch
+                          checked={!!u.approved}
+                          onCheckedChange={(v) => approve(u.id, v)}
+                        />
+                      </label>
+                    )}
                     <label className="flex items-center gap-2">
                       Zaměstnanec
                       <Switch
