@@ -5,12 +5,30 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getMyAccess } from "@/lib/claims.functions";
 
-export function AdminShell({ children }: { children: React.ReactNode }) {
+type ModuleKey = "claims" | "vykupy" | "users";
+
+export function AdminShell({
+  children,
+  requireModule,
+}: {
+  children: React.ReactNode;
+  requireModule?: ModuleKey;
+}) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [email, setEmail] = useState<string>("");
   const [mobileOpen, setMobileOpen] = useState(false);
+  const fetchAccess = useServerFn(getMyAccess);
+  const { data: access } = useQuery({
+    queryKey: ["my-access"],
+    queryFn: () => fetchAccess({}),
+  });
+  const modules = (access?.modules ?? []) as ReadonlyArray<ModuleKey>;
+  const can = (m: ModuleKey) => modules.includes(m);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? ""));
@@ -42,11 +60,21 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   const navList = (
     <nav className="flex-1 space-y-1 p-3">
-      {navItem("/admin", "Zakázky", FolderKanban)}
-      {navItem("/vykupy", "Ojeté vozy", Car)}
-      {navItem("/admin/users", "Uživatelé", Users)}
+      {can("claims") && navItem("/admin", "Zakázky", FolderKanban)}
+      {can("vykupy") && navItem("/vykupy", "Ojeté vozy", Car)}
+      {access?.isAdmin && navItem("/admin/users", "Uživatelé", Users)}
     </nav>
   );
+
+  const denied =
+    requireModule && access && !can(requireModule) ? (
+      <div className="mx-auto max-w-md px-4 py-20 text-center">
+        <h2 className="text-lg font-semibold">Nemáte přístup k tomuto modulu</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Požádejte super admina o přidělení přístupu.
+        </p>
+      </div>
+    ) : null;
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -100,7 +128,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <LogOut className="h-4 w-4" />
           </Button>
         </header>
-        <main className="flex-1 overflow-x-hidden">{children}</main>
+        <main className="flex-1 overflow-x-hidden">{denied ?? children}</main>
       </div>
     </div>
   );

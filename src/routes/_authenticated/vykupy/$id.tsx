@@ -136,7 +136,7 @@ function VykupForm() {
   }
 
   return (
-    <AdminShell>
+    <AdminShell requireModule="vykupy">
       <div className="mx-auto max-w-3xl px-4 py-8 md:py-10">
         <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/vykupy" })} className="mb-3 -ml-2">
           <ArrowLeft className="mr-1 h-4 w-4" /> Zpět

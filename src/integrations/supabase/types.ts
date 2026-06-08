@@ -224,6 +224,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_modules: {
+        Row: {
+          created_at: string
+          id: string
+          module: Database["public"]["Enums"]["app_module"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          module: Database["public"]["Enums"]["app_module"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          module?: Database["public"]["Enums"]["app_module"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -310,6 +331,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_module: {
+        Args: {
+          _module: Database["public"]["Enums"]["app_module"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -319,6 +347,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_module: "claims" | "vykupy" | "users"
       app_role: "admin" | "employee"
       claim_status:
         | "new"
@@ -454,6 +483,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_module: ["claims", "vykupy", "users"],
       app_role: ["admin", "employee"],
       claim_status: [
         "new",

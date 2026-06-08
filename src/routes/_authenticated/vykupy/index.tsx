@@ -42,7 +42,7 @@ function VykupyList() {
   }
 
   return (
-    <AdminShell>
+    <AdminShell requireModule="vykupy">
       <div className="mx-auto max-w-6xl px-4 py-8 md:py-10">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Divize Ojeté Vozy
