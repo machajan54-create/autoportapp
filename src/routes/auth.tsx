@@ -22,6 +22,8 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [resetMode, setResetMode] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -79,6 +81,20 @@ function AuthPage() {
     }
   }
 
+  async function sendReset(e: React.FormEvent) {
+    e.preventDefault();
+    if (!resetEmail) return;
+    setBusy(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: window.location.origin + "/auth",
+    });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Pokud účet existuje, odeslali jsme e-mail s instrukcemi.");
+    setResetMode(false);
+    setResetEmail("");
+  }
+
   return (
     <div
       className="flex min-h-screen items-center justify-center px-4"
@@ -89,12 +105,13 @@ function AuthPage() {
           <img
             src={rocketLogo}
             alt="Autoport APP logo"
-            className="h-16 w-16 object-contain -rotate-12 drop-shadow-[0_8px_20px_rgba(249,115,22,0.35)]"
+            className="h-16 w-16 object-contain -rotate-12 drop-shadow-[0_8px_20px_rgba(249,115,22,0.45)] transition-transform duration-500 hover:-rotate-6 hover:scale-110 animate-[float_4s_ease-in-out_infinite]"
           />
           <div>
             <h1 className="text-xl font-bold text-white">Interní systém Autoport APP 2026</h1>
           </div>
         </div>
+        <style>{`@keyframes float{0%,100%{transform:translateY(0) rotate(-12deg)}50%{transform:translateY(-6px) rotate(-10deg)}}`}</style>
 
         <Tabs defaultValue="login" className="mt-6">
           <TabsList className="grid w-full grid-cols-2 bg-slate-800/60">
@@ -113,6 +130,36 @@ function AuthPage() {
           </TabsList>
 
           <TabsContent value="login">
+            {resetMode ? (
+              <form onSubmit={sendReset} className="mt-4 space-y-4">
+                <div>
+                  <Label className="text-slate-200">E-mail pro reset hesla</Label>
+                  <Input
+                    type="email"
+                    className="mt-1 border-slate-700 bg-slate-900 text-white placeholder:text-slate-500"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full text-white hover:opacity-90"
+                  style={{ backgroundColor: "#F97316" }}
+                  disabled={busy}
+                >
+                  Odeslat odkaz pro reset
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full border-slate-700 bg-transparent text-slate-200 hover:bg-slate-800 hover:text-white"
+                  onClick={() => setResetMode(false)}
+                >
+                  Zpět na přihlášení
+                </Button>
+              </form>
+            ) : (
             <form onSubmit={signIn} className="mt-4 space-y-4">
               <div><Label className="text-slate-200">E-mail</Label>
                 <Input type="email" className="mt-1 border-slate-700 bg-slate-900 text-white placeholder:text-slate-500" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
@@ -129,7 +176,15 @@ function AuthPage() {
               <Button type="button" variant="outline" className="w-full border-slate-700 bg-transparent text-slate-200 hover:bg-slate-800 hover:text-white" onClick={demo} disabled={busy}>
                 Přihlásit se jako demo
               </Button>
+              <button
+                type="button"
+                onClick={() => setResetMode(true)}
+                className="block w-full text-center text-xs text-slate-400 underline hover:text-white"
+              >
+                Zapomenuté heslo?
+              </button>
             </form>
+            )}
           </TabsContent>
 
           <TabsContent value="register">
