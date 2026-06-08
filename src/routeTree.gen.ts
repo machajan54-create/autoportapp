@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UploadTokenRouteImport } from './routes/upload.$token'
+import { Route as AuthenticatedVykupyIndexRouteImport } from './routes/_authenticated/vykupy/index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedAdminIdRouteImport } from './routes/_authenticated/admin/$id'
@@ -42,6 +43,12 @@ const UploadTokenRoute = UploadTokenRouteImport.update({
   path: '/upload/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedVykupyIndexRoute =
+  AuthenticatedVykupyIndexRouteImport.update({
+    id: '/vykupy/',
+    path: '/vykupy/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
@@ -66,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/admin/$id': typeof AuthenticatedAdminIdRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/vykupy/': typeof AuthenticatedVykupyIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -75,6 +83,7 @@ export interface FileRoutesByTo {
   '/admin/$id': typeof AuthenticatedAdminIdRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
+  '/vykupy': typeof AuthenticatedVykupyIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -86,6 +95,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/$id': typeof AuthenticatedAdminIdRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/_authenticated/vykupy/': typeof AuthenticatedVykupyIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -97,6 +107,7 @@ export interface FileRouteTypes {
     | '/admin/$id'
     | '/admin/users'
     | '/admin/'
+    | '/vykupy/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -106,6 +117,7 @@ export interface FileRouteTypes {
     | '/admin/$id'
     | '/admin/users'
     | '/admin'
+    | '/vykupy'
   id:
     | '__root__'
     | '/'
@@ -116,6 +128,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/$id'
     | '/_authenticated/admin/users'
     | '/_authenticated/admin/'
+    | '/_authenticated/vykupy/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -163,6 +176,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UploadTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/vykupy/': {
+      id: '/_authenticated/vykupy/'
+      path: '/vykupy'
+      fullPath: '/vykupy/'
+      preLoaderRoute: typeof AuthenticatedVykupyIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/': {
       id: '/_authenticated/admin/'
       path: '/admin'
@@ -191,12 +211,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminIdRoute: typeof AuthenticatedAdminIdRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+  AuthenticatedVykupyIndexRoute: typeof AuthenticatedVykupyIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminIdRoute: AuthenticatedAdminIdRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+  AuthenticatedVykupyIndexRoute: AuthenticatedVykupyIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -212,3 +234,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
