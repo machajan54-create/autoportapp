@@ -204,7 +204,7 @@ export const listUsers = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data: profiles } = await context.supabase
       .from("profiles")
-      .select("id,email,full_name,created_at")
+      .select("id,email,full_name,created_at,approved")
       .order("created_at", { ascending: false });
     const { data: roles } = await context.supabase.from("user_roles").select("user_id,role");
     const { data: modules } = await context.supabase
@@ -285,14 +285,40 @@ export const getMyAccess = createServerFn({ method: "GET" })
       .select("role")
       .eq("user_id", context.userId);
     const isAdmin = (roles ?? []).some((r) => r.role === "admin");
+    const { data: profile } = await context.supabase
+      .from("profiles")
+      .select("approved")
+      .eq("id", context.userId)
+      .maybeSingle();
+    const approved = isAdmin || !!profile?.approved;
     if (isAdmin) {
-      return { isAdmin: true, modules: ["claims", "vykupy", "users"] as const };
+      return { isAdmin: true, approved: true, modules: ["claims", "vykupy", "users"] as const };
     }
     const { data: mods } = await context.supabase
       .from("user_modules")
       .select("module")
       .eq("user_id", context.userId);
-    return { isAdmin: false, modules: (mods ?? []).map((m) => m.module) };
+    return { isAdmin: false, approved, modules: (mods ?? []).map((m) => m.module) };
+  });
+
+export const setUserApproved = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ user_id: z.string().uuid(), approved: z.boolean() }).parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const { data: meRoles } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    if (!meRoles?.some((r) => r.role === "admin")) throw new Error("Forbidden");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("profiles")
+      .update({ approved: data.approved })
+      .eq("id", data.user_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 export const ensureDemoUser = createServerFn({ method: "POST" }).handler(async () => {

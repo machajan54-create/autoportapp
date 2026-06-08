@@ -68,7 +68,17 @@ export function AdminShell({
   );
 
   const denied =
-    requireModule && access && !can(requireModule) ? (
+    access && access.approved === false ? (
+      <div className="mx-auto max-w-md px-4 py-20 text-center">
+        <h2 className="text-lg font-semibold">Účet čeká na schválení</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Super admin musí váš účet nejprve schválit.
+        </p>
+        <Button variant="outline" size="sm" className="mt-6" onClick={logout}>
+          <LogOut className="mr-2 h-4 w-4" /> Odhlásit
+        </Button>
+      </div>
+    ) : requireModule && access && !can(requireModule) ? (
       <div className="mx-auto max-w-md px-4 py-20 text-center">
         <h2 className="text-lg font-semibold">Nemáte přístup k tomuto modulu</h2>
         <p className="mt-2 text-sm text-muted-foreground">
