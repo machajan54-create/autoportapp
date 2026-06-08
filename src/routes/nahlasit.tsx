@@ -17,7 +17,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { createClaim } from "@/lib/claims.functions";
-import { Phone, X, FileText, Image as ImageIcon, Check } from "lucide-react";
+import { Phone, X, FileText, Check } from "lucide-react";
 
 export const Route = createFileRoute("/nahlasit")({
   head: () => ({
