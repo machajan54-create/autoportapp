@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Car } from "lucide-react";
+import { Car, Phone, FileWarning } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureDemoUser, getMyAccess } from "@/lib/claims.functions";
 import { toast } from "sonner";
@@ -93,7 +93,7 @@ function Index() {
 
   return (
     <div
-      className="flex min-h-screen items-center justify-center px-4"
+      className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 pb-28 sm:pb-4"
       style={{ background: "linear-gradient(135deg, #0F172A 0%, #1E293B 100%)" }}
     >
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0F172A] p-8 shadow-2xl">
@@ -206,6 +206,30 @@ function Index() {
         <div className="mt-6 text-center text-sm">
           <Link to="/nahlasit" className="text-slate-400 hover:text-white">
             Nahlásit pojistnou událost →
+          </Link>
+        </div>
+      </div>
+
+      {/* Klientská sekce mimo přihlašovací kartu */}
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-white/10 bg-[#0B1220]/95 backdrop-blur px-4 py-3 sm:static sm:mt-6 sm:w-full sm:max-w-md sm:rounded-2xl sm:border sm:bg-[#0F172A] sm:p-5">
+        <p className="text-center text-xs uppercase tracking-wide text-slate-400">
+          Měli jste nehodu? Jsme tu pro vás
+        </p>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+          <a
+            href="tel:+420800100200"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-white shadow-lg"
+            style={{ backgroundColor: "#F97316" }}
+          >
+            <Phone className="h-4 w-4" />
+            Zavolat +420 800 100 200
+          </a>
+          <Link
+            to="/nahlasit"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800"
+          >
+            <FileWarning className="h-4 w-4" />
+            Nahlásit událost
           </Link>
         </div>
       </div>

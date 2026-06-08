@@ -58,17 +58,32 @@ export function SignaturePad({ onChange }: Props) {
 
   return (
     <div className="space-y-2">
-      <canvas
-        ref={canvasRef}
-        className="w-full rounded-md border border-input bg-card touch-none"
-        onPointerDown={start}
-        onPointerMove={move}
-        onPointerUp={end}
-        onPointerLeave={end}
-      />
-      <Button type="button" variant="outline" size="sm" onClick={clear}>
-        Vymazat podpis
-      </Button>
+      <div className="relative">
+        <canvas
+          ref={canvasRef}
+          className="w-full rounded-md border-2 border-dashed border-primary/50 bg-white touch-none"
+          onPointerDown={start}
+          onPointerMove={move}
+          onPointerUp={end}
+          onPointerLeave={end}
+        />
+        {!hasInk && (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <span className="text-sm text-muted-foreground">
+              ✍️ Podepište se zde (prstem nebo myší)
+            </span>
+          </div>
+        )}
+        <div className="pointer-events-none absolute inset-x-4 bottom-6 border-b border-dashed border-slate-300" />
+      </div>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          Podepište se v rámečku výše, na řádku.
+        </p>
+        <Button type="button" variant="outline" size="sm" onClick={clear}>
+          Vymazat
+        </Button>
+      </div>
     </div>
   );
 }
