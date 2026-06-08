@@ -55,6 +55,70 @@ export type Database = {
           },
         ]
       }
+      claim_events: {
+        Row: {
+          claim_id: string
+          created_at: string
+          id: string
+          message: string
+          type: string
+        }
+        Insert: {
+          claim_id: string
+          created_at?: string
+          id?: string
+          message: string
+          type: string
+        }
+        Update: {
+          claim_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_events_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      claim_tasks: {
+        Row: {
+          claim_id: string
+          created_at: string
+          done: boolean
+          id: string
+          title: string
+        }
+        Insert: {
+          claim_id: string
+          created_at?: string
+          done?: boolean
+          id?: string
+          title: string
+        }
+        Update: {
+          claim_id?: string
+          created_at?: string
+          done?: boolean
+          id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_tasks_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       claims: {
         Row: {
           accident_record: string | null
@@ -75,9 +139,12 @@ export type Database = {
           location: string | null
           notes: string | null
           phone: string
+          pu_number: string | null
           signature: string
           status: Database["public"]["Enums"]["claim_status"]
           updated_at: string
+          upload_token: string
+          vat_paid: boolean
           vat_payer: string | null
         }
         Insert: {
@@ -99,9 +166,12 @@ export type Database = {
           location?: string | null
           notes?: string | null
           phone: string
+          pu_number?: string | null
           signature: string
           status?: Database["public"]["Enums"]["claim_status"]
           updated_at?: string
+          upload_token?: string
+          vat_paid?: boolean
           vat_payer?: string | null
         }
         Update: {
@@ -123,9 +193,12 @@ export type Database = {
           location?: string | null
           notes?: string | null
           phone?: string
+          pu_number?: string | null
           signature?: string
           status?: Database["public"]["Enums"]["claim_status"]
           updated_at?: string
+          upload_token?: string
+          vat_paid?: boolean
           vat_payer?: string | null
         }
         Relationships: []
@@ -187,7 +260,13 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "employee"
-      claim_status: "new" | "in_progress" | "closed"
+      claim_status:
+        | "new"
+        | "in_progress"
+        | "closed"
+        | "in_repair"
+        | "waiting_vat"
+        | "done"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -316,7 +395,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "employee"],
-      claim_status: ["new", "in_progress", "closed"],
+      claim_status: [
+        "new",
+        "in_progress",
+        "closed",
+        "in_repair",
+        "waiting_vat",
+        "done",
+      ],
     },
   },
 } as const

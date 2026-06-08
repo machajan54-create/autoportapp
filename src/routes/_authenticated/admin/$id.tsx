@@ -1,18 +1,57 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { SiteHeader } from "@/components/SiteHeader";
+import { useState } from "react";
+import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
-import { getClaim, updateClaimStatus, generatePoaPdf } from "@/lib/claims.functions";
+import {
+  getClaim,
+  updateClaimStatus,
+  generatePoaPdf,
+  setVatPaid,
+  addTask,
+  toggleTask,
+  deleteTask,
+  notifyClient,
+} from "@/lib/claims.functions";
 import { toast } from "sonner";
-import { ArrowLeft, Download, FileText } from "lucide-react";
+import {
+  ArrowLeft,
+  Download,
+  FileText,
+  Image as ImageIcon,
+  QrCode,
+  Trash2,
+  Mail,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import QRCode from "qrcode";
 
 export const Route = createFileRoute("/_authenticated/admin/$id")({
   component: ClaimDetail,
 });
+
+const statusOptions: { value: string; label: string; cls: string }[] = [
+  { value: "new", label: "Nová", cls: "bg-primary/10 text-primary border-primary/20" },
+  { value: "in_repair", label: "V opravě", cls: "bg-amber-100 text-amber-900 border-amber-200" },
+  { value: "waiting_vat", label: "Čeká na DPH", cls: "bg-violet-100 text-violet-900 border-violet-200" },
+  { value: "done", label: "Dokončeno", cls: "bg-emerald-100 text-emerald-900 border-emerald-200" },
+];
+
+function statusMeta(s: string) {
+  if (s === "in_progress") return statusOptions[1];
+  if (s === "closed") return statusOptions[3];
+  return statusOptions.find((o) => o.value === s) ?? statusOptions[0];
+}
 
 function ClaimDetail() {
   const { id } = Route.useParams();
@@ -21,16 +60,28 @@ function ClaimDetail() {
   const fetch = useServerFn(getClaim);
   const update = useServerFn(updateClaimStatus);
   const genPoa = useServerFn(generatePoaPdf);
+  const setVat = useServerFn(setVatPaid);
+  const addTaskFn = useServerFn(addTask);
+  const toggleFn = useServerFn(toggleTask);
+  const deleteFn = useServerFn(deleteTask);
+  const notify = useServerFn(notifyClient);
 
   const { data, isLoading } = useQuery({
     queryKey: ["claim", id],
     queryFn: () => fetch({ data: { id } }),
   });
 
-  async function setStatus(s: "new" | "in_progress" | "closed") {
-    await update({ data: { id, status: s } });
+  const [qrUrl, setQrUrl] = useState<string | null>(null);
+  const [newTask, setNewTask] = useState("");
+
+  function invalidate() {
     qc.invalidateQueries({ queryKey: ["claim", id] });
     qc.invalidateQueries({ queryKey: ["claims"] });
+  }
+
+  async function setStatus(s: string) {
+    await update({ data: { id, status: s as any } });
+    invalidate();
     toast.success("Stav aktualizován");
   }
 
@@ -47,112 +98,297 @@ function ClaimDetail() {
     URL.revokeObjectURL(url);
   }
 
-  if (isLoading || !data) return <div className="p-10 text-muted-foreground">Načítám…</div>;
+  async function makeQr() {
+    if (!data) return;
+    const url = `${window.location.origin}/upload/${data.claim.upload_token}`;
+    const png = await QRCode.toDataURL(url, { width: 280, margin: 1 });
+    setQrUrl(png);
+  }
+
+  if (isLoading || !data) {
+    return (
+      <AdminShell>
+        <div className="p-10 text-muted-foreground">Načítám…</div>
+      </AdminShell>
+    );
+  }
+
   const c = data.claim;
+  const meta = statusMeta(c.status);
+  const photos = data.attachments.filter((a) => (a.mime_type ?? "").startsWith("image"));
 
   return (
-    <div className="min-h-screen bg-background">
-      <SiteHeader rightSlot={
-        <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/admin" })}>
-          <ArrowLeft className="mr-2 h-4 w-4" />Zpět
-        </Button>
-      } />
-      <main className="mx-auto max-w-4xl px-4 py-10 space-y-6">
-        <div className="flex items-start justify-between gap-4">
+    <AdminShell>
+      <div className="mx-auto max-w-3xl space-y-5 px-4 py-6 md:py-10">
+        <button
+          onClick={() => navigate({ to: "/admin" })}
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Zpět na zakázky
+        </button>
+
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
+            <div className="font-mono text-xs uppercase text-muted-foreground">
+              {c.pu_number ?? "—"}
+            </div>
             <h1 className="text-2xl font-bold">{c.first_name} {c.last_name}</h1>
-            <p className="text-sm text-muted-foreground">
-              Přijato {new Date(c.created_at).toLocaleString("cs-CZ")}
-            </p>
           </div>
           <div className="flex items-center gap-2">
-            <Select value={c.status} onValueChange={(v) => setStatus(v as any)}>
-              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+            <span className={cn("rounded-md border px-2 py-1 text-xs font-medium", meta.cls)}>
+              {meta.label}
+            </span>
+            <Select value={c.status} onValueChange={setStatus}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                <SelectItem value="new">Nová</SelectItem>
-                <SelectItem value="in_progress">V řešení</SelectItem>
-                <SelectItem value="closed">Uzavřeno</SelectItem>
+                {statusOptions.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
         </div>
 
-        <Section title="Kontakt">
-          <Row label="Jméno" v={`${c.first_name} ${c.last_name}`} />
+        <Section title="Údaje">
           <Row label="Telefon" v={c.phone} />
           <Row label="E-mail" v={c.email} />
           <Row label="Společnost" v={c.company} />
           <Row label="IČ" v={c.ico} />
           <Row label="Adresa" v={c.address} />
-        </Section>
-
-        <Section title="Událost">
           <Row label="Pojišťovna" v={c.insurer} />
           <Row label="Číslo škody" v={c.claim_number} />
-          <Row label="Datum" v={c.event_at ? new Date(c.event_at).toLocaleString("cs-CZ") : null} />
-          <Row label="Místo" v={c.location} />
+          <Row label="Datum události" v={c.event_at ? new Date(c.event_at).toLocaleString("cs-CZ") : null} />
+          <Row label="Místo události" v={c.location} />
           <Row label="Způsob likvidace" v={c.liquidation_type} />
           <Row label="Plátce DPH" v={c.vat_payer} />
           <Row label="Úvěr/leasing" v={c.loan_lease} />
-          <Row label="Záznam o nehodě" v={c.accident_record} />
-          <Row label="Záznam pojišťovnou" v={c.insurer_record} />
-          {c.notes && <div className="col-span-2"><div className="text-xs text-muted-foreground">Poznámka</div><div>{c.notes}</div></div>}
+          {c.notes && (
+            <div className="sm:col-span-2">
+              <div className="text-xs text-muted-foreground">Poznámka</div>
+              <div className="text-sm">{c.notes}</div>
+            </div>
+          )}
         </Section>
 
-        <section className="rounded-xl border bg-card p-6">
-          <h2 className="font-semibold">Přílohy</h2>
-          {data.attachments.length === 0 && <p className="mt-2 text-sm text-muted-foreground">Žádné přílohy</p>}
-          <ul className="mt-3 space-y-2 text-sm">
-            {data.attachments.map((a) => (
-              <li key={a.id} className="flex items-center justify-between rounded-md border bg-background px-3 py-2">
-                <span>
-                  <span className="font-medium">[{a.category}]</span> {a.file_name}
-                </span>
-                {a.url && (
-                  <a href={a.url} target="_blank" rel="noreferrer" className="text-primary underline">
-                    Otevřít
+        <Card>
+          <CardTitle icon={<ImageIcon className="h-4 w-4" />}>
+            Fotogalerie ({photos.length})
+          </CardTitle>
+          {photos.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Žádné fotky.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {photos.map((a) =>
+                a.url ? (
+                  <a key={a.id} href={a.url} target="_blank" rel="noreferrer">
+                    <img
+                      src={a.url}
+                      alt={a.file_name}
+                      className="h-20 w-20 rounded-md border object-cover"
+                    />
                   </a>
-                )}
+                ) : null,
+              )}
+            </div>
+          )}
+        </Card>
+
+        <Card>
+          <CardTitle icon={<FileText className="h-4 w-4" />}>Dokumenty</CardTitle>
+          <ul className="space-y-2 text-sm">
+            <li className="flex items-center justify-between rounded-md border bg-background px-3 py-2">
+              <span>
+                <span className="font-mono text-xs text-muted-foreground">[power_of_attorney]</span>{" "}
+                plna-moc-jednani.pdf
+              </span>
+              <button onClick={() => downloadPoa("jednani")} className="text-primary hover:underline">
+                Stáhnout
+              </button>
+            </li>
+            <li className="flex items-center justify-between rounded-md border bg-background px-3 py-2">
+              <span>
+                <span className="font-mono text-xs text-muted-foreground">[power_of_attorney]</span>{" "}
+                plna-moc-prevzeti.pdf
+              </span>
+              <button onClick={() => downloadPoa("plneni")} className="text-primary hover:underline">
+                Stáhnout
+              </button>
+            </li>
+            {data.attachments
+              .filter((a) => !(a.mime_type ?? "").startsWith("image"))
+              .map((a) => (
+                <li key={a.id} className="flex items-center justify-between rounded-md border bg-background px-3 py-2">
+                  <span>
+                    <span className="font-mono text-xs text-muted-foreground">[{a.category}]</span>{" "}
+                    {a.file_name}
+                  </span>
+                  {a.url && (
+                    <a href={a.url} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                      Otevřít
+                    </a>
+                  )}
+                </li>
+              ))}
+          </ul>
+        </Card>
+
+        <Card>
+          <CardTitle>Časová osa</CardTitle>
+          <ol className="space-y-2 text-sm">
+            {data.events.length === 0 && (
+              <li className="text-muted-foreground">Žádné události.</li>
+            )}
+            {data.events.map((e) => (
+              <li key={e.id} className="flex gap-3">
+                <span className="w-36 shrink-0 font-mono text-xs text-muted-foreground">
+                  {new Date(e.created_at).toLocaleString("cs-CZ", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+                <span>{e.message}</span>
+              </li>
+            ))}
+          </ol>
+        </Card>
+
+        <Card>
+          <CardTitle icon={<QrCode className="h-4 w-4" />}>Fotit do zakázky</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Vygenerujte QR kód a načtěte ho mobilem — můžete pak fotit přímo do této zakázky bez přihlášení.
+          </p>
+          <Button onClick={makeQr} className="w-full">
+            Vytvořit QR kód
+          </Button>
+          {qrUrl && (
+            <div className="mt-2 flex flex-col items-center gap-2 border-t pt-4">
+              <span className="text-xs text-muted-foreground">QR na detail zakázky</span>
+              <img src={qrUrl} alt="QR" className="h-56 w-56" />
+            </div>
+          )}
+        </Card>
+
+        <Card>
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold">DPH</h2>
+            <label className="flex cursor-pointer items-center gap-2 text-sm">
+              <Checkbox
+                checked={c.vat_paid}
+                onCheckedChange={async (v) => {
+                  await setVat({ data: { id, paid: Boolean(v) } });
+                  invalidate();
+                }}
+              />
+              Zaplaceno
+            </label>
+          </div>
+        </Card>
+
+        <Card>
+          <CardTitle>Úkoly</CardTitle>
+          <form
+            className="flex gap-2"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (!newTask.trim()) return;
+              await addTaskFn({ data: { claim_id: id, title: newTask.trim() } });
+              setNewTask("");
+              invalidate();
+            }}
+          >
+            <Input
+              value={newTask}
+              onChange={(e) => setNewTask(e.target.value)}
+              placeholder="Nový úkol…"
+            />
+            <Button type="submit">Přidat</Button>
+          </form>
+          <ul className="space-y-1 text-sm">
+            {data.tasks.map((t) => (
+              <li key={t.id} className="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-muted/50">
+                <Checkbox
+                  checked={t.done}
+                  onCheckedChange={async (v) => {
+                    await toggleFn({ data: { id: t.id, done: Boolean(v) } });
+                    invalidate();
+                  }}
+                />
+                <span className={cn("flex-1", t.done && "text-muted-foreground line-through")}>
+                  {t.title}
+                </span>
+                <button
+                  className="text-muted-foreground hover:text-destructive"
+                  onClick={async () => {
+                    await deleteFn({ data: { id: t.id } });
+                    invalidate();
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </li>
             ))}
           </ul>
-        </section>
+        </Card>
 
-        <section className="rounded-xl border bg-card p-6">
-          <h2 className="font-semibold">Podpis</h2>
-          {c.signature && <img src={c.signature} alt="podpis" className="mt-3 max-h-32 border rounded" />}
-        </section>
-
-        <section className="rounded-xl border bg-card p-6">
-          <h2 className="font-semibold">Plné moci</h2>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button onClick={() => downloadPoa("jednani")}>
-              <FileText className="mr-2 h-4 w-4" />Plná moc k jednání
+        <Card>
+          <CardTitle icon={<Mail className="h-4 w-4" />}>Upozornění klientovi</CardTitle>
+          {c.email ? (
+            <Button
+              className="w-full"
+              variant="secondary"
+              onClick={async () => {
+                try {
+                  const r = await notify({ data: { id } });
+                  toast.success(`Odesláno na ${r.email}`);
+                  invalidate();
+                } catch (e) {
+                  toast.error((e as Error).message);
+                }
+              }}
+            >
+              Poslat upozornění
             </Button>
-            <Button variant="outline" onClick={() => downloadPoa("plneni")}>
-              <Download className="mr-2 h-4 w-4" />Plná moc k převzetí plnění
-            </Button>
-          </div>
-        </section>
-      </main>
-    </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Klient neuvedl e-mail.</p>
+          )}
+        </Card>
+      </div>
+    </AdminShell>
   );
 }
 
+function Card({ children }: { children: React.ReactNode }) {
+  return <section className="space-y-3 rounded-xl border bg-card p-5">{children}</section>;
+}
+function CardTitle({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <h2 className="flex items-center gap-2 font-semibold">
+      {icon}
+      {children}
+    </h2>
+  );
+}
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-xl border bg-card p-6">
-      <h2 className="font-semibold">{title}</h2>
-      <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</dl>
-    </section>
+    <Card>
+      <CardTitle>{title}</CardTitle>
+      <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</dl>
+    </Card>
   );
 }
 function Row({ label, v }: { label: string; v: string | null | undefined }) {
-  if (!v) return null;
   return (
     <div>
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="text-sm">{v}</dd>
+      <dt className="text-xs uppercase tracking-wider text-muted-foreground">{label}</dt>
+      <dd className="text-sm">{v || "—"}</dd>
     </div>
   );
 }
