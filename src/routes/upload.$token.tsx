@@ -63,7 +63,7 @@ function UploadPage() {
       <header className="border-b bg-card px-4 py-4">
         <div className="mx-auto flex max-w-md items-center gap-2 font-semibold">
           <ShieldCheck className="h-5 w-5 text-primary" />
-          Pojistné události
+          Autoport APP
         </div>
       </header>
       <main className="mx-auto max-w-md px-4 py-8">

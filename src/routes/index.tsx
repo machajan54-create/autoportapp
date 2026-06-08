@@ -105,8 +105,8 @@ function Index() {
             <Car className="h-5 w-5 text-white" />
           </span>
           <div className="flex flex-col leading-tight">
-            <span>AutoPort</span>
-            <span className="text-xs font-normal text-slate-400">Interní systém</span>
+            <span>Autoport APP</span>
+            <span className="text-xs font-normal text-slate-400">Interní systém 2026</span>
           </div>
         </div>
 
