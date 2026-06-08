@@ -254,6 +254,116 @@ export type Database = {
         }
         Relationships: []
       }
+      purchases: {
+        Row: {
+          amount: number | null
+          created_at: string
+          currency: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          description: string | null
+          id: string
+          requested_by: string | null
+          status: Database["public"]["Enums"]["approval_status"]
+          supplier_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          currency?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          description?: string | null
+          id?: string
+          requested_by?: string | null
+          status?: Database["public"]["Enums"]["approval_status"]
+          supplier_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          currency?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          description?: string | null
+          id?: string
+          requested_by?: string | null
+          status?: Database["public"]["Enums"]["approval_status"]
+          supplier_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchases_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          address: string | null
+          contact_person: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          dic: string | null
+          email: string | null
+          ico: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          requested_by: string | null
+          status: Database["public"]["Enums"]["approval_status"]
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          dic?: string | null
+          email?: string | null
+          ico?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          requested_by?: string | null
+          status?: Database["public"]["Enums"]["approval_status"]
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          dic?: string | null
+          email?: string | null
+          ico?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          requested_by?: string | null
+          status?: Database["public"]["Enums"]["approval_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_modules: {
         Row: {
           created_at: string
@@ -379,6 +489,7 @@ export type Database = {
     Enums: {
       app_module: "claims" | "vykupy" | "users"
       app_role: "admin" | "employee"
+      approval_status: "pending" | "approved" | "rejected"
       claim_status:
         | "new"
         | "in_progress"
@@ -515,6 +626,7 @@ export const Constants = {
     Enums: {
       app_module: ["claims", "vykupy", "users"],
       app_role: ["admin", "employee"],
+      approval_status: ["pending", "approved", "rejected"],
       claim_status: [
         "new",
         "in_progress",
