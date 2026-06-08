@@ -89,7 +89,49 @@ function VykupyList() {
           </div>
         </div>
 
-        <div className="mt-4 overflow-hidden rounded-xl border bg-card">
+        {/* Mobile: card list */}
+        <div className="mt-4 space-y-2 md:hidden">
+          {isLoading && (
+            <div className="rounded-xl border bg-card p-4 text-center text-sm text-muted-foreground">Načítám…</div>
+          )}
+          {!isLoading && rows.length === 0 && (
+            <div className="rounded-xl border bg-card p-4 text-center text-sm text-muted-foreground">Žádné záznamy.</div>
+          )}
+          {rows.map((v) => {
+            const m = marze(v);
+            return (
+              <button
+                key={v.id}
+                onClick={() => navigate({ to: "/vykupy/$id", params: { id: v.id } })}
+                className="w-full rounded-xl border bg-card p-3 text-left active:bg-muted/50"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="truncate font-semibold">{v.znacka} {v.model}</div>
+                    <div className="truncate text-sm text-muted-foreground">{v.klient}</div>
+                  </div>
+                  <span className={cn("shrink-0 rounded-md border px-2 py-0.5 text-xs font-medium", stavBadge[v.stav] ?? "bg-muted")}>
+                    {v.stav}
+                  </span>
+                </div>
+                <div className="mt-2 flex items-center justify-between gap-2 text-sm">
+                  <div className="text-muted-foreground">{formatDate(v.datum_vykupu)}{v.zpracoval ? ` · ${v.zpracoval}` : ""}</div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="tabular-nums">{formatKc(v.vykoupeno_za)}</span>
+                    {m != null && (
+                      <span className={cn("tabular-nums font-medium", m < 0 && "text-rose-600", m > 0 && "text-emerald-600")}>
+                        {m > 0 ? "+" : ""}{formatKc(m)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Desktop: table */}
+        <div className="mt-4 hidden overflow-hidden rounded-xl border bg-card md:block">
           <Table>
             <TableHeader>
               <TableRow>
