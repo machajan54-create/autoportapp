@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import rocketLogo from "@/assets/rocket-logo.png";
 import { supabase } from "@/integrations/supabase/client";
-import { ensureDemoUser, getMyAccess } from "@/lib/claims.functions";
+import { getMyAccess } from "@/lib/claims.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
@@ -17,7 +17,6 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const ensureDemo = useServerFn(ensureDemoUser);
   const fetchAccess = useServerFn(getMyAccess);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -63,22 +62,6 @@ function AuthPage() {
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Účet vytvořen. Vyčkejte na schválení super adminem.");
-  }
-
-  async function demo() {
-    setBusy(true);
-    try {
-      const creds = await ensureDemo({});
-      const { error } = await supabase.auth.signInWithPassword({
-        email: creds.email, password: creds.password,
-      });
-      if (error) throw error;
-      navigate({ to: "/admin" });
-    } catch (err) {
-      toast.error((err as Error).message);
-    } finally {
-      setBusy(false);
-    }
   }
 
   async function sendReset(e: React.FormEvent) {
@@ -172,9 +155,6 @@ function AuthPage() {
                 disabled={busy}
               >
                 Přihlásit se
-              </Button>
-              <Button type="button" variant="outline" className="w-full border-slate-700 bg-transparent text-slate-200 hover:bg-slate-800 hover:text-white" onClick={demo} disabled={busy}>
-                Přihlásit se jako demo
               </Button>
               <button
                 type="button"
