@@ -235,6 +235,41 @@ function VykupForm() {
             </div>
           </Section>
 
+          <Section title="Nacenění – interní">
+            <Field label="Kdo nacenil (zaměstnanec)">
+              <Select
+                value={form.internal_priced_by_user_id || "none"}
+                onValueChange={(v) => set("internal_priced_by_user_id", v === "none" ? "" : v)}
+              >
+                <SelectTrigger><SelectValue placeholder="Vyberte…" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— nezadáno —</SelectItem>
+                  {(employees ?? []).map((u) => (
+                    <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Interní nacenění (Kč)">
+              <Input type="number" value={form.internal_priced_amount} onChange={(e) => set("internal_priced_amount", e.target.value)} />
+            </Field>
+            <Field label="Datum interního nacenění">
+              <Input type="date" value={form.internal_priced_at} onChange={(e) => set("internal_priced_at", e.target.value)} />
+            </Field>
+          </Section>
+
+          <Section title="Nacenění – externí">
+            <Field label="Kdo nacenil (firma / jméno)">
+              <Input value={form.external_priced_by} onChange={(e) => set("external_priced_by", e.target.value)} placeholder="např. AAA Auto" />
+            </Field>
+            <Field label="Externí nacenění (Kč)">
+              <Input type="number" value={form.external_priced_amount} onChange={(e) => set("external_priced_amount", e.target.value)} />
+            </Field>
+            <Field label="Datum externího nacenění">
+              <Input type="date" value={form.external_priced_at} onChange={(e) => set("external_priced_at", e.target.value)} />
+            </Field>
+          </Section>
+
           <Section title="Stav">
             <Field label="Datum výkupu">
               <Input type="date" value={form.datum_vykupu} onChange={(e) => set("datum_vykupu", e.target.value)} />
