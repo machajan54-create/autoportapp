@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { AdminShell } from "@/components/AdminShell";
 import { listClaims, getMyAccess } from "@/lib/claims.functions";
 import { listVykupy, formatKc, marze } from "@/lib/vykupy";
+import { listEmployees } from "@/lib/claims.functions";
 import { FolderOpen, AlertCircle, Car, Coins, TrendingUp, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 function DashboardPage() {
   const fetchAccess = useServerFn(getMyAccess);
   const fetchClaims = useServerFn(listClaims);
+  const fetchEmployees = useServerFn(listEmployees);
   const { data: access, isLoading: aLoad } = useQuery({
     queryKey: ["my-access"],
     queryFn: () => fetchAccess({}),
@@ -29,6 +31,11 @@ function DashboardPage() {
   const { data: vykupy } = useQuery({
     queryKey: ["vykupy"],
     queryFn: () => listVykupy(),
+    enabled: isAdmin,
+  });
+  const { data: employees } = useQuery({
+    queryKey: ["employees"],
+    queryFn: () => fetchEmployees({}),
     enabled: isAdmin,
   });
 
