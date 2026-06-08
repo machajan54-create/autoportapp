@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AdminShell } from "@/components/AdminShell";
+import { getMyAccess } from "@/lib/claims.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -51,13 +52,21 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function ApprovalsPage() {
+  const fetchAccess = useServerFn(getMyAccess);
+  const { data: access } = useQuery({
+    queryKey: ["my-access"],
+    queryFn: () => fetchAccess({}),
+  });
+  const isAdmin = !!access?.isAdmin;
   return (
     <AdminShell>
       <div className="mx-auto w-full max-w-6xl space-y-6 p-4 md:p-6">
         <header>
           <h1 className="text-2xl font-semibold">Schvalování</h1>
           <p className="text-sm text-muted-foreground">
-            Nákupy a dodavatelé — pouze super admin.
+            {isAdmin
+              ? "Schvalujte žádosti zaměstnanců o nákupy a dodavatele."
+              : "Vaše žádosti o nákupy a dodavatele. Schvaluje super admin."}
           </p>
         </header>
         <Tabs defaultValue="purchases">
@@ -70,10 +79,10 @@ function ApprovalsPage() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="purchases" className="mt-4">
-            <PurchasesTab />
+            <PurchasesTab isAdmin={isAdmin} />
           </TabsContent>
           <TabsContent value="suppliers" className="mt-4">
-            <SuppliersTab />
+            <SuppliersTab isAdmin={isAdmin} />
           </TabsContent>
         </Tabs>
       </div>
@@ -81,7 +90,7 @@ function ApprovalsPage() {
   );
 }
 
-function SuppliersTab() {
+function SuppliersTab({ isAdmin }: { isAdmin: boolean }) {
   const router = useRouter();
   const fetchList = useServerFn(listSuppliers);
   const create = useServerFn(createSupplier);
@@ -178,19 +187,21 @@ function SuppliersTab() {
                   </div>
                 </div>
                 <div className="flex gap-1">
-                  {s.status !== "approved" && (
+                  {isAdmin && s.status !== "approved" && (
                     <Button size="sm" variant="outline" onClick={() => setStatus(s.id, "approved")}>
                       <Check className="h-4 w-4" />
                     </Button>
                   )}
-                  {s.status !== "rejected" && (
+                  {isAdmin && s.status !== "rejected" && (
                     <Button size="sm" variant="outline" onClick={() => setStatus(s.id, "rejected")}>
                       <X className="h-4 w-4" />
                     </Button>
                   )}
-                  <Button size="sm" variant="ghost" onClick={() => remove(s.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {isAdmin && (
+                    <Button size="sm" variant="ghost" onClick={() => remove(s.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
@@ -201,7 +212,7 @@ function SuppliersTab() {
   );
 }
 
-function PurchasesTab() {
+function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
   const fetchList = useServerFn(listPurchases);
   const fetchSuppliers = useServerFn(listSuppliers);
   const create = useServerFn(createPurchase);
@@ -323,19 +334,21 @@ function PurchasesTab() {
                   {p.description && <div className="mt-1 text-sm">{p.description}</div>}
                 </div>
                 <div className="flex gap-1">
-                  {p.status !== "approved" && (
+                  {isAdmin && p.status !== "approved" && (
                     <Button size="sm" variant="outline" onClick={() => setStatus(p.id, "approved")}>
                       <Check className="h-4 w-4" />
                     </Button>
                   )}
-                  {p.status !== "rejected" && (
+                  {isAdmin && p.status !== "rejected" && (
                     <Button size="sm" variant="outline" onClick={() => setStatus(p.id, "rejected")}>
                       <X className="h-4 w-4" />
                     </Button>
                   )}
-                  <Button size="sm" variant="ghost" onClick={() => remove(p.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {isAdmin && (
+                    <Button size="sm" variant="ghost" onClick={() => remove(p.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}

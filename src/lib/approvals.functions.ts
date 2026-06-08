@@ -9,14 +9,18 @@ async function assertAdmin(supabase: any, userId: string) {
   }
 }
 
+async function isAdmin(supabase: any, userId: string): Promise<boolean> {
+  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+  return (data ?? []).some((r: any) => r.role === "admin");
+}
+
 export const listSuppliers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context.supabase, context.userId);
-    const { data, error } = await context.supabase
-      .from("suppliers")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const admin = await isAdmin(context.supabase, context.userId);
+    let q = context.supabase.from("suppliers").select("*").order("created_at", { ascending: false });
+    if (!admin) q = q.eq("requested_by", context.userId);
+    const { data, error } = await q;
     if (error) throw new Error(error.message);
     return data;
   });
@@ -36,10 +40,10 @@ export const createSupplier = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => supplierInput.parse(d))
   .handler(async ({ context, data }) => {
-    await assertAdmin(context.supabase, context.userId);
     const { error } = await context.supabase.from("suppliers").insert({
       ...data,
       email: data.email || null,
+      status: "pending",
       requested_by: context.userId,
     });
     if (error) throw new Error(error.message);
@@ -81,11 +85,13 @@ export const deleteSupplier = createServerFn({ method: "POST" })
 export const listPurchases = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context.supabase, context.userId);
-    const { data, error } = await context.supabase
+    const admin = await isAdmin(context.supabase, context.userId);
+    let q = context.supabase
       .from("purchases")
       .select("*, supplier:suppliers(id,name)")
       .order("created_at", { ascending: false });
+    if (!admin) q = q.eq("requested_by", context.userId);
+    const { data, error } = await q;
     if (error) throw new Error(error.message);
     return data;
   });
@@ -102,9 +108,9 @@ export const createPurchase = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => purchaseInput.parse(d))
   .handler(async ({ context, data }) => {
-    await assertAdmin(context.supabase, context.userId);
     const { error } = await context.supabase.from("purchases").insert({
       ...data,
+      status: "pending",
       requested_by: context.userId,
     });
     if (error) throw new Error(error.message);

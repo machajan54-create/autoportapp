@@ -9,7 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyAccess, getPendingApprovalsCount } from "@/lib/claims.functions";
 
-type ModuleKey = "claims" | "vykupy" | "users";
+type ModuleKey = "claims" | "vykupy" | "users" | "approvals" | "dashboard";
 
 export function AdminShell({
   children,
@@ -78,10 +78,10 @@ export function AdminShell({
 
   const navList = (
     <nav className="flex-1 space-y-1 p-3">
-      {access?.isAdmin && navItem("/dashboard", "Dashboard", LayoutDashboard)}
+      {(access?.isAdmin || can("dashboard")) && navItem("/dashboard", "Dashboard", LayoutDashboard)}
       {can("claims") && navItem("/admin", "Zakázky", FolderKanban)}
       {can("vykupy") && navItem("/vykupy", "Ojeté vozy", Car)}
-      {access?.isAdmin && navItem("/approvals", "Schvalování", CheckSquare)}
+      {(access?.isAdmin || can("approvals")) && navItem("/approvals", "Schvalování", CheckSquare)}
       {access?.isAdmin && navItem("/admin/users", "Uživatelé", Users, pendingCount)}
       {access?.isAdmin && navItem("/admin/templates", "Šablony dokumentů", FileText)}
     </nav>

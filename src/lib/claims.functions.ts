@@ -267,7 +267,7 @@ export const setUserModule = createServerFn({ method: "POST" })
     z
       .object({
         user_id: z.string().uuid(),
-        module: z.enum(["claims", "vykupy", "users"]),
+        module: z.enum(["claims", "vykupy", "users", "approvals", "dashboard"]),
         enable: z.boolean(),
       })
       .parse(d),
@@ -308,7 +308,11 @@ export const getMyAccess = createServerFn({ method: "GET" })
       .maybeSingle();
     const approved = isAdmin || !!profile?.approved;
     if (isAdmin) {
-      return { isAdmin: true, approved: true, modules: ["claims", "vykupy", "users"] as const };
+      return {
+        isAdmin: true,
+        approved: true,
+        modules: ["claims", "vykupy", "users", "approvals", "dashboard"] as const,
+      };
     }
     const { data: mods } = await context.supabase
       .from("user_modules")
@@ -335,6 +339,47 @@ export const setUserApproved = createServerFn({ method: "POST" })
       .eq("id", data.user_id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+export const adminCreateUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        email: z.string().email().max(255),
+        password: z.string().min(8).max(128),
+        full_name: z.string().min(1).max(200),
+        role: z.enum(["admin", "employee"]).default("employee"),
+        approved: z.boolean().default(true),
+      })
+      .parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const { data: meRoles } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    if (!meRoles?.some((r) => r.role === "admin")) throw new Error("Forbidden");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
+      email: data.email,
+      password: data.password,
+      email_confirm: true,
+      user_metadata: { full_name: data.full_name },
+    });
+    if (error) throw new Error(error.message);
+    const newId = created.user!.id;
+    // The trigger creates a profile + employee role; adjust to requested role + approval.
+    if (data.role === "admin") {
+      await supabaseAdmin
+        .from("user_roles")
+        .upsert({ user_id: newId, role: "admin" }, { onConflict: "user_id,role" });
+    }
+    await supabaseAdmin
+      .from("profiles")
+      .update({ approved: data.approved, full_name: data.full_name })
+      .eq("id", newId);
+    return { ok: true, id: newId };
   });
 
 export const ensureDemoUser = createServerFn({ method: "POST" }).handler(async () => {
