@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getMyAccess } from "@/lib/claims.functions";
 import { toast } from "sonner";
 
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -30,6 +31,8 @@ function Index() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [resetMode, setResetMode] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -73,6 +76,20 @@ function Index() {
     toast.success("Účet vytvořen. Vyčkejte na schválení super adminem.");
   }
 
+  async function sendReset(e: React.FormEvent) {
+    e.preventDefault();
+    if (!resetEmail) return;
+    setBusy(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: window.location.origin + "/reset-password",
+    });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Pokud účet existuje, odeslali jsme e-mail s instrukcemi.");
+    setResetMode(false);
+    setResetEmail("");
+  }
+
   return (
     <div
       className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 pb-28 sm:pb-4"
@@ -109,36 +126,74 @@ function Index() {
           </TabsList>
 
           <TabsContent value="login">
-            <form onSubmit={signIn} className="mt-4 space-y-4">
-              <div>
-                <Label className="text-slate-200">E-mail</Label>
-                <Input
-                  type="email"
-                  className="mt-1 border-slate-700 bg-slate-900 text-white placeholder:text-slate-500"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <Label className="text-slate-200">Heslo</Label>
-                <Input
-                  type="password"
-                  className="mt-1 border-slate-700 bg-slate-900 text-white placeholder:text-slate-500"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full text-white hover:opacity-90"
-                style={{ backgroundColor: "#F97316" }}
-                disabled={busy}
-              >
-                Přihlásit se
-              </Button>
-            </form>
+            {resetMode ? (
+              <form onSubmit={sendReset} className="mt-4 space-y-4">
+                <div>
+                  <Label className="text-slate-200">E-mail pro reset hesla</Label>
+                  <Input
+                    type="email"
+                    className="mt-1 border-slate-700 bg-slate-900 text-white placeholder:text-slate-500"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full text-white hover:opacity-90"
+                  style={{ backgroundColor: "#F97316" }}
+                  disabled={busy}
+                >
+                  Odeslat odkaz pro reset
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full border-slate-700 bg-transparent text-slate-200 hover:bg-slate-800 hover:text-white"
+                  onClick={() => setResetMode(false)}
+                >
+                  Zpět na přihlášení
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={signIn} className="mt-4 space-y-4">
+                <div>
+                  <Label className="text-slate-200">E-mail</Label>
+                  <Input
+                    type="email"
+                    className="mt-1 border-slate-700 bg-slate-900 text-white placeholder:text-slate-500"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label className="text-slate-200">Heslo</Label>
+                  <Input
+                    type="password"
+                    className="mt-1 border-slate-700 bg-slate-900 text-white placeholder:text-slate-500"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full text-white hover:opacity-90"
+                  style={{ backgroundColor: "#F97316" }}
+                  disabled={busy}
+                >
+                  Přihlásit se
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => setResetMode(true)}
+                  className="block w-full text-center text-xs text-slate-400 underline hover:text-white"
+                >
+                  Zapomenuté heslo?
+                </button>
+              </form>
+            )}
           </TabsContent>
 
           <TabsContent value="register">
