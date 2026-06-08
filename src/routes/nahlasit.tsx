@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SignaturePad } from "@/components/SignaturePad";
@@ -48,19 +48,67 @@ const INSURERS = [
   "UNIQA pojišťovna",
 ];
 
+const DRAFT_KEY = "nahlasit_draft_v1";
+
+type Draft = {
+  form: Record<string, string>;
+  insurerChoice: string;
+  signature: string | null;
+  step: number;
+};
+
+function loadDraft(): Draft | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as Draft;
+  } catch {
+    return null;
+  }
+}
+
 function Page() {
   const navigate = useNavigate();
   const submit = useServerFn(createClaim);
-  const [signature, setSignature] = useState<string | null>(null);
+  const initial = typeof window !== "undefined" ? loadDraft() : null;
+  const [signature, setSignature] = useState<string | null>(initial?.signature ?? null);
   const [busy, setBusy] = useState(false);
   const [files, setFiles] = useState<Record<FileCategory, File[]>>({
     tp: [], rp: [], accident: [], damage: [], photos: [],
   });
-  const [form, setForm] = useState<Record<string, string>>({});
+  const [form, setForm] = useState<Record<string, string>>(initial?.form ?? {});
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
-  const [insurerChoice, setInsurerChoice] = useState<string>("");
-  const [step, setStep] = useState(0);
+  const [insurerChoice, setInsurerChoice] = useState<string>(initial?.insurerChoice ?? "");
+  const [step, setStep] = useState(initial?.step ?? 0);
+  const [hasDraft, setHasDraft] = useState<boolean>(!!initial);
   const steps = ["Kontakt", "Událost", "Přílohy", "Podpis"];
+
+  // Persist draft on changes
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const draft: Draft = { form, insurerChoice, signature, step };
+    const hasContent =
+      Object.values(form).some((v) => v && v.trim()) || !!signature || insurerChoice;
+    if (hasContent) {
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+        setHasDraft(true);
+      } catch {
+        // ignore quota errors
+      }
+    }
+  }, [form, insurerChoice, signature, step]);
+
+  function clearDraft() {
+    if (typeof window !== "undefined") localStorage.removeItem(DRAFT_KEY);
+    setForm({});
+    setInsurerChoice("");
+    setSignature(null);
+    setStep(0);
+    setHasDraft(false);
+    toast.success("Rozpracovaný formulář byl smazán.");
+  }
 
   const onFile = (cat: FileCategory, list: FileList | null, multiple = false) => {
     if (!list) return;
@@ -139,6 +187,7 @@ function Page() {
         },
       });
       toast.success("Pojistná událost byla odeslána.");
+      if (typeof window !== "undefined") localStorage.removeItem(DRAFT_KEY);
       navigate({ to: "/" });
     } catch (err) {
       toast.error((err as Error).message);
