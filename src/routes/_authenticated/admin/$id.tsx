@@ -430,8 +430,12 @@ function ClaimDetail() {
   );
 }
 
-function Card({ children }: { children: React.ReactNode }) {
-  return <section className="space-y-3 rounded-xl border bg-card p-5">{children}</section>;
+function Card({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <section className={cn("space-y-3 rounded-xl border bg-card p-5", className)}>
+      {children}
+    </section>
+  );
 }
 function CardTitle({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
   return (
