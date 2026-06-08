@@ -355,6 +355,11 @@ export const generatePoaPdf = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .single();
     if (error) throw new Error(error.message);
+    const { data: tpl } = await context.supabase
+      .from("document_templates")
+      .select("body,title")
+      .eq("key", data.kind)
+      .maybeSingle();
     const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
     const pdf = await PDFDocument.create();
     const page = pdf.addPage([595, 842]);
@@ -362,31 +367,28 @@ export const generatePoaPdf = createServerFn({ method: "POST" })
     const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
     const ascii = (s: string) =>
       s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\x00-\x7F]/g, "");
-    const title =
+    const vars: Record<string, string> = {
+      first_name: claim.first_name ?? "",
+      last_name: claim.last_name ?? "",
+      company: claim.company ?? "",
+      ico: claim.ico ?? "",
+      address: claim.address ?? "",
+      phone: claim.phone ?? "",
+      email: claim.email ?? "",
+      insurer: claim.insurer ?? "-",
+      claim_number: claim.claim_number ?? "-",
+      event_at: claim.event_at ? new Date(claim.event_at).toLocaleString("cs-CZ") : "-",
+      location: claim.location ?? "-",
+    };
+    const fallback =
       data.kind === "jednani"
-        ? "PLNA MOC k jednani s pojistovnou"
-        : "PLNA MOC k prevzeti pojistneho plneni";
-    page.drawText(title, { x: 50, y: 790, size: 16, font: bold, color: rgb(0, 0, 0) });
-    const lines = [
-      `Zmocnitel: ${claim.first_name} ${claim.last_name}`,
-      claim.company ? `Spolecnost: ${claim.company}` : "",
-      claim.ico ? `IC: ${claim.ico}` : "",
-      claim.address ? `Adresa: ${claim.address}` : "",
-      `Telefon: ${claim.phone}`,
-      claim.email ? `E-mail: ${claim.email}` : "",
-      "",
-      "Zmocnenec: Pojistne udalosti s.r.o., IC 12345678",
-      "",
-      `Pojistovna: ${claim.insurer ?? "-"}`,
-      `Cislo skody: ${claim.claim_number ?? "-"}`,
-      claim.event_at ? `Datum udalosti: ${new Date(claim.event_at).toLocaleString("cs-CZ")}` : "",
-      claim.location ? `Misto udalosti: ${claim.location}` : "",
-      "",
-      data.kind === "jednani"
-        ? "Zmocnuji vyse uvedeneho zmocnence k zastupovani pri jednani s pojistovnou"
-        : "Zmocnuji vyse uvedeneho zmocnence k prevzeti pojistneho plneni",
-      "ve veci nahore uvedene pojistne udalosti v plnem rozsahu.",
-    ].filter(Boolean);
+        ? "PLNA MOC k jednani s pojistovnou\n\nZmocnitel: {{first_name}} {{last_name}}"
+        : "PLNA MOC k prevzeti pojistneho plneni\n\nZmocnitel: {{first_name}} {{last_name}}";
+    const body = (tpl?.body ?? fallback).replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? "");
+    const allLines = body.split("\n");
+    const titleLine = allLines[0] ?? "";
+    const lines = allLines.slice(1);
+    page.drawText(ascii(titleLine), { x: 50, y: 790, size: 16, font: bold, color: rgb(0, 0, 0) });
     let y = 750;
     for (const ln of lines) {
       page.drawText(ascii(ln), { x: 50, y, size: 11, font });
@@ -417,6 +419,47 @@ export const generatePoaPdf = createServerFn({ method: "POST" })
     });
     const bytes = await pdf.save();
     return { base64: Buffer.from(bytes).toString("base64") };
+  });
+
+export const listTemplates = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: meRoles } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    if (!meRoles?.some((r) => r.role === "admin")) throw new Error("Forbidden");
+    const { data, error } = await context.supabase
+      .from("document_templates")
+      .select("id,key,title,body,updated_at")
+      .order("key");
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const updateTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        title: z.string().min(1).max(200),
+        body: z.string().min(1).max(20000),
+      })
+      .parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const { data: meRoles } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    if (!meRoles?.some((r) => r.role === "admin")) throw new Error("Forbidden");
+    const { error } = await context.supabase
+      .from("document_templates")
+      .update({ title: data.title, body: data.body })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 // Public photo upload (used by mobile via QR code). No auth required — gated by upload_token.

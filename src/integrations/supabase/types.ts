@@ -203,6 +203,33 @@ export type Database = {
         }
         Relationships: []
       }
+      document_templates: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          key: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          key: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          key?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           approved: boolean

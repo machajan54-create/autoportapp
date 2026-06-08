@@ -29,9 +29,22 @@ type FileCategory = "tp" | "rp" | "accident" | "damage" | "photos";
 const fileFields: { key: FileCategory; label: string; multiple?: boolean }[] = [
   { key: "tp", label: "Technický průkaz" },
   { key: "rp", label: "Řidičský průkaz" },
-  { key: "accident", label: "Záznam o dopravní nehodě" },
   { key: "damage", label: "Záznam o poškození vozu" },
   { key: "photos", label: "Fotodokumentace", multiple: true },
+];
+
+const INSURERS = [
+  "Allianz pojišťovna",
+  "ČSOB Pojišťovna",
+  "Česká podnikatelská pojišťovna",
+  "Direct pojišťovna",
+  "ERGO pojišťovna",
+  "Generali Česká pojišťovna",
+  "Hasičská vzájemná pojišťovna",
+  "Kooperativa pojišťovna",
+  "Pillow pojišťovna",
+  "Slavia pojišťovna",
+  "UNIQA pojišťovna",
 ];
 
 function Page() {
@@ -44,6 +57,7 @@ function Page() {
   });
   const [form, setForm] = useState<Record<string, string>>({});
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const [insurerChoice, setInsurerChoice] = useState<string>("");
 
   const onFile = (cat: FileCategory, list: FileList | null) => {
     if (!list) return;
@@ -64,6 +78,8 @@ function Page() {
     }
     setBusy(true);
     try {
+      const finalInsurer =
+        insurerChoice === "__other__" ? form.insurer_other?.trim() || null : insurerChoice || null;
       const tempId = crypto.randomUUID();
       const uploaded: { category: string; file_path: string; file_name: string; mime_type?: string; size?: number }[] = [];
       for (const cat of Object.keys(files) as FileCategory[]) {
@@ -85,7 +101,7 @@ function Page() {
           address: form.address || null,
           phone: form.phone,
           email: form.email || "",
-          insurer: form.insurer || null,
+          insurer: finalInsurer,
           claim_number: form.claim_number || null,
           event_at: form.event_at || null,
           location: form.location || null,
@@ -132,7 +148,27 @@ function Page() {
           <section className="rounded-xl border bg-card p-6">
             <h2 className="text-lg font-semibold">Pojistná událost</h2>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Pojišťovna" k="insurer" set={set} />
+              <div>
+                <Label>Pojišťovna</Label>
+                <Select value={insurerChoice} onValueChange={setInsurerChoice}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Vyberte pojišťovnu" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {INSURERS.map((n) => (
+                      <SelectItem key={n} value={n}>{n}</SelectItem>
+                    ))}
+                    <SelectItem value="__other__">Jiná…</SelectItem>
+                  </SelectContent>
+                </Select>
+                {insurerChoice === "__other__" && (
+                  <Input
+                    className="mt-2"
+                    placeholder="Zadejte název pojišťovny"
+                    onChange={(e) => set("insurer_other", e.target.value)}
+                  />
+                )}
+              </div>
               <Field label="Číslo škody" k="claim_number" set={set} />
               <Field label="Datum a čas události" k="event_at" set={set} type="datetime-local" />
               <Field label="Místo události" k="location" set={set} />
@@ -142,6 +178,27 @@ function Page() {
               <SelectField label="Vozidlo na úvěr/leasing" k="loan_lease" set={set} options={yesNo} />
               <SelectField label="Záznam o dopravní nehodě" k="accident_record" set={set} options={yesNo} />
               <SelectField label="Záznam o poškození pojišťovnou" k="insurer_record" set={set} options={yesNo} />
+              {form.accident_record === "ano" && (
+                <div className="sm:col-span-2 rounded-lg border border-dashed border-primary/40 bg-primary/5 p-4">
+                  <Label>Soubor / fotografie záznamu o dopravní nehodě</Label>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Nahrajte sken nebo vyfoťte mobilem (max. 8 MB / soubor).
+                  </p>
+                  <Input
+                    type="file"
+                    multiple
+                    accept="image/*,application/pdf"
+                    capture="environment"
+                    className="mt-2"
+                    onChange={(e) => onFile("accident", e.target.files)}
+                  />
+                  {files.accident.length > 0 && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {files.accident.length} souborů připraveno k odeslání
+                    </p>
+                  )}
+                </div>
+              )}
               <div className="sm:col-span-2">
                 <Label>Doplňující informace</Label>
                 <Textarea className="mt-1" rows={4} onChange={(e) => set("notes", e.target.value)} />
