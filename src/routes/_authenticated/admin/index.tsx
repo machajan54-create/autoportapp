@@ -76,7 +76,7 @@ function AdminList() {
   };
 
   return (
-    <AdminShell>
+    <AdminShell requireModule="claims">
       <div className="mx-auto max-w-5xl px-4 py-8 md:py-10">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Klientský servis

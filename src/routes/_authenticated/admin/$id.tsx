@@ -107,7 +107,7 @@ function ClaimDetail() {
 
   if (isLoading || !data) {
     return (
-      <AdminShell>
+      <AdminShell requireModule="claims">
         <div className="p-10 text-muted-foreground">Načítám…</div>
       </AdminShell>
     );
@@ -118,7 +118,7 @@ function ClaimDetail() {
   const photos = data.attachments.filter((a) => (a.mime_type ?? "").startsWith("image"));
 
   return (
-    <AdminShell>
+    <AdminShell requireModule="claims">
       <div className="mx-auto max-w-3xl space-y-5 px-4 py-6 md:py-10">
         <button
           onClick={() => navigate({ to: "/admin" })}
