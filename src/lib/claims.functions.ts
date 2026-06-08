@@ -581,3 +581,18 @@ export const publicUploadPhoto = createServerFn({ method: "POST" })
     });
     return { ok: true };
   });
+
+export const listEmployees = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("profiles")
+      .select("id,full_name,email")
+      .order("full_name", { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((p) => ({
+      id: p.id,
+      name: p.full_name || p.email || "—",
+    }));
+  });
