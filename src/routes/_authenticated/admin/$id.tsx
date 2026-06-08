@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,10 @@ import {
   QrCode,
   Trash2,
   Mail,
+  Printer,
+  Copy,
+  ExternalLink,
+  Camera,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import QRCode from "qrcode";
@@ -98,11 +102,43 @@ function ClaimDetail() {
     URL.revokeObjectURL(url);
   }
 
-  async function makeQr() {
-    if (!data) return;
-    const url = `${window.location.origin}/upload/${data.claim.upload_token}`;
-    const png = await QRCode.toDataURL(url, { width: 280, margin: 1 });
-    setQrUrl(png);
+  const uploadUrl = data
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}/upload/${data.claim.upload_token}`
+    : "";
+
+  useEffect(() => {
+    if (!uploadUrl) return;
+    QRCode.toDataURL(uploadUrl, { width: 320, margin: 1 }).then(setQrUrl).catch(() => {});
+  }, [uploadUrl]);
+
+  async function copyUploadUrl() {
+    try {
+      await navigator.clipboard.writeText(uploadUrl);
+      toast.success("Odkaz zkopírován");
+    } catch {
+      toast.error("Nepodařilo se zkopírovat odkaz");
+    }
+  }
+
+  function printQrLabel() {
+    if (!qrUrl || !data) return;
+    const w = window.open("", "_blank", "width=480,height=640");
+    if (!w) return;
+    const zak = data.claim.pu_number ?? "";
+    w.document.write(`<!doctype html><html><head><title>QR ${zak}</title>
+      <style>
+        @page { size: 80mm 100mm; margin: 4mm; }
+        body { font-family: system-ui, sans-serif; text-align: center; margin: 0; padding: 8mm; }
+        h1 { font-size: 14px; margin: 0 0 6mm; letter-spacing: .04em; }
+        img { width: 64mm; height: 64mm; }
+        .code { margin-top: 4mm; font-size: 12px; color: #555; letter-spacing: .12em; }
+      </style></head><body>
+      <h1>FOCENÍ DO ZAKÁZKY</h1>
+      <img src="${qrUrl}" alt="QR" />
+      <div class="code">${zak}</div>
+      <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),300);}</script>
+      </body></html>`);
+    w.document.close();
   }
 
   if (isLoading || !data) {
