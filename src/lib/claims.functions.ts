@@ -522,7 +522,9 @@ export const publicUploadPhoto = createServerFn({ method: "POST" })
       .object({
         token: z.string().uuid(),
         file_name: z.string().min(1).max(200),
-        mime_type: z.string().min(1).max(100),
+        mime_type: z
+          .string()
+          .regex(/^image\/(jpeg|jpg|png|gif|webp|bmp|heic|heif)$/i, "Nepovolený typ souboru"),
         data_base64: z.string().min(10),
       })
       .parse(d),
