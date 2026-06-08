@@ -205,7 +205,7 @@ function ClaimDetail() {
           <div class="meta">
             <div class="info">
               ${klient ? `<span>Klient · <b>${klient}</b></span>` : ""}
-              ${vozidlo ? `<span>Vozidlo · <b>${vozidlo}</b></span>` : ""}
+              ${vozidlo ? `<span>Pojišťovna · <b>${vozidlo}</b></span>` : ""}
             </div>
             <div>Vytištěno ${dnes}</div>
           </div>
