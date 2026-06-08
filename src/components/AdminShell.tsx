@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getMyAccess } from "@/lib/claims.functions";
+import { getMyAccess, getPendingApprovalsCount } from "@/lib/claims.functions";
 
 type ModuleKey = "claims" | "vykupy" | "users";
 
@@ -23,10 +23,18 @@ export function AdminShell({
   const [email, setEmail] = useState<string>("");
   const [mobileOpen, setMobileOpen] = useState(false);
   const fetchAccess = useServerFn(getMyAccess);
+  const fetchPending = useServerFn(getPendingApprovalsCount);
   const { data: access } = useQuery({
     queryKey: ["my-access"],
     queryFn: () => fetchAccess({}),
   });
+  const { data: pending } = useQuery({
+    queryKey: ["pending-approvals"],
+    queryFn: () => fetchPending({}),
+    enabled: !!access?.isAdmin,
+    refetchInterval: 60_000,
+  });
+  const pendingCount = pending?.count ?? 0;
   const modules = (access?.modules ?? []) as ReadonlyArray<ModuleKey>;
   const can = (m: ModuleKey) => modules.includes(m);
 
@@ -39,7 +47,12 @@ export function AdminShell({
     navigate({ to: "/auth", replace: true });
   }
 
-  const navItem = (to: string, label: string, Icon: typeof FolderKanban) => {
+  const navItem = (
+    to: string,
+    label: string,
+    Icon: typeof FolderKanban,
+    badge?: number,
+  ) => {
     const active = pathname === to || (to !== "/admin" && pathname.startsWith(to));
     return (
       <Link
@@ -53,7 +66,12 @@ export function AdminShell({
         )}
       >
         <Icon className="h-4 w-4" />
-        {label}
+        <span className="flex-1">{label}</span>
+        {badge && badge > 0 ? (
+          <span className="rounded-full bg-destructive px-2 py-0.5 text-xs font-semibold text-destructive-foreground">
+            {badge}
+          </span>
+        ) : null}
       </Link>
     );
   };
@@ -64,7 +82,7 @@ export function AdminShell({
       {can("claims") && navItem("/admin", "Zakázky", FolderKanban)}
       {can("vykupy") && navItem("/vykupy", "Ojeté vozy", Car)}
       {access?.isAdmin && navItem("/approvals", "Schvalování", CheckSquare)}
-      {access?.isAdmin && navItem("/admin/users", "Uživatelé", Users)}
+      {access?.isAdmin && navItem("/admin/users", "Uživatelé", Users, pendingCount)}
       {access?.isAdmin && navItem("/admin/templates", "Šablony dokumentů", FileText)}
     </nav>
   );

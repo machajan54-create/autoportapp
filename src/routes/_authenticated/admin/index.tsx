@@ -15,6 +15,7 @@ import {
   Search,
   RotateCcw,
   ChevronRight,
+  Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -150,6 +151,15 @@ function AdminList() {
           >
             <RotateCcw className={cn("h-4 w-4", isFetching && "animate-spin")} />
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9"
+            onClick={() => exportCsv(rows)}
+            disabled={!rows.length}
+          >
+            <Download className="mr-1.5 h-4 w-4" /> Export CSV
+          </Button>
         </div>
 
         <h2 className="mt-8 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -196,6 +206,34 @@ function AdminList() {
       </div>
     </AdminShell>
   );
+}
+
+function exportCsv(rows: Array<Record<string, unknown>>) {
+  const cols = [
+    "pu_number",
+    "status",
+    "first_name",
+    "last_name",
+    "phone",
+    "insurer",
+    "claim_number",
+    "event_at",
+    "created_at",
+  ];
+  const esc = (v: unknown) => {
+    const s = v == null ? "" : String(v);
+    return /[",;\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const lines = [cols.join(";")].concat(
+    rows.map((r) => cols.map((c) => esc(r[c])).join(";")),
+  );
+  const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `zakazky-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function StatCard({

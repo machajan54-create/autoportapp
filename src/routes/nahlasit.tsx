@@ -17,7 +17,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { createClaim } from "@/lib/claims.functions";
-import { Phone, X, FileText, Check } from "lucide-react";
+import { Phone, X, FileText, Check, CheckCircle2, Copy } from "lucide-react";
 
 export const Route = createFileRoute("/nahlasit")({
   head: () => ({
@@ -83,6 +83,7 @@ function Page() {
   const [step, setStep] = useState(initial?.step ?? 0);
   const [hasDraft, setHasDraft] = useState<boolean>(!!initial);
   const steps = ["Kontakt", "Událost", "Přílohy", "Podpis"];
+  const [submitted, setSubmitted] = useState<{ pu: string; uploadUrl: string } | null>(null);
 
   // Persist draft on changes
   useEffect(() => {
@@ -125,6 +126,18 @@ function Page() {
         toast.error("Vyplňte jméno, příjmení a telefon.");
         return false;
       }
+      if (form.ico && !/^\d{8}$/.test(form.ico.trim())) {
+        toast.error("IČO musí být 8 číslic.");
+        return false;
+      }
+      if (!/^[+\d\s]{9,}$/.test(form.phone.trim())) {
+        toast.error("Telefon má neplatný formát.");
+        return false;
+      }
+      if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+        toast.error("E-mail má neplatný formát.");
+        return false;
+      }
     }
     if (step === 3 && !signature) {
       toast.error("Doplňte podpis.");
@@ -163,7 +176,7 @@ function Page() {
           uploaded.push({ category: cat, file_path: path, file_name: file.name, mime_type: file.type, size: file.size });
         }
       }
-      await submit({
+      const res = await submit({
         data: {
           first_name: form.first_name,
           last_name: form.last_name,
@@ -188,12 +201,59 @@ function Page() {
       });
       toast.success("Pojistná událost byla odeslána.");
       if (typeof window !== "undefined") localStorage.removeItem(DRAFT_KEY);
-      navigate({ to: "/" });
+      const uploadUrl =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/upload/${res.upload_token}`
+          : "";
+      setSubmitted({ pu: res.pu_number ?? "—", uploadUrl });
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
       setBusy(false);
     }
+  }
+
+  if (submitted) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SiteHeader />
+        <main className="mx-auto max-w-2xl px-4 py-16 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+            <CheckCircle2 className="h-9 w-9 text-emerald-600" />
+          </div>
+          <h1 className="mt-6 text-3xl font-bold">Pojistná událost odeslána</h1>
+          <p className="mt-2 text-muted-foreground">
+            Vaše číslo pojistné události:
+          </p>
+          <div className="mt-3 inline-block rounded-lg border bg-card px-6 py-3 font-mono text-2xl font-bold text-primary">
+            {submitted.pu}
+          </div>
+          <div className="mt-8 rounded-xl border bg-card p-5 text-left">
+            <p className="text-sm font-semibold">Doplnění příloh později</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Uložte si tento odkaz — můžete přes něj kdykoli doplnit další fotky nebo dokumenty.
+            </p>
+            <div className="mt-3 flex items-center gap-2">
+              <Input value={submitted.uploadUrl} readOnly className="font-mono text-xs" />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  navigator.clipboard.writeText(submitted.uploadUrl);
+                  toast.success("Odkaz zkopírován");
+                }}
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          <Button className="mt-8" size="lg" onClick={() => navigate({ to: "/" })}>
+            Zpět na hlavní stránku
+          </Button>
+        </main>
+      </div>
+    );
   }
 
   return (

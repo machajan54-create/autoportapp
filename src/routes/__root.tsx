@@ -79,18 +79,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Your Friendly Assistant is a web application that provides a conversational interface for users to interact with." },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Your Friendly Assistant is a web application that provides a conversational interface for users to interact with." },
+      { title: "Autoport APP — Interní systém" },
+      { name: "description", content: "Interní systém Autoport APP 2026 pro správu pojistných událostí, výkupů a schvalování." },
+      { name: "author", content: "Autoport" },
+      { property: "og:title", content: "Autoport APP — Interní systém" },
+      { property: "og:description", content: "Interní systém Autoport APP 2026 pro správu pojistných událostí." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "Lovable App" },
-      { name: "twitter:description", content: "Your Friendly Assistant is a web application that provides a conversational interface for users to interact with." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/206b4746-391c-4ef6-8683-45ba6f2c8e1f/id-preview-764dcd61--a5f2970c-6439-404d-be4b-7f82f0a3e916.lovable.app-1780919279086.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/206b4746-391c-4ef6-8683-45ba6f2c8e1f/id-preview-764dcd61--a5f2970c-6439-404d-be4b-7f82f0a3e916.lovable.app-1780919279086.png" },
     ],
     links: [
       {
