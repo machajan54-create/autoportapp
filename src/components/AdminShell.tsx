@@ -112,7 +112,7 @@ export function AdminShell({
       <aside className="hidden w-60 flex-col border-r bg-card md:flex">
         <div className="flex h-16 items-center gap-2 border-b px-4 font-semibold">
           <ShieldCheck className="h-5 w-5 text-primary" />
-          Pojistné události
+          Autoport APP
         </div>
         {navList}
         <div className="border-t p-3">
@@ -138,7 +138,7 @@ export function AdminShell({
                 <SheetTitle className="sr-only">Navigace</SheetTitle>
                 <div className="flex h-16 items-center gap-2 border-b px-4 font-semibold">
                   <ShieldCheck className="h-5 w-5 text-primary" />
-                  Pojistné události
+                  Autoport APP
                 </div>
                 {navList}
                 <div className="border-t p-3">
@@ -152,7 +152,7 @@ export function AdminShell({
             </Sheet>
             <Link to="/admin" className="flex items-center gap-2 font-semibold">
               <ShieldCheck className="h-5 w-5 text-primary" />
-              <span className="text-sm">Pojistné události</span>
+              <span className="text-sm">Autoport APP</span>
             </Link>
           </div>
           <Button variant="ghost" size="icon" onClick={logout} aria-label="Odhlásit">
