@@ -1,14 +1,16 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { ShieldCheck, FolderKanban, LogOut, Users, Car } from "lucide-react";
+import { ShieldCheck, FolderKanban, LogOut, Users, Car, Menu } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [email, setEmail] = useState<string>("");
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? ""));
@@ -24,6 +26,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     return (
       <Link
         to={to}
+        onClick={() => setMobileOpen(false)}
         className={cn(
           "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
           active
@@ -37,6 +40,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     );
   };
 
+  const navList = (
+    <nav className="flex-1 space-y-1 p-3">
+      {navItem("/admin", "Zakázky", FolderKanban)}
+      {navItem("/vykupy", "Ojeté vozy", Car)}
+      {navItem("/admin/users", "Uživatelé", Users)}
+    </nav>
+  );
+
   return (
     <div className="flex min-h-screen w-full bg-background">
       <aside className="hidden w-60 flex-col border-r bg-card md:flex">
@@ -44,11 +55,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <ShieldCheck className="h-5 w-5 text-primary" />
           Pojistné události
         </div>
-        <nav className="flex-1 space-y-1 p-3">
-          {navItem("/admin", "Zakázky", FolderKanban)}
-          {navItem("/vykupy", "Ojeté vozy", Car)}
-          {navItem("/admin/users", "Uživatelé", Users)}
-        </nav>
+        {navList}
         <div className="border-t p-3">
           <div className="truncate px-2 pb-2 text-xs text-muted-foreground">{email}</div>
           <Button variant="ghost" size="sm" className="w-full justify-start" onClick={logout}>
@@ -61,11 +68,35 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       {/* Mobile top bar */}
       <div className="flex w-full flex-col">
         <header className="flex h-14 items-center justify-between border-b bg-card px-4 md:hidden">
-          <Link to="/admin" className="flex items-center gap-2 font-semibold">
-            <ShieldCheck className="h-5 w-5 text-primary" />
-            Pojistné události
-          </Link>
-          <Button variant="ghost" size="sm" onClick={logout}>
+          <div className="flex items-center gap-2">
+            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Menu">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-64 p-0">
+                <SheetTitle className="sr-only">Navigace</SheetTitle>
+                <div className="flex h-16 items-center gap-2 border-b px-4 font-semibold">
+                  <ShieldCheck className="h-5 w-5 text-primary" />
+                  Pojistné události
+                </div>
+                {navList}
+                <div className="border-t p-3">
+                  <div className="truncate px-2 pb-2 text-xs text-muted-foreground">{email}</div>
+                  <Button variant="ghost" size="sm" className="w-full justify-start" onClick={logout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Odhlásit
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
+            <Link to="/admin" className="flex items-center gap-2 font-semibold">
+              <ShieldCheck className="h-5 w-5 text-primary" />
+              <span className="text-sm">Pojistné události</span>
+            </Link>
+          </div>
+          <Button variant="ghost" size="icon" onClick={logout} aria-label="Odhlásit">
             <LogOut className="h-4 w-4" />
           </Button>
         </header>
