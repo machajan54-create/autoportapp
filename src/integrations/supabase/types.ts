@@ -505,7 +505,13 @@ export type Database = {
       }
     }
     Enums: {
-      app_module: "claims" | "vykupy" | "users" | "approvals" | "dashboard"
+      app_module:
+        | "claims"
+        | "vykupy"
+        | "users"
+        | "approvals"
+        | "dashboard"
+        | "vykupy_external"
       app_role: "admin" | "employee"
       approval_status: "pending" | "approved" | "rejected"
       claim_status:
@@ -642,7 +648,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_module: ["claims", "vykupy", "users", "approvals", "dashboard"],
+      app_module: [
+        "claims",
+        "vykupy",
+        "users",
+        "approvals",
+        "dashboard",
+        "vykupy_external",
+      ],
       app_role: ["admin", "employee"],
       approval_status: ["pending", "approved", "rejected"],
       claim_status: [
