@@ -207,9 +207,13 @@ export const listUsers = createServerFn({ method: "GET" })
       .select("id,email,full_name,created_at")
       .order("created_at", { ascending: false });
     const { data: roles } = await context.supabase.from("user_roles").select("user_id,role");
+    const { data: modules } = await context.supabase
+      .from("user_modules")
+      .select("user_id,module");
     return (profiles ?? []).map((p) => ({
       ...p,
       roles: (roles ?? []).filter((r) => r.user_id === p.id).map((r) => r.role),
+      modules: (modules ?? []).filter((m) => m.user_id === p.id).map((m) => m.module),
     }));
   });
 
@@ -239,6 +243,56 @@ export const setUserRole = createServerFn({ method: "POST" })
         .eq("role", data.role);
     }
     return { ok: true };
+  });
+
+export const setUserModule = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        user_id: z.string().uuid(),
+        module: z.enum(["claims", "vykupy", "users"]),
+        enable: z.boolean(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const { data: meRoles } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    if (!meRoles?.some((r) => r.role === "admin")) throw new Error("Forbidden");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.enable) {
+      await supabaseAdmin
+        .from("user_modules")
+        .upsert({ user_id: data.user_id, module: data.module }, { onConflict: "user_id,module" });
+    } else {
+      await supabaseAdmin
+        .from("user_modules")
+        .delete()
+        .eq("user_id", data.user_id)
+        .eq("module", data.module);
+    }
+    return { ok: true };
+  });
+
+export const getMyAccess = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: roles } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    const isAdmin = (roles ?? []).some((r) => r.role === "admin");
+    if (isAdmin) {
+      return { isAdmin: true, modules: ["claims", "vykupy", "users"] as const };
+    }
+    const { data: mods } = await context.supabase
+      .from("user_modules")
+      .select("module")
+      .eq("user_id", context.userId);
+    return { isAdmin: false, modules: (mods ?? []).map((m) => m.module) };
   });
 
 export const ensureDemoUser = createServerFn({ method: "POST" }).handler(async () => {
