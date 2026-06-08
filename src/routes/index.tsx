@@ -126,36 +126,74 @@ function Index() {
           </TabsList>
 
           <TabsContent value="login">
-            <form onSubmit={signIn} className="mt-4 space-y-4">
-              <div>
-                <Label className="text-slate-200">E-mail</Label>
-                <Input
-                  type="email"
-                  className="mt-1 border-slate-700 bg-slate-900 text-white placeholder:text-slate-500"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <Label className="text-slate-200">Heslo</Label>
-                <Input
-                  type="password"
-                  className="mt-1 border-slate-700 bg-slate-900 text-white placeholder:text-slate-500"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full text-white hover:opacity-90"
-                style={{ backgroundColor: "#F97316" }}
-                disabled={busy}
-              >
-                Přihlásit se
-              </Button>
-            </form>
+            {resetMode ? (
+              <form onSubmit={sendReset} className="mt-4 space-y-4">
+                <div>
+                  <Label className="text-slate-200">E-mail pro reset hesla</Label>
+                  <Input
+                    type="email"
+                    className="mt-1 border-slate-700 bg-slate-900 text-white placeholder:text-slate-500"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full text-white hover:opacity-90"
+                  style={{ backgroundColor: "#F97316" }}
+                  disabled={busy}
+                >
+                  Odeslat odkaz pro reset
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full border-slate-700 bg-transparent text-slate-200 hover:bg-slate-800 hover:text-white"
+                  onClick={() => setResetMode(false)}
+                >
+                  Zpět na přihlášení
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={signIn} className="mt-4 space-y-4">
+                <div>
+                  <Label className="text-slate-200">E-mail</Label>
+                  <Input
+                    type="email"
+                    className="mt-1 border-slate-700 bg-slate-900 text-white placeholder:text-slate-500"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label className="text-slate-200">Heslo</Label>
+                  <Input
+                    type="password"
+                    className="mt-1 border-slate-700 bg-slate-900 text-white placeholder:text-slate-500"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full text-white hover:opacity-90"
+                  style={{ backgroundColor: "#F97316" }}
+                  disabled={busy}
+                >
+                  Přihlásit se
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => setResetMode(true)}
+                  className="block w-full text-center text-xs text-slate-400 underline hover:text-white"
+                >
+                  Zapomenuté heslo?
+                </button>
+              </form>
+            )}
           </TabsContent>
 
           <TabsContent value="register">
