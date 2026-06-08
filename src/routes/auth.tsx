@@ -85,16 +85,14 @@ function AuthPage() {
       style={{ background: "linear-gradient(135deg, #0F172A 0%, #1E293B 100%)" }}
     >
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0F172A] p-8 shadow-2xl">
-        <div className="flex items-center gap-3 text-lg font-semibold text-white">
-          <span
-            className="flex h-10 w-10 items-center justify-center rounded-lg"
-            style={{ backgroundColor: "#F97316" }}
-          >
-            <Car className="h-5 w-5 text-white" />
-          </span>
-          <div className="flex flex-col leading-tight">
-            <span>AutoPort</span>
-            <span className="text-xs font-normal text-slate-400">Interní systém</span>
+        <div className="flex flex-col items-center gap-4 text-center">
+          <img
+            src={rocketLogo}
+            alt="Autoport APP logo"
+            className="h-16 w-16 object-contain"
+          />
+          <div>
+            <h1 className="text-xl font-bold text-white">Interní systém Autoport APP 2026</h1>
           </div>
         </div>
 
