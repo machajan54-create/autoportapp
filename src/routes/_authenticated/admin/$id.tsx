@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,10 @@ import {
   QrCode,
   Trash2,
   Mail,
+  Printer,
+  Copy,
+  ExternalLink,
+  Camera,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import QRCode from "qrcode";
@@ -98,11 +102,43 @@ function ClaimDetail() {
     URL.revokeObjectURL(url);
   }
 
-  async function makeQr() {
-    if (!data) return;
-    const url = `${window.location.origin}/upload/${data.claim.upload_token}`;
-    const png = await QRCode.toDataURL(url, { width: 280, margin: 1 });
-    setQrUrl(png);
+  const uploadUrl = data
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}/upload/${data.claim.upload_token}`
+    : "";
+
+  useEffect(() => {
+    if (!uploadUrl) return;
+    QRCode.toDataURL(uploadUrl, { width: 320, margin: 1 }).then(setQrUrl).catch(() => {});
+  }, [uploadUrl]);
+
+  async function copyUploadUrl() {
+    try {
+      await navigator.clipboard.writeText(uploadUrl);
+      toast.success("Odkaz zkopírován");
+    } catch {
+      toast.error("Nepodařilo se zkopírovat odkaz");
+    }
+  }
+
+  function printQrLabel() {
+    if (!qrUrl || !data) return;
+    const w = window.open("", "_blank", "width=480,height=640");
+    if (!w) return;
+    const zak = data.claim.pu_number ?? "";
+    w.document.write(`<!doctype html><html><head><title>QR ${zak}</title>
+      <style>
+        @page { size: 80mm 100mm; margin: 4mm; }
+        body { font-family: system-ui, sans-serif; text-align: center; margin: 0; padding: 8mm; }
+        h1 { font-size: 14px; margin: 0 0 6mm; letter-spacing: .04em; }
+        img { width: 64mm; height: 64mm; }
+        .code { margin-top: 4mm; font-size: 12px; color: #555; letter-spacing: .12em; }
+      </style></head><body>
+      <h1>FOCENÍ DO ZAKÁZKY</h1>
+      <img src="${qrUrl}" alt="QR" />
+      <div class="code">${zak}</div>
+      <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),300);}</script>
+      </body></html>`);
+    w.document.close();
   }
 
   if (isLoading || !data) {
@@ -260,20 +296,49 @@ function ClaimDetail() {
           </ol>
         </Card>
 
-        <Card>
-          <CardTitle icon={<QrCode className="h-4 w-4" />}>Fotit do zakázky</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Vygenerujte QR kód a načtěte ho mobilem — můžete pak fotit přímo do této zakázky bez přihlášení.
+        <Card className="border-primary/30 bg-primary/5">
+          <div className="flex items-start gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+              <Camera className="h-5 w-5" />
+            </span>
+            <div>
+              <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">
+                Focení mobilem do této složky
+              </h2>
+            </div>
+          </div>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Naskenujte QR kód fotoaparátem mobilního telefonu klienta nebo mechanika. Otevře se
+            nahrávací rozhraní spojené přímo s touto zakázkou{" "}
+            <span className="font-semibold text-foreground">{c.pu_number ?? ""}</span>.
           </p>
-          <Button onClick={makeQr} className="w-full">
-            Vytvořit QR kód
-          </Button>
           {qrUrl && (
-            <div className="mt-2 flex flex-col items-center gap-2 border-t pt-4">
-              <span className="text-xs text-muted-foreground">QR na detail zakázky</span>
-              <img src={qrUrl} alt="QR" className="h-56 w-56" />
+            <div className="mt-4 flex flex-col items-center gap-2 rounded-xl border border-border bg-background p-4">
+              <img src={qrUrl} alt={`QR ${c.pu_number ?? ""}`} className="h-56 w-56" />
+              <span className="text-xs tracking-widest text-muted-foreground">
+                {c.pu_number ?? ""}
+              </span>
             </div>
           )}
+          <div className="mt-4 flex flex-col gap-2">
+            <Button onClick={printQrLabel} disabled={!qrUrl} className="w-full gap-2">
+              <Printer className="h-4 w-4" />
+              Tisk QR štítku do auta
+            </Button>
+            <Button onClick={copyUploadUrl} variant="outline" className="w-full gap-2">
+              <Copy className="h-4 w-4" />
+              Zkopírovat nahrávací odkaz
+            </Button>
+            <a
+              href={uploadUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-1 inline-flex items-center justify-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+            >
+              Testovat mobilní nahrávání zde v prohlížeči
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
         </Card>
 
         <Card>
@@ -365,8 +430,12 @@ function ClaimDetail() {
   );
 }
 
-function Card({ children }: { children: React.ReactNode }) {
-  return <section className="space-y-3 rounded-xl border bg-card p-5">{children}</section>;
+function Card({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <section className={cn("space-y-3 rounded-xl border bg-card p-5", className)}>
+      {children}
+    </section>
+  );
 }
 function CardTitle({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
   return (
