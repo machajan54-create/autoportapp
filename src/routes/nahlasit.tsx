@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { createClaim } from "@/lib/claims.functions";
+import { Phone, X, FileText, Image as ImageIcon, Check } from "lucide-react";
 
 export const Route = createFileRoute("/nahlasit")({
   head: () => ({
@@ -58,18 +59,40 @@ function Page() {
   const [form, setForm] = useState<Record<string, string>>({});
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
   const [insurerChoice, setInsurerChoice] = useState<string>("");
+  const [step, setStep] = useState(0);
+  const steps = ["Kontakt", "Událost", "Přílohy", "Podpis"];
 
-  const onFile = (cat: FileCategory, list: FileList | null) => {
+  const onFile = (cat: FileCategory, list: FileList | null, multiple = false) => {
     if (!list) return;
     const arr = Array.from(list).filter((f) => f.size <= 8 * 1024 * 1024);
     if (arr.length < list.length) toast.error("Některé soubory přesahují 8 MB.");
-    setFiles((f) => ({ ...f, [cat]: arr }));
+    setFiles((f) => ({ ...f, [cat]: multiple ? [...f[cat], ...arr] : arr }));
   };
+  const removeFile = (cat: FileCategory, idx: number) =>
+    setFiles((f) => ({ ...f, [cat]: f[cat].filter((_, i) => i !== idx) }));
+
+  function validateStep(): boolean {
+    if (step === 0) {
+      if (!form.first_name || !form.last_name || !form.phone) {
+        toast.error("Vyplňte jméno, příjmení a telefon.");
+        return false;
+      }
+    }
+    if (step === 3 && !signature) {
+      toast.error("Doplňte podpis.");
+      return false;
+    }
+    return true;
+  }
+  const next = () => { if (validateStep()) setStep((s) => Math.min(s + 1, steps.length - 1)); };
+  const prev = () => setStep((s) => Math.max(s - 1, 0));
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (step !== steps.length - 1) { next(); return; }
     if (!form.first_name || !form.last_name || !form.phone) {
       toast.error("Vyplňte povinná pole.");
+      setStep(0);
       return;
     }
     if (!signature) {
@@ -126,12 +149,63 @@ function Page() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SiteHeader rightSlot={<Link to="/" className="hover:text-foreground">Přihlášení</Link>} />
+      <SiteHeader
+        rightSlot={
+          <div className="flex items-center gap-3 text-sm">
+            <a
+              href="tel:+420800100200"
+              className="hidden sm:inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-primary-foreground"
+            >
+              <Phone className="h-3.5 w-3.5" /> +420 800 100 200
+            </a>
+            <Link to="/" className="hover:text-foreground">Přihlášení</Link>
+          </div>
+        }
+      />
       <main className="mx-auto max-w-3xl px-4 py-10">
         <h1 className="text-3xl font-bold text-foreground">Nahlášení pojistné události</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Pole označená * jsou povinná.</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Pole označená * jsou povinná. Potřebujete pomoc?{" "}
+          <a href="tel:+420800100200" className="font-medium text-primary underline">
+            Zavolejte +420 800 100 200
+          </a>.
+        </p>
+
+        {/* Progress bar */}
+        <div className="mt-6">
+          <div className="flex items-center justify-between text-xs font-medium">
+            {steps.map((s, i) => (
+              <div key={s} className="flex flex-1 items-center gap-2">
+                <div
+                  className={`flex h-7 w-7 items-center justify-center rounded-full border-2 ${
+                    i < step
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : i === step
+                      ? "border-primary text-primary"
+                      : "border-muted text-muted-foreground"
+                  }`}
+                >
+                  {i < step ? <Check className="h-4 w-4" /> : i + 1}
+                </div>
+                <span className={i === step ? "text-foreground" : "text-muted-foreground"}>
+                  {s}
+                </span>
+                {i < steps.length - 1 && (
+                  <div className={`mx-2 hidden h-px flex-1 sm:block ${i < step ? "bg-primary" : "bg-muted"}`} />
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full bg-primary transition-all"
+              style={{ width: `${((step + 1) / steps.length) * 100}%` }}
+            />
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+          {step === 0 && (
           <section className="rounded-xl border bg-card p-6">
             <h2 className="text-lg font-semibold">Kontaktní údaje</h2>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -144,7 +218,9 @@ function Page() {
               <Field label="E-mail" k="email" set={set} type="email" />
             </div>
           </section>
+          )}
 
+          {step === 1 && (
           <section className="rounded-xl border bg-card p-6">
             <h2 className="text-lg font-semibold">Pojistná událost</h2>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -190,13 +266,9 @@ function Page() {
                     accept="image/*,application/pdf"
                     capture="environment"
                     className="mt-2"
-                    onChange={(e) => onFile("accident", e.target.files)}
+                    onChange={(e) => onFile("accident", e.target.files, true)}
                   />
-                  {files.accident.length > 0 && (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {files.accident.length} souborů připraveno k odeslání
-                    </p>
-                  )}
+                  <FilePreview list={files.accident} onRemove={(i) => removeFile("accident", i)} />
                 </div>
               )}
               <div className="sm:col-span-2">
@@ -205,7 +277,9 @@ function Page() {
               </div>
             </div>
           </section>
+          )}
 
+          {step === 2 && (
           <section className="rounded-xl border bg-card p-6">
             <h2 className="text-lg font-semibold">Přílohy</h2>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -218,23 +292,23 @@ function Page() {
                   <Input
                     type="file"
                     multiple={f.multiple}
+                    accept="image/*,application/pdf"
                     className="mt-1"
-                    onChange={(e) => onFile(f.key, e.target.files)}
+                    onChange={(e) => onFile(f.key, e.target.files, !!f.multiple)}
                   />
-                  {files[f.key].length > 0 && (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {files[f.key].length} souborů
-                    </p>
-                  )}
+                  <FilePreview list={files[f.key]} onRemove={(i) => removeFile(f.key, i)} />
                 </div>
               ))}
             </div>
           </section>
+          )}
 
+          {step === 3 && (
           <section className="rounded-xl border bg-card p-6">
             <h2 className="text-lg font-semibold">Elektronický podpis *</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Podepište se prstem nebo myší. Podpis bude vložen do plných mocí.
+              <strong>Podepište se v poli níže</strong> — prstem na mobilu nebo myší na počítači.
+              Podpis bude vložen do plných mocí.
             </p>
             <div className="mt-4">
               <SignaturePad onChange={setSignature} />
@@ -243,10 +317,24 @@ function Page() {
               Po odeslání se automaticky vygenerují předvyplněné plné moci.
             </p>
           </section>
+          )}
 
-          <Button type="submit" size="lg" disabled={busy} className="w-full">
-            {busy ? "Odesílám…" : "Odeslat pojistnou událost"}
-          </Button>
+          <div className="flex gap-3">
+            {step > 0 && (
+              <Button type="button" variant="outline" size="lg" onClick={prev} disabled={busy}>
+                Zpět
+              </Button>
+            )}
+            {step < steps.length - 1 ? (
+              <Button type="button" size="lg" className="flex-1" onClick={next}>
+                Pokračovat
+              </Button>
+            ) : (
+              <Button type="submit" size="lg" disabled={busy} className="flex-1">
+                {busy ? "Odesílám…" : "Odeslat pojistnou událost"}
+              </Button>
+            )}
+          </div>
         </form>
       </main>
     </div>
@@ -254,6 +342,44 @@ function Page() {
 }
 
 const yesNo: [string, string][] = [["ano","Ano"],["ne","Ne"]];
+
+function FilePreview({ list, onRemove }: { list: File[]; onRemove: (i: number) => void }) {
+  if (!list.length) return null;
+  return (
+    <ul className="mt-2 space-y-1">
+      {list.map((f, i) => {
+        const isImg = f.type.startsWith("image/");
+        const url = isImg ? URL.createObjectURL(f) : null;
+        return (
+          <li
+            key={i}
+            className="flex items-center gap-2 rounded-md border bg-muted/30 px-2 py-1.5 text-xs"
+          >
+            {url ? (
+              <img src={url} alt={f.name} className="h-10 w-10 rounded object-cover" />
+            ) : (
+              <div className="flex h-10 w-10 items-center justify-center rounded bg-muted">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="truncate">{f.name}</p>
+              <p className="text-muted-foreground">{(f.size / 1024).toFixed(0)} kB</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => onRemove(i)}
+              className="rounded p-1 text-muted-foreground hover:bg-destructive hover:text-destructive-foreground"
+              aria-label="Odstranit"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
 
 function Field({ label, k, set, type = "text", className }: {
   label: string; k: string; set: (k: string, v: string) => void; type?: string; className?: string;
