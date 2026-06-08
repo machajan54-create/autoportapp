@@ -14,16 +14,180 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      claim_attachments: {
+        Row: {
+          category: string
+          claim_id: string
+          created_at: string
+          file_name: string
+          file_path: string
+          id: string
+          mime_type: string | null
+          size: number | null
+        }
+        Insert: {
+          category: string
+          claim_id: string
+          created_at?: string
+          file_name: string
+          file_path: string
+          id?: string
+          mime_type?: string | null
+          size?: number | null
+        }
+        Update: {
+          category?: string
+          claim_id?: string
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          mime_type?: string | null
+          size?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_attachments_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      claims: {
+        Row: {
+          accident_record: string | null
+          address: string | null
+          claim_number: string | null
+          company: string | null
+          created_at: string
+          email: string | null
+          event_at: string | null
+          first_name: string
+          ico: string | null
+          id: string
+          insurer: string | null
+          insurer_record: string | null
+          last_name: string
+          liquidation_type: string | null
+          loan_lease: string | null
+          location: string | null
+          notes: string | null
+          phone: string
+          signature: string
+          status: Database["public"]["Enums"]["claim_status"]
+          updated_at: string
+          vat_payer: string | null
+        }
+        Insert: {
+          accident_record?: string | null
+          address?: string | null
+          claim_number?: string | null
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          event_at?: string | null
+          first_name: string
+          ico?: string | null
+          id?: string
+          insurer?: string | null
+          insurer_record?: string | null
+          last_name: string
+          liquidation_type?: string | null
+          loan_lease?: string | null
+          location?: string | null
+          notes?: string | null
+          phone: string
+          signature: string
+          status?: Database["public"]["Enums"]["claim_status"]
+          updated_at?: string
+          vat_payer?: string | null
+        }
+        Update: {
+          accident_record?: string | null
+          address?: string | null
+          claim_number?: string | null
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          event_at?: string | null
+          first_name?: string
+          ico?: string | null
+          id?: string
+          insurer?: string | null
+          insurer_record?: string | null
+          last_name?: string
+          liquidation_type?: string | null
+          loan_lease?: string | null
+          location?: string | null
+          notes?: string | null
+          phone?: string
+          signature?: string
+          status?: Database["public"]["Enums"]["claim_status"]
+          updated_at?: string
+          vat_payer?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "employee"
+      claim_status: "new" | "in_progress" | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +314,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "employee"],
+      claim_status: ["new", "in_progress", "closed"],
+    },
   },
 } as const
