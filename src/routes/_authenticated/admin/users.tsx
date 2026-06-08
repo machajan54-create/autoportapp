@@ -1,11 +1,9 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { SiteHeader } from "@/components/SiteHeader";
-import { Button } from "@/components/ui/button";
+import { AdminShell } from "@/components/AdminShell";
 import { Switch } from "@/components/ui/switch";
 import { listUsers, setUserRole } from "@/lib/claims.functions";
-import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/users")({
@@ -13,7 +11,6 @@ export const Route = createFileRoute("/_authenticated/admin/users")({
 });
 
 function UsersPage() {
-  const navigate = useNavigate();
   const qc = useQueryClient();
   const fetch = useServerFn(listUsers);
   const setRole = useServerFn(setUserRole);
@@ -29,12 +26,7 @@ function UsersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <SiteHeader rightSlot={
-        <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/admin" })}>
-          <ArrowLeft className="mr-2 h-4 w-4" />Zpět
-        </Button>
-      } />
+    <AdminShell>
       <main className="mx-auto max-w-4xl px-4 py-10">
         <h1 className="text-2xl font-bold">Uživatelé</h1>
         <p className="text-sm text-muted-foreground">Přidělování rolí mohou měnit pouze admini.</p>
@@ -71,6 +63,6 @@ function UsersPage() {
           </table>
         </div>
       </main>
-    </div>
+    </AdminShell>
   );
 }
