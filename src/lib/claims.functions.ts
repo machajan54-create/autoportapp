@@ -267,7 +267,7 @@ export const setUserModule = createServerFn({ method: "POST" })
     z
       .object({
         user_id: z.string().uuid(),
-        module: z.enum(["claims", "vykupy", "users"]),
+        module: z.enum(["claims", "vykupy", "users", "approvals", "dashboard"]),
         enable: z.boolean(),
       })
       .parse(d),
@@ -308,7 +308,11 @@ export const getMyAccess = createServerFn({ method: "GET" })
       .maybeSingle();
     const approved = isAdmin || !!profile?.approved;
     if (isAdmin) {
-      return { isAdmin: true, approved: true, modules: ["claims", "vykupy", "users"] as const };
+      return {
+        isAdmin: true,
+        approved: true,
+        modules: ["claims", "vykupy", "users", "approvals", "dashboard"] as const,
+      };
     }
     const { data: mods } = await context.supabase
       .from("user_modules")
