@@ -18,6 +18,12 @@ export type Vykup = {
   stav: string;
   zpracoval: string | null;
   poznamka: string | null;
+  internal_priced_by_user_id: string | null;
+  internal_priced_amount: number | null;
+  internal_priced_at: string | null;
+  external_priced_by: string | null;
+  external_priced_amount: number | null;
+  external_priced_at: string | null;
 };
 
 export const ZNACKY = ["Citroen", "Peugeot", "Fiat", "DS", "Jiná"] as const;
