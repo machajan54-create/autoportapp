@@ -1,17 +1,23 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Link } from "@tanstack/react-router";
-import { SiteHeader } from "@/components/SiteHeader";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Car } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { ensureDemoUser, getMyAccess } from "@/lib/claims.functions";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Pojistné události — online nahlášení" },
+      { title: "Autoport APP — Přihlášení" },
       {
         name: "description",
         content:
-          "Nahlaste pojistnou událost online. Připravíme plné moci a postaráme se o komunikaci s pojišťovnou.",
+          "Přihlášení do interního systému Autoport APP. Správa pojistných událostí a výkupů.",
       },
     ],
   }),
@@ -19,34 +25,190 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const navigate = useNavigate();
+  const ensureDemo = useServerFn(ensureDemoUser);
+  const fetchAccess = useServerFn(getMyAccess);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) navigate({ to: "/admin" });
+    });
+  }, [navigate]);
+
+  async function signIn(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setBusy(false);
+      return toast.error(error.message);
+    }
+    try {
+      const acc = await fetchAccess({});
+      if (!acc.approved) {
+        await supabase.auth.signOut();
+        setBusy(false);
+        return toast.error("Váš účet čeká na schválení super adminem.");
+      }
+    } catch (e) {
+      setBusy(false);
+      return toast.error((e as Error).message);
+    }
+    setBusy(false);
+    navigate({ to: "/admin" });
+  }
+
+  async function signUp(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: window.location.origin },
+    });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Účet vytvořen. Vyčkejte na schválení super adminem.");
+  }
+
+  async function demo() {
+    setBusy(true);
+    try {
+      const creds = await ensureDemo({});
+      const { error } = await supabase.auth.signInWithPassword({
+        email: creds.email,
+        password: creds.password,
+      });
+      if (error) throw error;
+      navigate({ to: "/admin" });
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-background">
-      <SiteHeader
-        rightSlot={
-          <Link to="/auth" className="hover:text-foreground">
-            Přihlášení
-          </Link>
-        }
-      />
-      <main className="mx-auto max-w-5xl px-4 py-20">
-        <h1 className="max-w-2xl text-5xl font-bold tracking-tight text-foreground">
-          Nahlaste pojistnou událost online
-        </h1>
-        <p className="mt-6 max-w-xl text-lg text-muted-foreground">
-          Vyplňte krátký formulář, přiložte fotografie a podepište se. Připravíme plné moci a
-          postaráme se o komunikaci s pojišťovnou.
-        </p>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Button asChild size="lg">
-            <Link to="/nahlasit">
-              Nahlásit událost <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
-          <Button asChild size="lg" variant="outline">
-            <Link to="/auth">Přihlášení pro zaměstnance</Link>
-          </Button>
+    <div
+      className="flex min-h-screen items-center justify-center px-4"
+      style={{ background: "linear-gradient(135deg, #0F172A 0%, #1E293B 100%)" }}
+    >
+      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0F172A] p-8 shadow-2xl">
+        <div className="flex items-center gap-3 text-lg font-semibold text-white">
+          <span
+            className="flex h-10 w-10 items-center justify-center rounded-lg"
+            style={{ backgroundColor: "#F97316" }}
+          >
+            <Car className="h-5 w-5 text-white" />
+          </span>
+          <div className="flex flex-col leading-tight">
+            <span>AutoPort</span>
+            <span className="text-xs font-normal text-slate-400">Interní systém</span>
+          </div>
         </div>
-      </main>
+
+        <Tabs defaultValue="login" className="mt-6">
+          <TabsList className="grid w-full grid-cols-2 bg-slate-800/60">
+            <TabsTrigger
+              value="login"
+              className="data-[state=active]:bg-[#F97316] data-[state=active]:text-white text-slate-300"
+            >
+              Přihlášení
+            </TabsTrigger>
+            <TabsTrigger
+              value="register"
+              className="data-[state=active]:bg-[#F97316] data-[state=active]:text-white text-slate-300"
+            >
+              Registrace
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="login">
+            <form onSubmit={signIn} className="mt-4 space-y-4">
+              <div>
+                <Label className="text-slate-200">E-mail</Label>
+                <Input
+                  type="email"
+                  className="mt-1 border-slate-700 bg-slate-900 text-white placeholder:text-slate-500"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <Label className="text-slate-200">Heslo</Label>
+                <Input
+                  type="password"
+                  className="mt-1 border-slate-700 bg-slate-900 text-white placeholder:text-slate-500"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <Button
+                type="submit"
+                className="w-full text-white hover:opacity-90"
+                style={{ backgroundColor: "#F97316" }}
+                disabled={busy}
+              >
+                Přihlásit se
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-slate-700 bg-transparent text-slate-200 hover:bg-slate-800 hover:text-white"
+                onClick={demo}
+                disabled={busy}
+              >
+                Přihlásit se jako demo
+              </Button>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="register">
+            <form onSubmit={signUp} className="mt-4 space-y-4">
+              <div>
+                <Label className="text-slate-200">E-mail</Label>
+                <Input
+                  type="email"
+                  className="mt-1 border-slate-700 bg-slate-900 text-white placeholder:text-slate-500"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <Label className="text-slate-200">Heslo</Label>
+                <Input
+                  type="password"
+                  className="mt-1 border-slate-700 bg-slate-900 text-white placeholder:text-slate-500"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  minLength={6}
+                  required
+                />
+              </div>
+              <Button
+                type="submit"
+                className="w-full text-white hover:opacity-90"
+                style={{ backgroundColor: "#F97316" }}
+                disabled={busy}
+              >
+                Vytvořit účet
+              </Button>
+            </form>
+          </TabsContent>
+        </Tabs>
+
+        <div className="mt-6 text-center text-sm">
+          <Link to="/nahlasit" className="text-slate-400 hover:text-white">
+            Nahlásit pojistnou událost →
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
