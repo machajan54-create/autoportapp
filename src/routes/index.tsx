@@ -138,15 +138,6 @@ function Index() {
               >
                 Přihlásit se
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full border-slate-700 bg-transparent text-slate-200 hover:bg-slate-800 hover:text-white"
-                onClick={demo}
-                disabled={busy}
-              >
-                Přihlásit se jako demo
-              </Button>
             </form>
           </TabsContent>
 
