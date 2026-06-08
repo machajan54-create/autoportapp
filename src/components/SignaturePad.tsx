@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button";
 
 interface Props {
   onChange: (dataUrl: string | null) => void;
+  initialDataUrl?: string | null;
 }
 
-export function SignaturePad({ onChange }: Props) {
+export function SignaturePad({ onChange, initialDataUrl }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [drawing, setDrawing] = useState(false);
-  const [hasInk, setHasInk] = useState(false);
+  const [hasInk, setHasInk] = useState(!!initialDataUrl);
 
   useEffect(() => {
     const c = canvasRef.current!;
@@ -23,6 +24,12 @@ export function SignaturePad({ onChange }: Props) {
     ctx.lineWidth = 2;
     ctx.lineCap = "round";
     ctx.strokeStyle = "#0f172a";
+    if (initialDataUrl) {
+      const img = new Image();
+      img.onload = () => ctx.drawImage(img, 0, 0, w, h);
+      img.src = initialDataUrl;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const pos = (e: React.PointerEvent) => {
