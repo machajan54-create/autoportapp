@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getMyAccess } from "@/lib/claims.functions";
 import { toast } from "sonner";
 
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
