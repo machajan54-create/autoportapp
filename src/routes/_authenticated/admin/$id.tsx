@@ -125,10 +125,8 @@ function ClaimDetail() {
     const w = window.open("", "_blank", "width=820,height=1100");
     if (!w) return;
     const zak = data.claim.pu_number ?? "";
-    const klient = (data.claim.client_name ?? "").toString();
-    const vozidlo = [data.claim.vehicle_brand, data.claim.vehicle_model, data.claim.vehicle_spz]
-      .filter(Boolean)
-      .join(" · ");
+    const klient = [data.claim.first_name, data.claim.last_name].filter(Boolean).join(" ");
+    const vozidlo = data.claim.insurer ?? "";
     const dnes = new Date().toLocaleDateString("cs-CZ");
     w.document.write(`<!doctype html><html><head>
       <meta charset="utf-8"/>
