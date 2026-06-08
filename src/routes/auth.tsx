@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Car } from "lucide-react";
+import rocketLogo from "@/assets/rocket-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureDemoUser, getMyAccess } from "@/lib/claims.functions";
 import { toast } from "sonner";
