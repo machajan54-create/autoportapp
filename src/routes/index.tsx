@@ -76,6 +76,20 @@ function Index() {
     toast.success("Účet vytvořen. Vyčkejte na schválení super adminem.");
   }
 
+  async function sendReset(e: React.FormEvent) {
+    e.preventDefault();
+    if (!resetEmail) return;
+    setBusy(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: window.location.origin + "/reset-password",
+    });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Pokud účet existuje, odeslali jsme e-mail s instrukcemi.");
+    setResetMode(false);
+    setResetEmail("");
+  }
+
   return (
     <div
       className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 pb-28 sm:pb-4"
