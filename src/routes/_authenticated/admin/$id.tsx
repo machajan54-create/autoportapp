@@ -122,21 +122,96 @@ function ClaimDetail() {
 
   function printQrLabel() {
     if (!qrUrl || !data) return;
-    const w = window.open("", "_blank", "width=480,height=640");
+    const w = window.open("", "_blank", "width=820,height=1100");
     if (!w) return;
     const zak = data.claim.pu_number ?? "";
-    w.document.write(`<!doctype html><html><head><title>QR ${zak}</title>
+    const klient = [data.claim.first_name, data.claim.last_name].filter(Boolean).join(" ");
+    const vozidlo = data.claim.insurer ?? "";
+    const dnes = new Date().toLocaleDateString("cs-CZ");
+    w.document.write(`<!doctype html><html><head>
+      <meta charset="utf-8"/>
+      <title>QR štítek ${zak}</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com"/>
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
       <style>
-        @page { size: 80mm 100mm; margin: 4mm; }
-        body { font-family: system-ui, sans-serif; text-align: center; margin: 0; padding: 8mm; }
-        h1 { font-size: 14px; margin: 0 0 6mm; letter-spacing: .04em; }
-        img { width: 64mm; height: 64mm; }
-        .code { margin-top: 4mm; font-size: 12px; color: #555; letter-spacing: .12em; }
+        @page { size: A4 portrait; margin: 0; }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; background: #fff; color: #0f172a; font-family: 'Inter', system-ui, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .sheet { width: 210mm; height: 297mm; padding: 18mm 16mm; display: flex; flex-direction: column; position: relative; }
+        .frame { flex: 1; border: 1.2pt solid #0f172a; border-radius: 4mm; padding: 14mm 14mm 12mm; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+        .corner { position: absolute; width: 10mm; height: 10mm; border: 1.4pt solid #F97316; }
+        .corner.tl { top: 4mm; left: 4mm; border-right: none; border-bottom: none; }
+        .corner.tr { top: 4mm; right: 4mm; border-left: none; border-bottom: none; }
+        .corner.bl { bottom: 4mm; left: 4mm; border-right: none; border-top: none; }
+        .corner.br { bottom: 4mm; right: 4mm; border-left: none; border-top: none; }
+        .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8mm; }
+        .brand { font-family: 'JetBrains Mono', monospace; font-size: 9pt; letter-spacing: .32em; color: #64748b; text-transform: uppercase; }
+        .brand b { color: #F97316; font-weight: 700; }
+        .tag { font-family: 'JetBrains Mono', monospace; font-size: 9pt; letter-spacing: .24em; color: #0f172a; border: 1pt solid #0f172a; padding: 2mm 4mm; border-radius: 999px; }
+        .hero { margin-top: 10mm; }
+        .kicker { font-family: 'JetBrains Mono', monospace; font-size: 10pt; letter-spacing: .42em; color: #F97316; text-transform: uppercase; }
+        h1 { font-size: 56pt; font-weight: 800; letter-spacing: -.025em; line-height: .95; margin: 4mm 0 0; }
+        h1 span { display: block; color: #F97316; }
+        .lede { margin-top: 8mm; max-width: 130mm; font-size: 12pt; line-height: 1.5; color: #334155; font-weight: 400; }
+        .lede b { color: #0f172a; font-weight: 600; }
+        .center { margin-top: 10mm; display: flex; justify-content: center; }
+        .qr { background: #fff; border: 1pt solid #e2e8f0; padding: 8mm; border-radius: 3mm; box-shadow: 0 2mm 6mm rgba(15,23,42,.06); }
+        .qr img { width: 78mm; height: 78mm; display: block; }
+        .zak-label { text-align: center; margin-top: 6mm; font-family: 'JetBrains Mono', monospace; font-size: 14pt; letter-spacing: .42em; font-weight: 600; color: #0f172a; }
+        .zak-sub { text-align: center; margin-top: 2mm; font-size: 9pt; letter-spacing: .28em; color: #94a3b8; text-transform: uppercase; }
+        .steps { margin-top: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6mm; padding-top: 10mm; border-top: .5pt solid #e2e8f0; }
+        .step { display: flex; flex-direction: column; gap: 2mm; }
+        .step .n { font-family: 'JetBrains Mono', monospace; font-size: 9pt; letter-spacing: .3em; color: #F97316; font-weight: 700; }
+        .step .t { font-size: 10pt; font-weight: 600; color: #0f172a; }
+        .step .d { font-size: 9pt; color: #64748b; line-height: 1.45; }
+        .meta { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 8mm; font-family: 'JetBrains Mono', monospace; font-size: 8pt; letter-spacing: .24em; color: #94a3b8; text-transform: uppercase; }
+        .meta .info { display: flex; gap: 6mm; flex-wrap: wrap; }
+        .meta .info span b { color: #0f172a; font-weight: 600; letter-spacing: .12em; }
+        @media print { .noprint { display: none; } }
       </style></head><body>
-      <h1>FOCENÍ DO ZAKÁZKY</h1>
-      <img src="${qrUrl}" alt="QR" />
-      <div class="code">${zak}</div>
-      <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),300);}</script>
+      <div class="sheet">
+        <div class="frame">
+          <span class="corner tl"></span><span class="corner tr"></span>
+          <span class="corner bl"></span><span class="corner br"></span>
+
+          <div class="top">
+            <div class="brand">AUTOPORT <b>APP</b> · INTERNÍ SYSTÉM</div>
+            <div class="tag">QR · ${zak || "—"}</div>
+          </div>
+
+          <div class="hero">
+            <div class="kicker">Focení mobilem</div>
+            <h1>Vyfoťte vůz<span>do této zakázky.</span></h1>
+            <p class="lede">
+              Naskenujte QR kód fotoaparátem mobilního telefonu. Otevře se nahrávací rozhraní
+              spojené přímo se zakázkou <b>${zak || "—"}</b>. Žádné přihlášení, žádné e-maily —
+              fotky se uloží okamžitě.
+            </p>
+          </div>
+
+          <div class="center">
+            <div class="qr"><img src="${qrUrl}" alt="QR ${zak}"/></div>
+          </div>
+          <div class="zak-label">${zak || "—"}</div>
+          <div class="zak-sub">Kód zakázky</div>
+
+          <div class="steps">
+            <div class="step"><span class="n">01</span><span class="t">Naskenovat</span><span class="d">Otevřete fotoaparát mobilu a namiřte ho na QR kód výše.</span></div>
+            <div class="step"><span class="n">02</span><span class="t">Vyfotit</span><span class="d">Klepněte na notifikaci a pořiďte snímky vozidla v rozhraní.</span></div>
+            <div class="step"><span class="n">03</span><span class="t">Hotovo</span><span class="d">Fotky se automaticky uloží k zakázce ${zak || ""}.</span></div>
+          </div>
+
+          <div class="meta">
+            <div class="info">
+              ${klient ? `<span>Klient · <b>${klient}</b></span>` : ""}
+              ${vozidlo ? `<span>Pojišťovna · <b>${vozidlo}</b></span>` : ""}
+            </div>
+            <div>Vytištěno ${dnes}</div>
+          </div>
+        </div>
+      </div>
+      <script>window.onload=()=>{setTimeout(()=>{window.print();},250);window.onafterprint=()=>window.close();}</script>
       </body></html>`);
     w.document.close();
   }
