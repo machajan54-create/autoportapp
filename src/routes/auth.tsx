@@ -89,7 +89,7 @@ function AuthPage() {
           <img
             src={rocketLogo}
             alt="Autoport APP logo"
-            className="h-16 w-16 object-contain"
+            className="h-16 w-16 object-contain -rotate-12 drop-shadow-[0_8px_20px_rgba(249,115,22,0.35)]"
           />
           <div>
             <h1 className="text-xl font-bold text-white">Interní systém Autoport APP 2026</h1>
