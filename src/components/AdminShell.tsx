@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { ShieldCheck, FolderKanban, LogOut, Users } from "lucide-react";
+import { ShieldCheck, FolderKanban, LogOut, Users, Car } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </div>
         <nav className="flex-1 space-y-1 p-3">
           {navItem("/admin", "Zakázky", FolderKanban)}
+          {navItem("/vykupy", "Ojeté vozy", Car)}
           {navItem("/admin/users", "Uživatelé", Users)}
         </nav>
         <div className="border-t p-3">

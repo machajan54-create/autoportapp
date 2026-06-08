@@ -245,6 +245,66 @@ export type Database = {
         }
         Relationships: []
       }
+      vykupy: {
+        Row: {
+          created_at: string
+          datum_vykupu: string | null
+          id: string
+          klient: string
+          model: string
+          naceneno_od: number | null
+          naklady: number
+          pocet_km: number | null
+          poznamka: string | null
+          prodano_za: number | null
+          rok_vyroby: number | null
+          stav: string
+          telefon: string | null
+          vykoupeno_za: number | null
+          zdroj: string | null
+          znacka: string
+          zpracoval: string | null
+        }
+        Insert: {
+          created_at?: string
+          datum_vykupu?: string | null
+          id?: string
+          klient: string
+          model: string
+          naceneno_od?: number | null
+          naklady?: number
+          pocet_km?: number | null
+          poznamka?: string | null
+          prodano_za?: number | null
+          rok_vyroby?: number | null
+          stav?: string
+          telefon?: string | null
+          vykoupeno_za?: number | null
+          zdroj?: string | null
+          znacka: string
+          zpracoval?: string | null
+        }
+        Update: {
+          created_at?: string
+          datum_vykupu?: string | null
+          id?: string
+          klient?: string
+          model?: string
+          naceneno_od?: number | null
+          naklady?: number
+          pocet_km?: number | null
+          poznamka?: string | null
+          prodano_za?: number | null
+          rok_vyroby?: number | null
+          stav?: string
+          telefon?: string | null
+          vykoupeno_za?: number | null
+          zdroj?: string | null
+          znacka?: string
+          zpracoval?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
