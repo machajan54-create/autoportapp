@@ -102,6 +102,13 @@ function DashboardPage() {
             <Stat label="Obrat (prodáno)" value={formatKc(obrat)} icon={<Coins className="h-5 w-5 text-primary" />} tint="bg-primary/10" />
             <Stat label="Marže celkem" value={formatKc(totalMarze)} icon={<Coins className="h-5 w-5 text-emerald-600" />} tint="bg-emerald-100" />
           </div>
+
+          <div className="mt-6 rounded-xl border bg-card p-5">
+            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Výtěžnost podle cenaře (interní nacenění)
+            </h3>
+            <PricerLeaderboard rows={prodano} />
+          </div>
         </section>
       </div>
     </AdminShell>
