@@ -18,6 +18,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
 import { Route as AuthenticatedVykupyIndexRouteImport } from './routes/_authenticated/vykupy/index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
+import { Route as AuthenticatedVykupyDashboardRouteImport } from './routes/_authenticated/vykupy/dashboard'
 import { Route as AuthenticatedVykupyIdRouteImport } from './routes/_authenticated/vykupy/$id'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedAdminTemplatesRouteImport } from './routes/_authenticated/admin/templates'
@@ -68,6 +69,12 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedVykupyDashboardRoute =
+  AuthenticatedVykupyDashboardRouteImport.update({
+    id: '/vykupy/dashboard',
+    path: '/vykupy/dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedVykupyIdRoute = AuthenticatedVykupyIdRouteImport.update({
   id: '/vykupy/$id',
   path: '/vykupy/$id',
@@ -101,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/admin/templates': typeof AuthenticatedAdminTemplatesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
+  '/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/vykupy/': typeof AuthenticatedVykupyIndexRoute
 }
@@ -115,6 +123,7 @@ export interface FileRoutesByTo {
   '/admin/templates': typeof AuthenticatedAdminTemplatesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
+  '/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/vykupy': typeof AuthenticatedVykupyIndexRoute
 }
@@ -131,6 +140,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/templates': typeof AuthenticatedAdminTemplatesRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/vykupy/$id': typeof AuthenticatedVykupyIdRoute
+  '/_authenticated/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/vykupy/': typeof AuthenticatedVykupyIndexRoute
 }
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
     | '/admin/templates'
     | '/admin/users'
     | '/vykupy/$id'
+    | '/vykupy/dashboard'
     | '/admin/'
     | '/vykupy/'
   fileRoutesByTo: FileRoutesByTo
@@ -161,6 +172,7 @@ export interface FileRouteTypes {
     | '/admin/templates'
     | '/admin/users'
     | '/vykupy/$id'
+    | '/vykupy/dashboard'
     | '/admin'
     | '/vykupy'
   id:
@@ -176,6 +188,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/templates'
     | '/_authenticated/admin/users'
     | '/_authenticated/vykupy/$id'
+    | '/_authenticated/vykupy/dashboard'
     | '/_authenticated/admin/'
     | '/_authenticated/vykupy/'
   fileRoutesById: FileRoutesById
@@ -253,6 +266,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/vykupy/dashboard': {
+      id: '/_authenticated/vykupy/dashboard'
+      path: '/vykupy/dashboard'
+      fullPath: '/vykupy/dashboard'
+      preLoaderRoute: typeof AuthenticatedVykupyDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/vykupy/$id': {
       id: '/_authenticated/vykupy/$id'
       path: '/vykupy/$id'
@@ -291,6 +311,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminTemplatesRoute: typeof AuthenticatedAdminTemplatesRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedVykupyIdRoute: typeof AuthenticatedVykupyIdRoute
+  AuthenticatedVykupyDashboardRoute: typeof AuthenticatedVykupyDashboardRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedVykupyIndexRoute: typeof AuthenticatedVykupyIndexRoute
 }
@@ -302,6 +323,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminTemplatesRoute: AuthenticatedAdminTemplatesRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedVykupyIdRoute: AuthenticatedVykupyIdRoute,
+  AuthenticatedVykupyDashboardRoute: AuthenticatedVykupyDashboardRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedVykupyIndexRoute: AuthenticatedVykupyIndexRoute,
 }

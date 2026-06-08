@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, Pencil, Trash2, Car } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Car, BarChart3 } from "lucide-react";
 import {
   listVykupy, deleteVykup, formatKc, formatDate, marze, stavBadge,
 } from "@/lib/vykupy";
@@ -52,13 +52,21 @@ function VykupyList() {
             <Car className="h-7 w-7 text-orange-500" />
             Výkupy
           </h1>
-          <Button
-            onClick={() => navigate({ to: "/vykupy/$id", params: { id: "novy" } })}
-            className="bg-orange-500 text-white hover:bg-orange-600"
-          >
-            <Plus className="mr-1 h-4 w-4" />
-            Nový výkup
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild variant="outline">
+              <Link to="/vykupy/dashboard">
+                <BarChart3 className="mr-1 h-4 w-4" />
+                Dashboard
+              </Link>
+            </Button>
+            <Button
+              onClick={() => navigate({ to: "/vykupy/$id", params: { id: "novy" } })}
+              className="bg-orange-500 text-white hover:bg-orange-600"
+            >
+              <Plus className="mr-1 h-4 w-4" />
+              Nový výkup
+            </Button>
+          </div>
         </div>
 
         <div className="mt-6 rounded-xl border bg-card p-3">
