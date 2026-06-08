@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as UploadTokenRouteImport } from './routes/upload.$token'
 import { Route as AuthenticatedVykupyIndexRouteImport } from './routes/_authenticated/vykupy/index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
+import { Route as AuthenticatedVykupyIdRouteImport } from './routes/_authenticated/vykupy/$id'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedAdminIdRouteImport } from './routes/_authenticated/admin/$id'
 
@@ -54,6 +55,11 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedVykupyIdRoute = AuthenticatedVykupyIdRouteImport.update({
+  id: '/vykupy/$id',
+  path: '/vykupy/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/upload/$token': typeof UploadTokenRoute
   '/admin/$id': typeof AuthenticatedAdminIdRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/vykupy/': typeof AuthenticatedVykupyIndexRoute
 }
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/upload/$token': typeof UploadTokenRoute
   '/admin/$id': typeof AuthenticatedAdminIdRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/vykupy': typeof AuthenticatedVykupyIndexRoute
 }
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/upload/$token': typeof UploadTokenRoute
   '/_authenticated/admin/$id': typeof AuthenticatedAdminIdRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/_authenticated/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/vykupy/': typeof AuthenticatedVykupyIndexRoute
 }
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/upload/$token'
     | '/admin/$id'
     | '/admin/users'
+    | '/vykupy/$id'
     | '/admin/'
     | '/vykupy/'
   fileRoutesByTo: FileRoutesByTo
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/upload/$token'
     | '/admin/$id'
     | '/admin/users'
+    | '/vykupy/$id'
     | '/admin'
     | '/vykupy'
   id:
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/upload/$token'
     | '/_authenticated/admin/$id'
     | '/_authenticated/admin/users'
+    | '/_authenticated/vykupy/$id'
     | '/_authenticated/admin/'
     | '/_authenticated/vykupy/'
   fileRoutesById: FileRoutesById
@@ -190,6 +202,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/vykupy/$id': {
+      id: '/_authenticated/vykupy/$id'
+      path: '/vykupy/$id'
+      fullPath: '/vykupy/$id'
+      preLoaderRoute: typeof AuthenticatedVykupyIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/users': {
       id: '/_authenticated/admin/users'
       path: '/admin/users'
@@ -210,6 +229,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminIdRoute: typeof AuthenticatedAdminIdRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
+  AuthenticatedVykupyIdRoute: typeof AuthenticatedVykupyIdRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedVykupyIndexRoute: typeof AuthenticatedVykupyIndexRoute
 }
@@ -217,6 +237,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminIdRoute: AuthenticatedAdminIdRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
+  AuthenticatedVykupyIdRoute: AuthenticatedVykupyIdRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedVykupyIndexRoute: AuthenticatedVykupyIndexRoute,
 }
