@@ -16,7 +16,7 @@ import {
   getVykup, upsertVykup, formatKc, marze,
   ZNACKY, ZDROJE, STAVY, type Vykup,
 } from "@/lib/vykupy";
-import { listEmployees } from "@/lib/claims.functions";
+import { listEmployees, getMyAccess } from "@/lib/claims.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/vykupy/$id")({
@@ -97,6 +97,16 @@ function VykupForm() {
     queryKey: ["employees"],
     queryFn: () => fetchEmployees({}),
   });
+  const fetchAccess = useServerFn(getMyAccess);
+  const { data: access } = useQuery({
+    queryKey: ["my-access"],
+    queryFn: () => fetchAccess({}),
+  });
+  const modules = (access?.modules ?? []) as string[];
+  const isAdmin = !!access?.isAdmin;
+  const canFull = isAdmin || modules.includes("vykupy");
+  const canExternalOnly = !canFull && modules.includes("vykupy_external");
+  const ro = canExternalOnly; // read-only mode for everything except externí nacenění
 
   const { data: existing } = useQuery({
     queryKey: ["vykup", id],
@@ -120,13 +130,13 @@ function VykupForm() {
 
   async function onSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.klient.trim() || !form.model.trim()) {
+    if (canFull && (!form.klient.trim() || !form.model.trim())) {
       toast.error("Vyplňte alespoň klienta a model.");
       return;
     }
     setSaving(true);
     try {
-      const payload: Partial<Vykup> = {
+      const fullPayload: Partial<Vykup> = {
         znacka: form.znacka,
         model: form.model.trim(),
         rok_vyroby: toNum(form.rok_vyroby) ?? null,
@@ -149,7 +159,18 @@ function VykupForm() {
         external_priced_amount: toNum(form.external_priced_amount) ?? null,
         external_priced_at: form.external_priced_at || null,
       };
+      const extOnlyPayload: Partial<Vykup> = {
+        external_priced_by: form.external_priced_by.trim() || null,
+        external_priced_amount: toNum(form.external_priced_amount) ?? null,
+        external_priced_at: form.external_priced_at || null,
+      };
+      const payload: Partial<Vykup> = canFull ? fullPayload : extOnlyPayload;
       if (!isNew) payload.id = id;
+      if (isNew && !canFull) {
+        toast.error("Nemáte oprávnění vytvořit nový výkup.");
+        setSaving(false);
+        return;
+      }
       await upsertVykup(payload);
       toast.success(isNew ? "Výkup vytvořen" : "Uloženo");
       qc.invalidateQueries({ queryKey: ["vykupy"] });
@@ -163,53 +184,58 @@ function VykupForm() {
   }
 
   return (
-    <AdminShell requireModule="vykupy">
+    <AdminShell requireModule={["vykupy", "vykupy_external"]}>
       <div className="mx-auto max-w-3xl px-4 py-8 md:py-10">
         <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/vykupy" })} className="mb-3 -ml-2">
           <ArrowLeft className="mr-1 h-4 w-4" /> Zpět
         </Button>
         <h1 className="text-2xl font-bold md:text-3xl">
-          {isNew ? "Nový výkup" : "Upravit výkup"}
+          {isNew ? "Nový výkup" : canExternalOnly ? "Externí nacenění" : "Upravit výkup"}
         </h1>
+        {canExternalOnly && (
+          <p className="mt-2 text-sm text-muted-foreground">
+            Máte přístup pouze k vyplnění externího nacenění. Ostatní pole jsou pouze pro čtení.
+          </p>
+        )}
 
         <form onSubmit={onSave} className="mt-6 space-y-6 rounded-xl border bg-card p-5">
           <Section title="Vozidlo">
             <Field label="Značka">
-              <Select value={form.znacka} onValueChange={(v) => set("znacka", v)}>
+              <Select value={form.znacka} onValueChange={(v) => set("znacka", v)} disabled={ro}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{ZNACKY.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}</SelectContent>
               </Select>
             </Field>
             <Field label="Model">
-              <Input value={form.model} onChange={(e) => set("model", e.target.value)} required />
+              <Input value={form.model} onChange={(e) => set("model", e.target.value)} required={!ro} readOnly={ro} />
             </Field>
             <Field label="Rok výroby">
-              <Input type="number" value={form.rok_vyroby} onChange={(e) => set("rok_vyroby", e.target.value)} />
+              <Input type="number" value={form.rok_vyroby} onChange={(e) => set("rok_vyroby", e.target.value)} readOnly={ro} />
             </Field>
             <Field label="Počet km">
-              <Input type="number" value={form.pocet_km} onChange={(e) => set("pocet_km", e.target.value)} />
+              <Input type="number" value={form.pocet_km} onChange={(e) => set("pocet_km", e.target.value)} readOnly={ro} />
             </Field>
           </Section>
 
           <Section title="Klient">
             <Field label="Klient">
-              <Input value={form.klient} onChange={(e) => set("klient", e.target.value)} required />
+              <Input value={form.klient} onChange={(e) => set("klient", e.target.value)} required={!ro} readOnly={ro} />
             </Field>
             <Field label="Telefon">
-              <Input value={form.telefon} onChange={(e) => set("telefon", e.target.value)} />
+              <Input value={form.telefon} onChange={(e) => set("telefon", e.target.value)} readOnly={ro} />
             </Field>
             <Field label="Zdroj">
-              <Select value={form.zdroj} onValueChange={(v) => set("zdroj", v)}>
+              <Select value={form.zdroj} onValueChange={(v) => set("zdroj", v)} disabled={ro}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{ZDROJE.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}</SelectContent>
               </Select>
             </Field>
             <Field label="Zpracoval">
-              <Input value={form.zpracoval} onChange={(e) => set("zpracoval", e.target.value)} />
+              <Input value={form.zpracoval} onChange={(e) => set("zpracoval", e.target.value)} readOnly={ro} />
             </Field>
           </Section>
 
-          <Section title="Cenová kalkulace">
+          {canFull && <Section title="Cenová kalkulace">
             <Field label="Naceněno od (Kč)">
               <Input type="number" value={form.naceneno_od} onChange={(e) => set("naceneno_od", e.target.value)} />
             </Field>
@@ -233,9 +259,9 @@ function VykupForm() {
                 <span className="tabular-nums font-bold">{liveMarze == null ? "vyplňte prodáno a vykoupeno" : formatKc(liveMarze)}</span>
               </div>
             </div>
-          </Section>
+          </Section>}
 
-          <Section title="Nacenění – interní">
+          {canFull && <Section title="Nacenění – interní">
             <Field label="Kdo nacenil (zaměstnanec)">
               <Select
                 value={form.internal_priced_by_user_id || "none"}
@@ -256,7 +282,7 @@ function VykupForm() {
             <Field label="Datum interního nacenění">
               <Input type="date" value={form.internal_priced_at} onChange={(e) => set("internal_priced_at", e.target.value)} />
             </Field>
-          </Section>
+          </Section>}
 
           <Section title="Nacenění – externí">
             <Field label="Kdo nacenil (firma / jméno)">
@@ -270,7 +296,7 @@ function VykupForm() {
             </Field>
           </Section>
 
-          <Section title="Stav">
+          {canFull && <Section title="Stav">
             <Field label="Datum výkupu">
               <Input type="date" value={form.datum_vykupu} onChange={(e) => set("datum_vykupu", e.target.value)} />
             </Field>
@@ -284,7 +310,7 @@ function VykupForm() {
               <Label className="mb-1.5 block text-sm">Poznámka</Label>
               <Textarea rows={3} value={form.poznamka} onChange={(e) => set("poznamka", e.target.value)} />
             </div>
-          </Section>
+          </Section>}
 
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" onClick={() => navigate({ to: "/vykupy" })}>
