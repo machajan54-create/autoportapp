@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Car, Phone, FileWarning } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { ensureDemoUser, getMyAccess } from "@/lib/claims.functions";
+import { getMyAccess } from "@/lib/claims.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
@@ -26,7 +26,6 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const navigate = useNavigate();
-  const ensureDemo = useServerFn(ensureDemoUser);
   const fetchAccess = useServerFn(getMyAccess);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -72,23 +71,6 @@ function Index() {
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Účet vytvořen. Vyčkejte na schválení super adminem.");
-  }
-
-  async function demo() {
-    setBusy(true);
-    try {
-      const creds = await ensureDemo({});
-      const { error } = await supabase.auth.signInWithPassword({
-        email: creds.email,
-        password: creds.password,
-      });
-      if (error) throw error;
-      navigate({ to: "/admin" });
-    } catch (err) {
-      toast.error((err as Error).message);
-    } finally {
-      setBusy(false);
-    }
   }
 
   return (
