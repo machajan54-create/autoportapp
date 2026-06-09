@@ -84,7 +84,7 @@ export const ensureDemoUser = createServerFn({ method: "POST" }).handler(async (
         event_at: new Date(Date.now() - 1000*60*60*24*30).toISOString(), location: "Plzeň, Borská pole",
         liquidation_type: "Oprava", vat_payer: "Ano", notes: "Demo — dokončeno, vyplaceno.",
         signature: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=",
-        status: "completed",
+        status: "done",
       },
     ]);
   }
