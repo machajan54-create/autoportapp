@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import rocketLogo from "@/assets/rocket-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyAccess } from "@/lib/claims.functions";
+import { ensureDemoUser } from "@/lib/demo.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
@@ -18,6 +19,7 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const fetchAccess = useServerFn(getMyAccess);
+  const ensureDemo = useServerFn(ensureDemoUser);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -76,6 +78,23 @@ function AuthPage() {
     toast.success("Pokud účet existuje, odeslali jsme e-mail s instrukcemi.");
     setResetMode(false);
     setResetEmail("");
+  }
+
+  async function demoLogin() {
+    setBusy(true);
+    try {
+      const { email: demoEmail, password: demoPassword } = await ensureDemo({});
+      const { error } = await supabase.auth.signInWithPassword({
+        email: demoEmail,
+        password: demoPassword,
+      });
+      if (error) throw error;
+      navigate({ to: "/admin" });
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
