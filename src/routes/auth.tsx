@@ -182,6 +182,23 @@ function AuthPage() {
               >
                 Zapomenuté heslo?
               </button>
+              <div className="mt-2 rounded-lg border border-dashed border-slate-700 bg-slate-900/60 p-3">
+                <p className="text-center text-[11px] uppercase tracking-wide text-slate-400">
+                  Demo přístup
+                </p>
+                <p className="mt-1 text-center text-xs text-slate-300">
+                  demo@autoport.app · Demo1234!
+                </p>
+                <Button
+                  type="button"
+                  onClick={demoLogin}
+                  disabled={busy}
+                  variant="outline"
+                  className="mt-2 w-full border-slate-700 bg-transparent text-slate-100 hover:bg-slate-800 hover:text-white"
+                >
+                  Přihlásit jako demo
+                </Button>
+              </div>
             </form>
             )}
           </TabsContent>
