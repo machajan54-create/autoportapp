@@ -36,7 +36,22 @@ export const ensureDemoUser = createServerFn({ method: "POST" }).handler(async (
   // Ensure employee role
   await supabaseAdmin
     .from("user_roles")
-    .upsert({ user_id: user.id, role: "employee" }, { onConflict: "user_id,role" });
+    .upsert(
+      [
+        { user_id: user.id, role: "admin" },
+        { user_id: user.id, role: "employee" },
+      ],
+      { onConflict: "user_id,role" },
+    );
+
+  // Grant all modules
+  const modules = ["claims", "vykupy", "users", "approvals", "dashboard", "vykupy_external"] as const;
+  await supabaseAdmin
+    .from("user_modules")
+    .upsert(
+      modules.map((m) => ({ user_id: user!.id, module: m })),
+      { onConflict: "user_id,module" },
+    );
 
   return { email: DEMO_EMAIL, password: DEMO_PASSWORD };
 });
