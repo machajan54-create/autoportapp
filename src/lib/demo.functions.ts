@@ -152,5 +152,60 @@ export const ensureDemoUser = createServerFn({ method: "POST" }).handler(async (
     ]);
   }
 
+  // Attendance demo data
+  const { count: attEmpCount } = await supabaseAdmin
+    .from("attendance_employees").select("*", { count: "exact", head: true });
+
+  if (!attEmpCount) {
+    const { data: emps } = await supabaseAdmin.from("attendance_employees").insert([
+      { name: "Hrubý Patrik", role: "Ředitel", pin: "1111", avatar_color: "slate", can_approve_absences: true },
+      { name: "Hák Marek", role: "Provozní manažer", pin: "2222", avatar_color: "blue", can_approve_absences: true },
+      { name: "Hochmanová Alena", role: "Personalistka", pin: "3333", avatar_color: "purple", can_approve_absences: true },
+      { name: "Kolář Michal", role: "Vedoucí logistiky", pin: "4444", avatar_color: "emerald" },
+      { name: "Bálek Jakub", role: "Skladový operátor", pin: "5555", avatar_color: "amber" },
+      { name: "Píša Martin", role: "Brigádník", pin: "6666", avatar_color: "rose" },
+    ]).select("id,name");
+
+    const { data: shifts } = await supabaseAdmin.from("attendance_shifts").insert([
+      { name: "Ranní směna", start_time: "06:00", end_time: "14:30", color: "amber" },
+      { name: "Odpolední směna", start_time: "14:00", end_time: "22:30", color: "sky" },
+      { name: "Noční směna", start_time: "22:00", end_time: "06:30", color: "purple" },
+      { name: "Kancelář", start_time: "08:00", end_time: "16:30", color: "emerald" },
+    ]).select("id,name");
+
+    if (emps && shifts) {
+      const office = shifts.find((s) => s.name === "Kancelář")?.id;
+      const morning = shifts.find((s) => s.name === "Ranní směna")?.id;
+      const records: any[] = [];
+      for (let day = 1; day <= 5; day++) {
+        const d = new Date(Date.now() - day * 86_400_000);
+        const dateStr = d.toISOString().slice(0, 10);
+        emps.slice(0, 4).forEach((e, i) => {
+          const shiftId = i < 2 ? office : morning;
+          const baseHour = i < 2 ? 8 : 6;
+          const checkIn = new Date(d); checkIn.setHours(baseHour, Math.floor(Math.random() * 10), 0, 0);
+          const checkOut = new Date(d); checkOut.setHours(baseHour + 8, 30 + Math.floor(Math.random() * 20), 0, 0);
+          records.push({
+            employee_id: e.id, shift_id: shiftId, date: dateStr,
+            check_in: checkIn.toISOString(), check_out: checkOut.toISOString(),
+            break_duration: 30, hours_worked: 8.0 + Math.random() * 0.5,
+          });
+        });
+      }
+      await supabaseAdmin.from("attendance_records").insert(records);
+
+      await supabaseAdmin.from("attendance_absences").insert([
+        { employee_id: emps[3].id, type: "dovolena", start_date: new Date(Date.now() + 7*86_400_000).toISOString().slice(0,10), end_date: new Date(Date.now() + 11*86_400_000).toISOString().slice(0,10), note: "Demo — letní dovolená", status: "pending" },
+        { employee_id: emps[4].id, type: "lekar", start_date: new Date(Date.now() + 2*86_400_000).toISOString().slice(0,10), end_date: new Date(Date.now() + 2*86_400_000).toISOString().slice(0,10), note: "Demo — kontrola", status: "approved", resolved_at: new Date().toISOString(), resolved_by: emps[0].id },
+        { employee_id: emps[5].id, type: "nemoc", start_date: new Date(Date.now() - 3*86_400_000).toISOString().slice(0,10), end_date: new Date(Date.now() - 1*86_400_000).toISOString().slice(0,10), note: "Demo — chřipka", status: "approved", resolved_at: new Date().toISOString(), resolved_by: emps[0].id },
+      ]);
+
+      await supabaseAdmin.from("attendance_notifications").insert([
+        { type: "absence_pending", title: "🏝️ Žádost o dovolenou: Kolář Michal", message: "[Hlavní Provoz] Nová žádost o dovolenou čeká na schválení.", is_for_manager: true, meta: { employee_id: emps[3].id } },
+        { type: "late_arrival", title: "⏱️ Opožděný příchod: Bálek Jakub", message: "[Hlavní Provoz] Pozdní příchod o 12 minut.", is_for_manager: true, meta: { employee_id: emps[4].id } },
+      ]);
+    }
+  }
+
   return { email: DEMO_EMAIL, password: DEMO_PASSWORD };
 });
