@@ -14,6 +14,272 @@ export type Database = {
   }
   public: {
     Tables: {
+      attendance_absences: {
+        Row: {
+          created_at: string
+          employee_id: string
+          end_date: string
+          id: string
+          note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["dochazka_absence_status"]
+          type: Database["public"]["Enums"]["dochazka_absence_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          end_date: string
+          id?: string
+          note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          start_date: string
+          status?: Database["public"]["Enums"]["dochazka_absence_status"]
+          type: Database["public"]["Enums"]["dochazka_absence_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          end_date?: string
+          id?: string
+          note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["dochazka_absence_status"]
+          type?: Database["public"]["Enums"]["dochazka_absence_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_absences_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_absences_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "attendance_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_employees: {
+        Row: {
+          active: boolean
+          avatar_color: string
+          can_approve_absences: boolean
+          created_at: string
+          id: string
+          name: string
+          pin: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          avatar_color?: string
+          can_approve_absences?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          pin: string
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          avatar_color?: string
+          can_approve_absences?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          pin?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      attendance_notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_for_manager: boolean
+          message: string
+          meta: Json
+          read: boolean
+          recipient_employee_id: string | null
+          title: string
+          type: Database["public"]["Enums"]["dochazka_notification_type"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_for_manager?: boolean
+          message: string
+          meta?: Json
+          read?: boolean
+          recipient_employee_id?: string | null
+          title: string
+          type: Database["public"]["Enums"]["dochazka_notification_type"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_for_manager?: boolean
+          message?: string
+          meta?: Json
+          read?: boolean
+          recipient_employee_id?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["dochazka_notification_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_notifications_recipient_employee_id_fkey"
+            columns: ["recipient_employee_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_records: {
+        Row: {
+          break_duration: number
+          check_in: string
+          check_out: string | null
+          created_at: string
+          date: string
+          employee_id: string
+          hours_worked: number
+          id: string
+          note: string | null
+          shift_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          break_duration?: number
+          check_in: string
+          check_out?: string | null
+          created_at?: string
+          date: string
+          employee_id: string
+          hours_worked?: number
+          id?: string
+          note?: string | null
+          shift_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          break_duration?: number
+          check_in?: string
+          check_out?: string | null
+          created_at?: string
+          date?: string
+          employee_id?: string
+          hours_worked?: number
+          id?: string
+          note?: string | null
+          shift_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_records_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_records_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_shifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_settings: {
+        Row: {
+          custom_message_prefix: string
+          id: boolean
+          late_arrival_buffer_minutes: number
+          no_show_buffer_minutes: number
+          notify_employee_absence_resolved: boolean
+          notify_employee_late: boolean
+          notify_employee_shift_ending: boolean
+          notify_manager_absence_pending: boolean
+          notify_manager_no_show: boolean
+          shift_ending_minutes_threshold: number
+          updated_at: string
+        }
+        Insert: {
+          custom_message_prefix?: string
+          id?: boolean
+          late_arrival_buffer_minutes?: number
+          no_show_buffer_minutes?: number
+          notify_employee_absence_resolved?: boolean
+          notify_employee_late?: boolean
+          notify_employee_shift_ending?: boolean
+          notify_manager_absence_pending?: boolean
+          notify_manager_no_show?: boolean
+          shift_ending_minutes_threshold?: number
+          updated_at?: string
+        }
+        Update: {
+          custom_message_prefix?: string
+          id?: boolean
+          late_arrival_buffer_minutes?: number
+          no_show_buffer_minutes?: number
+          notify_employee_absence_resolved?: boolean
+          notify_employee_late?: boolean
+          notify_employee_shift_ending?: boolean
+          notify_manager_absence_pending?: boolean
+          notify_manager_no_show?: boolean
+          shift_ending_minutes_threshold?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      attendance_shifts: {
+        Row: {
+          color: string
+          created_at: string
+          end_time: string
+          id: string
+          name: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          end_time: string
+          id?: string
+          name: string
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          end_time?: string
+          id?: string
+          name?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       claim_attachments: {
         Row: {
           category: string
@@ -522,6 +788,20 @@ export type Database = {
         | "in_repair"
         | "waiting_vat"
         | "done"
+      dochazka_absence_status: "pending" | "approved" | "rejected"
+      dochazka_absence_type:
+        | "dovolena"
+        | "nemoc"
+        | "lekar"
+        | "neplacene_volno"
+        | "jine"
+      dochazka_notification_type:
+        | "late_arrival"
+        | "shift_ending"
+        | "no_show"
+        | "absence_pending"
+        | "absence_resolved"
+        | "custom"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -667,6 +947,22 @@ export const Constants = {
         "in_repair",
         "waiting_vat",
         "done",
+      ],
+      dochazka_absence_status: ["pending", "approved", "rejected"],
+      dochazka_absence_type: [
+        "dovolena",
+        "nemoc",
+        "lekar",
+        "neplacene_volno",
+        "jine",
+      ],
+      dochazka_notification_type: [
+        "late_arrival",
+        "shift_ending",
+        "no_show",
+        "absence_pending",
+        "absence_resolved",
+        "custom",
       ],
     },
   },
