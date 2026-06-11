@@ -18,6 +18,7 @@ import { Route as UploadTokenRouteImport } from './routes/upload.$token'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
 import { Route as AuthenticatedVykupyIndexRouteImport } from './routes/_authenticated/vykupy/index'
+import { Route as AuthenticatedDochazkaIndexRouteImport } from './routes/_authenticated/dochazka/index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedVykupyDashboardRouteImport } from './routes/_authenticated/vykupy/dashboard'
 import { Route as AuthenticatedVykupyIdRouteImport } from './routes/_authenticated/vykupy/$id'
@@ -69,6 +70,12 @@ const AuthenticatedVykupyIndexRoute =
   AuthenticatedVykupyIndexRouteImport.update({
     id: '/vykupy/',
     path: '/vykupy/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDochazkaIndexRoute =
+  AuthenticatedDochazkaIndexRouteImport.update({
+    id: '/dochazka/',
+    path: '/dochazka/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
@@ -125,6 +132,7 @@ export interface FileRoutesByFullPath {
   '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/dochazka/': typeof AuthenticatedDochazkaIndexRoute
   '/vykupy/': typeof AuthenticatedVykupyIndexRoute
 }
 export interface FileRoutesByTo {
@@ -142,6 +150,7 @@ export interface FileRoutesByTo {
   '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
+  '/dochazka': typeof AuthenticatedDochazkaIndexRoute
   '/vykupy': typeof AuthenticatedVykupyIndexRoute
 }
 export interface FileRoutesById {
@@ -161,6 +170,7 @@ export interface FileRoutesById {
   '/_authenticated/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/_authenticated/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/_authenticated/dochazka/': typeof AuthenticatedDochazkaIndexRoute
   '/_authenticated/vykupy/': typeof AuthenticatedVykupyIndexRoute
 }
 export interface FileRouteTypes {
@@ -180,6 +190,7 @@ export interface FileRouteTypes {
     | '/vykupy/$id'
     | '/vykupy/dashboard'
     | '/admin/'
+    | '/dochazka/'
     | '/vykupy/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -197,6 +208,7 @@ export interface FileRouteTypes {
     | '/vykupy/$id'
     | '/vykupy/dashboard'
     | '/admin'
+    | '/dochazka'
     | '/vykupy'
   id:
     | '__root__'
@@ -215,6 +227,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vykupy/$id'
     | '/_authenticated/vykupy/dashboard'
     | '/_authenticated/admin/'
+    | '/_authenticated/dochazka/'
     | '/_authenticated/vykupy/'
   fileRoutesById: FileRoutesById
 }
@@ -292,6 +305,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVykupyIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/dochazka/': {
+      id: '/_authenticated/dochazka/'
+      path: '/dochazka'
+      fullPath: '/dochazka/'
+      preLoaderRoute: typeof AuthenticatedDochazkaIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/': {
       id: '/_authenticated/admin/'
       path: '/admin'
@@ -354,6 +374,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVykupyIdRoute: typeof AuthenticatedVykupyIdRoute
   AuthenticatedVykupyDashboardRoute: typeof AuthenticatedVykupyDashboardRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+  AuthenticatedDochazkaIndexRoute: typeof AuthenticatedDochazkaIndexRoute
   AuthenticatedVykupyIndexRoute: typeof AuthenticatedVykupyIndexRoute
 }
 
@@ -367,6 +388,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVykupyIdRoute: AuthenticatedVykupyIdRoute,
   AuthenticatedVykupyDashboardRoute: AuthenticatedVykupyDashboardRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+  AuthenticatedDochazkaIndexRoute: AuthenticatedDochazkaIndexRoute,
   AuthenticatedVykupyIndexRoute: AuthenticatedVykupyIndexRoute,
 }
 
