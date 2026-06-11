@@ -18,9 +18,11 @@ import { Route as UploadTokenRouteImport } from './routes/upload.$token'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
 import { Route as AuthenticatedVykupyIndexRouteImport } from './routes/_authenticated/vykupy/index'
+import { Route as AuthenticatedDochazkaIndexRouteImport } from './routes/_authenticated/dochazka/index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedVykupyDashboardRouteImport } from './routes/_authenticated/vykupy/dashboard'
 import { Route as AuthenticatedVykupyIdRouteImport } from './routes/_authenticated/vykupy/$id'
+import { Route as AuthenticatedDochazkaTerminalRouteImport } from './routes/_authenticated/dochazka/terminal'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedAdminTemplatesRouteImport } from './routes/_authenticated/admin/templates'
 import { Route as AuthenticatedAdminIdRouteImport } from './routes/_authenticated/admin/$id'
@@ -70,6 +72,12 @@ const AuthenticatedVykupyIndexRoute =
     path: '/vykupy/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedDochazkaIndexRoute =
+  AuthenticatedDochazkaIndexRouteImport.update({
+    id: '/dochazka/',
+    path: '/dochazka/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
@@ -86,6 +94,12 @@ const AuthenticatedVykupyIdRoute = AuthenticatedVykupyIdRouteImport.update({
   path: '/vykupy/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDochazkaTerminalRoute =
+  AuthenticatedDochazkaTerminalRouteImport.update({
+    id: '/dochazka/terminal',
+    path: '/dochazka/terminal',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
@@ -114,9 +128,11 @@ export interface FileRoutesByFullPath {
   '/admin/$id': typeof AuthenticatedAdminIdRoute
   '/admin/templates': typeof AuthenticatedAdminTemplatesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/dochazka/terminal': typeof AuthenticatedDochazkaTerminalRoute
   '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/dochazka/': typeof AuthenticatedDochazkaIndexRoute
   '/vykupy/': typeof AuthenticatedVykupyIndexRoute
 }
 export interface FileRoutesByTo {
@@ -130,9 +146,11 @@ export interface FileRoutesByTo {
   '/admin/$id': typeof AuthenticatedAdminIdRoute
   '/admin/templates': typeof AuthenticatedAdminTemplatesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/dochazka/terminal': typeof AuthenticatedDochazkaTerminalRoute
   '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
+  '/dochazka': typeof AuthenticatedDochazkaIndexRoute
   '/vykupy': typeof AuthenticatedVykupyIndexRoute
 }
 export interface FileRoutesById {
@@ -148,9 +166,11 @@ export interface FileRoutesById {
   '/_authenticated/admin/$id': typeof AuthenticatedAdminIdRoute
   '/_authenticated/admin/templates': typeof AuthenticatedAdminTemplatesRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/_authenticated/dochazka/terminal': typeof AuthenticatedDochazkaTerminalRoute
   '/_authenticated/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/_authenticated/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/_authenticated/dochazka/': typeof AuthenticatedDochazkaIndexRoute
   '/_authenticated/vykupy/': typeof AuthenticatedVykupyIndexRoute
 }
 export interface FileRouteTypes {
@@ -166,9 +186,11 @@ export interface FileRouteTypes {
     | '/admin/$id'
     | '/admin/templates'
     | '/admin/users'
+    | '/dochazka/terminal'
     | '/vykupy/$id'
     | '/vykupy/dashboard'
     | '/admin/'
+    | '/dochazka/'
     | '/vykupy/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -182,9 +204,11 @@ export interface FileRouteTypes {
     | '/admin/$id'
     | '/admin/templates'
     | '/admin/users'
+    | '/dochazka/terminal'
     | '/vykupy/$id'
     | '/vykupy/dashboard'
     | '/admin'
+    | '/dochazka'
     | '/vykupy'
   id:
     | '__root__'
@@ -199,9 +223,11 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/$id'
     | '/_authenticated/admin/templates'
     | '/_authenticated/admin/users'
+    | '/_authenticated/dochazka/terminal'
     | '/_authenticated/vykupy/$id'
     | '/_authenticated/vykupy/dashboard'
     | '/_authenticated/admin/'
+    | '/_authenticated/dochazka/'
     | '/_authenticated/vykupy/'
   fileRoutesById: FileRoutesById
 }
@@ -279,6 +305,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVykupyIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/dochazka/': {
+      id: '/_authenticated/dochazka/'
+      path: '/dochazka'
+      fullPath: '/dochazka/'
+      preLoaderRoute: typeof AuthenticatedDochazkaIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/': {
       id: '/_authenticated/admin/'
       path: '/admin'
@@ -298,6 +331,13 @@ declare module '@tanstack/react-router' {
       path: '/vykupy/$id'
       fullPath: '/vykupy/$id'
       preLoaderRoute: typeof AuthenticatedVykupyIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dochazka/terminal': {
+      id: '/_authenticated/dochazka/terminal'
+      path: '/dochazka/terminal'
+      fullPath: '/dochazka/terminal'
+      preLoaderRoute: typeof AuthenticatedDochazkaTerminalRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/users': {
@@ -330,9 +370,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminIdRoute: typeof AuthenticatedAdminIdRoute
   AuthenticatedAdminTemplatesRoute: typeof AuthenticatedAdminTemplatesRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
+  AuthenticatedDochazkaTerminalRoute: typeof AuthenticatedDochazkaTerminalRoute
   AuthenticatedVykupyIdRoute: typeof AuthenticatedVykupyIdRoute
   AuthenticatedVykupyDashboardRoute: typeof AuthenticatedVykupyDashboardRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+  AuthenticatedDochazkaIndexRoute: typeof AuthenticatedDochazkaIndexRoute
   AuthenticatedVykupyIndexRoute: typeof AuthenticatedVykupyIndexRoute
 }
 
@@ -342,9 +384,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminIdRoute: AuthenticatedAdminIdRoute,
   AuthenticatedAdminTemplatesRoute: AuthenticatedAdminTemplatesRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
+  AuthenticatedDochazkaTerminalRoute: AuthenticatedDochazkaTerminalRoute,
   AuthenticatedVykupyIdRoute: AuthenticatedVykupyIdRoute,
   AuthenticatedVykupyDashboardRoute: AuthenticatedVykupyDashboardRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+  AuthenticatedDochazkaIndexRoute: AuthenticatedDochazkaIndexRoute,
   AuthenticatedVykupyIndexRoute: AuthenticatedVykupyIndexRoute,
 }
 
@@ -362,13 +406,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
