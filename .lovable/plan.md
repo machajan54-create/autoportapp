@@ -1,41 +1,89 @@
+## Plán: Modul Docházka
 
-## Co přebuduju
+Portuju nahraný docházkový systém (~5 600 řádků, 8 komponent) do AutoPortu jako nový modul `dochazka` s plnou perzistencí v Lovable Cloud, podle stejných vzorů jako stávající moduly (`claims`, `vykupy`, atd.).
 
-Současný admin (jen tabulka zakázek + detail) nahradím rozhraním podle `claim-charm-69`:
+### 1. Databáze (jedna migrace)
 
-### Layout
-- Levý **sidebar** s logem „Pojistné události", nav „Zakázky" a patičkou s e-mailem + tlačítkem Odhlásit.
-- Hlavní oblast s nadpisem „Klientský servis / Pojistné události".
+Nové tabulky pod `public`:
+- `attendance_employees` — jméno, role, PIN (hash), barva avatara, active, can_approve_absences
+- `attendance_shifts` — name, start_time, end_time, color
+- `attendance_records` — employee_id, date, check_in, check_out, shift_id, note, break_duration, hours_worked
+- `attendance_absences` — employee_id, type (enum), start_date, end_date, status (enum), note, resolved_by, resolved_at
+- `attendance_notifications` — type, title, message, read, recipient_employee_id, is_for_manager, meta jsonb
+- `attendance_settings` — singleton (jeden řádek) s notifikačními nastaveními
 
-### Přehled (`/admin`)
-- 3 statistické karty: **Aktivní zakázky**, **Neuhrazené DPH**, **Celkem v databázi** + oranžová CTA karta **Zadat pojistnou událost** (vede na `/nahlasit`).
-- Filtrační lišta: hledání + záložky **Všechny / Nové / V opravě / Čeká na DPH / Dokončené** + refresh.
-- Seznam karet **Složky zakázek** — každá karta: kód `PU-YYYY-NNNN`, datum, status badge, název pojišťovny, „Majitel: …", „Číslo škodní: …".
+K tomu:
+- Enum `app_module` rozšířit o hodnotu `dochazka`
+- RLS: čtení/zápis pro uživatele s modulem `dochazka` (přes `has_module`), admin plný přístup, `service_role` ALL
+- GRANT na všechny tabulky `authenticated` + `service_role`
+- `updated_at` trigger na editovatelných tabulkách
 
-### Detail zakázky (`/admin/:id`)
-- Header: PU kód, jméno klienta, badge + dropdown na změnu stavu (Nová, V opravě, Čeká na DPH, Dokončeno).
-- **Údaje** (vše ze současné databáze).
-- **Fotogalerie** s náhledy příloh typu fotka/podpis.
-- **Dokumenty** — plné moci se generují automaticky (uloží se do storage) a tady se jen stahují.
-- **Časová osa** událostí (vytvoření, změny stavů, nahrané fotky, DPH).
-- **Fotit do zakázky** — QR kód s veřejným tokenem; mobilní stránka umožní nahrát fotky bez přihlášení.
-- **DPH** checkbox „Zaplaceno".
-- **Úkoly** — jednoduchý seznam (přidat / odškrtnout).
-- **Upozornění klientovi** — pošle e-mail (přes Lovable AI Gateway / resend-style integration) pokud má klient e-mail.
+### 2. Sidebar / navigace
 
-### Datová vrstva
-Migrace přidá:
-- `claims.pu_number` (text, unikátní), `claims.vat_paid` (bool), `claims.upload_token` (uuid) — pro veřejný upload přes QR.
-- Rozšíření enumu `claim_status`: `new`, `in_repair`, `waiting_vat`, `done` (zachová zpětnou kompatibilitu).
-- `claim_events` (timeline): claim_id, type, message, created_at, created_by.
-- `claim_tasks`: claim_id, title, done, created_at.
-- RLS + GRANTy.
-- Storage policy + nová serverFn pro veřejný upload pomocí `upload_token` (bez přihlášení).
+- Přidat položku „Docházka" do `AdminShell.tsx` (ikona `Clock`)
+- Modul `dochazka` přidat do seznamu modulů ve správě uživatelů (`admin/users.tsx`) a v demo seedu (`demo.functions.ts` — doplnit do `modules` pole)
 
-### Co zůstává
-- Veřejný formulář `/nahlasit`, podpis, demo login, role.
+### 3. Routy (pod `_authenticated/`)
 
-### Mimo plán (potvrď, jestli chceš taky)
-- Odesílání e-mailů — bez nastaveného mailového providera pošlu jen toast „odesláno" (placeholder). Pokud chceš reálné e-maily, řekni a doplním Resend/SMTP secret.
+```
+_authenticated/dochazka/
+  index.tsx           → /dochazka          (dashboard s 7 záložkami)
+  terminal.tsx        → /dochazka/terminal (terminál s PIN přihlášením)
+```
 
-Pokud souhlasíš, jdu na to.
+Dashboard použije lokální tab state (jako vykupy) — 7 záložek: Statistiky, Zaměstnanci, Směny, Záznamy, Absence, Upozornění, Export.
+
+### 4. Komponenty
+
+Zkopírovat upravené verze do `src/components/dochazka/`:
+- `TerminalView.tsx`, `DashboardView.tsx`
+- `StatsTab.tsx`, `EmployeesTab.tsx`, `ShiftsTab.tsx`, `RecordsTab.tsx`, `AbsencesTab.tsx`, `AlertsTab.tsx`, `ExportTab.tsx`
+
+Adaptace originálu:
+- Vyhodit `localStorage` ukládání → React Query + server functions
+- Použít stávající shadcn komponenty (`Button`, `Card`, `Dialog`, `Input`, `Tabs`, `Badge`, `Table`) místo vlastních
+- Sjednotit styl s AutoPort design tokens (žádné hardcoded barvy)
+- Zachovat veškerou business logiku (výpočet hodin, late detection, etc.) z `utils.ts`
+
+### 5. Server functions
+
+`src/lib/dochazka.functions.ts` — vše s `requireSupabaseAuth`:
+- `listEmployees`, `upsertEmployee`, `deleteEmployee`
+- `listShifts`, `upsertShift`, `deleteShift`
+- `listRecords(month?)`, `checkIn(employeeId, pin, shiftId)`, `checkOut(recordId)`, `upsertRecord`, `deleteRecord`
+- `listAbsences`, `createAbsence`, `resolveAbsence(id, status)`
+- `listNotifications`, `markNotificationRead`, `markAllRead`
+- `getSettings`, `updateSettings`
+- `seedDochazkaDemo` (volitelně) — naplnit demo zaměstnanci/směnami pro demo účet (zavolá se i z `ensureDemoUser`)
+
+PIN se hashuje (bcrypt/sha256) — terminál posílá plaintext PIN, server porovná.
+
+### 6. Demo data
+
+Rozšířit `src/lib/demo.functions.ts`:
+- Přidat `dochazka` do modulů demo účtu
+- Seed: 4 zaměstnanci (Hrubý Patrik, Hák Marek, …), 3 směny (Ranní/Odpolední/Noční), pár záznamů z posledních dní, 2 absence
+
+### 7. Co je mimo plán (úmyslně)
+
+- Realtime push notifikací (zobrazují se při refetchi)
+- Mobilní PWA terminál — funguje v prohlížeči, plnohodnotné PWA až později
+- Tisk QR identifikátorů pro píchání (originál to nemá)
+
+### Technické detaily
+
+- Typy z `src/integrations/supabase/types.ts` (auto-gen po migraci)
+- Časy v DB jako `timestamptz` (check_in/check_out), čisté datumy jako `date`
+- `hours_worked` se počítá v DB triggeru při `UPDATE` check_out (nebo v server fn) — vyhneme se nekonzistenci
+- Enum typy: `dochazka_absence_type`, `dochazka_absence_status`, `dochazka_notification_type`
+- Soubory přesahující 300 řádků (TerminalView, RecordsTab, AlertsTab, AbsencesTab) ponechám jako jeden soubor — refaktor na menší by zdvojnásobil rozsah práce; pokud chceš, můžu je rozdělit v druhém kroku.
+
+### Pořadí prací
+
+1. Migrace DB (čeká na schválení)
+2. Server functions + adaptace `demo.functions.ts`
+3. Routy + sidebar
+4. Postupně 7 záložek + terminál
+5. Závěrečný test: přihlášení jako demo → /dochazka, píchnutí přes terminál
+
+Odhad: rozsáhlá změna, několik tool callů. Pojedu po jednom velkém kroku, abych ti to nepřevalil najednou.
