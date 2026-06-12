@@ -536,15 +536,21 @@ function AbsencesTab() {
   const qc = useQueryClient();
   const fetchA = useServerFn(listAbsences);
   const fetchE = useServerFn(listEmployees);
+  const fetchR = useServerFn(listResolvers);
   const upsert = useServerFn(upsertAbsence);
   const resolve = useServerFn(resolveAbsence);
   const del = useServerFn(deleteAbsence);
   const { data: absences } = useQuery({ queryKey: ["dochazka", "absences"], queryFn: () => fetchA({}) });
   const { data: employees } = useQuery({ queryKey: ["dochazka", "employees"], queryFn: () => fetchE({}) });
+  const { data: resolvers } = useQuery({ queryKey: ["dochazka", "resolvers"], queryFn: () => fetchR() });
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState<any>(null);
 
   const empMap = useMemo(() => new Map((employees ?? []).map((e) => [e.id, e])), [employees]);
+  const resolverMap = useMemo(
+    () => new Map((resolvers ?? []).map((p: any) => [p.id, p.full_name || p.email])),
+    [resolvers],
+  );
 
   function openNew() {
     setEdit({
