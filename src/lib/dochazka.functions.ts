@@ -492,19 +492,30 @@ export const getMonthCalendar = createServerFn({ method: "GET" })
       ? `${data.year + 1}-01-01`
       : `${data.year}-${String(data.month + 1).padStart(2, "0")}-01`;
 
-    const [emp, recs, abs] = await Promise.all([
-      context.supabase.from("attendance_employees").select("id,name,avatar_color,active").order("name"),
-      context.supabase
-        .from("attendance_records")
-        .select("employee_id,date,check_in,check_out,hours_worked")
-        .gte("date", start)
-        .lt("date", next),
-      context.supabase
-        .from("attendance_absences")
-        .select("employee_id,start_date,end_date,type,status")
-        .lte("start_date", next)
-        .gte("end_date", start),
-    ]);
+    const access = await getDochazkaAccess(context.supabase, context.userId);
+    let empQ = context.supabase
+      .from("attendance_employees")
+      .select("id,name,avatar_color,active")
+      .order("name");
+    let recsQ = context.supabase
+      .from("attendance_records")
+      .select("employee_id,date,check_in,check_out,hours_worked")
+      .gte("date", start)
+      .lt("date", next);
+    let absQ = context.supabase
+      .from("attendance_absences")
+      .select("employee_id,start_date,end_date,type,status")
+      .lte("start_date", next)
+      .gte("end_date", start);
+    if (!access.canApproveAll) {
+      if (!access.myEmployeeId) {
+        return { employees: [], records: [], absences: [] };
+      }
+      empQ = empQ.eq("id", access.myEmployeeId);
+      recsQ = recsQ.eq("employee_id", access.myEmployeeId);
+      absQ = absQ.eq("employee_id", access.myEmployeeId);
+    }
+    const [emp, recs, abs] = await Promise.all([empQ, recsQ, absQ]);
     if (emp.error) throw new Error(emp.error.message);
     if (recs.error) throw new Error(recs.error.message);
     if (abs.error) throw new Error(abs.error.message);
