@@ -2,6 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+const ABSENCE_TYPE_LABEL: Record<string, string> = {
+  dovolena: "Dovolená",
+  nemoc: "Nemoc",
+  lekar: "Lékař",
+  neplacene_volno: "Neplacené volno",
+  jine: "Jiné",
+};
+
 // ============ Employees ============
 
 const employeeInput = z.object({
@@ -301,6 +309,26 @@ export const upsertAbsence = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
+    // Notify super admin about new absence request
+    const { data: emp } = await context.supabase
+      .from("attendance_employees")
+      .select("name")
+      .eq("id", data.employee_id)
+      .maybeSingle();
+    await (await import("@/lib/email/notify.server")).notifyAdmins({
+      templateName: "approval-request",
+      templateData: {
+        kind: "vacation",
+        requesterName: emp?.name ?? "Zaměstnanec",
+        title: ABSENCE_TYPE_LABEL[data.type] ?? data.type,
+        details: data.note ?? "",
+        meta: [
+          { label: "Od", value: data.start_date },
+          { label: "Do", value: data.end_date },
+        ],
+        actionUrl: "https://www.autoport-app.cz/dochazka",
+      },
+    });
     return { id: row.id };
   });
 
