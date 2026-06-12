@@ -51,8 +51,8 @@ export const createSupplier = createServerFn({ method: "POST" })
       requested_by: context.userId,
     });
     if (error) throw new Error(error.message);
-    const me = await getUserEmail(context.userId);
-    await notifyAdmins({
+    const me = await (await loadNotify()).getUserEmail(context.userId);
+    await (await loadNotify()).notifyAdmins({
       templateName: "approval-request",
       templateData: {
         kind: "purchase",
@@ -95,9 +95,9 @@ export const decideSupplier = createServerFn({ method: "POST" })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     if (row?.requested_by && data.status !== "pending") {
-      const u = await getUserEmail(row.requested_by);
+      const u = await (await loadNotify()).getUserEmail(row.requested_by);
       if (u.email) {
-        await enqueueTransactionalEmail({
+        await (await loadNotify()).enqueueTransactionalEmail({
           templateName: "approval-decision",
           recipientEmail: u.email,
           idempotencyKey: `supplier-${data.id}-${data.status}`,
@@ -156,8 +156,8 @@ export const createPurchase = createServerFn({ method: "POST" })
       requested_by: context.userId,
     });
     if (error) throw new Error(error.message);
-    const me = await getUserEmail(context.userId);
-    await notifyAdmins({
+    const me = await (await loadNotify()).getUserEmail(context.userId);
+    await (await loadNotify()).notifyAdmins({
       templateName: "approval-request",
       templateData: {
         kind: "purchase",
@@ -202,9 +202,9 @@ export const decidePurchase = createServerFn({ method: "POST" })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     if (row?.requested_by && data.status !== "pending") {
-      const u = await getUserEmail(row.requested_by);
+      const u = await (await loadNotify()).getUserEmail(row.requested_by);
       if (u.email) {
-        await enqueueTransactionalEmail({
+        await (await loadNotify()).enqueueTransactionalEmail({
           templateName: "approval-decision",
           recipientEmail: u.email,
           idempotencyKey: `purchase-${data.id}-${data.status}`,
