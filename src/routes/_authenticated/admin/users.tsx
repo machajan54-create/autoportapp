@@ -341,7 +341,7 @@ function UsersPage() {
                     size="sm"
                     variant="outline"
                     onClick={() => {
-                      navigator.clipboard.writeText(pwdGenerated);
+                      navigator.clipboard.writeText(pwdGenerated!);
                       toast.success("Zkopírováno");
                     }}
                   >
