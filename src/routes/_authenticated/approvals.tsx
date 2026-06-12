@@ -185,6 +185,11 @@ function SuppliersTab({ isAdmin }: { isAdmin: boolean }) {
                   <div className="truncate text-xs text-muted-foreground">
                     {[s.ico && `IČO ${s.ico}`, s.contact_person, s.email, s.phone].filter(Boolean).join(" · ")}
                   </div>
+                  {s.requester && (
+                    <div className="truncate text-xs text-muted-foreground">
+                      Žádá: {s.requester.full_name || s.requester.email}
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-1">
                   {isAdmin && s.status !== "approved" && (
@@ -331,6 +336,11 @@ function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
                       new Date(p.created_at).toLocaleDateString("cs-CZ"),
                     ].filter(Boolean).join(" · ")}
                   </div>
+                  {p.requester && (
+                    <div className="truncate text-xs text-muted-foreground">
+                      Žádá: {p.requester.full_name || p.requester.email}
+                    </div>
+                  )}
                   {p.description && <div className="mt-1 text-sm">{p.description}</div>}
                 </div>
                 <div className="flex gap-1">
