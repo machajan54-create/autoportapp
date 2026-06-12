@@ -26,7 +26,7 @@ export const listSuppliers = createServerFn({ method: "GET" })
     if (!admin) q = q.eq("requested_by", context.userId);
     const { data, error } = await q;
     if (error) throw new Error(error.message);
-    return data;
+    return await attachRequesters(context.supabase, data ?? []);
   });
 
 const supplierInput = z.object({
@@ -135,7 +135,7 @@ export const listPurchases = createServerFn({ method: "GET" })
     if (!admin) q = q.eq("requested_by", context.userId);
     const { data, error } = await q;
     if (error) throw new Error(error.message);
-    return data;
+    return await attachRequesters(context.supabase, data ?? []);
   });
 
 const purchaseInput = z.object({
