@@ -266,7 +266,7 @@ function CreateDefectDialog({
 }: {
   onClose: () => void;
   onCreated: () => void;
-  createFn: ReturnType<typeof useServerFn<typeof createDefect>>;
+  createFn: (args: { data: { title: string; description?: string | null; priority: typeof DEFECT_PRIORITY[number]; photos: Photo[] } }) => Promise<unknown>;
 }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
