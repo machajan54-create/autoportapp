@@ -82,7 +82,15 @@ export const updateDefect = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => updateInput.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const patch: Record<string, any> = {};
+    type UpdatePatch = {
+      status?: typeof DEFECT_STATUS[number];
+      priority?: typeof DEFECT_PRIORITY[number];
+      resolution_note?: string | null;
+      resolved_by?: string | null;
+      resolved_at?: string | null;
+      resolver_name?: string | null;
+    };
+    const patch: UpdatePatch = {};
     if (data.priority) patch.priority = data.priority;
     if (data.resolution_note !== undefined) patch.resolution_note = data.resolution_note;
     if (data.status) {
