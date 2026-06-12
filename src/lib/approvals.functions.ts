@@ -18,6 +18,17 @@ async function isAdmin(supabase: any, userId: string): Promise<boolean> {
   return (data ?? []).some((r: any) => r.role === "admin");
 }
 
+async function attachRequesters<T extends { requested_by?: string | null }>(
+  supabase: any,
+  rows: T[],
+): Promise<(T & { requester?: { id: string; full_name: string | null; email: string | null } | null })[]> {
+  const ids = Array.from(new Set(rows.map((r) => r.requested_by).filter(Boolean))) as string[];
+  if (!ids.length) return rows.map((r) => ({ ...r, requester: null }));
+  const { data } = await supabase.from("profiles").select("id, full_name, email").in("id", ids);
+  const map = new Map<string, any>((data ?? []).map((p: any) => [p.id, p]));
+  return rows.map((r) => ({ ...r, requester: r.requested_by ? map.get(r.requested_by) ?? null : null }));
+}
+
 export const listSuppliers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
