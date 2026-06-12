@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { enqueueTransactionalEmail, notifyAdmins } from "@/lib/email/notify.server";
+
 
 const CLAIM_STATUS_LABEL: Record<string, string> = {
   new: "Nová",
@@ -63,7 +63,7 @@ export const createClaim = createServerFn({ method: "POST" })
       if (aerr) throw new Error(aerr.message);
     }
     // Notify super admin about new claim
-    await notifyAdmins({
+    await (await import("@/lib/email/notify.server")).notifyAdmins({
       templateName: "approval-request",
       templateData: {
         kind: "claim",
@@ -172,7 +172,7 @@ export const updateClaimStatus = createServerFn({ method: "POST" })
     if (claim?.email) {
       const isApproved = data.status === "done";
       const isRejected = data.status === "closed";
-      await enqueueTransactionalEmail({
+      await (await import("@/lib/email/notify.server")).enqueueTransactionalEmail({
         templateName: "approval-decision",
         recipientEmail: claim.email,
         idempotencyKey: `claim-${data.id}-${data.status}`,

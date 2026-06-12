@@ -315,7 +315,7 @@ export const upsertAbsence = createServerFn({ method: "POST" })
       .select("name")
       .eq("id", data.employee_id)
       .maybeSingle();
-    await notifyAdmins({
+    await (await import("@/lib/email/notify.server")).notifyAdmins({
       templateName: "approval-request",
       templateData: {
         kind: "vacation",
