@@ -10,6 +10,24 @@ const ABSENCE_TYPE_LABEL: Record<string, string> = {
   jine: "Jiné",
 };
 
+// Returns the access context for the current user:
+// - isAdmin: super admin role
+// - canApproveAll: can see everyone's data (admin or employee.can_approve_absences)
+// - myEmployeeId: paired attendance_employees row (or null)
+async function getDochazkaAccess(supabase: any, userId: string) {
+  const [{ data: roles }, { data: emp }] = await Promise.all([
+    supabase.from("user_roles").select("role").eq("user_id", userId),
+    supabase
+      .from("attendance_employees")
+      .select("id,can_approve_absences")
+      .eq("user_id", userId)
+      .maybeSingle(),
+  ]);
+  const isAdmin = (roles ?? []).some((r: any) => r.role === "admin");
+  const canApproveAll = isAdmin || !!emp?.can_approve_absences;
+  return { isAdmin, canApproveAll, myEmployeeId: emp?.id ?? null };
+}
+
 // ============ Employees ============
 
 const employeeInput = z.object({
@@ -20,15 +38,23 @@ const employeeInput = z.object({
   avatar_color: z.string().default("slate"),
   active: z.boolean().default(true),
   can_approve_absences: z.boolean().default(false),
+  user_id: z.string().uuid().nullable().optional(),
 });
 
 export const listEmployees = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
+    const access = await getDochazkaAccess(context.supabase, context.userId);
+    let q = context.supabase
       .from("attendance_employees")
-      .select("id,name,role,avatar_color,active,can_approve_absences,created_at,updated_at")
+      .select("id,name,role,avatar_color,active,can_approve_absences,user_id,created_at,updated_at")
       .order("name");
+    if (!access.canApproveAll) {
+      // Non-admin / non-approver sees only their own paired employee row
+      if (!access.myEmployeeId) return [];
+      q = q.eq("id", access.myEmployeeId);
+    }
+    const { data, error } = await q;
     if (error) throw new Error(error.message);
     return data ?? [];
   });
