@@ -23,9 +23,6 @@ export const ensureDemoUser = createServerFn({ method: "POST" }).handler(async (
     });
     if (createErr) throw new Error(createErr.message);
     user = created.user!;
-  } else {
-    // Reset password to ensure it always works
-    await supabaseAdmin.auth.admin.updateUserById(user.id, { password: DEMO_PASSWORD });
   }
 
   // Approve profile
