@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import rocketLogo from "@/assets/rocket-logo.png";
+import autoportLogo from "@/assets/autoport-logo.png.asset.json";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyAccess } from "@/lib/claims.functions";
 import { ensureDemoUser } from "@/lib/demo.functions";
@@ -104,16 +104,15 @@ function AuthPage() {
     >
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0F172A] p-8 shadow-2xl">
         <div className="flex flex-col items-center gap-4 text-center">
-          <img
-            src={rocketLogo}
-            alt="Autoport APP logo"
-            className="h-16 w-16 object-contain -rotate-12 drop-shadow-[0_8px_20px_rgba(249,115,22,0.45)] transition-transform duration-500 hover:-rotate-6 hover:scale-110 animate-[float_4s_ease-in-out_infinite]"
-          />
-          <div>
-            <h1 className="text-xl font-bold text-white">Interní systém Autoport APP 2026</h1>
+          <div className="rounded-xl bg-white px-5 py-3 shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
+            <img
+              src={autoportLogo.url}
+              alt="Autoport APP"
+              className="h-10 w-auto object-contain"
+            />
           </div>
+          <h1 className="text-base font-medium text-slate-300">Interní systém 2026</h1>
         </div>
-        <style>{`@keyframes float{0%,100%{transform:translateY(0) rotate(-12deg)}50%{transform:translateY(-6px) rotate(-10deg)}}`}</style>
 
         <Tabs defaultValue="login" className="mt-6">
           <TabsList className="grid w-full grid-cols-2 bg-slate-800/60">
