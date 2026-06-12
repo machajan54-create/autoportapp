@@ -432,12 +432,6 @@ export const adminCreateUser = createServerFn({ method: "POST" })
   });
 
 export const generatePoaPdf = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ id: z.string().uuid(), kind: z.enum(["jednani", "plneni"]) }).parse(d),
-  )
-  .handler(async () => ({ ok: true } as any));
-
 export const adminSetUserPassword = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
@@ -470,6 +464,8 @@ export const adminSetUserPassword = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true, password };
   });
+
+export const generatePoaPdf = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z.object({ id: z.string().uuid(), kind: z.enum(["jednani", "plneni"]) }).parse(d),
