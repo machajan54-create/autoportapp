@@ -70,6 +70,7 @@ function loadDraft(): Draft | null {
 function Page() {
   const navigate = useNavigate();
   const submit = useServerFn(createClaim);
+  const uploadFile = useServerFn(publicSubmissionUpload);
   const initial = typeof window !== "undefined" ? loadDraft() : null;
   const [signature, setSignature] = useState<string | null>(initial?.signature ?? null);
   const [busy, setBusy] = useState(false);
