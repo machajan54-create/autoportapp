@@ -63,6 +63,8 @@ export const upsertEmployee = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => employeeInput.parse(d))
   .handler(async ({ data, context }) => {
+    const access = await getDochazkaAccess(context.supabase, context.userId);
+    if (!access.isAdmin) throw new Error("Pouze super admin");
     if (data.id) {
       const { error } = await context.supabase
         .from("attendance_employees")
@@ -378,6 +380,8 @@ export const resolveAbsence = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
+    const access = await getDochazkaAccess(context.supabase, context.userId);
+    if (!access.canApproveAll) throw new Error("Nemáte oprávnění schvalovat");
     const { error } = await context.supabase
       .from("attendance_absences")
       .update({
@@ -536,4 +540,10 @@ export const listResolvers = createServerFn({ method: "GET" })
       .select("id,full_name,email");
     if (error) throw new Error(error.message);
     return data ?? [];
+  });
+
+export const getMyDochazkaAccess = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    return await getDochazkaAccess(context.supabase, context.userId);
   });
