@@ -204,7 +204,7 @@ function EmployeesTab() {
     setOpen(true);
   }
   function openEdit(emp: any) {
-    setEdit({ ...emp });
+    setEdit({ ...emp, pin: "" });
     setOpen(true);
   }
   async function save() {
