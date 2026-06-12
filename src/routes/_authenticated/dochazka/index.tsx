@@ -195,16 +195,18 @@ function EmployeesTab() {
   const fetchEmp = useServerFn(listEmployees);
   const upsert = useServerFn(upsertEmployee);
   const del = useServerFn(deleteEmployee);
+  const fetchResolvers = useServerFn(listResolvers);
   const { data, isLoading } = useQuery({ queryKey: ["dochazka", "employees"], queryFn: () => fetchEmp({}) });
+  const { data: users } = useQuery({ queryKey: ["dochazka", "users"], queryFn: () => fetchResolvers({}) });
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState<any>(null);
 
   function openNew() {
-    setEdit({ name: "", role: "", pin: "", avatar_color: "slate", active: true, can_approve_absences: false });
+    setEdit({ name: "", role: "", pin: "", avatar_color: "slate", active: true, can_approve_absences: false, user_id: null });
     setOpen(true);
   }
   function openEdit(emp: any) {
-    setEdit({ ...emp, pin: "" });
+    setEdit({ ...emp, pin: "", user_id: emp.user_id ?? null });
     setOpen(true);
   }
   async function save() {
@@ -295,6 +297,26 @@ function EmployeesTab() {
               </div>
               <div className="flex items-center justify-between"><Label>Může schvalovat absence</Label><Switch checked={edit.can_approve_absences} onCheckedChange={(v) => setEdit({ ...edit, can_approve_absences: v })} /></div>
               <div className="flex items-center justify-between"><Label>Aktivní</Label><Switch checked={edit.active} onCheckedChange={(v) => setEdit({ ...edit, active: v })} /></div>
+              <div className="grid gap-2">
+                <Label>Přiřazený uživatel (přihlášení do aplikace)</Label>
+                <Select
+                  value={edit.user_id ?? "__none"}
+                  onValueChange={(v) => setEdit({ ...edit, user_id: v === "__none" ? null : v })}
+                >
+                  <SelectTrigger><SelectValue placeholder="Bez přiřazení" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">Bez přiřazení (jen kiosk)</SelectItem>
+                    {(users ?? []).map((u: any) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.full_name || u.email || u.id}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Po přiřazení vidí tento zaměstnanec v Docházce jen své vlastní záznamy a žádosti.
+                </p>
+              </div>
             </div>
           )}
           <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Zrušit</Button><Button onClick={save}>Uložit</Button></DialogFooter>
