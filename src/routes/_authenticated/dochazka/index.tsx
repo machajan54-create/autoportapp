@@ -814,3 +814,170 @@ function ExportTab() {
     </div>
   );
 }
+
+// ============= Calendar =============
+function CalendarTab() {
+  const today = new Date();
+  const [year, setYear] = useState(today.getFullYear());
+  const [month, setMonth] = useState(today.getMonth() + 1); // 1..12
+
+  const fetchCal = useServerFn(getMonthCalendar);
+  const { data, isLoading } = useQuery({
+    queryKey: ["dochazka", "calendar", year, month],
+    queryFn: () => fetchCal({ data: { year, month } }),
+  });
+
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+  function prev() {
+    if (month === 1) { setYear(year - 1); setMonth(12); } else setMonth(month - 1);
+  }
+  function next() {
+    if (month === 12) { setYear(year + 1); setMonth(1); } else setMonth(month + 1);
+  }
+
+  // Map[empId][day] = { state, hours }
+  const grid = useMemo(() => {
+    const m = new Map<string, Map<number, { state: string; hours?: number; type?: string }>>();
+    const monthStr = `${year}-${String(month).padStart(2, "0")}`;
+    (data?.employees ?? []).forEach((e: any) => m.set(e.id, new Map()));
+    (data?.records ?? []).forEach((r: any) => {
+      if (!r.date.startsWith(monthStr)) return;
+      const day = Number(r.date.slice(8, 10));
+      const emp = m.get(r.employee_id);
+      if (!emp) return;
+      const existing = emp.get(day);
+      const hours = (existing?.hours ?? 0) + Number(r.hours_worked ?? 0);
+      const state = r.check_out ? "worked" : "in";
+      emp.set(day, { state: existing?.state === "in" ? "in" : state, hours });
+    });
+    (data?.absences ?? []).forEach((a: any) => {
+      const sd = new Date(a.start_date);
+      const ed = new Date(a.end_date);
+      for (let d = new Date(sd); d <= ed; d.setDate(d.getDate() + 1)) {
+        if (d.getFullYear() !== year || d.getMonth() + 1 !== month) continue;
+        const day = d.getDate();
+        const emp = m.get(a.employee_id);
+        if (!emp) continue;
+        const stateName = a.status === "pending" ? "abs_pending" : a.status === "rejected" ? "abs_rejected" : `abs_${a.type}`;
+        if (!emp.has(day)) emp.set(day, { state: stateName, type: a.type });
+      }
+    });
+    return m;
+  }, [data, year, month]);
+
+  function cellClasses(s?: string) {
+    if (!s) return "bg-muted/30";
+    if (s === "in") return "bg-amber-200 text-amber-900";
+    if (s === "worked") return "bg-emerald-200 text-emerald-900";
+    if (s === "abs_pending") return "bg-slate-200 text-slate-700";
+    if (s === "abs_rejected") return "bg-rose-100 text-rose-700";
+    if (s.startsWith("abs_")) return "bg-sky-100 text-sky-800";
+    return "bg-muted/30";
+  }
+  function cellLabel(s?: string) {
+    if (!s) return "";
+    if (s === "in") return "V";
+    if (s === "worked") return "✓";
+    if (s === "abs_pending") return "?";
+    if (s === "abs_rejected") return "✗";
+    if (s === "abs_dovolena") return "D";
+    if (s === "abs_nemoc") return "N";
+    if (s === "abs_lekar") return "L";
+    if (s === "abs_neplacene_volno") return "V";
+    return "•";
+  }
+
+  const monthName = new Date(year, month - 1, 1).toLocaleDateString("cs-CZ", { month: "long", year: "numeric" });
+
+  return (
+    <div className="mt-4 space-y-3">
+      <Card className="p-3">
+        <div className="flex items-center justify-between">
+          <Button size="icon" variant="outline" onClick={prev}><ChevronLeft className="h-4 w-4" /></Button>
+          <div className="text-sm font-semibold capitalize">{monthName}</div>
+          <Button size="icon" variant="outline" onClick={next}><ChevronRight className="h-4 w-4" /></Button>
+        </div>
+      </Card>
+
+      <Card className="overflow-x-auto p-2">
+        {isLoading ? (
+          <p className="p-4 text-sm text-muted-foreground">Načítám…</p>
+        ) : (data?.employees ?? []).length === 0 ? (
+          <p className="p-4 text-sm text-muted-foreground">Žádní zaměstnanci.</p>
+        ) : (
+          <table className="w-full border-collapse text-xs">
+            <thead>
+              <tr>
+                <th className="sticky left-0 z-10 bg-background p-2 text-left font-semibold">Zaměstnanec</th>
+                {days.map((d) => {
+                  const dow = new Date(year, month - 1, d).getDay();
+                  const weekend = dow === 0 || dow === 6;
+                  return (
+                    <th key={d} className={cn("w-7 p-1 text-center font-mono", weekend && "text-rose-400")}>
+                      {d}
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {(data?.employees ?? []).map((e: any) => (
+                <tr key={e.id} className="border-t">
+                  <td className="sticky left-0 z-10 bg-background p-2">
+                    <div className="flex items-center gap-2">
+                      <span className={cn("inline-flex h-6 w-6 items-center justify-center rounded-full border text-[10px] font-semibold", avatarClasses(e.avatar_color))}>
+                        {initials(e.name)}
+                      </span>
+                      <span className="truncate font-medium">{e.name}</span>
+                    </div>
+                  </td>
+                  {days.map((d) => {
+                    const cell = grid.get(e.id)?.get(d);
+                    const dow = new Date(year, month - 1, d).getDay();
+                    const weekend = dow === 0 || dow === 6;
+                    return (
+                      <td key={d} className="p-0.5">
+                        <div
+                          title={cell?.hours ? `${cell.hours.toFixed(1)} h` : cell?.state ?? ""}
+                          className={cn(
+                            "flex h-7 w-7 items-center justify-center rounded text-[10px] font-semibold",
+                            cellClasses(cell?.state),
+                            !cell && weekend && "bg-slate-100",
+                          )}
+                        >
+                          {cellLabel(cell?.state)}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Card>
+
+      <Card className="p-3 text-xs">
+        <p className="mb-2 font-semibold">Legenda</p>
+        <div className="flex flex-wrap gap-3 text-muted-foreground">
+          <Legend cls="bg-emerald-200 text-emerald-900" label="Odpracováno (✓)" />
+          <Legend cls="bg-amber-200 text-amber-900" label="V práci (V)" />
+          <Legend cls="bg-sky-100 text-sky-800" label="Absence (D/N/L)" />
+          <Legend cls="bg-slate-200 text-slate-700" label="Žádost čeká (?)" />
+          <Legend cls="bg-rose-100 text-rose-700" label="Zamítnuto (✗)" />
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function Legend({ cls, label }: { cls: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className={cn("h-4 w-4 rounded", cls)} />
+      {label}
+    </span>
+  );
+}
