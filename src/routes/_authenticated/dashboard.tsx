@@ -1,11 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useMemo } from "react";
 import { AdminShell } from "@/components/AdminShell";
 import { listClaims, getMyAccess } from "@/lib/claims.functions";
 import { listVykupy, formatKc, marze } from "@/lib/vykupy";
 import { listEmployees } from "@/lib/claims.functions";
-import { FolderOpen, AlertCircle, Car, Coins, TrendingUp, Users } from "lucide-react";
+import {
+  listEmployees as listDochazkaEmployees,
+  listRecords as listDochazkaRecords,
+  listAbsences as listDochazkaAbsences,
+} from "@/lib/dochazka.functions";
+import {
+  FolderOpen, AlertCircle, Car, Coins, TrendingUp, Users,
+  Clock, LogIn, PalmtreeIcon, Timer,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -38,6 +47,51 @@ function DashboardPage() {
     queryFn: () => fetchEmployees({}),
     enabled: isAdmin,
   });
+
+  // Docházka
+  const fetchDochEmp = useServerFn(listDochazkaEmployees);
+  const fetchDochRec = useServerFn(listDochazkaRecords);
+  const fetchDochAbs = useServerFn(listDochazkaAbsences);
+  const today = new Date().toISOString().slice(0, 10);
+  const monthFrom = today.slice(0, 7) + "-01";
+  const { data: dochEmps } = useQuery({
+    queryKey: ["dash", "doch", "emps"],
+    queryFn: () => fetchDochEmp({}),
+    enabled: isAdmin,
+  });
+  const { data: dochRecs } = useQuery({
+    queryKey: ["dash", "doch", "recs", monthFrom],
+    queryFn: () => fetchDochRec({ data: { from: monthFrom } }),
+    enabled: isAdmin,
+  });
+  const { data: dochAbs } = useQuery({
+    queryKey: ["dash", "doch", "abs"],
+    queryFn: () => fetchDochAbs({}),
+    enabled: isAdmin,
+  });
+
+  const dochStats = useMemo(() => {
+    const recs = dochRecs ?? [];
+    const todayRecs = recs.filter((r: any) => r.date === today);
+    const inWork = todayRecs.filter((r: any) => !r.check_out).length;
+    const totalHours = recs.reduce((s: number, r: any) => s + Number(r.hours_worked ?? 0), 0);
+    const pendingAbs = (dochAbs ?? []).filter((a: any) => a.status === "pending").length;
+    const activeEmps = (dochEmps ?? []).filter((e: any) => e.active).length;
+    // Top 5 by hours (month)
+    const byEmp = new Map<string, number>();
+    recs.forEach((r: any) => {
+      byEmp.set(r.employee_id, (byEmp.get(r.employee_id) ?? 0) + Number(r.hours_worked ?? 0));
+    });
+    const top = Array.from(byEmp.entries())
+      .map(([id, hours]) => ({
+        id,
+        name: (dochEmps ?? []).find((e: any) => e.id === id)?.name ?? "Neznámý",
+        hours,
+      }))
+      .sort((a, b) => b.hours - a.hours)
+      .slice(0, 5);
+    return { inWork, totalHours, pendingAbs, activeEmps, top };
+  }, [dochRecs, dochAbs, dochEmps, today]);
 
   if (aLoad) {
     return (
@@ -115,6 +169,44 @@ function DashboardPage() {
               Výtěžnost podle cenaře (interní nacenění)
             </h3>
             <PricerLeaderboard rows={prodano} employees={employees ?? []} />
+          </div>
+        </section>
+
+        <section className="mt-10">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Docházka
+            </h2>
+            <Link to="/dochazka" className="text-sm text-primary hover:underline">
+              Otevřít modul →
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <Stat label="Aktuálně v práci" value={dochStats.inWork} icon={<LogIn className="h-5 w-5 text-emerald-600" />} tint="bg-emerald-100" />
+            <Stat label="Odpracováno (měsíc)" value={`${dochStats.totalHours.toFixed(1)} h`} icon={<Timer className="h-5 w-5 text-sky-600" />} tint="bg-sky-100" />
+            <Stat label="Čekající absence" value={dochStats.pendingAbs} icon={<PalmtreeIcon className="h-5 w-5 text-amber-600" />} tint="bg-amber-100" />
+            <Stat label="Aktivní zaměstnanci" value={dochStats.activeEmps} icon={<Clock className="h-5 w-5 text-primary" />} tint="bg-primary/10" />
+          </div>
+
+          <div className="mt-6 rounded-xl border bg-card p-5">
+            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Top 5 — odpracované hodiny tento měsíc
+            </h3>
+            {dochStats.top.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Zatím žádné záznamy.</p>
+            ) : (
+              <div className="divide-y">
+                {dochStats.top.map((r, i) => (
+                  <div key={r.id} className="flex items-center justify-between py-2 text-sm">
+                    <span className="flex items-center gap-3">
+                      <span className="w-5 text-right text-xs text-muted-foreground">{i + 1}.</span>
+                      <span className="font-medium">{r.name}</span>
+                    </span>
+                    <span className="font-mono font-semibold tabular-nums">{r.hours.toFixed(1)} h</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
       </div>
