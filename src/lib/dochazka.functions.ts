@@ -311,11 +311,17 @@ const absenceInput = z.object({
 export const listAbsences = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
+    const access = await getDochazkaAccess(context.supabase, context.userId);
+    let q = context.supabase
       .from("attendance_absences")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(2000);
+    if (!access.canApproveAll) {
+      if (!access.myEmployeeId) return [];
+      q = q.eq("employee_id", access.myEmployeeId);
+    }
+    const { data, error } = await q;
     if (error) throw new Error(error.message);
     return data ?? [];
   });
