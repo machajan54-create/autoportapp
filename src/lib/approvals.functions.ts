@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { enqueueTransactionalEmail, notifyAdmins, getUserEmail } from "@/lib/email/notify.server";
+
+const loadNotify = () => import("@/lib/email/notify.server");
 
 const APP_URL = "https://www.autoport-app.cz/approvals";
 
