@@ -276,7 +276,7 @@ function UsersPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => openPwd({ id: u.id, email: u.email })}
+                      onClick={() => openPwd({ id: u.id, email: u.email ?? "" })}
                     >
                       <KeyRound className="mr-1.5 h-3.5 w-3.5" /> Heslo
                     </Button>
