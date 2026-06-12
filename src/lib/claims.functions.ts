@@ -431,7 +431,6 @@ export const adminCreateUser = createServerFn({ method: "POST" })
     return { ok: true, id: newId };
   });
 
-export const generatePoaPdf = createServerFn({ method: "POST" })
 export const adminSetUserPassword = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
