@@ -113,9 +113,8 @@ export function AdminShell({
   return (
     <div className="flex min-h-screen w-full bg-background">
       <aside className="hidden w-60 flex-col border-r bg-card md:flex">
-        <div className="flex h-16 items-center gap-2 border-b px-4 font-semibold">
-          <ShieldCheck className="h-5 w-5 text-primary" />
-          Autoport APP
+        <div className="flex h-16 items-center border-b px-4">
+          <img src={autoportLogo.url} alt="Autoport APP" className="h-8 w-auto object-contain" />
         </div>
         {navList}
         <div className="border-t p-3">
@@ -139,9 +138,8 @@ export function AdminShell({
               </SheetTrigger>
               <SheetContent side="left" className="w-64 p-0">
                 <SheetTitle className="sr-only">Navigace</SheetTitle>
-                <div className="flex h-16 items-center gap-2 border-b px-4 font-semibold">
-                  <ShieldCheck className="h-5 w-5 text-primary" />
-                  Autoport APP
+                <div className="flex h-16 items-center border-b px-4">
+                  <img src={autoportLogo.url} alt="Autoport APP" className="h-8 w-auto object-contain" />
                 </div>
                 {navList}
                 <div className="border-t p-3">
@@ -153,9 +151,8 @@ export function AdminShell({
                 </div>
               </SheetContent>
             </Sheet>
-            <Link to="/admin" className="flex items-center gap-2 font-semibold">
-              <ShieldCheck className="h-5 w-5 text-primary" />
-              <span className="text-sm">Autoport APP</span>
+            <Link to="/admin" className="flex items-center" aria-label="Autoport APP">
+              <img src={autoportLogo.url} alt="Autoport APP" className="h-7 w-auto object-contain" />
             </Link>
           </div>
           <Button variant="ghost" size="icon" onClick={logout} aria-label="Odhlásit">
