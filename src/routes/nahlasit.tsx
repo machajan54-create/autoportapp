@@ -15,8 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { createClaim } from "@/lib/claims.functions";
+import { createClaim, publicSubmissionUpload } from "@/lib/claims.functions";
 import { Phone, X, FileText, Check, CheckCircle2, Copy } from "lucide-react";
 
 export const Route = createFileRoute("/nahlasit")({
