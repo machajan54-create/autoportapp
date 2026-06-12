@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { notifyAdmins } from "@/lib/email/notify.server";
 
 const ABSENCE_TYPE_LABEL: Record<string, string> = {
   dovolena: "Dovolená",
