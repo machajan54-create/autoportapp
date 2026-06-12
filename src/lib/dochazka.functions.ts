@@ -410,3 +410,54 @@ export const updateDochazkaSettings = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ============ Calendar ============
+
+export const getMonthCalendar = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      year: z.number().int().min(2020).max(2100),
+      month: z.number().int().min(1).max(12),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const start = `${data.year}-${String(data.month).padStart(2, "0")}-01`;
+    const next = data.month === 12
+      ? `${data.year + 1}-01-01`
+      : `${data.year}-${String(data.month + 1).padStart(2, "0")}-01`;
+
+    const [emp, recs, abs] = await Promise.all([
+      context.supabase.from("attendance_employees").select("id,name,avatar_color,active").order("name"),
+      context.supabase
+        .from("attendance_records")
+        .select("employee_id,date,check_in,check_out,hours_worked")
+        .gte("date", start)
+        .lt("date", next),
+      context.supabase
+        .from("attendance_absences")
+        .select("employee_id,start_date,end_date,type,status")
+        .lte("start_date", next)
+        .gte("end_date", start),
+    ]);
+    if (emp.error) throw new Error(emp.error.message);
+    if (recs.error) throw new Error(recs.error.message);
+    if (abs.error) throw new Error(abs.error.message);
+    return {
+      employees: emp.data ?? [],
+      records: recs.data ?? [],
+      absences: abs.data ?? [],
+    };
+  });
+
+// ============ Resolver names ============
+
+export const listResolvers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("profiles")
+      .select("id,full_name,email");
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
