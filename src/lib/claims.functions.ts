@@ -586,15 +586,7 @@ export const publicSubmissionUpload = createServerFn({ method: "POST" })
     z
       .object({
         temp_id: z.string().uuid(),
-        category: z.enum([
-          "tp_front",
-          "tp_back",
-          "id_front",
-          "id_back",
-          "photos",
-          "damage",
-          "other",
-        ]),
+        category: z.string().min(1).max(40).regex(/^[a-z0-9_-]+$/i, "Neplatná kategorie"),
         file_name: z.string().min(1).max(200),
         mime_type: z
           .string()
