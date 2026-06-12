@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -26,6 +27,7 @@ import {
 import {
   Clock, Plus, Pencil, Trash2, Download, Check, X, BellOff, BellRing,
   ExternalLink, Users as UsersIcon, CalendarClock, BarChart3, PalmtreeIcon, Bell,
+  CalendarDays, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import {
   listEmployees, upsertEmployee, deleteEmployee,
@@ -34,6 +36,7 @@ import {
   listAbsences, upsertAbsence, resolveAbsence, deleteAbsence,
   listNotifications, markNotificationRead, markAllNotificationsRead,
   getDochazkaSettings, updateDochazkaSettings,
+  getMonthCalendar, listResolvers,
 } from "@/lib/dochazka.functions";
 import {
   ABSENCE_TYPES, ABSENCE_TYPE_LABEL, SHIFT_COLORS, AVATAR_COLORS,
@@ -46,6 +49,26 @@ export const Route = createFileRoute("/_authenticated/dochazka/")({
 });
 
 function DochazkaPage() {
+  // Realtime: refetch when terminal/admin activity changes data
+  const qc = useQueryClient();
+  useEffect(() => {
+    const ch = supabase
+      .channel("dochazka-admin")
+      .on("postgres_changes", { event: "*", schema: "public", table: "attendance_records" }, () => {
+        qc.invalidateQueries({ queryKey: ["dochazka"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "attendance_absences" }, () => {
+        qc.invalidateQueries({ queryKey: ["dochazka"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "attendance_notifications" }, () => {
+        qc.invalidateQueries({ queryKey: ["dochazka", "notifications"] });
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [qc]);
+
   return (
     <AdminShell requireModule={["dochazka" as any]}>
       <div className="mx-auto max-w-7xl px-4 py-6 md:py-8">
@@ -58,15 +81,16 @@ function DochazkaPage() {
             Docházka
           </h1>
           <Button asChild variant="outline">
-            <Link to="/dochazka/terminal">
+            <Link to="/terminal" target="_blank">
               <ExternalLink className="mr-2 h-4 w-4" /> Otevřít terminál (kiosk)
             </Link>
           </Button>
         </div>
 
         <Tabs defaultValue="stats" className="mt-6">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 lg:grid-cols-7">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 lg:grid-cols-8">
             <TabsTrigger value="stats"><BarChart3 className="mr-1 h-4 w-4" />Statistiky</TabsTrigger>
+            <TabsTrigger value="calendar"><CalendarDays className="mr-1 h-4 w-4" />Kalendář</TabsTrigger>
             <TabsTrigger value="employees"><UsersIcon className="mr-1 h-4 w-4" />Zaměstnanci</TabsTrigger>
             <TabsTrigger value="shifts"><CalendarClock className="mr-1 h-4 w-4" />Směny</TabsTrigger>
             <TabsTrigger value="records">Záznamy</TabsTrigger>
@@ -76,6 +100,7 @@ function DochazkaPage() {
           </TabsList>
 
           <TabsContent value="stats"><StatsTab /></TabsContent>
+          <TabsContent value="calendar"><CalendarTab /></TabsContent>
           <TabsContent value="employees"><EmployeesTab /></TabsContent>
           <TabsContent value="shifts"><ShiftsTab /></TabsContent>
           <TabsContent value="records"><RecordsTab /></TabsContent>
