@@ -431,6 +431,39 @@ export const adminCreateUser = createServerFn({ method: "POST" })
     return { ok: true, id: newId };
   });
 
+export const adminSetUserPassword = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        user_id: z.string().uuid(),
+        password: z.string().min(8).max(128).optional(),
+        generate: z.boolean().default(false),
+      })
+      .parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const { data: meRoles } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    if (!meRoles?.some((r) => r.role === "admin")) throw new Error("Forbidden");
+    let password = data.password;
+    if (data.generate || !password) {
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+      const bytes = new Uint8Array(16);
+      crypto.getRandomValues(bytes);
+      password = Array.from(bytes, (b) => chars[b % chars.length]).join("");
+    }
+    if (!password || password.length < 8) throw new Error("Heslo musí mít alespoň 8 znaků");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(data.user_id, {
+      password,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true, password };
+  });
+
 export const generatePoaPdf = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>

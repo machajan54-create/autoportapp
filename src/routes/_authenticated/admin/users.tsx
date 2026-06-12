@@ -15,13 +15,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { UserPlus } from "lucide-react";
+import { UserPlus, KeyRound, Copy } from "lucide-react";
 import {
   listUsers,
   setUserRole,
   setUserModule,
   setUserApproved,
   adminCreateUser,
+  adminSetUserPassword,
 } from "@/lib/claims.functions";
 import { toast } from "sonner";
 
@@ -48,9 +49,14 @@ function UsersPage() {
   const setMod = useServerFn(setUserModule);
   const setApproved = useServerFn(setUserApproved);
   const createUser = useServerFn(adminCreateUser);
+  const setPwd = useServerFn(adminSetUserPassword);
   const { data, isLoading } = useQuery({ queryKey: ["users"], queryFn: () => fetch({}) });
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [pwdUser, setPwdUser] = useState<{ id: string; email: string } | null>(null);
+  const [pwdValue, setPwdValue] = useState("");
+  const [pwdBusy, setPwdBusy] = useState(false);
+  const [pwdGenerated, setPwdGenerated] = useState<string | null>(null);
   const [newUser, setNewUser] = useState({
     email: "",
     password: "",
@@ -113,6 +119,35 @@ function UsersPage() {
       toast.error((e as Error).message);
     } finally {
       setCreating(false);
+    }
+  }
+
+  function openPwd(u: { id: string; email: string }) {
+    setPwdUser(u);
+    setPwdValue("");
+    setPwdGenerated(null);
+  }
+
+  async function handleSetPwd(generate: boolean) {
+    if (!pwdUser) return;
+    setPwdBusy(true);
+    try {
+      const res = await setPwd({
+        data: generate
+          ? { user_id: pwdUser.id, generate: true }
+          : { user_id: pwdUser.id, password: pwdValue, generate: false },
+      });
+      if (generate) {
+        setPwdGenerated(res.password);
+        toast.success("Vygenerováno nové heslo");
+      } else {
+        toast.success("Heslo změněno");
+        setPwdUser(null);
+      }
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setPwdBusy(false);
     }
   }
 
@@ -238,6 +273,13 @@ function UsersPage() {
                         onCheckedChange={(v) => toggle(u.id, "admin", v)}
                       />
                     </label>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openPwd({ id: u.id, email: u.email ?? "" })}
+                    >
+                      <KeyRound className="mr-1.5 h-3.5 w-3.5" /> Heslo
+                    </Button>
                   </div>
                 </div>
 
@@ -267,6 +309,82 @@ function UsersPage() {
             );
           })}
         </div>
+
+        <Dialog
+          open={!!pwdUser}
+          onOpenChange={(o) => {
+            if (!o) {
+              setPwdUser(null);
+              setPwdGenerated(null);
+              setPwdValue("");
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Heslo · {pwdUser?.email}</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              Aktuální heslo nelze zobrazit – je v databázi uložené jako nevratný hash.
+              Můžete nastavit nové, nebo vygenerovat náhodné.
+            </p>
+            {pwdGenerated ? (
+              <div className="rounded-md border bg-amber-50 p-3">
+                <div className="mb-1 text-xs font-medium text-amber-900">
+                  Nové heslo (zobrazeno pouze jednou – uložte si ho):
+                </div>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 rounded bg-white px-2 py-1.5 font-mono text-sm">
+                    {pwdGenerated}
+                  </code>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      navigator.clipboard.writeText(pwdGenerated!);
+                      toast.success("Zkopírováno");
+                    }}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>Nové heslo (min. 8 znaků)</Label>
+                <Input
+                  type="text"
+                  minLength={8}
+                  maxLength={128}
+                  value={pwdValue}
+                  onChange={(e) => setPwdValue(e.target.value)}
+                  placeholder="Zadej nové heslo…"
+                />
+              </div>
+            )}
+            <DialogFooter className="gap-2 sm:gap-2">
+              {pwdGenerated ? (
+                <Button onClick={() => setPwdUser(null)}>Hotovo</Button>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    disabled={pwdBusy}
+                    onClick={() => handleSetPwd(true)}
+                  >
+                    Vygenerovat náhodné
+                  </Button>
+                  <Button
+                    disabled={pwdBusy || pwdValue.length < 8}
+                    onClick={() => handleSetPwd(false)}
+                  >
+                    {pwdBusy ? "Ukládám…" : "Nastavit heslo"}
+                  </Button>
+                </>
+              )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </AdminShell>
   );
