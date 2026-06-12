@@ -6,11 +6,17 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Clock, Delete, ArrowLeft, LogIn, LogOut } from "lucide-react";
-import { listShifts, terminalCheckIn } from "@/lib/dochazka.functions";
+import { publicListShifts, terminalCheckIn } from "@/lib/dochazka.functions";
 import { shiftClasses } from "@/lib/dochazka";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/_authenticated/dochazka/terminal")({
+export const Route = createFileRoute("/terminal")({
+  head: () => ({
+    meta: [
+      { title: "Docházkový terminál — AutoPort" },
+      { name: "robots", content: "noindex,nofollow" },
+    ],
+  }),
   component: TerminalPage,
 });
 
@@ -24,10 +30,10 @@ function TerminalPage() {
     name: string;
   }>(null);
 
-  const fetchShifts = useServerFn(listShifts);
+  const fetchShifts = useServerFn(publicListShifts);
   const submit = useServerFn(terminalCheckIn);
 
-  const { data: shifts } = useQuery({ queryKey: ["dochazka", "shifts"], queryFn: () => fetchShifts({}) });
+  const { data: shifts } = useQuery({ queryKey: ["terminal", "shifts"], queryFn: () => fetchShifts() });
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -60,6 +66,7 @@ function TerminalPage() {
       setPin("");
     } catch (e: any) {
       toast.error(e?.message ?? "Chyba");
+      setPin("");
     } finally {
       setBusy(false);
     }
@@ -68,8 +75,8 @@ function TerminalPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 p-4">
       <div className="mx-auto flex max-w-5xl items-center justify-between py-3">
-        <Link to="/dochazka" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" /> Zpět do administrace
+        <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4" /> Hlavní stránka
         </Link>
         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
           <Clock className="h-4 w-4" />
@@ -78,7 +85,6 @@ function TerminalPage() {
       </div>
 
       <div className="mx-auto mt-4 grid max-w-5xl gap-6 md:grid-cols-2">
-        {/* Left: time + last action */}
         <Card className="flex flex-col items-center justify-center gap-6 bg-white p-8 shadow-lg">
           <div className="text-center">
             <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Aktuální čas</p>
@@ -114,7 +120,6 @@ function TerminalPage() {
             </div>
           )}
 
-          {/* Shift picker */}
           <div className="w-full">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Směna (volitelné)
@@ -147,7 +152,6 @@ function TerminalPage() {
           </div>
         </Card>
 
-        {/* Right: keypad */}
         <Card className="bg-white p-8 shadow-lg">
           <div className="mb-4 flex h-16 items-center justify-center rounded-xl border-2 border-slate-200 bg-slate-50 font-mono text-3xl tracking-[0.5em]">
             {pin ? "•".repeat(pin.length) : <span className="text-base text-muted-foreground tracking-normal">PIN</span>}

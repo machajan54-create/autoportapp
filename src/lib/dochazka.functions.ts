@@ -124,15 +124,30 @@ const recordInput = z.object({
 
 export const listRecords = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        from: z.string().optional(),
+        to: z.string().optional(),
+        employee_id: z.string().uuid().optional(),
+        limit: z.number().int().min(1).max(5000).default(2000),
+      })
+      .partial()
+      .parse(d ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    let q = context.supabase
       .from("attendance_records")
       .select("*")
       .order("date", { ascending: false })
       .order("check_in", { ascending: false })
-      .limit(500);
+      .limit(data?.limit ?? 2000);
+    if (data?.from) q = q.gte("date", data.from);
+    if (data?.to) q = q.lte("date", data.to);
+    if (data?.employee_id) q = q.eq("employee_id", data.employee_id);
+    const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    return data ?? [];
+    return rows ?? [];
   });
 
 export const upsertRecord = createServerFn({ method: "POST" })
@@ -172,17 +187,17 @@ export const deleteRecord = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// Terminal check-in: authenticate by PIN and create record
+// Terminal check-in: PUBLIC endpoint authenticated by PIN; uses admin client
 export const terminalCheckIn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z.object({
-      pin: z.string().min(4),
+      pin: z.string().regex(/^\d{4,8}$/, "PIN musí být 4–8 číslic"),
       shift_id: z.string().uuid().nullable().optional(),
     }).parse(d),
   )
-  .handler(async ({ data, context }) => {
-    const { data: emp, error: empErr } = await context.supabase
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: emp, error: empErr } = await supabaseAdmin
       .from("attendance_employees")
       .select("id,name,active")
       .eq("pin", data.pin)
@@ -195,7 +210,7 @@ export const terminalCheckIn = createServerFn({ method: "POST" })
     const dateStr = today.toISOString().slice(0, 10);
 
     // Check if there's an open record today
-    const { data: open } = await context.supabase
+    const { data: open } = await supabaseAdmin
       .from("attendance_records")
       .select("*")
       .eq("employee_id", emp.id)
@@ -209,7 +224,7 @@ export const terminalCheckIn = createServerFn({ method: "POST" })
       const now = Date.now();
       const breakMs = (open.break_duration ?? 0) * 60_000;
       const hours = Math.max(0, (now - checkIn - breakMs) / 3_600_000);
-      const { error: updErr } = await context.supabase
+      const { error: updErr } = await supabaseAdmin
         .from("attendance_records")
         .update({
           check_out: new Date().toISOString(),
@@ -220,7 +235,7 @@ export const terminalCheckIn = createServerFn({ method: "POST" })
       return { action: "checked_out" as const, employee: { id: emp.id, name: emp.name } };
     }
 
-    const { error: insErr } = await context.supabase.from("attendance_records").insert({
+    const { error: insErr } = await supabaseAdmin.from("attendance_records").insert({
       employee_id: emp.id,
       shift_id: data.shift_id ?? null,
       date: dateStr,
@@ -231,6 +246,17 @@ export const terminalCheckIn = createServerFn({ method: "POST" })
     if (insErr) throw new Error(insErr.message);
     return { action: "checked_in" as const, employee: { id: emp.id, name: emp.name } };
   });
+
+// Public listing of shifts for terminal display (read-only, safe columns)
+export const publicListShifts = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("attendance_shifts")
+    .select("id,name,start_time,end_time,color")
+    .order("start_time");
+  if (error) throw new Error(error.message);
+  return data ?? [];
+});
 
 // ============ Absences ============
 
@@ -249,7 +275,8 @@ export const listAbsences = createServerFn({ method: "GET" })
     const { data, error } = await context.supabase
       .from("attendance_absences")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(2000);
     if (error) throw new Error(error.message);
     return data ?? [];
   });
@@ -291,6 +318,7 @@ export const resolveAbsence = createServerFn({ method: "POST" })
       .update({
         status: data.status,
         resolved_at: new Date().toISOString(),
+        resolved_by: context.userId,
       })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -315,7 +343,7 @@ export const listNotifications = createServerFn({ method: "GET" })
       .from("attendance_notifications")
       .select("*")
       .order("created_at", { ascending: false })
-      .limit(200);
+      .limit(1000);
     if (error) throw new Error(error.message);
     return data ?? [];
   });
@@ -381,4 +409,55 @@ export const updateDochazkaSettings = createServerFn({ method: "POST" })
       .eq("id", true);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+// ============ Calendar ============
+
+export const getMonthCalendar = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      year: z.number().int().min(2020).max(2100),
+      month: z.number().int().min(1).max(12),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const start = `${data.year}-${String(data.month).padStart(2, "0")}-01`;
+    const next = data.month === 12
+      ? `${data.year + 1}-01-01`
+      : `${data.year}-${String(data.month + 1).padStart(2, "0")}-01`;
+
+    const [emp, recs, abs] = await Promise.all([
+      context.supabase.from("attendance_employees").select("id,name,avatar_color,active").order("name"),
+      context.supabase
+        .from("attendance_records")
+        .select("employee_id,date,check_in,check_out,hours_worked")
+        .gte("date", start)
+        .lt("date", next),
+      context.supabase
+        .from("attendance_absences")
+        .select("employee_id,start_date,end_date,type,status")
+        .lte("start_date", next)
+        .gte("end_date", start),
+    ]);
+    if (emp.error) throw new Error(emp.error.message);
+    if (recs.error) throw new Error(recs.error.message);
+    if (abs.error) throw new Error(abs.error.message);
+    return {
+      employees: emp.data ?? [],
+      records: recs.data ?? [],
+      absences: abs.data ?? [],
+    };
+  });
+
+// ============ Resolver names ============
+
+export const listResolvers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("profiles")
+      .select("id,full_name,email");
+    if (error) throw new Error(error.message);
+    return data ?? [];
   });
