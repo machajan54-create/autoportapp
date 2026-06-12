@@ -576,3 +576,42 @@ export const listEmployees = createServerFn({ method: "GET" })
       name: p.full_name || p.email || "—",
     }));
   });
+
+// Public submission upload: used by the unauthenticated /nahlasit form to
+// upload attachments before the claim is created. Path is a client-supplied
+// tempId; uploads are performed via the service role so the storage INSERT
+// policy can stay locked down. Validates mime type and file size.
+export const publicSubmissionUpload = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        temp_id: z.string().uuid(),
+        category: z.string().min(1).max(40).regex(/^[a-z0-9_-]+$/i, "Neplatná kategorie"),
+        file_name: z.string().min(1).max(200),
+        mime_type: z
+          .string()
+          .regex(
+            /^(image\/(jpeg|jpg|png|gif|webp|bmp|heic|heif)|application\/pdf)$/i,
+            "Nepovolený typ souboru",
+          ),
+        data_base64: z.string().min(10).max(15_000_000),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const safe = data.file_name.replace(/[^\w.-]/g, "_");
+    const path = `${data.temp_id}/${data.category}/${Date.now()}-${safe}`;
+    const bytes = Buffer.from(data.data_base64, "base64");
+    if (bytes.byteLength > 10 * 1024 * 1024) throw new Error("Soubor je větší než 10 MB.");
+    const { error: uerr } = await supabaseAdmin.storage
+      .from("claim-files")
+      .upload(path, bytes, { contentType: data.mime_type, upsert: false });
+    if (uerr) throw new Error(uerr.message);
+    return {
+      file_path: path,
+      file_name: data.file_name,
+      mime_type: data.mime_type,
+      size: bytes.byteLength,
+    };
+  });

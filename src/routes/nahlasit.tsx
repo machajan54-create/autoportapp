@@ -15,8 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { createClaim } from "@/lib/claims.functions";
+import { createClaim, publicSubmissionUpload } from "@/lib/claims.functions";
 import { Phone, X, FileText, Check, CheckCircle2, Copy } from "lucide-react";
 
 export const Route = createFileRoute("/nahlasit")({
@@ -71,6 +70,7 @@ function loadDraft(): Draft | null {
 function Page() {
   const navigate = useNavigate();
   const submit = useServerFn(createClaim);
+  const uploadFile = useServerFn(publicSubmissionUpload);
   const initial = typeof window !== "undefined" ? loadDraft() : null;
   const [signature, setSignature] = useState<string | null>(initial?.signature ?? null);
   const [busy, setBusy] = useState(false);
@@ -168,12 +168,37 @@ function Page() {
       const uploaded: { category: string; file_path: string; file_name: string; mime_type?: string; size?: number }[] = [];
       for (const cat of Object.keys(files) as FileCategory[]) {
         for (const file of files[cat]) {
-          const path = `${tempId}/${cat}/${Date.now()}-${file.name.replace(/[^\w.-]/g, "_")}`;
-          const { error } = await supabase.storage.from("claim-files").upload(path, file, {
-            upsert: false, contentType: file.type,
+          if (file.size > 10 * 1024 * 1024) {
+            throw new Error(`Soubor "${file.name}" je větší než 10 MB.`);
+          }
+          const buf = await file.arrayBuffer();
+          // base64 encode in chunks to avoid stack overflow on large files
+          let binary = "";
+          const bytes = new Uint8Array(buf);
+          const CHUNK = 0x8000;
+          for (let i = 0; i < bytes.length; i += CHUNK) {
+            binary += String.fromCharCode.apply(
+              null,
+              Array.from(bytes.subarray(i, i + CHUNK)) as unknown as number[],
+            );
+          }
+          const data_base64 = btoa(binary);
+          const res = await uploadFile({
+            data: {
+              temp_id: tempId,
+              category: cat,
+              file_name: file.name,
+              mime_type: file.type || "application/octet-stream",
+              data_base64,
+            },
           });
-          if (error) throw error;
-          uploaded.push({ category: cat, file_path: path, file_name: file.name, mime_type: file.type, size: file.size });
+          uploaded.push({
+            category: cat,
+            file_path: res.file_path,
+            file_name: res.file_name,
+            mime_type: res.mime_type,
+            size: res.size,
+          });
         }
       }
       const res = await submit({
