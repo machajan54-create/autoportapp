@@ -82,6 +82,7 @@ export type Database = {
           pin: string
           role: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           active?: boolean
@@ -93,6 +94,7 @@ export type Database = {
           pin: string
           role?: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           active?: boolean
@@ -104,6 +106,7 @@ export type Database = {
           pin?: string
           role?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
