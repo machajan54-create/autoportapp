@@ -1,6 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { enqueueTransactionalEmail, notifyAdmins } from "@/lib/email/notify.server";
+
+const CLAIM_STATUS_LABEL: Record<string, string> = {
+  new: "Nová",
+  in_progress: "V řešení",
+  in_repair: "V opravě",
+  waiting_vat: "Čeká na DPH",
+  done: "Hotovo",
+  closed: "Uzavřeno",
+};
 
 const attachmentSchema = z.object({
   category: z.string(),
@@ -52,6 +62,22 @@ export const createClaim = createServerFn({ method: "POST" })
       const { error: aerr } = await supabaseAdmin.from("claim_attachments").insert(rows);
       if (aerr) throw new Error(aerr.message);
     }
+    // Notify super admin about new claim
+    await notifyAdmins({
+      templateName: "approval-request",
+      templateData: {
+        kind: "claim",
+        requesterName: `${rest.first_name} ${rest.last_name}`,
+        title: `Reklamace ${claim.pu_number ?? ""}`.trim(),
+        details: rest.notes ?? "",
+        meta: [
+          ...(email ? [{ label: "E-mail", value: email }] : []),
+          ...(rest.phone ? [{ label: "Telefon", value: rest.phone }] : []),
+          ...(rest.insurer ? [{ label: "Pojišťovna", value: rest.insurer }] : []),
+        ],
+        actionUrl: `https://www.autoport-app.cz/vykupy`,
+      },
+    });
     return { id: claim.id, pu_number: claim.pu_number, upload_token: claim.upload_token };
   });
 
@@ -137,6 +163,29 @@ export const updateClaimStatus = createServerFn({ method: "POST" })
     await context.supabase
       .from("claim_events")
       .insert({ claim_id: data.id, type: "status", message: `Stav změněn na ${data.status}` });
+    // Notify claim's client about status change
+    const { data: claim } = await context.supabase
+      .from("claims")
+      .select("email, first_name, last_name, pu_number")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (claim?.email) {
+      const isApproved = data.status === "done";
+      const isRejected = data.status === "closed";
+      await enqueueTransactionalEmail({
+        templateName: "approval-decision",
+        recipientEmail: claim.email,
+        idempotencyKey: `claim-${data.id}-${data.status}`,
+        templateData: {
+          kind: "claim",
+          status: isApproved ? "approved" : isRejected ? "rejected" : data.status,
+          recipientName: `${claim.first_name ?? ""} ${claim.last_name ?? ""}`.trim(),
+          title: `Reklamace ${claim.pu_number ?? ""}`.trim(),
+          meta: [{ label: "Aktuální stav", value: CLAIM_STATUS_LABEL[data.status] ?? data.status }],
+          actionUrl: "https://www.autoport-app.cz",
+        },
+      });
+    }
     return { ok: true };
   });
 
