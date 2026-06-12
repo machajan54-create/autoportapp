@@ -27,7 +27,7 @@ export const listEmployees = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("attendance_employees")
-      .select("*")
+      .select("id,name,role,avatar_color,active,can_approve_absences,created_at,updated_at")
       .order("name");
     if (error) throw new Error(error.message);
     return data ?? [];
