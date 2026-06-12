@@ -42,7 +42,7 @@ export const ensureDemoUser = createServerFn({ method: "POST" }).handler(async (
     );
 
   // Grant all modules
-  const modules = ["claims", "vykupy", "users", "approvals", "dashboard", "vykupy_external", "dochazka"] as const;
+  const modules = ["claims", "vykupy", "users", "approvals", "dashboard", "vykupy_external", "dochazka", "defects"] as const;
   await supabaseAdmin
     .from("user_modules")
     .upsert(
