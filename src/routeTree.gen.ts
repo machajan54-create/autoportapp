@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TerminalRouteImport } from './routes/terminal'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as NahlasitRouteImport } from './routes/nahlasit'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -22,11 +23,15 @@ import { Route as AuthenticatedDochazkaIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedVykupyDashboardRouteImport } from './routes/_authenticated/vykupy/dashboard'
 import { Route as AuthenticatedVykupyIdRouteImport } from './routes/_authenticated/vykupy/$id'
-import { Route as AuthenticatedDochazkaTerminalRouteImport } from './routes/_authenticated/dochazka/terminal'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedAdminTemplatesRouteImport } from './routes/_authenticated/admin/templates'
 import { Route as AuthenticatedAdminIdRouteImport } from './routes/_authenticated/admin/$id'
 
+const TerminalRoute = TerminalRouteImport.update({
+  id: '/terminal',
+  path: '/terminal',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -94,12 +99,6 @@ const AuthenticatedVykupyIdRoute = AuthenticatedVykupyIdRouteImport.update({
   path: '/vykupy/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedDochazkaTerminalRoute =
-  AuthenticatedDochazkaTerminalRouteImport.update({
-    id: '/dochazka/terminal',
-    path: '/dochazka/terminal',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
@@ -122,13 +121,13 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/nahlasit': typeof NahlasitRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/terminal': typeof TerminalRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/upload/$token': typeof UploadTokenRoute
   '/admin/$id': typeof AuthenticatedAdminIdRoute
   '/admin/templates': typeof AuthenticatedAdminTemplatesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
-  '/dochazka/terminal': typeof AuthenticatedDochazkaTerminalRoute
   '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -140,13 +139,13 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/nahlasit': typeof NahlasitRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/terminal': typeof TerminalRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/upload/$token': typeof UploadTokenRoute
   '/admin/$id': typeof AuthenticatedAdminIdRoute
   '/admin/templates': typeof AuthenticatedAdminTemplatesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
-  '/dochazka/terminal': typeof AuthenticatedDochazkaTerminalRoute
   '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -160,13 +159,13 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/nahlasit': typeof NahlasitRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/terminal': typeof TerminalRoute
   '/_authenticated/approvals': typeof AuthenticatedApprovalsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/upload/$token': typeof UploadTokenRoute
   '/_authenticated/admin/$id': typeof AuthenticatedAdminIdRoute
   '/_authenticated/admin/templates': typeof AuthenticatedAdminTemplatesRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
-  '/_authenticated/dochazka/terminal': typeof AuthenticatedDochazkaTerminalRoute
   '/_authenticated/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/_authenticated/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -180,13 +179,13 @@ export interface FileRouteTypes {
     | '/auth'
     | '/nahlasit'
     | '/reset-password'
+    | '/terminal'
     | '/approvals'
     | '/dashboard'
     | '/upload/$token'
     | '/admin/$id'
     | '/admin/templates'
     | '/admin/users'
-    | '/dochazka/terminal'
     | '/vykupy/$id'
     | '/vykupy/dashboard'
     | '/admin/'
@@ -198,13 +197,13 @@ export interface FileRouteTypes {
     | '/auth'
     | '/nahlasit'
     | '/reset-password'
+    | '/terminal'
     | '/approvals'
     | '/dashboard'
     | '/upload/$token'
     | '/admin/$id'
     | '/admin/templates'
     | '/admin/users'
-    | '/dochazka/terminal'
     | '/vykupy/$id'
     | '/vykupy/dashboard'
     | '/admin'
@@ -217,13 +216,13 @@ export interface FileRouteTypes {
     | '/auth'
     | '/nahlasit'
     | '/reset-password'
+    | '/terminal'
     | '/_authenticated/approvals'
     | '/_authenticated/dashboard'
     | '/upload/$token'
     | '/_authenticated/admin/$id'
     | '/_authenticated/admin/templates'
     | '/_authenticated/admin/users'
-    | '/_authenticated/dochazka/terminal'
     | '/_authenticated/vykupy/$id'
     | '/_authenticated/vykupy/dashboard'
     | '/_authenticated/admin/'
@@ -237,11 +236,19 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   NahlasitRoute: typeof NahlasitRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  TerminalRoute: typeof TerminalRoute
   UploadTokenRoute: typeof UploadTokenRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terminal': {
+      id: '/terminal'
+      path: '/terminal'
+      fullPath: '/terminal'
+      preLoaderRoute: typeof TerminalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -333,13 +340,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVykupyIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/dochazka/terminal': {
-      id: '/_authenticated/dochazka/terminal'
-      path: '/dochazka/terminal'
-      fullPath: '/dochazka/terminal'
-      preLoaderRoute: typeof AuthenticatedDochazkaTerminalRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/admin/users': {
       id: '/_authenticated/admin/users'
       path: '/admin/users'
@@ -370,7 +370,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminIdRoute: typeof AuthenticatedAdminIdRoute
   AuthenticatedAdminTemplatesRoute: typeof AuthenticatedAdminTemplatesRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
-  AuthenticatedDochazkaTerminalRoute: typeof AuthenticatedDochazkaTerminalRoute
   AuthenticatedVykupyIdRoute: typeof AuthenticatedVykupyIdRoute
   AuthenticatedVykupyDashboardRoute: typeof AuthenticatedVykupyDashboardRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
@@ -384,7 +383,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminIdRoute: AuthenticatedAdminIdRoute,
   AuthenticatedAdminTemplatesRoute: AuthenticatedAdminTemplatesRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
-  AuthenticatedDochazkaTerminalRoute: AuthenticatedDochazkaTerminalRoute,
   AuthenticatedVykupyIdRoute: AuthenticatedVykupyIdRoute,
   AuthenticatedVykupyDashboardRoute: AuthenticatedVykupyDashboardRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
@@ -401,8 +399,19 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   NahlasitRoute: NahlasitRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  TerminalRoute: TerminalRoute,
   UploadTokenRoute: UploadTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
