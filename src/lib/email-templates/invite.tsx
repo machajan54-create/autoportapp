@@ -23,26 +23,24 @@ export const InviteEmail = ({
   siteUrl,
   confirmationUrl,
 }: InviteEmailProps) => (
-  <Html lang="en" dir="ltr">
+  <Html lang="cs" dir="ltr">
     <Head />
-    <Preview>You've been invited to join {siteName}</Preview>
+    <Preview>Pozvánka do {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>You've been invited</Heading>
+        <Heading style={h1}>Byli jste pozváni</Heading>
         <Text style={text}>
-          You've been invited to join{' '}
+          Dostali jste pozvánku do aplikace{' '}
           <Link href={siteUrl} style={link}>
             <strong>{siteName}</strong>
           </Link>
-          . Click the button below to accept the invitation and create your
-          account.
+          . Pozvánku přijměte a vytvořte si účet kliknutím na tlačítko níže.
         </Text>
         <Button style={button} href={confirmationUrl}>
-          Accept Invitation
+          Přijmout pozvánku
         </Button>
         <Text style={footer}>
-          If you weren't expecting this invitation, you can safely ignore this
-          email.
+          Pokud jste pozvánku neočekávali, tento e-mail můžete ignorovat.
         </Text>
       </Container>
     </Body>
