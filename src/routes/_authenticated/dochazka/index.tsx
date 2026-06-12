@@ -612,6 +612,11 @@ function AbsencesTab() {
                   {a.status === "pending" && <Badge variant="secondary" className="bg-amber-100 text-amber-700">Čeká</Badge>}
                   {a.status === "approved" && <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">Schváleno</Badge>}
                   {a.status === "rejected" && <Badge variant="secondary" className="bg-rose-100 text-rose-700">Zamítnuto</Badge>}
+                {a.resolved_by && a.status !== "pending" && (
+                  <div className="mt-0.5 text-[10px] text-muted-foreground">
+                    {resolverMap.get(a.resolved_by) ?? "neznámý"}
+                  </div>
+                )}
                 </TableCell>
                 <TableCell>
                   <div className="flex justify-end gap-1">
