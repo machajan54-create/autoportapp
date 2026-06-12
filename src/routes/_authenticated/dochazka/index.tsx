@@ -260,7 +260,7 @@ function EmployeesTab() {
                 </TableCell>
                 <TableCell className="font-medium">{e.name}</TableCell>
                 <TableCell className="text-muted-foreground">{e.role || "—"}</TableCell>
-                <TableCell className="font-mono text-xs">{"•".repeat(e.pin.length)}</TableCell>
+                <TableCell className="font-mono text-xs">••••</TableCell>
                 <TableCell>{e.can_approve_absences ? <Check className="h-4 w-4 text-emerald-600" /> : <X className="h-4 w-4 text-muted-foreground" />}</TableCell>
                 <TableCell>{e.active ? <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">Aktivní</Badge> : <Badge variant="outline">Neaktivní</Badge>}</TableCell>
                 <TableCell>
