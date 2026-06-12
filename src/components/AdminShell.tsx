@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { ShieldCheck, FolderKanban, LogOut, Users, Car, Menu, LayoutDashboard, FileText, CheckSquare, Clock } from "lucide-react";
+import { ShieldCheck, FolderKanban, LogOut, Users, Car, Menu, LayoutDashboard, FileText, CheckSquare, Clock, Wrench } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { getMyAccess, getPendingApprovalsCount } from "@/lib/claims.functions";
 import autoportLogo from "@/assets/autoport-logo.png.asset.json";
 
-type ModuleKey = "claims" | "vykupy" | "vykupy_external" | "users" | "approvals" | "dashboard" | "dochazka";
+type ModuleKey = "claims" | "vykupy" | "vykupy_external" | "users" | "approvals" | "dashboard" | "dochazka" | "defects";
 
 export function AdminShell({
   children,
@@ -85,6 +85,7 @@ export function AdminShell({
       {can("claims") && navItem("/admin", "Zakázky", FolderKanban)}
       {(can("vykupy") || can("vykupy_external")) && navItem("/vykupy", "Ojeté vozy", Car)}
       {can("dochazka") && navItem("/dochazka", "Docházka", Clock)}
+      {navItem("/zavady", "Závady", Wrench)}
       {(access?.isAdmin || can("approvals")) && navItem("/approvals", "Schvalování", CheckSquare)}
       {access?.isAdmin && navItem("/admin/users", "Uživatelé", Users, pendingCount)}
       {access?.isAdmin && navItem("/admin/templates", "Šablony dokumentů", FileText)}

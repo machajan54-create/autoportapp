@@ -19,6 +19,7 @@ import { Route as UploadTokenRouteImport } from './routes/upload.$token'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
+import { Route as AuthenticatedZavadyIndexRouteImport } from './routes/_authenticated/zavady/index'
 import { Route as AuthenticatedVykupyIndexRouteImport } from './routes/_authenticated/vykupy/index'
 import { Route as AuthenticatedDochazkaIndexRouteImport } from './routes/_authenticated/dochazka/index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
@@ -81,6 +82,12 @@ const AuthenticatedApprovalsRoute = AuthenticatedApprovalsRouteImport.update({
   path: '/approvals',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedZavadyIndexRoute =
+  AuthenticatedZavadyIndexRouteImport.update({
+    id: '/zavady/',
+    path: '/zavady/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedVykupyIndexRoute =
   AuthenticatedVykupyIndexRouteImport.update({
     id: '/vykupy/',
@@ -168,6 +175,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/dochazka/': typeof AuthenticatedDochazkaIndexRoute
   '/vykupy/': typeof AuthenticatedVykupyIndexRoute
+  '/zavady/': typeof AuthenticatedZavadyIndexRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -191,6 +199,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/dochazka': typeof AuthenticatedDochazkaIndexRoute
   '/vykupy': typeof AuthenticatedVykupyIndexRoute
+  '/zavady': typeof AuthenticatedZavadyIndexRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -216,6 +225,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/dochazka/': typeof AuthenticatedDochazkaIndexRoute
   '/_authenticated/vykupy/': typeof AuthenticatedVykupyIndexRoute
+  '/_authenticated/zavady/': typeof AuthenticatedZavadyIndexRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -241,6 +251,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/dochazka/'
     | '/vykupy/'
+    | '/zavady/'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -264,6 +275,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dochazka'
     | '/vykupy'
+    | '/zavady'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -288,6 +300,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/'
     | '/_authenticated/dochazka/'
     | '/_authenticated/vykupy/'
+    | '/_authenticated/zavady/'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -378,6 +391,13 @@ declare module '@tanstack/react-router' {
       path: '/approvals'
       fullPath: '/approvals'
       preLoaderRoute: typeof AuthenticatedApprovalsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/zavady/': {
+      id: '/_authenticated/zavady/'
+      path: '/zavady'
+      fullPath: '/zavady/'
+      preLoaderRoute: typeof AuthenticatedZavadyIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/vykupy/': {
@@ -478,6 +498,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedDochazkaIndexRoute: typeof AuthenticatedDochazkaIndexRoute
   AuthenticatedVykupyIndexRoute: typeof AuthenticatedVykupyIndexRoute
+  AuthenticatedZavadyIndexRoute: typeof AuthenticatedZavadyIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -491,6 +512,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedDochazkaIndexRoute: AuthenticatedDochazkaIndexRoute,
   AuthenticatedVykupyIndexRoute: AuthenticatedVykupyIndexRoute,
+  AuthenticatedZavadyIndexRoute: AuthenticatedZavadyIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

@@ -472,6 +472,57 @@ export type Database = {
         }
         Relationships: []
       }
+      defects: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          photos: Json
+          priority: string
+          reported_by: string
+          reporter_name: string | null
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          resolver_name: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          photos?: Json
+          priority?: string
+          reported_by: string
+          reporter_name?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resolver_name?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          photos?: Json
+          priority?: string
+          reported_by?: string
+          reporter_name?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resolver_name?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       document_templates: {
         Row: {
           body: string
@@ -918,6 +969,7 @@ export type Database = {
         | "dashboard"
         | "vykupy_external"
         | "dochazka"
+        | "defects"
       app_role: "admin" | "employee"
       approval_status: "pending" | "approved" | "rejected"
       claim_status:
@@ -1076,6 +1128,7 @@ export const Constants = {
         "dashboard",
         "vykupy_external",
         "dochazka",
+        "defects",
       ],
       app_role: ["admin", "employee"],
       approval_status: ["pending", "approved", "rejected"],
