@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { ShieldCheck, FolderKanban, LogOut, Users, Car, Menu, LayoutDashboard, FileText, CheckSquare, Clock, Wrench, Search, History } from "lucide-react";
+import { ShieldCheck, FolderKanban, LogOut, Users, Car, Menu, LayoutDashboard, FileText, CheckSquare, Clock, Wrench, Search, History, Briefcase } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import autoportLogo from "@/assets/autoport-logo.png.asset.json";
 import { NotificationsBell } from "@/components/NotificationsBell";
 import { CommandPalette } from "@/components/CommandPalette";
 
-type ModuleKey = "claims" | "vykupy" | "vykupy_external" | "users" | "approvals" | "dashboard" | "dochazka" | "defects";
+type ModuleKey = "claims" | "vykupy" | "vykupy_external" | "users" | "approvals" | "dashboard" | "dochazka" | "defects" | "deals";
 
 export function AdminShell({
   children,
@@ -89,6 +89,7 @@ export function AdminShell({
       {(can("vykupy") || can("vykupy_external")) && navItem("/vykupy", "Ojeté vozy", Car)}
       {can("dochazka") && navItem("/dochazka", "Docházka", Clock)}
       {navItem("/zavady", "Závady", Wrench)}
+      {can("deals") && navItem("/deals", "Obchodní případy", Briefcase)}
       {(access?.isAdmin || can("approvals")) && navItem("/approvals", "Schvalování", CheckSquare)}
       {access?.isAdmin && navItem("/admin/users", "Uživatelé", Users, pendingCount)}
       {access?.isAdmin && navItem("/admin/templates", "Šablony dokumentů", FileText)}
