@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { BookOpen, Plus, Pencil, Trash2, Car, Fuel, Route as RouteIcon, Camera, X, Receipt } from "lucide-react";
+import { BookOpen, Plus, Pencil, Trash2, Car, Fuel, Route as RouteIcon, Camera, X, Receipt, Download } from "lucide-react";
 import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -321,6 +321,65 @@ function LogbookPage() {
     }
   }
 
+  function csvEscape(v: unknown): string {
+    if (v === null || v === undefined) return "";
+    const s = String(v);
+    return /[",;\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  }
+
+  async function exportVehicle(vehicle: Vehicle | null) {
+    try {
+      const res = await fetchEntries({
+        data: vehicle ? { vehicle_id: vehicle.id } : {},
+      });
+      const rows = (res?.rows ?? []) as Entry[];
+      if (!rows.length) {
+        toast.error("Žádné záznamy k exportu");
+        return;
+      }
+      const header = [
+        "Datum", "Vozidlo", "RZ", "Trasa", "Účel",
+        "Najeto KM", "Stav tachometru", "PHM (l)", "Cena (Kč)",
+        "Účtenka", "Poznámka", "Zapsal",
+      ];
+      const lines = [header.join(";")];
+      for (const e of rows) {
+        const v = vehicleById.get(e.vehicle_id);
+        lines.push([
+          e.entry_date,
+          v?.type ?? "",
+          v?.spz ?? "",
+          e.route ?? "",
+          e.purpose ?? "",
+          num(e.km_driven) ?? "",
+          num(e.odometer) ?? "",
+          num(e.fuel_liters) ?? "",
+          num(e.fuel_cost_czk) ?? "",
+          e.receipt_path ? "ano" : "",
+          e.note ?? "",
+          e.created_by_name ?? "",
+        ].map(csvEscape).join(";"));
+      }
+      const csv = "\uFEFF" + lines.join("\r\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const stamp = new Date().toISOString().slice(0, 10);
+      const slug = vehicle
+        ? `${vehicle.type}${vehicle.spz ? `-${vehicle.spz}` : ""}`.replace(/[^a-zA-Z0-9_-]+/g, "_")
+        : "vsechna-vozidla";
+      a.href = url;
+      a.download = `kniha-jizd_${slug}_${stamp}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Export hotov");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Export selhal");
+    }
+  }
+
   async function removeEntry(e: Entry) {
     if (!confirm("Smazat záznam?")) return;
     try {
@@ -343,6 +402,14 @@ function LogbookPage() {
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={openCreateVehicle}>
               <Car className="mr-1 h-4 w-4" /> Nové vozidlo
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => exportVehicle(selectedVehicle)}
+              disabled={selectedVehicleId !== "all" && !selectedVehicle}
+              title={selectedVehicle ? `Export – ${selectedVehicle.type}` : "Export všech vozidel"}
+            >
+              <Download className="mr-1 h-4 w-4" /> Export CSV
             </Button>
             <Button onClick={openCreateEntry}>
               <Plus className="mr-1 h-4 w-4" /> Nový záznam
@@ -501,6 +568,9 @@ function LogbookPage() {
                         : <Badge variant="outline">Neaktivní</Badge>}
                     </TableCell>
                     <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => exportVehicle(v)} aria-label="Export CSV" title="Export knihy jízd">
+                        <Download className="h-4 w-4" />
+                      </Button>
                       <Button variant="ghost" size="icon" onClick={() => openEditVehicle(v)} aria-label="Upravit">
                         <Pencil className="h-4 w-4" />
                       </Button>

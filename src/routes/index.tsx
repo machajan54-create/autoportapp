@@ -37,10 +37,16 @@ function Index() {
   const [resetEmail, setResetEmail] = useState("");
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/admin" });
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!data.session) return;
+      try {
+        const acc = await fetchAccess({});
+        navigate({ to: acc.isAdmin ? "/dashboard" : "/admin" });
+      } catch {
+        navigate({ to: "/admin" });
+      }
     });
-  }, [navigate]);
+  }, [navigate, fetchAccess]);
 
   async function signIn(e: React.FormEvent) {
     e.preventDefault();
@@ -57,12 +63,13 @@ function Index() {
         setBusy(false);
         return toast.error("Váš účet čeká na schválení super adminem.");
       }
+      setBusy(false);
+      navigate({ to: acc.isAdmin ? "/dashboard" : "/admin" });
+      return;
     } catch (e) {
       setBusy(false);
       return toast.error((e as Error).message);
     }
-    setBusy(false);
-    navigate({ to: "/admin" });
   }
 
   async function signUp(e: React.FormEvent) {
@@ -101,7 +108,12 @@ function Index() {
         password: demoPassword,
       });
       if (error) throw error;
-      navigate({ to: "/admin" });
+      try {
+        const acc = await fetchAccess({});
+        navigate({ to: acc.isAdmin ? "/dashboard" : "/admin" });
+      } catch {
+        navigate({ to: "/admin" });
+      }
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
