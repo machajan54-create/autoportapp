@@ -22,7 +22,11 @@ const entryInput = z.object({
   fuel_liters: z.number().min(0).max(10000).optional().nullable(),
   fuel_cost_czk: z.number().min(0).max(1_000_000).optional().nullable(),
   note: z.string().trim().max(2000).optional().nullable(),
-});
+  receipt_path: z.string().trim().max(500).optional().nullable(),
+}).refine(
+  (d) => !(d.fuel_liters && d.fuel_liters > 0) || !!d.receipt_path,
+  { message: "Tankování vyžaduje fotku účtenky", path: ["receipt_path"] },
+);
 
 export const listVehicles = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -105,6 +109,7 @@ export const upsertEntry = createServerFn({ method: "POST" })
       fuel_liters: rest.fuel_liters ?? null,
       fuel_cost_czk: rest.fuel_cost_czk ?? null,
       note: rest.note || null,
+      receipt_path: rest.receipt_path || null,
     };
     if (id) {
       const { error } = await context.supabase
