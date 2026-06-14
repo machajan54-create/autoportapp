@@ -1009,6 +1009,7 @@ export type Database = {
         | "vykupy_external"
         | "dochazka"
         | "defects"
+        | "deals"
       app_role: "admin" | "employee"
       approval_status: "pending" | "approved" | "rejected"
       claim_status:
@@ -1168,6 +1169,7 @@ export const Constants = {
         "vykupy_external",
         "dochazka",
         "defects",
+        "deals",
       ],
       app_role: ["admin", "employee"],
       approval_status: ["pending", "approved", "rejected"],
