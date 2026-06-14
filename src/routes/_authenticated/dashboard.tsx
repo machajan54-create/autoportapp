@@ -6,6 +6,7 @@ import { AdminShell } from "@/components/AdminShell";
 import { listClaims, getMyAccess } from "@/lib/claims.functions";
 import { listVykupy, formatKc, marze } from "@/lib/vykupy";
 import { listEmployees } from "@/lib/claims.functions";
+import { listDefects } from "@/lib/defects.functions";
 import {
   listEmployees as listDochazkaEmployees,
   listRecords as listDochazkaRecords,
@@ -13,7 +14,7 @@ import {
 } from "@/lib/dochazka.functions";
 import {
   FolderOpen, AlertCircle, Car, Coins, TrendingUp, Users,
-  Clock, LogIn, PalmtreeIcon, Timer,
+  Clock, LogIn, PalmtreeIcon, Timer, Wrench, AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -52,8 +53,10 @@ function DashboardPage() {
   const fetchDochEmp = useServerFn(listDochazkaEmployees);
   const fetchDochRec = useServerFn(listDochazkaRecords);
   const fetchDochAbs = useServerFn(listDochazkaAbsences);
+  const fetchDefects = useServerFn(listDefects);
   const today = new Date().toISOString().slice(0, 10);
   const monthFrom = today.slice(0, 7) + "-01";
+  const yearFrom = today.slice(0, 4) + "-01-01";
   const { data: dochEmps } = useQuery({
     queryKey: ["dash", "doch", "emps"],
     queryFn: () => fetchDochEmp({}),
@@ -67,6 +70,16 @@ function DashboardPage() {
   const { data: dochAbs } = useQuery({
     queryKey: ["dash", "doch", "abs"],
     queryFn: () => fetchDochAbs({}),
+    enabled: isAdmin,
+  });
+  const { data: dochYearRecs } = useQuery({
+    queryKey: ["dash", "doch", "year", yearFrom],
+    queryFn: () => fetchDochRec({ data: { from: yearFrom } }),
+    enabled: isAdmin,
+  });
+  const { data: defects } = useQuery({
+    queryKey: ["dash", "defects"],
+    queryFn: () => fetchDefects({}),
     enabled: isAdmin,
   });
 
@@ -92,6 +105,29 @@ function DashboardPage() {
       .slice(0, 5);
     return { inWork, totalHours, pendingAbs, activeEmps, top };
   }, [dochRecs, dochAbs, dochEmps, today]);
+
+  const dppWarnings = useMemo(() => {
+    if (!dochEmps || !dochYearRecs) return [] as { id: string; name: string; hours: number; over: boolean }[];
+    const dpp = (dochEmps as any[]).filter((e) => e.employment_type === "dpp" && e.active);
+    const map = new Map<string, number>();
+    for (const r of dochYearRecs as any[]) {
+      map.set(r.employee_id, (map.get(r.employee_id) ?? 0) + Number(r.hours_worked ?? 0));
+    }
+    return dpp
+      .map((e) => ({ id: e.id, name: e.name, hours: map.get(e.id) ?? 0 }))
+      .filter((x) => x.hours >= 270)
+      .map((x) => ({ ...x, over: x.hours >= 300 }))
+      .sort((a, b) => b.hours - a.hours);
+  }, [dochEmps, dochYearRecs]);
+
+  const defectStats = useMemo(() => {
+    const rows = (defects?.rows ?? []) as any[];
+    return {
+      open: rows.filter((d) => d.status === "new" || d.status === "in_progress").length,
+      critical: rows.filter((d) => d.priority === "critical" && d.status !== "closed" && d.status !== "resolved").length,
+      resolved: rows.filter((d) => d.status === "resolved" || d.status === "closed").length,
+    };
+  }, [defects]);
 
   if (aLoad) {
     return (
@@ -208,10 +244,48 @@ function DashboardPage() {
               </div>
             )}
           </div>
+
+          {dppWarnings.length > 0 && (
+            <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-5">
+              <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-amber-800">
+                <AlertTriangle className="h-4 w-4" /> DPP — limit 300 h/rok
+              </h3>
+              <div className="divide-y divide-amber-200/60">
+                {dppWarnings.map((w) => (
+                  <div key={w.id} className="flex items-center justify-between py-2 text-sm">
+                    <span className="font-medium">{w.name}</span>
+                    <span className={cn("font-mono font-semibold tabular-nums", w.over ? "text-rose-700" : "text-amber-700")}>
+                      {w.hours.toFixed(1)} / 300 h {w.over ? "⚠ překročeno" : ""}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+
+        <section className="mt-10">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Závady
+            </h2>
+            <Link to="/zavady" className="text-sm text-primary hover:underline">
+              Otevřít modul →
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <Stat label="Otevřené" value={defectStats.open} icon={<Wrench className="h-5 w-5 text-amber-600" />} tint="bg-amber-100" />
+            <Stat label="Kritické" value={defectStats.critical} icon={<AlertCircle className="h-5 w-5 text-rose-600" />} tint="bg-rose-100" />
+            <Stat label="Vyřešené" value={defectStats.resolved} icon={<CheckSquareLikeIcon />} tint="bg-emerald-100" />
+          </div>
         </section>
       </div>
     </AdminShell>
   );
+}
+
+function CheckSquareLikeIcon() {
+  return <Wrench className="h-5 w-5 text-emerald-600" />;
 }
 
 function Stat({
