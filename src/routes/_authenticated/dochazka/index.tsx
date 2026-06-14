@@ -202,11 +202,11 @@ function EmployeesTab() {
   const [edit, setEdit] = useState<any>(null);
 
   function openNew() {
-    setEdit({ name: "", role: "", pin: "", avatar_color: "slate", active: true, can_approve_absences: false, user_id: null, employment_type: "HPP" });
+    setEdit({ name: "", role: "", pin: "", avatar_color: "slate", active: true, can_approve_absences: false, user_id: null, employment_types: ["HPP"] });
     setOpen(true);
   }
   function openEdit(emp: any) {
-    setEdit({ ...emp, pin: "", user_id: emp.user_id ?? null, employment_type: emp.employment_type ?? "HPP" });
+    setEdit({ ...emp, pin: "", user_id: emp.user_id ?? null, employment_types: emp.employment_types?.length ? emp.employment_types : ["HPP"] });
     setOpen(true);
   }
   async function save() {
@@ -264,9 +264,14 @@ function EmployeesTab() {
                 <TableCell className="font-medium">{e.name}</TableCell>
                 <TableCell className="text-muted-foreground">{e.role || "—"}</TableCell>
                 <TableCell>
-                  {(e as any).employment_type === "DPP"
-                    ? <Badge variant="outline" className="border-violet-300 bg-violet-50 text-violet-700">DPP</Badge>
-                    : <Badge variant="outline" className="border-sky-300 bg-sky-50 text-sky-700">HPP</Badge>}
+                  <div className="flex flex-wrap gap-1">
+                    {((e as any).employment_types ?? []).includes("HPP") && (
+                      <Badge variant="outline" className="border-sky-300 bg-sky-50 text-sky-700">HPP</Badge>
+                    )}
+                    {((e as any).employment_types ?? []).includes("DPP") && (
+                      <Badge variant="outline" className="border-violet-300 bg-violet-50 text-violet-700">DPP</Badge>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell className="font-mono text-xs">••••</TableCell>
                 <TableCell>{e.can_approve_absences ? <Check className="h-4 w-4 text-emerald-600" /> : <X className="h-4 w-4 text-muted-foreground" />}</TableCell>
