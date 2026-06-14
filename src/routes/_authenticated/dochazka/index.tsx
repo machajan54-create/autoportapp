@@ -202,11 +202,11 @@ function EmployeesTab() {
   const [edit, setEdit] = useState<any>(null);
 
   function openNew() {
-    setEdit({ name: "", role: "", pin: "", avatar_color: "slate", active: true, can_approve_absences: false, user_id: null });
+    setEdit({ name: "", role: "", pin: "", avatar_color: "slate", active: true, can_approve_absences: false, user_id: null, employment_type: "HPP" });
     setOpen(true);
   }
   function openEdit(emp: any) {
-    setEdit({ ...emp, pin: "", user_id: emp.user_id ?? null });
+    setEdit({ ...emp, pin: "", user_id: emp.user_id ?? null, employment_type: emp.employment_type ?? "HPP" });
     setOpen(true);
   }
   async function save() {
@@ -242,6 +242,7 @@ function EmployeesTab() {
               <TableHead></TableHead>
               <TableHead>Jméno</TableHead>
               <TableHead>Pozice</TableHead>
+              <TableHead>Úvazek</TableHead>
               <TableHead>PIN</TableHead>
               <TableHead>Schvaluje</TableHead>
               <TableHead>Aktivní</TableHead>
@@ -250,9 +251,9 @@ function EmployeesTab() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">Načítám…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground">Načítám…</TableCell></TableRow>
             ) : (data ?? []).length === 0 ? (
-              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">Žádní zaměstnanci.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground">Žádní zaměstnanci.</TableCell></TableRow>
             ) : (data ?? []).map((e) => (
               <TableRow key={e.id}>
                 <TableCell>
@@ -262,6 +263,11 @@ function EmployeesTab() {
                 </TableCell>
                 <TableCell className="font-medium">{e.name}</TableCell>
                 <TableCell className="text-muted-foreground">{e.role || "—"}</TableCell>
+                <TableCell>
+                  {(e as any).employment_type === "DPP"
+                    ? <Badge variant="outline" className="border-violet-300 bg-violet-50 text-violet-700">DPP</Badge>
+                    : <Badge variant="outline" className="border-sky-300 bg-sky-50 text-sky-700">HPP</Badge>}
+                </TableCell>
                 <TableCell className="font-mono text-xs">••••</TableCell>
                 <TableCell>{e.can_approve_absences ? <Check className="h-4 w-4 text-emerald-600" /> : <X className="h-4 w-4 text-muted-foreground" />}</TableCell>
                 <TableCell>{e.active ? <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">Aktivní</Badge> : <Badge variant="outline">Neaktivní</Badge>}</TableCell>
