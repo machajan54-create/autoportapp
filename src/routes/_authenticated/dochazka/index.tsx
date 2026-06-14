@@ -36,7 +36,7 @@ import {
   listAbsences, upsertAbsence, resolveAbsence, deleteAbsence,
   listNotifications, markNotificationRead, markAllNotificationsRead,
   getDochazkaSettings, updateDochazkaSettings,
-  getMonthCalendar, listResolvers, getDppYearOverview, DPP_YEAR_LIMIT,
+  getMonthCalendar, listResolvers,
 } from "@/lib/dochazka.functions";
 import { Sparkles } from "lucide-react";
 import { autoFillMonth } from "@/lib/dochazka.functions";
