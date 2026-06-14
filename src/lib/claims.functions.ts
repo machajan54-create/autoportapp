@@ -330,6 +330,17 @@ export const setUserRole = createServerFn({ method: "POST" })
         .eq("user_id", data.user_id)
         .eq("role", data.role);
     }
+    {
+      const { logEvent } = await import("@/lib/audit.server");
+      await logEvent({
+        actorId: context.userId,
+        actorEmail: context.claims?.email ?? null,
+        module: "users",
+        action: data.enable ? "role_grant" : "role_revoke",
+        entityId: data.user_id,
+        details: { role: data.role },
+      });
+    }
     return { ok: true };
   });
 
@@ -361,6 +372,17 @@ export const setUserModule = createServerFn({ method: "POST" })
         .delete()
         .eq("user_id", data.user_id)
         .eq("module", data.module);
+    }
+    {
+      const { logEvent } = await import("@/lib/audit.server");
+      await logEvent({
+        actorId: context.userId,
+        actorEmail: context.claims?.email ?? null,
+        module: "users",
+        action: data.enable ? "module_grant" : "module_revoke",
+        entityId: data.user_id,
+        details: { module: data.module },
+      });
     }
     return { ok: true };
   });
@@ -410,6 +432,16 @@ export const setUserApproved = createServerFn({ method: "POST" })
       .update({ approved: data.approved })
       .eq("id", data.user_id);
     if (error) throw new Error(error.message);
+    {
+      const { logEvent } = await import("@/lib/audit.server");
+      await logEvent({
+        actorId: context.userId,
+        actorEmail: context.claims?.email ?? null,
+        module: "users",
+        action: data.approved ? "approved" : "unapproved",
+        entityId: data.user_id,
+      });
+    }
     return { ok: true };
   });
 
