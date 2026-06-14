@@ -12,7 +12,7 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import {
-  LayoutDashboard, FolderKanban, Car, Clock, Wrench, CheckSquare, Users, FileText,
+  LayoutDashboard, FolderKanban, Car, Clock, Wrench, CheckSquare, Users, FileText, BookOpen,
 } from "lucide-react";
 import { listClaims } from "@/lib/claims.functions";
 import { listVykupy } from "@/lib/vykupy";
@@ -85,6 +85,7 @@ export function CommandPalette({
     if (can("dochazka")) list.push({ label: "Docházka", to: "/dochazka", icon: Clock });
     list.push({ label: "Závady", to: "/zavady", icon: Wrench });
     if (isAdmin || can("approvals")) list.push({ label: "Schvalování", to: "/approvals", icon: CheckSquare });
+    if (can("logbook")) list.push({ label: "Kniha jízd", to: "/logbook", icon: BookOpen });
     if (isAdmin) list.push({ label: "Uživatelé", to: "/admin/users", icon: Users });
     if (isAdmin) list.push({ label: "Šablony dokumentů", to: "/admin/templates", icon: FileText });
     return list;

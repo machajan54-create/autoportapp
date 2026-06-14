@@ -40,6 +40,7 @@ const MODULE_LIST: { key: ModuleKey; label: string }[] = [
   { key: "dochazka", label: "Docházka" },
   { key: "defects", label: "Závady" },
   { key: "deals", label: "Obchodní případy" },
+  { key: "logbook", label: "Kniha jízd" },
   { key: "approvals", label: "Schvalování" },
   { key: "users", label: "Uživatelé" },
 ];
