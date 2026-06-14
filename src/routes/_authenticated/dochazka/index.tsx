@@ -809,61 +809,197 @@ function ExportTab() {
   const fetchR = useServerFn(listRecords);
   const fetchE = useServerFn(listEmployees);
   const fetchS = useServerFn(listShifts);
+  const fetchDpp = useServerFn(getDppYearOverview);
   const { data: records } = useQuery({ queryKey: ["dochazka", "records"], queryFn: () => fetchR({}) });
   const { data: employees } = useQuery({ queryKey: ["dochazka", "employees"], queryFn: () => fetchE({}) });
   const { data: shifts } = useQuery({ queryKey: ["dochazka", "shifts"], queryFn: () => fetchS({}) });
   const [month, setMonth] = useState(() => todayISODate().slice(0, 7));
+  const year = Number(month.slice(0, 4));
+  const { data: dpp } = useQuery({
+    queryKey: ["dochazka", "dpp-overview", year],
+    queryFn: () => fetchDpp({ data: { year } }),
+  });
 
+  const empMap = useMemo(() => new Map((employees ?? []).map((e) => [e.id, e])), [employees]);
   const filtered = useMemo(() => (records ?? []).filter((r) => r.date.startsWith(month)), [records, month]);
+  const filteredHpp = useMemo(
+    () => filtered.filter((r) => ((empMap.get(r.employee_id) as any)?.employment_type ?? "HPP") === "HPP"),
+    [filtered, empMap],
+  );
+  const filteredDpp = useMemo(
+    () => filtered.filter((r) => (empMap.get(r.employee_id) as any)?.employment_type === "DPP"),
+    [filtered, empMap],
+  );
 
-  function exportCSV() {
-    const empMap = new Map((employees ?? []).map((e) => [e.id, e.name]));
-    const shiftMap = new Map((shifts ?? []).map((s) => [s.id, s.name]));
-    const header = ["Datum", "Zaměstnanec", "Směna", "Příchod", "Odchod", "Pauza (min)", "Hodiny", "Poznámka"];
-    const rows = filtered.map((r) => [
-      r.date,
-      empMap.get(r.employee_id) ?? "",
-      r.shift_id ? (shiftMap.get(r.shift_id) ?? "") : "",
-      r.check_in ? new Date(r.check_in).toLocaleString("cs-CZ") : "",
-      r.check_out ? new Date(r.check_out).toLocaleString("cs-CZ") : "",
-      String(r.break_duration ?? 0),
-      String(r.hours_worked ?? 0),
-      (r.note ?? "").replace(/[\r\n;]/g, " "),
-    ]);
-    const csv = [header, ...rows].map((r) => r.map((x) => `"${String(x).replace(/"/g, '""')}"`).join(";")).join("\n");
+  function downloadCsv(filename: string, rows: string[][]) {
+    const csv = rows.map((r) => r.map((x) => `"${String(x ?? "").replace(/"/g, '""')}"`).join(";")).join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `dochazka-${month}.csv`;
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
   }
 
+  function buildRows(list: typeof filtered, includeType: boolean) {
+    const shiftMap = new Map((shifts ?? []).map((s) => [s.id, s.name]));
+    const header = ["Datum", "Zaměstnanec", ...(includeType ? ["Úvazek"] : []), "Směna", "Příchod", "Odchod", "Pauza (min)", "Hodiny", "Poznámka"];
+    const rows = list.map((r) => {
+      const e = empMap.get(r.employee_id) as any;
+      return [
+        r.date,
+        e?.name ?? "",
+        ...(includeType ? [e?.employment_type ?? "HPP"] : []),
+        r.shift_id ? (shiftMap.get(r.shift_id) ?? "") : "",
+        r.check_in ? new Date(r.check_in).toLocaleString("cs-CZ") : "",
+        r.check_out ? new Date(r.check_out).toLocaleString("cs-CZ") : "",
+        String(r.break_duration ?? 0),
+        String(r.hours_worked ?? 0),
+        (r.note ?? "").replace(/[\r\n;]/g, " "),
+      ];
+    });
+    return [header, ...rows];
+  }
+
+  function exportAll() { downloadCsv(`dochazka-${month}.csv`, buildRows(filtered, true)); }
+  function exportHpp() { downloadCsv(`dochazka-HPP-${month}.csv`, buildRows(filteredHpp, false)); }
+  function exportDpp() {
+    const base = buildRows(filteredDpp, false);
+    // append a YTD summary block for DPP employees
+    const sumByEmp = new Map<string, number>();
+    filteredDpp.forEach((r) => sumByEmp.set(r.employee_id, (sumByEmp.get(r.employee_id) ?? 0) + Number(r.hours_worked ?? 0)));
+    base.push([]);
+    base.push([`Roční sumář ${year} (limit ${DPP_YEAR_LIMIT} h)`]);
+    base.push(["Zaměstnanec", "Hodiny v měsíci", "Hodiny YTD", "Zbývá do limitu", "Status"]);
+    (dpp?.rows ?? []).forEach((row: any) => {
+      const monthly = sumByEmp.get(row.employee_id) ?? 0;
+      base.push([
+        row.name,
+        monthly.toFixed(2),
+        row.used_hours.toFixed(2),
+        row.remaining_hours.toFixed(2),
+        row.over_limit ? "PŘEKROČENO" : row.warn_threshold ? "Blíží se limit" : "OK",
+      ]);
+    });
+    downloadCsv(`dochazka-DPP-${month}.csv`, base);
+  }
+
   const totalHours = filtered.reduce((s, r) => s + Number(r.hours_worked ?? 0), 0);
+  const totalHppHours = filteredHpp.reduce((s, r) => s + Number(r.hours_worked ?? 0), 0);
+  const totalDppHours = filteredDpp.reduce((s, r) => s + Number(r.hours_worked ?? 0), 0);
 
   return (
-    <div className="mt-4 grid gap-4 md:grid-cols-2">
+    <div className="mt-4 space-y-4">
       <Card className="p-4">
-        <h3 className="text-sm font-semibold">Export CSV za měsíc</h3>
-        <div className="mt-3 grid gap-2">
+        <h3 className="text-sm font-semibold">Měsíc exportu</h3>
+        <div className="mt-3 grid max-w-xs gap-2">
           <Label>Měsíc</Label>
           <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} />
         </div>
-        <div className="mt-3 text-sm text-muted-foreground">
-          Záznamů: <span className="font-semibold text-foreground">{filtered.length}</span> · Celkem hodin:{" "}
-          <span className="font-semibold text-foreground">{totalHours.toFixed(1)}</span>
-        </div>
-        <Button className="mt-4 w-full" onClick={exportCSV} disabled={filtered.length === 0}>
-          <Download className="mr-2 h-4 w-4" /> Stáhnout CSV
-        </Button>
       </Card>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="p-4">
+          <Badge variant="outline" className="border-slate-300">Univerzální</Badge>
+          <h3 className="mt-2 text-sm font-semibold">Všichni zaměstnanci</h3>
+          <p className="mt-1 text-xs text-muted-foreground">Jeden soubor se sloupcem typu úvazku.</p>
+          <div className="mt-3 text-sm text-muted-foreground">
+            Záznamů: <span className="font-semibold text-foreground">{filtered.length}</span> · Hodin:{" "}
+            <span className="font-semibold text-foreground">{totalHours.toFixed(1)}</span>
+          </div>
+          <Button className="mt-3 w-full" onClick={exportAll} disabled={filtered.length === 0}>
+            <Download className="mr-2 h-4 w-4" /> Stáhnout CSV
+          </Button>
+        </Card>
+
+        <Card className="p-4">
+          <Badge variant="outline" className="border-sky-300 bg-sky-50 text-sky-700">HPP</Badge>
+          <h3 className="mt-2 text-sm font-semibold">Měsíční výkaz HPP</h3>
+          <p className="mt-1 text-xs text-muted-foreground">Hlavní pracovní poměr.</p>
+          <div className="mt-3 text-sm text-muted-foreground">
+            Záznamů: <span className="font-semibold text-foreground">{filteredHpp.length}</span> · Hodin:{" "}
+            <span className="font-semibold text-foreground">{totalHppHours.toFixed(1)}</span>
+          </div>
+          <Button className="mt-3 w-full" variant="outline" onClick={exportHpp} disabled={filteredHpp.length === 0}>
+            <Download className="mr-2 h-4 w-4" /> Stáhnout CSV
+          </Button>
+        </Card>
+
+        <Card className="p-4">
+          <Badge variant="outline" className="border-violet-300 bg-violet-50 text-violet-700">DPP</Badge>
+          <h3 className="mt-2 text-sm font-semibold">Měsíční výkaz DPP</h3>
+          <p className="mt-1 text-xs text-muted-foreground">Včetně ročního součtu do limitu {DPP_YEAR_LIMIT} h.</p>
+          <div className="mt-3 text-sm text-muted-foreground">
+            Záznamů: <span className="font-semibold text-foreground">{filteredDpp.length}</span> · Hodin:{" "}
+            <span className="font-semibold text-foreground">{totalDppHours.toFixed(1)}</span>
+          </div>
+          <Button className="mt-3 w-full" variant="outline" onClick={exportDpp} disabled={filteredDpp.length === 0 && (dpp?.rows ?? []).length === 0}>
+            <Download className="mr-2 h-4 w-4" /> Stáhnout CSV
+          </Button>
+        </Card>
+      </div>
+
+      <Card className="p-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold">DPP – přehled za rok {year}</h3>
+          <span className="text-xs text-muted-foreground">Limit {DPP_YEAR_LIMIT} h/rok</span>
+        </div>
+        {(dpp?.rows ?? []).length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">Žádní zaměstnanci na DPP.</p>
+        ) : (
+          <Table className="mt-3">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Zaměstnanec</TableHead>
+                <TableHead className="text-right">Odpracováno</TableHead>
+                <TableHead className="text-right">Zbývá</TableHead>
+                <TableHead>Vytížení</TableHead>
+                <TableHead>Stav</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(dpp?.rows ?? []).map((row: any) => {
+                const pct = Math.min(100, (row.used_hours / DPP_YEAR_LIMIT) * 100);
+                return (
+                  <TableRow key={row.employee_id}>
+                    <TableCell className="font-medium">{row.name}</TableCell>
+                    <TableCell className="text-right font-mono">{row.used_hours.toFixed(1)} h</TableCell>
+                    <TableCell className="text-right font-mono">{row.remaining_hours.toFixed(1)} h</TableCell>
+                    <TableCell>
+                      <div className="h-2 w-32 overflow-hidden rounded-full bg-slate-200">
+                        <div
+                          className={cn(
+                            "h-full rounded-full",
+                            row.over_limit ? "bg-rose-500" : row.warn_threshold ? "bg-amber-500" : "bg-emerald-500",
+                          )}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {row.over_limit ? (
+                        <Badge className="bg-rose-100 text-rose-700">Překročeno</Badge>
+                      ) : row.warn_threshold ? (
+                        <Badge className="bg-amber-100 text-amber-700">Blíží se limit</Badge>
+                      ) : (
+                        <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">OK</Badge>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        )}
+      </Card>
+
       <Card className="p-4 text-sm text-muted-foreground">
         <p className="font-semibold text-foreground">Tipy</p>
         <ul className="mt-2 list-disc space-y-1 pl-5">
           <li>Export obsahuje BOM, otevře se správně v Excelu.</li>
           <li>Oddělovač je středník (cs-CZ standard).</li>
-          <li>Pro reporting po zaměstnanci použijte filtr v Excelu.</li>
+          <li>U DPP je v souboru přidán roční sumář vůči limitu {DPP_YEAR_LIMIT} h/rok.</li>
         </ul>
       </Card>
     </div>
