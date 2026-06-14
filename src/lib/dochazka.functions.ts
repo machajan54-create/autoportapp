@@ -548,3 +548,54 @@ export const getMyDochazkaAccess = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     return await getDochazkaAccess(context.supabase, context.userId);
   });
+
+// ============ DPP year overview ============
+// Roční sumář hodin pro DPP zaměstnance (limit 300 h/rok dle zákoníku práce).
+export const DPP_YEAR_LIMIT = 300;
+
+export const getDppYearOverview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ year: z.number().int().min(2020).max(2100) }).parse(d ?? { year: new Date().getFullYear() }),
+  )
+  .handler(async ({ data, context }) => {
+    const start = `${data.year}-01-01`;
+    const next = `${data.year + 1}-01-01`;
+    const access = await getDochazkaAccess(context.supabase, context.userId);
+    let empQ = context.supabase
+      .from("attendance_employees")
+      .select("id,name,avatar_color,employment_type,active")
+      .eq("employment_type", "DPP")
+      .order("name");
+    let recsQ = context.supabase
+      .from("attendance_records")
+      .select("employee_id,hours_worked")
+      .gte("date", start)
+      .lt("date", next);
+    if (!access.canApproveAll) {
+      if (!access.myEmployeeId) return { year: data.year, limit: DPP_YEAR_LIMIT, rows: [] };
+      empQ = empQ.eq("id", access.myEmployeeId);
+      recsQ = recsQ.eq("employee_id", access.myEmployeeId);
+    }
+    const [emp, recs] = await Promise.all([empQ, recsQ]);
+    if (emp.error) throw new Error(emp.error.message);
+    if (recs.error) throw new Error(recs.error.message);
+    const sum = new Map<string, number>();
+    for (const r of (recs.data ?? []) as any[]) {
+      sum.set(r.employee_id, (sum.get(r.employee_id) ?? 0) + Number(r.hours_worked ?? 0));
+    }
+    const rows = (emp.data ?? []).map((e: any) => {
+      const used = Math.round((sum.get(e.id) ?? 0) * 100) / 100;
+      return {
+        employee_id: e.id,
+        name: e.name,
+        avatar_color: e.avatar_color,
+        active: e.active,
+        used_hours: used,
+        remaining_hours: Math.max(0, DPP_YEAR_LIMIT - used),
+        over_limit: used > DPP_YEAR_LIMIT,
+        warn_threshold: used >= DPP_YEAR_LIMIT * 0.9 && used <= DPP_YEAR_LIMIT,
+      };
+    });
+    return { year: data.year, limit: DPP_YEAR_LIMIT, rows };
+  });
