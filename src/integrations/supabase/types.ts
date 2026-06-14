@@ -511,6 +511,51 @@ export type Database = {
         }
         Relationships: []
       }
+      deals: {
+        Row: {
+          client_name: string | null
+          contact: string | null
+          created_at: string
+          expected_close_date: string | null
+          id: string
+          notes: string | null
+          owner_id: string | null
+          owner_name: string | null
+          stage: string
+          title: string
+          updated_at: string
+          value_czk: number | null
+        }
+        Insert: {
+          client_name?: string | null
+          contact?: string | null
+          created_at?: string
+          expected_close_date?: string | null
+          id?: string
+          notes?: string | null
+          owner_id?: string | null
+          owner_name?: string | null
+          stage?: string
+          title: string
+          updated_at?: string
+          value_czk?: number | null
+        }
+        Update: {
+          client_name?: string | null
+          contact?: string | null
+          created_at?: string
+          expected_close_date?: string | null
+          id?: string
+          notes?: string | null
+          owner_id?: string | null
+          owner_name?: string | null
+          stage?: string
+          title?: string
+          updated_at?: string
+          value_czk?: number | null
+        }
+        Relationships: []
+      }
       defects: {
         Row: {
           created_at: string
