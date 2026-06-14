@@ -403,6 +403,14 @@ function LogbookPage() {
             <Button variant="outline" onClick={openCreateVehicle}>
               <Car className="mr-1 h-4 w-4" /> Nové vozidlo
             </Button>
+            <Button
+              variant="outline"
+              onClick={() => exportVehicle(selectedVehicle)}
+              disabled={selectedVehicleId !== "all" && !selectedVehicle}
+              title={selectedVehicle ? `Export – ${selectedVehicle.type}` : "Export všech vozidel"}
+            >
+              <Download className="mr-1 h-4 w-4" /> Export CSV
+            </Button>
             <Button onClick={openCreateEntry}>
               <Plus className="mr-1 h-4 w-4" /> Nový záznam
             </Button>
@@ -560,6 +568,9 @@ function LogbookPage() {
                         : <Badge variant="outline">Neaktivní</Badge>}
                     </TableCell>
                     <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => exportVehicle(v)} aria-label="Export CSV" title="Export knihy jízd">
+                        <Download className="h-4 w-4" />
+                      </Button>
                       <Button variant="ghost" size="icon" onClick={() => openEditVehicle(v)} aria-label="Upravit">
                         <Pencil className="h-4 w-4" />
                       </Button>
