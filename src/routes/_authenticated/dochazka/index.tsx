@@ -36,7 +36,7 @@ import {
   listAbsences, upsertAbsence, resolveAbsence, deleteAbsence,
   listNotifications, markNotificationRead, markAllNotificationsRead,
   getDochazkaSettings, updateDochazkaSettings,
-  getMonthCalendar, listResolvers,
+  getMonthCalendar, listResolvers, getDppYearOverview, DPP_YEAR_LIMIT,
 } from "@/lib/dochazka.functions";
 import {
   ABSENCE_TYPES, ABSENCE_TYPE_LABEL, SHIFT_COLORS, AVATAR_COLORS,
