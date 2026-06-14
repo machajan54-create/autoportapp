@@ -721,6 +721,101 @@ export type Database = {
         }
         Relationships: []
       }
+      logbook_entries: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          entry_date: string
+          fuel_cost_czk: number | null
+          fuel_liters: number | null
+          id: string
+          km_driven: number | null
+          note: string | null
+          odometer: number | null
+          purpose: string | null
+          route: string | null
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          entry_date: string
+          fuel_cost_czk?: number | null
+          fuel_liters?: number | null
+          id?: string
+          km_driven?: number | null
+          note?: string | null
+          odometer?: number | null
+          purpose?: string | null
+          route?: string | null
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          entry_date?: string
+          fuel_cost_czk?: number | null
+          fuel_liters?: number | null
+          id?: string
+          km_driven?: number | null
+          note?: string | null
+          odometer?: number | null
+          purpose?: string | null
+          route?: string | null
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logbook_entries_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "logbook_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      logbook_vehicles: {
+        Row: {
+          active: boolean
+          body_number: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          responsible_person: string | null
+          spz: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          body_number?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          responsible_person?: string | null
+          spz?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          body_number?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          responsible_person?: string | null
+          spz?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           approved: boolean
@@ -1055,6 +1150,7 @@ export type Database = {
         | "dochazka"
         | "defects"
         | "deals"
+        | "logbook"
       app_role: "admin" | "employee"
       approval_status: "pending" | "approved" | "rejected"
       claim_status:
@@ -1215,6 +1311,7 @@ export const Constants = {
         "dochazka",
         "defects",
         "deals",
+        "logbook",
       ],
       app_role: ["admin", "employee"],
       approval_status: ["pending", "approved", "rejected"],
