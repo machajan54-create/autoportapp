@@ -837,11 +837,17 @@ function ExportTab() {
   const empMap = useMemo(() => new Map((employees ?? []).map((e) => [e.id, e])), [employees]);
   const filtered = useMemo(() => (records ?? []).filter((r) => r.date.startsWith(month)), [records, month]);
   const filteredHpp = useMemo(
-    () => filtered.filter((r) => ((empMap.get(r.employee_id) as any)?.employment_type ?? "HPP") === "HPP"),
+    () => filtered.filter((r) => {
+      const types = (empMap.get(r.employee_id) as any)?.employment_types ?? ["HPP"];
+      return types.includes("HPP");
+    }),
     [filtered, empMap],
   );
   const filteredDpp = useMemo(
-    () => filtered.filter((r) => (empMap.get(r.employee_id) as any)?.employment_type === "DPP"),
+    () => filtered.filter((r) => {
+      const types = (empMap.get(r.employee_id) as any)?.employment_types ?? [];
+      return types.includes("DPP");
+    }),
     [filtered, empMap],
   );
 
@@ -864,7 +870,7 @@ function ExportTab() {
       return [
         r.date,
         e?.name ?? "",
-        ...(includeType ? [e?.employment_type ?? "HPP"] : []),
+        ...(includeType ? [(e?.employment_types ?? ["HPP"]).join("+")] : []),
         r.shift_id ? (shiftMap.get(r.shift_id) ?? "") : "",
         r.check_in ? new Date(r.check_in).toLocaleString("cs-CZ") : "",
         r.check_out ? new Date(r.check_out).toLocaleString("cs-CZ") : "",
