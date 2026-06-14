@@ -39,7 +39,7 @@ const employeeInput = z.object({
   active: z.boolean().default(true),
   can_approve_absences: z.boolean().default(false),
   user_id: z.string().uuid().nullable().optional(),
-  employment_type: z.enum(["HPP", "DPP"]).default("HPP"),
+  employment_types: z.enum(["HPP", "DPP"]).default("HPP"),
 });
 
 export const listEmployees = createServerFn({ method: "GET" })
@@ -48,7 +48,7 @@ export const listEmployees = createServerFn({ method: "GET" })
     const access = await getDochazkaAccess(context.supabase, context.userId);
     let q = context.supabase
       .from("attendance_employees")
-      .select("id,name,role,avatar_color,active,can_approve_absences,user_id,employment_type,created_at,updated_at")
+      .select("id,name,role,avatar_color,active,can_approve_absences,user_id,employment_types,created_at,updated_at")
       .order("name");
     if (!access.canApproveAll) {
       // Non-admin / non-approver sees only their own paired employee row
@@ -500,7 +500,7 @@ export const getMonthCalendar = createServerFn({ method: "GET" })
     const access = await getDochazkaAccess(context.supabase, context.userId);
     let empQ = context.supabase
       .from("attendance_employees")
-      .select("id,name,avatar_color,active,employment_type")
+      .select("id,name,avatar_color,active,employment_types")
       .order("name");
     let recsQ = context.supabase
       .from("attendance_records")
@@ -564,8 +564,8 @@ export const getDppYearOverview = createServerFn({ method: "GET" })
     const access = await getDochazkaAccess(context.supabase, context.userId);
     let empQ = context.supabase
       .from("attendance_employees")
-      .select("id,name,avatar_color,employment_type,active")
-      .eq("employment_type", "DPP")
+      .select("id,name,avatar_color,employment_types,active")
+      .eq("employment_types", "DPP")
       .order("name");
     let recsQ = context.supabase
       .from("attendance_records")
