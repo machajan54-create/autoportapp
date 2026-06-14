@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Briefcase, Plus, Pencil, Trash2 } from "lucide-react";
+import { Briefcase, Plus, Pencil, Trash2, Upload } from "lucide-react";
 import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/table";
 import {
   listDeals, createDeal, updateDeal, deleteDeal,
+  importDeals,
   DEAL_STAGES, DEAL_STAGE_LABEL,
 } from "@/lib/deals.functions";
 import { cn } from "@/lib/utils";
@@ -75,6 +76,7 @@ function DealsPage() {
   const createFn = useServerFn(createDeal);
   const updateFn = useServerFn(updateDeal);
   const deleteFn = useServerFn(deleteDeal);
+  const importFn = useServerFn(importDeals);
 
   const { data, isLoading } = useQuery({
     queryKey: ["deals"],
@@ -87,6 +89,9 @@ function DealsPage() {
   const [editing, setEditing] = useState<DealRow | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
   const [saving, setSaving] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importing, setImporting] = useState(false);
 
   const filtered = useMemo(
     () => (filter === "all" ? rows : rows.filter((r) => r.stage === filter)),
@@ -177,6 +182,55 @@ function DealsPage() {
     }
   }
 
+  function parseImport(text: string) {
+    const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    if (lines.length === 0) return [] as Array<{ title: string; client_name?: string; contact?: string; value_czk?: number | null; notes?: string }>;
+    const sep = lines[0].includes("\t") ? "\t" : ";";
+    const splitRow = (l: string) => l.split(sep).map((c) => c.trim());
+    let start = 0;
+    const first = splitRow(lines[0]).map((c) => c.toLowerCase());
+    const headerKeywords = ["klient", "název", "nazev", "title", "client", "jméno", "jmeno"];
+    if (first.some((c) => headerKeywords.includes(c))) start = 1;
+    const out: Array<{ title: string; client_name?: string; contact?: string; value_czk?: number | null; notes?: string }> = [];
+    for (let i = start; i < lines.length; i++) {
+      const cells = splitRow(lines[i]);
+      const client = cells[0] || "";
+      if (!client) continue;
+      const contact = cells[1] || undefined;
+      const valueRaw = cells[2] || "";
+      const notes = cells[3] || undefined;
+      const val = valueRaw ? Number(valueRaw.replace(/\s/g, "").replace(",", ".")) : null;
+      out.push({
+        title: client,
+        client_name: client,
+        contact,
+        value_czk: val !== null && Number.isFinite(val) ? val : null,
+        notes,
+      });
+    }
+    return out;
+  }
+
+  async function doImport() {
+    const rows = parseImport(importText);
+    if (rows.length === 0) {
+      toast.error("Žádné platné řádky k importu");
+      return;
+    }
+    setImporting(true);
+    try {
+      const res = await importFn({ data: { rows } });
+      toast.success(`Importováno ${res.count} klientů`);
+      setImportOpen(false);
+      setImportText("");
+      qc.invalidateQueries({ queryKey: ["deals"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Import selhal");
+    } finally {
+      setImporting(false);
+    }
+  }
+
   return (
     <AdminShell requireModule="deals">
       <div className="mx-auto max-w-7xl space-y-4 p-4 md:p-6">
@@ -187,6 +241,9 @@ function DealsPage() {
           </div>
           <Button onClick={openCreate}>
             <Plus className="mr-1 h-4 w-4" /> Nový případ
+          </Button>
+          <Button variant="outline" onClick={() => setImportOpen(true)}>
+            <Upload className="mr-1 h-4 w-4" /> Import klientů
           </Button>
         </div>
 
@@ -320,6 +377,34 @@ function DealsPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Zrušit</Button>
             <Button onClick={save} disabled={saving}>{saving ? "Ukládám…" : "Uložit"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={importOpen} onOpenChange={setImportOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Import klientů</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <p className="text-muted-foreground">
+              Vložte data oddělená středníkem nebo tabulátorem (např. zkopírovaná z Excelu).
+              Sloupce: <strong>Klient; Kontakt; Hodnota (Kč); Poznámka</strong>. První řádek může být hlavička.
+            </p>
+            <Textarea
+              rows={10}
+              placeholder={"Klient;Kontakt;Hodnota;Poznámka\nJan Novák;jan@firma.cz;120000;První kontakt\nFirma s.r.o.;+420 123 456 789;;Doporučení"}
+              value={importText}
+              onChange={(e) => setImportText(e.target.value)}
+              className="font-mono text-xs"
+            />
+            <div className="text-xs text-muted-foreground">
+              Náhled: {parseImport(importText).length} řádků k importu
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setImportOpen(false)}>Zrušit</Button>
+            <Button onClick={doImport} disabled={importing}>{importing ? "Importuji…" : "Importovat"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

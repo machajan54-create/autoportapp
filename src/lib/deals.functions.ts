@@ -23,6 +23,17 @@ const createInput = z.object({
 
 const updateInput = createInput.partial().extend({ id: z.string().uuid() });
 
+const importInput = z.object({
+  rows: z.array(z.object({
+    title: z.string().trim().min(1).max(200),
+    client_name: z.string().trim().max(200).optional().nullable(),
+    contact: z.string().trim().max(200).optional().nullable(),
+    value_czk: z.number().min(0).max(1_000_000_000).optional().nullable(),
+    stage: z.enum(DEAL_STAGES).optional(),
+    notes: z.string().trim().max(4000).optional().nullable(),
+  })).min(1).max(500),
+});
+
 export const listDeals = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -84,4 +95,27 @@ export const deleteDeal = createServerFn({ method: "POST" })
     const { error } = await context.supabase.from("deals").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+export const importDeals = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => importInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: profile } = await supabase
+      .from("profiles").select("full_name,email").eq("id", userId).maybeSingle();
+    const owner_name = profile?.full_name || profile?.email || null;
+    const payload = data.rows.map((r) => ({
+      title: r.title,
+      client_name: r.client_name || null,
+      contact: r.contact || null,
+      value_czk: r.value_czk ?? null,
+      stage: r.stage ?? "lead",
+      notes: r.notes || null,
+      owner_id: userId,
+      owner_name,
+    }));
+    const { error } = await supabase.from("deals").insert(payload as never);
+    if (error) throw new Error(error.message);
+    return { ok: true, count: payload.length };
   });
