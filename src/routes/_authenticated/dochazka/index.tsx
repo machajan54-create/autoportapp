@@ -38,6 +38,8 @@ import {
   getDochazkaSettings, updateDochazkaSettings,
   getMonthCalendar, listResolvers, getDppYearOverview, DPP_YEAR_LIMIT,
 } from "@/lib/dochazka.functions";
+import { Sparkles } from "lucide-react";
+import { autoFillMonth } from "@/lib/dochazka.functions";
 import {
   ABSENCE_TYPES, ABSENCE_TYPE_LABEL, SHIFT_COLORS, AVATAR_COLORS,
   avatarClasses, shiftClasses, initials, formatTime, formatDate, formatHours, todayISODate,
