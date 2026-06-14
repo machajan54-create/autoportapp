@@ -447,6 +447,18 @@ function LogbookPage() {
                     <TableCell className="text-right tabular-nums">{e.fuel_cost_czk == null ? "—" : fmtCzk(e.fuel_cost_czk)}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{e.created_by_name || "—"}</TableCell>
                     <TableCell className="text-right">
+                      {e.receipt_path && receiptUrls[e.receipt_path] && (
+                        <a
+                          href={receiptUrls[e.receipt_path]}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mr-1 inline-flex h-9 w-9 items-center justify-center rounded-md text-amber-700 hover:bg-muted"
+                          aria-label="Otevřít účtenku"
+                          title="Otevřít účtenku"
+                        >
+                          <Receipt className="h-4 w-4" />
+                        </a>
+                      )}
                       <Button variant="ghost" size="icon" onClick={() => openEditEntry(e)} aria-label="Upravit">
                         <Pencil className="h-4 w-4" />
                       </Button>
