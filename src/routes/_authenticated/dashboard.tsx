@@ -7,6 +7,9 @@ import { listClaims, getMyAccess } from "@/lib/claims.functions";
 import { listVykupy, formatKc, marze } from "@/lib/vykupy";
 import { listEmployees } from "@/lib/claims.functions";
 import { listDefects } from "@/lib/defects.functions";
+import { listDeals, DEAL_STAGE_LABEL } from "@/lib/deals.functions";
+import { listVehicles, listEntries } from "@/lib/logbook.functions";
+import { listSuppliers, listPurchases } from "@/lib/approvals.functions";
 import {
   listEmployees as listDochazkaEmployees,
   listRecords as listDochazkaRecords,
@@ -15,6 +18,7 @@ import {
 import {
   FolderOpen, AlertCircle, AlertTriangle, LogIn, Timer,
   PalmtreeIcon, Trophy, Wrench, FileWarning, ArrowRight,
+  Briefcase, BookOpen, CheckSquare, Car as CarIcon, Fuel,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -83,6 +87,42 @@ function DashboardPage() {
     enabled: isAdmin,
   });
 
+  // Obchodní případy
+  const fetchDeals = useServerFn(listDeals);
+  const { data: dealsData } = useQuery({
+    queryKey: ["dash", "deals"],
+    queryFn: () => fetchDeals({}),
+    enabled: isAdmin,
+  });
+
+  // Kniha jízd
+  const fetchLogVehicles = useServerFn(listVehicles);
+  const fetchLogEntries = useServerFn(listEntries);
+  const { data: logVehiclesData } = useQuery({
+    queryKey: ["dash", "logbook", "vehicles"],
+    queryFn: () => fetchLogVehicles({}),
+    enabled: isAdmin,
+  });
+  const { data: logEntriesData } = useQuery({
+    queryKey: ["dash", "logbook", "entries"],
+    queryFn: () => fetchLogEntries({}),
+    enabled: isAdmin,
+  });
+
+  // Schvalování
+  const fetchSuppliers = useServerFn(listSuppliers);
+  const fetchPurchases = useServerFn(listPurchases);
+  const { data: suppliersData } = useQuery({
+    queryKey: ["dash", "suppliers"],
+    queryFn: () => fetchSuppliers({}),
+    enabled: isAdmin,
+  });
+  const { data: purchasesData } = useQuery({
+    queryKey: ["dash", "purchases"],
+    queryFn: () => fetchPurchases({}),
+    enabled: isAdmin,
+  });
+
   const dochStats = useMemo(() => {
     const recs = dochRecs ?? [];
     const todayRecs = recs.filter((r: any) => r.date === today);
@@ -128,6 +168,55 @@ function DashboardPage() {
       resolved: rows.filter((d) => d.status === "resolved" || d.status === "closed").length,
     };
   }, [defects]);
+
+  const dealStats = useMemo(() => {
+    const rows = ((dealsData as any)?.rows ?? []) as any[];
+    const byStage = new Map<string, { count: number; value: number }>();
+    let pipeline = 0;
+    let won = 0;
+    let wonCount = 0;
+    for (const d of rows) {
+      const v = Number(d.value_czk ?? 0);
+      const cur = byStage.get(d.stage) ?? { count: 0, value: 0 };
+      cur.count += 1;
+      cur.value += v;
+      byStage.set(d.stage, cur);
+      if (d.stage !== "won" && d.stage !== "lost") pipeline += v;
+      if (d.stage === "won") { won += v; wonCount += 1; }
+    }
+    return { total: rows.length, byStage, pipeline, won, wonCount };
+  }, [dealsData]);
+
+  const logbookStats = useMemo(() => {
+    const vehicles = ((logVehiclesData as any)?.rows ?? []) as any[];
+    const entries = ((logEntriesData as any)?.rows ?? []) as any[];
+    const monthPrefix = today.slice(0, 7);
+    let km = 0, liters = 0, cost = 0, refuels = 0;
+    for (const e of entries) {
+      if (!String(e.entry_date ?? "").startsWith(monthPrefix)) continue;
+      km += Number(e.km_driven ?? 0);
+      const l = Number(e.fuel_liters ?? 0);
+      if (l > 0) refuels += 1;
+      liters += l;
+      cost += Number(e.fuel_cost_czk ?? 0);
+    }
+    return {
+      vehiclesActive: vehicles.filter((v) => v.active).length,
+      vehiclesTotal: vehicles.length,
+      km, liters, cost, refuels,
+    };
+  }, [logVehiclesData, logEntriesData, today]);
+
+  const approvalsStats = useMemo(() => {
+    const sup = (suppliersData ?? []) as any[];
+    const pur = (purchasesData ?? []) as any[];
+    const pSup = sup.filter((s) => s.status === "pending").length;
+    const pPur = pur.filter((p) => p.status === "pending").length;
+    const pendingValue = pur
+      .filter((p) => p.status === "pending")
+      .reduce((s, p) => s + Number(p.amount ?? 0), 0);
+    return { pendingSuppliers: pSup, pendingPurchases: pPur, totalSuppliers: sup.length, pendingValue };
+  }, [suppliersData, purchasesData]);
 
   if (aLoad) {
     return (
@@ -433,6 +522,149 @@ function DashboardPage() {
                   ? "Vyžadují okamžitou pozornost."
                   : "Aktuálně nejsou hlášeny žádné kritické závady."}
               </p>
+            </div>
+          </div>
+
+          {/* Obchodní případy */}
+          <div className="flex flex-col space-y-4 md:col-span-4">
+            <SectionHeader stripe="bg-indigo-600" title="Obchodní případy" to="/deals" />
+            <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-start justify-between">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-slate-500">Aktivní pipeline</p>
+                  <p className="mt-1 text-3xl font-bold tabular-nums text-slate-900">
+                    {formatKc(dealStats.pipeline)}
+                  </p>
+                </div>
+                <div className="rounded-xl bg-indigo-50 p-2.5 text-indigo-600">
+                  <Briefcase className="h-6 w-6" />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                {(["lead", "offer", "won"] as const).map((s) => {
+                  const st = dealStats.byStage.get(s) ?? { count: 0, value: 0 };
+                  return (
+                    <div key={s} className="rounded-xl border border-slate-100 bg-slate-50 p-2">
+                      <p className="text-[10px] font-bold uppercase text-slate-400">
+                        {DEAL_STAGE_LABEL[s]}
+                      </p>
+                      <p className="text-lg font-bold tabular-nums text-slate-800">{st.count}</p>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex justify-between border-t border-slate-100 pt-2">
+                <span className="text-xs text-slate-500">Vyhráno · obrat</span>
+                <span className="text-xs font-bold tabular-nums text-emerald-700">
+                  {dealStats.wonCount} · {formatKc(dealStats.won)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Kniha jízd */}
+          <div className="flex flex-col space-y-4 md:col-span-4">
+            <SectionHeader stripe="bg-teal-600" title="Kniha jízd" to="/logbook" />
+            <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-start justify-between">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-slate-500">Najeto tento měsíc</p>
+                  <p className="mt-1 text-3xl font-bold tabular-nums text-slate-900">
+                    {logbookStats.km.toFixed(0)}
+                    <span className="ml-1 text-base font-medium text-slate-400">km</span>
+                  </p>
+                </div>
+                <div className="rounded-xl bg-teal-50 p-2.5 text-teal-600">
+                  <BookOpen className="h-6 w-6" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-2.5">
+                  <p className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1">
+                    <Fuel className="h-3 w-3" /> Tankování
+                  </p>
+                  <p className="text-lg font-bold tabular-nums text-slate-800">
+                    {logbookStats.liters.toFixed(1)} l
+                  </p>
+                  <p className="text-[11px] tabular-nums text-slate-500">{formatKc(logbookStats.cost)}</p>
+                </div>
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-2.5">
+                  <p className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1">
+                    <CarIcon className="h-3 w-3" /> Vozidla
+                  </p>
+                  <p className="text-lg font-bold tabular-nums text-slate-800">
+                    {logbookStats.vehiclesActive}
+                  </p>
+                  <p className="text-[11px] tabular-nums text-slate-500">
+                    z {logbookStats.vehiclesTotal} aktivních
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Schvalování */}
+          <div className="flex flex-col space-y-4 md:col-span-4">
+            <SectionHeader stripe="bg-purple-600" title="Schvalování" to="/approvals" />
+            <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <Link
+                to="/approvals"
+                className={cn(
+                  "block rounded-xl border p-4 transition-colors",
+                  approvalsStats.pendingPurchases + approvalsStats.pendingSuppliers > 0
+                    ? "border-purple-100 bg-purple-50 hover:bg-purple-100/60"
+                    : "border-emerald-100 bg-emerald-50 hover:bg-emerald-100/60",
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="min-w-0">
+                    <p className={cn(
+                      "text-xs font-bold uppercase tracking-wide",
+                      approvalsStats.pendingPurchases + approvalsStats.pendingSuppliers > 0
+                        ? "text-purple-700"
+                        : "text-emerald-700",
+                    )}>
+                      Čeká na schválení
+                    </p>
+                    <p className={cn(
+                      "text-3xl font-bold tabular-nums",
+                      approvalsStats.pendingPurchases + approvalsStats.pendingSuppliers > 0
+                        ? "text-purple-800"
+                        : "text-emerald-800",
+                    )}>
+                      {approvalsStats.pendingPurchases + approvalsStats.pendingSuppliers}
+                    </p>
+                  </div>
+                  <div className={cn(
+                    "flex h-10 w-10 items-center justify-center rounded-full",
+                    approvalsStats.pendingPurchases + approvalsStats.pendingSuppliers > 0
+                      ? "bg-purple-100 text-purple-600"
+                      : "bg-emerald-100 text-emerald-600",
+                  )}>
+                    <CheckSquare className="h-5 w-5" />
+                  </div>
+                </div>
+              </Link>
+              <div className="grid grid-cols-2 gap-2 text-center">
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-2">
+                  <p className="text-[10px] font-bold uppercase text-slate-400">Dodavatelé</p>
+                  <p className="text-lg font-bold tabular-nums text-slate-800">
+                    {approvalsStats.pendingSuppliers}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-2">
+                  <p className="text-[10px] font-bold uppercase text-slate-400">Nákupy</p>
+                  <p className="text-lg font-bold tabular-nums text-slate-800">
+                    {approvalsStats.pendingPurchases}
+                  </p>
+                </div>
+              </div>
+              <div className="flex justify-between border-t border-slate-100 pt-2">
+                <span className="text-xs text-slate-500">Hodnota čekajících nákupů</span>
+                <span className="text-xs font-bold tabular-nums text-slate-700">
+                  {formatKc(approvalsStats.pendingValue)}
+                </span>
+              </div>
             </div>
           </div>
         </div>
