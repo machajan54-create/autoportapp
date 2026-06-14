@@ -169,6 +169,19 @@ export const updateClaimStatus = createServerFn({ method: "POST" })
       .select("email, first_name, last_name, pu_number")
       .eq("id", data.id)
       .maybeSingle();
+    // Audit log
+    {
+      const { logEvent } = await import("@/lib/audit.server");
+      await logEvent({
+        actorId: context.userId,
+        actorEmail: context.claims?.email ?? null,
+        module: "claims",
+        action: "status_change",
+        entityId: data.id,
+        entityLabel: claim?.pu_number ?? data.id,
+        details: { status: data.status },
+      });
+    }
     if (claim?.email) {
       const isApproved = data.status === "done";
       const isRejected = data.status === "closed";
@@ -207,6 +220,16 @@ export const setVatPaid = createServerFn({ method: "POST" })
         type: "vat",
         message: data.paid ? "DPH označeno jako zaplacené" : "DPH vráceno do nezaplaceno",
       });
+    {
+      const { logEvent } = await import("@/lib/audit.server");
+      await logEvent({
+        actorId: context.userId,
+        actorEmail: context.claims?.email ?? null,
+        module: "claims",
+        action: data.paid ? "vat_paid" : "vat_unpaid",
+        entityId: data.id,
+      });
+    }
     return { ok: true };
   });
 
