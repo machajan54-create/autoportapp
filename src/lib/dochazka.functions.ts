@@ -39,7 +39,7 @@ const employeeInput = z.object({
   active: z.boolean().default(true),
   can_approve_absences: z.boolean().default(false),
   user_id: z.string().uuid().nullable().optional(),
-  employment_type: z.enum(["HPP", "DPP"]).default("HPP"),
+  employment_types: z.array(z.enum(["HPP", "DPP"])).min(1).default(["HPP"]),
 });
 
 export const listEmployees = createServerFn({ method: "GET" })
@@ -48,7 +48,7 @@ export const listEmployees = createServerFn({ method: "GET" })
     const access = await getDochazkaAccess(context.supabase, context.userId);
     let q = context.supabase
       .from("attendance_employees")
-      .select("id,name,role,avatar_color,active,can_approve_absences,user_id,employment_type,created_at,updated_at")
+      .select("id,name,role,avatar_color,active,can_approve_absences,user_id,employment_types,created_at,updated_at")
       .order("name");
     if (!access.canApproveAll) {
       // Non-admin / non-approver sees only their own paired employee row
@@ -500,7 +500,7 @@ export const getMonthCalendar = createServerFn({ method: "GET" })
     const access = await getDochazkaAccess(context.supabase, context.userId);
     let empQ = context.supabase
       .from("attendance_employees")
-      .select("id,name,avatar_color,active,employment_type")
+      .select("id,name,avatar_color,active,employment_types")
       .order("name");
     let recsQ = context.supabase
       .from("attendance_records")
@@ -564,8 +564,8 @@ export const getDppYearOverview = createServerFn({ method: "GET" })
     const access = await getDochazkaAccess(context.supabase, context.userId);
     let empQ = context.supabase
       .from("attendance_employees")
-      .select("id,name,avatar_color,employment_type,active")
-      .eq("employment_type", "DPP")
+      .select("id,name,avatar_color,employment_types,active")
+      .contains("employment_types", ["DPP"])
       .order("name");
     let recsQ = context.supabase
       .from("attendance_records")
@@ -598,4 +598,134 @@ export const getDppYearOverview = createServerFn({ method: "GET" })
       };
     });
     return { year: data.year, limit: DPP_YEAR_LIMIT, rows };
+  });
+
+// ============ Auto-fill month ============
+// Vygeneruje docházku za měsíc na pracovní dny (po–pá).
+// HPP: hours_per_day každý pracovní den.
+// DPP: total_hours rovnoměrně rozprostřené (krok 0,25 h).
+// Přeskočí dny, kde už existuje záznam nebo schválená/čekající absence.
+export const autoFillMonth = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        employee_id: z.string().uuid(),
+        year: z.number().int().min(2020).max(2100),
+        month: z.number().int().min(1).max(12),
+        mode: z.enum(["HPP", "DPP"]),
+        total_hours: z.number().min(0).max(744).optional(),
+        hours_per_day: z.number().min(0.25).max(24).default(8),
+        start_hour: z.number().int().min(0).max(23).default(8),
+        break_minutes: z.number().int().min(0).max(240).default(30),
+        shift_id: z.string().uuid().nullable().optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const access = await getDochazkaAccess(context.supabase, context.userId);
+    if (!access.canApproveAll) throw new Error("Nemáte oprávnění");
+
+    const monthStr = `${data.year}-${String(data.month).padStart(2, "0")}`;
+    const start = `${monthStr}-01`;
+    const lastDay = new Date(data.year, data.month, 0).getDate();
+    const next =
+      data.month === 12
+        ? `${data.year + 1}-01-01`
+        : `${data.year}-${String(data.month + 1).padStart(2, "0")}-01`;
+
+    // Ověření, že zaměstnanec má daný typ úvazku
+    const { data: emp, error: empErr } = await context.supabase
+      .from("attendance_employees")
+      .select("id,name,employment_types")
+      .eq("id", data.employee_id)
+      .maybeSingle();
+    if (empErr) throw new Error(empErr.message);
+    if (!emp) throw new Error("Zaměstnanec nenalezen");
+    if (!((emp as any).employment_types ?? []).includes(data.mode)) {
+      throw new Error(`Zaměstnanec nemá úvazek ${data.mode}`);
+    }
+
+    // Pracovní dny v měsíci (po–pá)
+    const workdays: string[] = [];
+    for (let d = 1; d <= lastDay; d++) {
+      const dow = new Date(Date.UTC(data.year, data.month - 1, d)).getUTCDay();
+      if (dow !== 0 && dow !== 6) {
+        workdays.push(`${monthStr}-${String(d).padStart(2, "0")}`);
+      }
+    }
+
+    // Blokované dny: existující záznamy + nezamítnuté absence
+    const [existing, absences] = await Promise.all([
+      context.supabase
+        .from("attendance_records")
+        .select("date")
+        .eq("employee_id", data.employee_id)
+        .gte("date", start)
+        .lt("date", next),
+      context.supabase
+        .from("attendance_absences")
+        .select("start_date,end_date,status")
+        .eq("employee_id", data.employee_id)
+        .neq("status", "rejected")
+        .lte("start_date", next)
+        .gte("end_date", start),
+    ]);
+    if (existing.error) throw new Error(existing.error.message);
+    if (absences.error) throw new Error(absences.error.message);
+
+    const blocked = new Set<string>();
+    (existing.data ?? []).forEach((r: any) => blocked.add(r.date));
+    (absences.data ?? []).forEach((a: any) => {
+      const s = new Date(a.start_date);
+      const e = new Date(a.end_date);
+      for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+        blocked.add(d.toISOString().slice(0, 10));
+      }
+    });
+
+    const days = workdays.filter((d) => !blocked.has(d));
+    if (days.length === 0) throw new Error("Žádné volné pracovní dny v tomto měsíci");
+
+    // Hodiny na den
+    let perDay: number[];
+    if (data.mode === "HPP") {
+      perDay = days.map(() => data.hours_per_day);
+    } else {
+      if (!data.total_hours || data.total_hours <= 0)
+        throw new Error("Pro DPP zadejte celkový počet hodin");
+      const base = Math.floor((data.total_hours / days.length) * 4) / 4;
+      perDay = days.map(() => base);
+      let remaining = Math.round((data.total_hours - base * days.length) * 100) / 100;
+      let i = 0;
+      while (remaining > 0.001 && i < days.length) {
+        perDay[i] = Math.round((perDay[i] + 0.25) * 100) / 100;
+        remaining = Math.round((remaining - 0.25) * 100) / 100;
+        i++;
+      }
+    }
+
+    const rows = days.map((date, idx) => {
+      const hours = perDay[idx];
+      const day = Number(date.slice(8, 10));
+      const checkIn = new Date(Date.UTC(data.year, data.month - 1, day, data.start_hour, 0, 0));
+      const checkOut = new Date(
+        checkIn.getTime() + (hours * 60 + data.break_minutes) * 60_000,
+      );
+      return {
+        employee_id: data.employee_id,
+        shift_id: data.shift_id ?? null,
+        date,
+        check_in: checkIn.toISOString(),
+        check_out: checkOut.toISOString(),
+        break_duration: data.break_minutes,
+        hours_worked: hours,
+        note: `Auto-vyplněno (${data.mode})`,
+      };
+    });
+
+    const { error } = await context.supabase.from("attendance_records").insert(rows);
+    if (error) throw new Error(error.message);
+    const total = Math.round(rows.reduce((s, r) => s + r.hours_worked, 0) * 100) / 100;
+    return { ok: true, created: rows.length, total_hours: total, skipped: workdays.length - days.length };
   });

@@ -38,6 +38,8 @@ import {
   getDochazkaSettings, updateDochazkaSettings,
   getMonthCalendar, listResolvers, getDppYearOverview, DPP_YEAR_LIMIT,
 } from "@/lib/dochazka.functions";
+import { Sparkles } from "lucide-react";
+import { autoFillMonth } from "@/lib/dochazka.functions";
 import {
   ABSENCE_TYPES, ABSENCE_TYPE_LABEL, SHIFT_COLORS, AVATAR_COLORS,
   avatarClasses, shiftClasses, initials, formatTime, formatDate, formatHours, todayISODate,
@@ -202,11 +204,11 @@ function EmployeesTab() {
   const [edit, setEdit] = useState<any>(null);
 
   function openNew() {
-    setEdit({ name: "", role: "", pin: "", avatar_color: "slate", active: true, can_approve_absences: false, user_id: null, employment_type: "HPP" });
+    setEdit({ name: "", role: "", pin: "", avatar_color: "slate", active: true, can_approve_absences: false, user_id: null, employment_types: ["HPP"] });
     setOpen(true);
   }
   function openEdit(emp: any) {
-    setEdit({ ...emp, pin: "", user_id: emp.user_id ?? null, employment_type: emp.employment_type ?? "HPP" });
+    setEdit({ ...emp, pin: "", user_id: emp.user_id ?? null, employment_types: emp.employment_types?.length ? emp.employment_types : ["HPP"] });
     setOpen(true);
   }
   async function save() {
@@ -264,9 +266,14 @@ function EmployeesTab() {
                 <TableCell className="font-medium">{e.name}</TableCell>
                 <TableCell className="text-muted-foreground">{e.role || "—"}</TableCell>
                 <TableCell>
-                  {(e as any).employment_type === "DPP"
-                    ? <Badge variant="outline" className="border-violet-300 bg-violet-50 text-violet-700">DPP</Badge>
-                    : <Badge variant="outline" className="border-sky-300 bg-sky-50 text-sky-700">HPP</Badge>}
+                  <div className="flex flex-wrap gap-1">
+                    {((e as any).employment_types ?? []).includes("HPP") && (
+                      <Badge variant="outline" className="border-sky-300 bg-sky-50 text-sky-700">HPP</Badge>
+                    )}
+                    {((e as any).employment_types ?? []).includes("DPP") && (
+                      <Badge variant="outline" className="border-violet-300 bg-violet-50 text-violet-700">DPP</Badge>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell className="font-mono text-xs">••••</TableCell>
                 <TableCell>{e.can_approve_absences ? <Check className="h-4 w-4 text-emerald-600" /> : <X className="h-4 w-4 text-muted-foreground" />}</TableCell>
@@ -292,27 +299,36 @@ function EmployeesTab() {
               <div className="grid gap-2"><Label>Pozice</Label><Input value={edit.role} onChange={(e) => setEdit({ ...edit, role: e.target.value })} /></div>
               <div className="grid gap-2"><Label>PIN (4–8 číslic)</Label><Input value={edit.pin} onChange={(e) => setEdit({ ...edit, pin: e.target.value.replace(/\D/g, "").slice(0, 8) })} /></div>
               <div className="grid gap-2">
-                <Label>Typ úvazku</Label>
+                <Label>Typ úvazku (lze vybrat oba)</Label>
                 <div className="flex gap-2">
-                  {(["HPP", "DPP"] as const).map((t) => (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => setEdit({ ...edit, employment_type: t })}
-                      className={cn(
-                        "flex-1 rounded-md border-2 px-3 py-2 text-sm font-semibold transition",
-                        edit.employment_type === t
-                          ? (t === "DPP"
+                  {(["HPP", "DPP"] as const).map((t) => {
+                    const selected = (edit.employment_types ?? []).includes(t);
+                    return (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => {
+                          const curr: string[] = edit.employment_types ?? [];
+                          let next = selected ? curr.filter((x) => x !== t) : [...curr, t];
+                          if (next.length === 0) next = [t]; // alespoň jeden
+                          setEdit({ ...edit, employment_types: next });
+                        }}
+                        className={cn(
+                          "flex-1 rounded-md border-2 px-3 py-2 text-sm font-semibold transition",
+                          selected
+                            ? t === "DPP"
                               ? "border-violet-400 bg-violet-50 text-violet-800"
-                              : "border-sky-400 bg-sky-50 text-sky-800")
-                          : "border-slate-200 bg-white text-slate-600 hover:border-slate-300",
-                      )}
-                    >
-                      {t === "HPP" ? "HPP – hlavní pracovní poměr" : "DPP – dohoda o provedení práce"}
-                    </button>
-                  ))}
+                              : "border-sky-400 bg-sky-50 text-sky-800"
+                            : "border-slate-200 bg-white text-slate-600 hover:border-slate-300",
+                        )}
+                      >
+                        {selected && <Check className="mr-1 inline h-3 w-3" />}
+                        {t === "HPP" ? "HPP – hlavní pracovní poměr" : "DPP – dohoda o provedení práce"}
+                      </button>
+                    );
+                  })}
                 </div>
-                {edit.employment_type === "DPP" && (
+                {(edit.employment_types ?? []).includes("DPP") && (
                   <p className="text-xs text-muted-foreground">
                     U DPP se sleduje zákonný limit {DPP_YEAR_LIMIT} h/rok u jednoho zaměstnavatele.
                   </p>
@@ -437,6 +453,212 @@ function ShiftsTab() {
 }
 
 // ============= Records =============
+// AutoFillButton: dialog pro hromadné vygenerování docházky za měsíc
+function AutoFillButton({ employees, shifts, onDone }: { employees: any[]; shifts: any[]; onDone: () => void }) {
+  const fill = useServerFn(autoFillMonth);
+  const [open, setOpen] = useState(false);
+  const today = new Date();
+  const defaultMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+  const [form, setForm] = useState({
+    employee_id: "",
+    month: defaultMonth,
+    mode: "HPP" as "HPP" | "DPP",
+    hours_per_day: 8,
+    total_hours: 100,
+    start_hour: 8,
+    break_minutes: 30,
+    shift_id: "" as string,
+  });
+  const [busy, setBusy] = useState(false);
+
+  const employee = employees.find((e) => e.id === form.employee_id);
+  const empTypes: string[] = (employee?.employment_types as string[]) ?? [];
+  const availableModes = empTypes.length ? empTypes : ["HPP"];
+
+  function openDialog() {
+    setForm((f) => ({
+      ...f,
+      employee_id: employees[0]?.id ?? "",
+      mode: ((employees[0]?.employment_types as string[]) ?? ["HPP"])[0] as "HPP" | "DPP",
+    }));
+    setOpen(true);
+  }
+
+  async function submit() {
+    if (!form.employee_id) { toast.error("Vyberte zaměstnance"); return; }
+    const [y, m] = form.month.split("-").map(Number);
+    setBusy(true);
+    try {
+      const r = await fill({
+        data: {
+          employee_id: form.employee_id,
+          year: y,
+          month: m,
+          mode: form.mode,
+          hours_per_day: form.hours_per_day,
+          total_hours: form.total_hours,
+          start_hour: form.start_hour,
+          break_minutes: form.break_minutes,
+          shift_id: form.shift_id || null,
+        },
+      });
+      toast.success(`Vygenerováno ${r.created} dní · celkem ${r.total_hours} h${r.skipped ? ` (přeskočeno ${r.skipped})` : ""}`);
+      setOpen(false);
+      onDone();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Chyba");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <Button variant="outline" onClick={openDialog}>
+        <Sparkles className="mr-1 h-4 w-4" /> Auto-vyplnit měsíc
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Auto-vyplnění docházky</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid gap-2">
+              <Label>Zaměstnanec</Label>
+              <Select
+                value={form.employee_id}
+                onValueChange={(v) => {
+                  const e = employees.find((x) => x.id === v);
+                  const types = (e?.employment_types as string[]) ?? ["HPP"];
+                  setForm({ ...form, employee_id: v, mode: types[0] as "HPP" | "DPP" });
+                }}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {employees.map((e) => (
+                    <SelectItem key={e.id} value={e.id}>
+                      {e.name} · {((e.employment_types as string[]) ?? ["HPP"]).join(" + ")}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-2">
+                <Label>Měsíc</Label>
+                <Input type="month" value={form.month} onChange={(e) => setForm({ ...form, month: e.target.value })} />
+              </div>
+              <div className="grid gap-2">
+                <Label>Režim</Label>
+                <div className="flex gap-1">
+                  {(["HPP", "DPP"] as const).map((t) => {
+                    const enabled = availableModes.includes(t);
+                    return (
+                      <button
+                        key={t}
+                        type="button"
+                        disabled={!enabled}
+                        onClick={() => setForm({ ...form, mode: t })}
+                        className={cn(
+                          "flex-1 rounded-md border-2 px-2 py-1.5 text-sm font-semibold transition",
+                          !enabled && "cursor-not-allowed opacity-40",
+                          form.mode === t
+                            ? t === "DPP"
+                              ? "border-violet-400 bg-violet-50 text-violet-800"
+                              : "border-sky-400 bg-sky-50 text-sky-800"
+                            : "border-slate-200 bg-white text-slate-600",
+                        )}
+                      >
+                        {t}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {form.mode === "HPP" ? (
+              <div className="grid gap-2">
+                <Label>Hodin na pracovní den</Label>
+                <Input
+                  type="number"
+                  step="0.25"
+                  min="0.25"
+                  max="24"
+                  value={form.hours_per_day}
+                  onChange={(e) => setForm({ ...form, hours_per_day: Number(e.target.value) })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Vygeneruje záznam na každý pracovní den (po–pá) s {form.hours_per_day} h.
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-2">
+                <Label>Celkový počet hodin za měsíc</Label>
+                <Input
+                  type="number"
+                  step="0.25"
+                  min="0.25"
+                  max="744"
+                  value={form.total_hours}
+                  onChange={(e) => setForm({ ...form, total_hours: Number(e.target.value) })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Hodiny se rovnoměrně rozprostřou mezi pracovní dny (krok 0,25 h).
+                </p>
+              </div>
+            )}
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="grid gap-2">
+                <Label>Začátek</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="23"
+                  value={form.start_hour}
+                  onChange={(e) => setForm({ ...form, start_hour: Number(e.target.value) })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Pauza (min)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="240"
+                  value={form.break_minutes}
+                  onChange={(e) => setForm({ ...form, break_minutes: Number(e.target.value) })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Směna</Label>
+                <Select value={form.shift_id || "__none"} onValueChange={(v) => setForm({ ...form, shift_id: v === "__none" ? "" : v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">Bez směny</SelectItem>
+                    {shifts.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <p className="rounded bg-amber-50 p-2 text-xs text-amber-800">
+              Dny s již existujícím záznamem nebo schválenou/čekající absencí budou přeskočeny.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>Zrušit</Button>
+            <Button onClick={submit} disabled={busy}>{busy ? "Generuji…" : "Vygenerovat"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 function RecordsTab() {
   const qc = useQueryClient();
   const fetchR = useServerFn(listRecords);
@@ -505,7 +727,10 @@ function RecordsTab() {
 
   return (
     <div className="mt-4 space-y-3">
-      <div className="flex justify-end"><Button onClick={openNew}><Plus className="mr-1 h-4 w-4" /> Nový záznam</Button></div>
+      <div className="flex flex-wrap justify-end gap-2">
+        <AutoFillButton employees={employees ?? []} shifts={shifts ?? []} onDone={() => qc.invalidateQueries({ queryKey: ["dochazka"] })} />
+        <Button onClick={openNew}><Plus className="mr-1 h-4 w-4" /> Nový záznam</Button>
+      </div>
       <Card>
         <Table>
           <TableHeader>
@@ -823,11 +1048,17 @@ function ExportTab() {
   const empMap = useMemo(() => new Map((employees ?? []).map((e) => [e.id, e])), [employees]);
   const filtered = useMemo(() => (records ?? []).filter((r) => r.date.startsWith(month)), [records, month]);
   const filteredHpp = useMemo(
-    () => filtered.filter((r) => ((empMap.get(r.employee_id) as any)?.employment_type ?? "HPP") === "HPP"),
+    () => filtered.filter((r) => {
+      const types = (empMap.get(r.employee_id) as any)?.employment_types ?? ["HPP"];
+      return types.includes("HPP");
+    }),
     [filtered, empMap],
   );
   const filteredDpp = useMemo(
-    () => filtered.filter((r) => (empMap.get(r.employee_id) as any)?.employment_type === "DPP"),
+    () => filtered.filter((r) => {
+      const types = (empMap.get(r.employee_id) as any)?.employment_types ?? [];
+      return types.includes("DPP");
+    }),
     [filtered, empMap],
   );
 
@@ -850,7 +1081,7 @@ function ExportTab() {
       return [
         r.date,
         e?.name ?? "",
-        ...(includeType ? [e?.employment_type ?? "HPP"] : []),
+        ...(includeType ? [(e?.employment_types ?? ["HPP"]).join("+")] : []),
         r.shift_id ? (shiftMap.get(r.shift_id) ?? "") : "",
         r.check_in ? new Date(r.check_in).toLocaleString("cs-CZ") : "",
         r.check_out ? new Date(r.check_out).toLocaleString("cs-CZ") : "",
