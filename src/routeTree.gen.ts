@@ -22,6 +22,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
 import { Route as AuthenticatedZavadyIndexRouteImport } from './routes/_authenticated/zavady/index'
 import { Route as AuthenticatedVykupyIndexRouteImport } from './routes/_authenticated/vykupy/index'
+import { Route as AuthenticatedLogbookIndexRouteImport } from './routes/_authenticated/logbook/index'
 import { Route as AuthenticatedDochazkaIndexRouteImport } from './routes/_authenticated/dochazka/index'
 import { Route as AuthenticatedDealsIndexRouteImport } from './routes/_authenticated/deals/index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
@@ -103,6 +104,12 @@ const AuthenticatedVykupyIndexRoute =
   AuthenticatedVykupyIndexRouteImport.update({
     id: '/vykupy/',
     path: '/vykupy/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLogbookIndexRoute =
+  AuthenticatedLogbookIndexRouteImport.update({
+    id: '/logbook/',
+    path: '/logbook/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedDochazkaIndexRoute =
@@ -214,6 +221,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/deals/': typeof AuthenticatedDealsIndexRoute
   '/dochazka/': typeof AuthenticatedDochazkaIndexRoute
+  '/logbook/': typeof AuthenticatedLogbookIndexRoute
   '/vykupy/': typeof AuthenticatedVykupyIndexRoute
   '/zavady/': typeof AuthenticatedZavadyIndexRoute
   '/api/public/hooks/weekly-report': typeof ApiPublicHooksWeeklyReportRoute
@@ -244,6 +252,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/deals': typeof AuthenticatedDealsIndexRoute
   '/dochazka': typeof AuthenticatedDochazkaIndexRoute
+  '/logbook': typeof AuthenticatedLogbookIndexRoute
   '/vykupy': typeof AuthenticatedVykupyIndexRoute
   '/zavady': typeof AuthenticatedZavadyIndexRoute
   '/api/public/hooks/weekly-report': typeof ApiPublicHooksWeeklyReportRoute
@@ -276,6 +285,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/deals/': typeof AuthenticatedDealsIndexRoute
   '/_authenticated/dochazka/': typeof AuthenticatedDochazkaIndexRoute
+  '/_authenticated/logbook/': typeof AuthenticatedLogbookIndexRoute
   '/_authenticated/vykupy/': typeof AuthenticatedVykupyIndexRoute
   '/_authenticated/zavady/': typeof AuthenticatedZavadyIndexRoute
   '/api/public/hooks/weekly-report': typeof ApiPublicHooksWeeklyReportRoute
@@ -308,6 +318,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/deals/'
     | '/dochazka/'
+    | '/logbook/'
     | '/vykupy/'
     | '/zavady/'
     | '/api/public/hooks/weekly-report'
@@ -338,6 +349,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/deals'
     | '/dochazka'
+    | '/logbook'
     | '/vykupy'
     | '/zavady'
     | '/api/public/hooks/weekly-report'
@@ -369,6 +381,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/'
     | '/_authenticated/deals/'
     | '/_authenticated/dochazka/'
+    | '/_authenticated/logbook/'
     | '/_authenticated/vykupy/'
     | '/_authenticated/zavady/'
     | '/api/public/hooks/weekly-report'
@@ -489,6 +502,13 @@ declare module '@tanstack/react-router' {
       path: '/vykupy'
       fullPath: '/vykupy/'
       preLoaderRoute: typeof AuthenticatedVykupyIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/logbook/': {
+      id: '/_authenticated/logbook/'
+      path: '/logbook'
+      fullPath: '/logbook/'
+      preLoaderRoute: typeof AuthenticatedLogbookIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dochazka/': {
@@ -618,6 +638,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedDealsIndexRoute: typeof AuthenticatedDealsIndexRoute
   AuthenticatedDochazkaIndexRoute: typeof AuthenticatedDochazkaIndexRoute
+  AuthenticatedLogbookIndexRoute: typeof AuthenticatedLogbookIndexRoute
   AuthenticatedVykupyIndexRoute: typeof AuthenticatedVykupyIndexRoute
   AuthenticatedZavadyIndexRoute: typeof AuthenticatedZavadyIndexRoute
 }
@@ -634,6 +655,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedDealsIndexRoute: AuthenticatedDealsIndexRoute,
   AuthenticatedDochazkaIndexRoute: AuthenticatedDochazkaIndexRoute,
+  AuthenticatedLogbookIndexRoute: AuthenticatedLogbookIndexRoute,
   AuthenticatedVykupyIndexRoute: AuthenticatedVykupyIndexRoute,
   AuthenticatedZavadyIndexRoute: AuthenticatedZavadyIndexRoute,
 }
