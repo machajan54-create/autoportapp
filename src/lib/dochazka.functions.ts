@@ -565,7 +565,7 @@ export const getDppYearOverview = createServerFn({ method: "GET" })
     let empQ = context.supabase
       .from("attendance_employees")
       .select("id,name,avatar_color,employment_types,active")
-      .eq("employment_types", "DPP")
+      .contains("employment_types", ["DPP"])
       .order("name");
     let recsQ = context.supabase
       .from("attendance_records")
