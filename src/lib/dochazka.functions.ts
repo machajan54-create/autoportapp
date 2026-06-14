@@ -39,7 +39,7 @@ const employeeInput = z.object({
   active: z.boolean().default(true),
   can_approve_absences: z.boolean().default(false),
   user_id: z.string().uuid().nullable().optional(),
-  employment_types: z.enum(["HPP", "DPP"]).default("HPP"),
+  employment_types: z.array(z.enum(["HPP", "DPP"])).min(1).default(["HPP"]),
 });
 
 export const listEmployees = createServerFn({ method: "GET" })
