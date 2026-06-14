@@ -734,6 +734,7 @@ export type Database = {
           note: string | null
           odometer: number | null
           purpose: string | null
+          receipt_path: string | null
           route: string | null
           updated_at: string
           vehicle_id: string
@@ -750,6 +751,7 @@ export type Database = {
           note?: string | null
           odometer?: number | null
           purpose?: string | null
+          receipt_path?: string | null
           route?: string | null
           updated_at?: string
           vehicle_id: string
@@ -766,6 +768,7 @@ export type Database = {
           note?: string | null
           odometer?: number | null
           purpose?: string | null
+          receipt_path?: string | null
           route?: string | null
           updated_at?: string
           vehicle_id?: string
