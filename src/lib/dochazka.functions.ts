@@ -500,7 +500,7 @@ export const getMonthCalendar = createServerFn({ method: "GET" })
     const access = await getDochazkaAccess(context.supabase, context.userId);
     let empQ = context.supabase
       .from("attendance_employees")
-      .select("id,name,avatar_color,active")
+      .select("id,name,avatar_color,active,employment_type")
       .order("name");
     let recsQ = context.supabase
       .from("attendance_records")
