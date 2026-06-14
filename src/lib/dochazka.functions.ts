@@ -396,7 +396,7 @@ export const resolveAbsence = createServerFn({ method: "POST" })
       const { logEvent } = await import("@/lib/audit.server");
       const { data: abs } = await context.supabase
         .from("attendance_absences")
-        .select("type, date_from, date_to, employee_id")
+        .select("type, start_date, end_date, employee_id")
         .eq("id", data.id)
         .maybeSingle();
       await logEvent({
@@ -405,7 +405,7 @@ export const resolveAbsence = createServerFn({ method: "POST" })
         module: "dochazka",
         action: `absence_${data.status}`,
         entityId: data.id,
-        entityLabel: abs ? `${abs.type} ${abs.date_from}–${abs.date_to}` : null,
+        entityLabel: abs ? `${abs.type} ${abs.start_date}–${abs.end_date}` : null,
         details: abs ? { employee_id: abs.employee_id } : undefined,
       });
     }
