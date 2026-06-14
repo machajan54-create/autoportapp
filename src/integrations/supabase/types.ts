@@ -77,6 +77,7 @@ export type Database = {
           avatar_color: string
           can_approve_absences: boolean
           created_at: string
+          employment_type: string
           id: string
           name: string
           pin: string
@@ -89,6 +90,7 @@ export type Database = {
           avatar_color?: string
           can_approve_absences?: boolean
           created_at?: string
+          employment_type?: string
           id?: string
           name: string
           pin: string
@@ -101,6 +103,7 @@ export type Database = {
           avatar_color?: string
           can_approve_absences?: boolean
           created_at?: string
+          employment_type?: string
           id?: string
           name?: string
           pin?: string
