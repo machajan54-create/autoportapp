@@ -292,6 +292,33 @@ function EmployeesTab() {
               <div className="grid gap-2"><Label>Pozice</Label><Input value={edit.role} onChange={(e) => setEdit({ ...edit, role: e.target.value })} /></div>
               <div className="grid gap-2"><Label>PIN (4–8 číslic)</Label><Input value={edit.pin} onChange={(e) => setEdit({ ...edit, pin: e.target.value.replace(/\D/g, "").slice(0, 8) })} /></div>
               <div className="grid gap-2">
+                <Label>Typ úvazku</Label>
+                <div className="flex gap-2">
+                  {(["HPP", "DPP"] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setEdit({ ...edit, employment_type: t })}
+                      className={cn(
+                        "flex-1 rounded-md border-2 px-3 py-2 text-sm font-semibold transition",
+                        edit.employment_type === t
+                          ? (t === "DPP"
+                              ? "border-violet-400 bg-violet-50 text-violet-800"
+                              : "border-sky-400 bg-sky-50 text-sky-800")
+                          : "border-slate-200 bg-white text-slate-600 hover:border-slate-300",
+                      )}
+                    >
+                      {t === "HPP" ? "HPP – hlavní pracovní poměr" : "DPP – dohoda o provedení práce"}
+                    </button>
+                  ))}
+                </div>
+                {edit.employment_type === "DPP" && (
+                  <p className="text-xs text-muted-foreground">
+                    U DPP se sleduje zákonný limit {DPP_YEAR_LIMIT} h/rok u jednoho zaměstnavatele.
+                  </p>
+                )}
+              </div>
+              <div className="grid gap-2">
                 <Label>Barva avatara</Label>
                 <div className="flex gap-2">
                   {AVATAR_COLORS.map((c) => (
