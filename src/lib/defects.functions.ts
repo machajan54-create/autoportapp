@@ -112,6 +112,19 @@ export const updateDefect = createServerFn({ method: "POST" })
     }
     const { error } = await supabase.from("defects").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
+    if (data.status) {
+      const { logEvent } = await import("@/lib/audit.server");
+      const { data: defect } = await supabase.from("defects").select("title").eq("id", data.id).maybeSingle();
+      await logEvent({
+        actorId: userId,
+        actorEmail: context.claims?.email ?? null,
+        module: "defects",
+        action: `status_${data.status}`,
+        entityId: data.id,
+        entityLabel: defect?.title ?? null,
+        details: data.priority ? { priority: data.priority } : undefined,
+      });
+    }
     return { ok: true };
   });
 
