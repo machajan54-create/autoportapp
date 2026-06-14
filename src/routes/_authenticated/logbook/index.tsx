@@ -594,6 +594,42 @@ function LogbookPage() {
                 <Label>Cena (Kč)</Label>
                 <Input type="number" inputMode="decimal" step="0.01" min="0" value={eForm.fuel_cost_czk} onChange={(e) => setEForm({ ...eForm, fuel_cost_czk: e.target.value })} />
               </div>
+              <div className="col-span-2">
+                <Label className="flex items-center gap-1">
+                  <Receipt className="h-3.5 w-3.5" />
+                  Fotka účtenky {num(eForm.fuel_liters) ? <span className="text-destructive">*</span> : null}
+                </Label>
+                {eForm.receipt_path ? (
+                  <div className="mt-1 flex items-center gap-2">
+                    {receiptUrls[eForm.receipt_path] ? (
+                      <a href={receiptUrls[eForm.receipt_path]} target="_blank" rel="noreferrer">
+                        <img src={receiptUrls[eForm.receipt_path]} alt="Účtenka" className="h-20 w-20 rounded border object-cover" />
+                      </a>
+                    ) : (
+                      <Badge variant="outline">Nahráno</Badge>
+                    )}
+                    <Button type="button" variant="ghost" size="sm" onClick={clearReceipt}>
+                      <X className="mr-1 h-3.5 w-3.5" /> Odebrat
+                    </Button>
+                  </div>
+                ) : (
+                  <label className="mt-1 inline-flex cursor-pointer items-center gap-2 rounded-md border border-dashed bg-background px-3 py-2 text-sm hover:bg-muted">
+                    <Camera className="h-4 w-4" />
+                    {receiptUploading ? "Nahrávám…" : "Vyfotit / vybrat účtenku"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                      disabled={receiptUploading}
+                      onChange={(e) => uploadReceipt(e.target.files?.[0])}
+                    />
+                  </label>
+                )}
+                {num(eForm.fuel_liters) ? (
+                  <p className="mt-1 text-xs text-muted-foreground">Bez fotky účtenky nelze tankování uložit.</p>
+                ) : null}
+              </div>
             </div>
             <div>
               <Label>Poznámka</Label>
