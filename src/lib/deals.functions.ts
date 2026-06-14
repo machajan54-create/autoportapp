@@ -69,7 +69,10 @@ export const updateDeal = createServerFn({ method: "POST" })
     for (const [k, v] of Object.entries(rest)) {
       if (v !== undefined) patch[k] = v === "" ? null : v;
     }
-    const { error } = await context.supabase.from("deals").update(patch).eq("id", id);
+    const { error } = await context.supabase
+      .from("deals")
+      .update(patch as never)
+      .eq("id", id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
