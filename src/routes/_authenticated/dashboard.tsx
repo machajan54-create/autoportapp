@@ -518,28 +518,6 @@ function initials(name: string) {
     .join("") || "?";
 }
 
-function Stat({
-  label,
-  value,
-  icon,
-  tint,
-}: {
-  label: string;
-  value: number | string;
-  icon: React.ReactNode;
-  tint: string;
-}) {
-  return (
-    <div className="flex items-center justify-between rounded-xl border bg-card p-5">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-        <p className="mt-1 text-2xl font-bold md:text-3xl">{value}</p>
-      </div>
-      <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg", tint)}>{icon}</div>
-    </div>
-  );
-}
-
 function PricerLeaderboard({
   rows,
   employees,
