@@ -39,6 +39,7 @@ const employeeInput = z.object({
   active: z.boolean().default(true),
   can_approve_absences: z.boolean().default(false),
   user_id: z.string().uuid().nullable().optional(),
+  employment_type: z.enum(["HPP", "DPP"]).default("HPP"),
 });
 
 export const listEmployees = createServerFn({ method: "GET" })
@@ -47,7 +48,7 @@ export const listEmployees = createServerFn({ method: "GET" })
     const access = await getDochazkaAccess(context.supabase, context.userId);
     let q = context.supabase
       .from("attendance_employees")
-      .select("id,name,role,avatar_color,active,can_approve_absences,user_id,created_at,updated_at")
+      .select("id,name,role,avatar_color,active,can_approve_absences,user_id,employment_type,created_at,updated_at")
       .order("name");
     if (!access.canApproveAll) {
       // Non-admin / non-approver sees only their own paired employee row
