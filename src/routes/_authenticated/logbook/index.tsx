@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { BookOpen, Plus, Pencil, Trash2, Car, Fuel, Route as RouteIcon } from "lucide-react";
+import { BookOpen, Plus, Pencil, Trash2, Car, Fuel, Route as RouteIcon, Camera, X, Receipt } from "lucide-react";
 import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -22,8 +22,9 @@ import {
 } from "@/components/ui/table";
 import {
   listVehicles, upsertVehicle, deleteVehicle,
-  listEntries, upsertEntry, deleteEntry,
+  listEntries, upsertEntry, deleteEntry, getReceiptUrls,
 } from "@/lib/logbook.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/logbook/")({
   component: LogbookPage,
@@ -50,6 +51,7 @@ type Entry = {
   fuel_cost_czk: number | string | null;
   note: string | null;
   created_by_name: string | null;
+  receipt_path: string | null;
 };
 
 const emptyVehicle = { type: "", spz: "", body_number: "", responsible_person: "", active: true };
@@ -63,6 +65,7 @@ const emptyEntry = {
   fuel_liters: "",
   fuel_cost_czk: "",
   note: "",
+  receipt_path: "" as string,
 };
 
 function num(v: number | string | null | undefined): number | null {
@@ -91,6 +94,7 @@ function LogbookPage() {
   const deleteVehicleFn = useServerFn(deleteVehicle);
   const saveEntryFn = useServerFn(upsertEntry);
   const deleteEntryFn = useServerFn(deleteEntry);
+  const fetchReceiptUrls = useServerFn(getReceiptUrls);
 
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | "all">("all");
 
@@ -106,6 +110,17 @@ function LogbookPage() {
       fetchEntries({ data: selectedVehicleId === "all" ? {} : { vehicle_id: selectedVehicleId } }),
   });
   const entries = (eData?.rows ?? []) as Entry[];
+
+  const receiptPaths = useMemo(
+    () => entries.map((e) => e.receipt_path).filter((p): p is string => !!p),
+    [entries],
+  );
+  const { data: receiptUrlsData } = useQuery({
+    queryKey: ["logbook-receipt-urls", receiptPaths],
+    queryFn: () => fetchReceiptUrls({ data: { paths: receiptPaths } }),
+    enabled: receiptPaths.length > 0,
+  });
+  const receiptUrls = receiptUrlsData?.urls ?? {};
 
   const vehicleById = useMemo(() => {
     const m = new Map<string, Vehicle>();
@@ -219,6 +234,7 @@ function LogbookPage() {
       fuel_liters: e.fuel_liters == null ? "" : String(e.fuel_liters),
       fuel_cost_czk: e.fuel_cost_czk == null ? "" : String(e.fuel_cost_czk),
       note: e.note ?? "",
+      receipt_path: e.receipt_path ?? "",
     });
     setEntryOpen(true);
   }
@@ -238,6 +254,10 @@ function LogbookPage() {
       toast.error("Vyplňte alespoň najeté KM nebo natankováno (l)");
       return;
     }
+    if (liters !== null && liters > 0 && !eForm.receipt_path) {
+      toast.error("Tankování vyžaduje fotku účtenky");
+      return;
+    }
     setESaving(true);
     try {
       await saveEntryFn({
@@ -252,6 +272,7 @@ function LogbookPage() {
           fuel_liters: liters,
           fuel_cost_czk: num(eForm.fuel_cost_czk),
           note: eForm.note.trim() || null,
+          receipt_path: eForm.receipt_path || null,
         },
       });
       toast.success("Záznam uložen");
@@ -261,6 +282,42 @@ function LogbookPage() {
       toast.error(e instanceof Error ? e.message : "Uložení selhalo");
     } finally {
       setESaving(false);
+    }
+  }
+
+  const [receiptUploading, setReceiptUploading] = useState(false);
+  async function uploadReceipt(file: File | undefined | null) {
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Soubor je větší než 10 MB");
+      return;
+    }
+    setReceiptUploading(true);
+    try {
+      const { data: userRes } = await supabase.auth.getUser();
+      const uid = userRes.user?.id;
+      if (!uid) throw new Error("Nejste přihlášen");
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `${uid}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from("logbook-receipts").upload(path, file, {
+        upsert: false,
+        contentType: file.type || undefined,
+      });
+      if (error) throw new Error(error.message);
+      setEForm((f) => ({ ...f, receipt_path: path }));
+      toast.success("Účtenka nahrána");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Nahrání selhalo");
+    } finally {
+      setReceiptUploading(false);
+    }
+  }
+
+  async function clearReceipt() {
+    const path = eForm.receipt_path;
+    setEForm((f) => ({ ...f, receipt_path: "" }));
+    if (path) {
+      try { await supabase.storage.from("logbook-receipts").remove([path]); } catch { /* ignore */ }
     }
   }
 
