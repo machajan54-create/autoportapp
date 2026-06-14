@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Briefcase, Plus, Pencil, Trash2 } from "lucide-react";
+import { Briefcase, Plus, Pencil, Trash2, Upload } from "lucide-react";
 import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/table";
 import {
   listDeals, createDeal, updateDeal, deleteDeal,
+  importDeals,
   DEAL_STAGES, DEAL_STAGE_LABEL,
 } from "@/lib/deals.functions";
 import { cn } from "@/lib/utils";
@@ -75,6 +76,7 @@ function DealsPage() {
   const createFn = useServerFn(createDeal);
   const updateFn = useServerFn(updateDeal);
   const deleteFn = useServerFn(deleteDeal);
+  const importFn = useServerFn(importDeals);
 
   const { data, isLoading } = useQuery({
     queryKey: ["deals"],
@@ -87,6 +89,9 @@ function DealsPage() {
   const [editing, setEditing] = useState<DealRow | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
   const [saving, setSaving] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importing, setImporting] = useState(false);
 
   const filtered = useMemo(
     () => (filter === "all" ? rows : rows.filter((r) => r.stage === filter)),
@@ -187,6 +192,9 @@ function DealsPage() {
           </div>
           <Button onClick={openCreate}>
             <Plus className="mr-1 h-4 w-4" /> Nový případ
+          </Button>
+          <Button variant="outline" onClick={() => setImportOpen(true)}>
+            <Upload className="mr-1 h-4 w-4" /> Import klientů
           </Button>
         </div>
 
