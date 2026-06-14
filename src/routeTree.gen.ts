@@ -23,6 +23,7 @@ import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedZavadyIndexRouteImport } from './routes/_authenticated/zavady/index'
 import { Route as AuthenticatedVykupyIndexRouteImport } from './routes/_authenticated/vykupy/index'
 import { Route as AuthenticatedDochazkaIndexRouteImport } from './routes/_authenticated/dochazka/index'
+import { Route as AuthenticatedDealsIndexRouteImport } from './routes/_authenticated/deals/index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as AuthenticatedVykupyDashboardRouteImport } from './routes/_authenticated/vykupy/dashboard'
@@ -110,6 +111,11 @@ const AuthenticatedDochazkaIndexRoute =
     path: '/dochazka/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedDealsIndexRoute = AuthenticatedDealsIndexRouteImport.update({
+  id: '/deals/',
+  path: '/deals/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
@@ -206,6 +212,7 @@ export interface FileRoutesByFullPath {
   '/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/deals/': typeof AuthenticatedDealsIndexRoute
   '/dochazka/': typeof AuthenticatedDochazkaIndexRoute
   '/vykupy/': typeof AuthenticatedVykupyIndexRoute
   '/zavady/': typeof AuthenticatedZavadyIndexRoute
@@ -235,6 +242,7 @@ export interface FileRoutesByTo {
   '/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
+  '/deals': typeof AuthenticatedDealsIndexRoute
   '/dochazka': typeof AuthenticatedDochazkaIndexRoute
   '/vykupy': typeof AuthenticatedVykupyIndexRoute
   '/zavady': typeof AuthenticatedZavadyIndexRoute
@@ -266,6 +274,7 @@ export interface FileRoutesById {
   '/_authenticated/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/_authenticated/deals/': typeof AuthenticatedDealsIndexRoute
   '/_authenticated/dochazka/': typeof AuthenticatedDochazkaIndexRoute
   '/_authenticated/vykupy/': typeof AuthenticatedVykupyIndexRoute
   '/_authenticated/zavady/': typeof AuthenticatedZavadyIndexRoute
@@ -297,6 +306,7 @@ export interface FileRouteTypes {
     | '/vykupy/dashboard'
     | '/lovable/email/suppression'
     | '/admin/'
+    | '/deals/'
     | '/dochazka/'
     | '/vykupy/'
     | '/zavady/'
@@ -326,6 +336,7 @@ export interface FileRouteTypes {
     | '/vykupy/dashboard'
     | '/lovable/email/suppression'
     | '/admin'
+    | '/deals'
     | '/dochazka'
     | '/vykupy'
     | '/zavady'
@@ -356,6 +367,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vykupy/dashboard'
     | '/lovable/email/suppression'
     | '/_authenticated/admin/'
+    | '/_authenticated/deals/'
     | '/_authenticated/dochazka/'
     | '/_authenticated/vykupy/'
     | '/_authenticated/zavady/'
@@ -486,6 +498,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDochazkaIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/deals/': {
+      id: '/_authenticated/deals/'
+      path: '/deals'
+      fullPath: '/deals/'
+      preLoaderRoute: typeof AuthenticatedDealsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/': {
       id: '/_authenticated/admin/'
       path: '/admin'
@@ -597,6 +616,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVykupyIdRoute: typeof AuthenticatedVykupyIdRoute
   AuthenticatedVykupyDashboardRoute: typeof AuthenticatedVykupyDashboardRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+  AuthenticatedDealsIndexRoute: typeof AuthenticatedDealsIndexRoute
   AuthenticatedDochazkaIndexRoute: typeof AuthenticatedDochazkaIndexRoute
   AuthenticatedVykupyIndexRoute: typeof AuthenticatedVykupyIndexRoute
   AuthenticatedZavadyIndexRoute: typeof AuthenticatedZavadyIndexRoute
@@ -612,6 +632,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVykupyIdRoute: AuthenticatedVykupyIdRoute,
   AuthenticatedVykupyDashboardRoute: AuthenticatedVykupyDashboardRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+  AuthenticatedDealsIndexRoute: AuthenticatedDealsIndexRoute,
   AuthenticatedDochazkaIndexRoute: AuthenticatedDochazkaIndexRoute,
   AuthenticatedVykupyIndexRoute: AuthenticatedVykupyIndexRoute,
   AuthenticatedZavadyIndexRoute: AuthenticatedZavadyIndexRoute,

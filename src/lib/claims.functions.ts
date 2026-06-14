@@ -405,7 +405,7 @@ export const getMyAccess = createServerFn({ method: "GET" })
       return {
         isAdmin: true,
         approved: true,
-        modules: ["claims", "vykupy", "vykupy_external", "users", "approvals", "dashboard", "dochazka", "defects"] as const,
+        modules: ["claims", "vykupy", "vykupy_external", "users", "approvals", "dashboard", "dochazka", "defects", "deals"] as const,
       };
     }
     const { data: mods } = await context.supabase
