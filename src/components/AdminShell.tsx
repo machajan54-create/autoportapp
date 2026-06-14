@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { ShieldCheck, FolderKanban, LogOut, Users, Car, Menu, LayoutDashboard, FileText, CheckSquare, Clock, Wrench } from "lucide-react";
+import { ShieldCheck, FolderKanban, LogOut, Users, Car, Menu, LayoutDashboard, FileText, CheckSquare, Clock, Wrench, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyAccess, getPendingApprovalsCount } from "@/lib/claims.functions";
 import autoportLogo from "@/assets/autoport-logo.png.asset.json";
+import { NotificationsBell } from "@/components/NotificationsBell";
+import { CommandPalette } from "@/components/CommandPalette";
 
 type ModuleKey = "claims" | "vykupy" | "vykupy_external" | "users" | "approvals" | "dashboard" | "dochazka" | "defects";
 
@@ -40,6 +42,7 @@ export function AdminShell({
   const can = (m: ModuleKey) => modules.includes(m);
   const canAny = (m: ModuleKey | ModuleKey[]) =>
     Array.isArray(m) ? m.some((x) => can(x)) : can(m);
+  const isAdmin = !!access?.isAdmin;
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? ""));
@@ -114,6 +117,7 @@ export function AdminShell({
 
   return (
     <div className="flex min-h-screen w-full bg-background">
+      <CommandPalette isAdmin={isAdmin} modules={modules} />
       <aside className="hidden w-60 flex-col border-r bg-card md:flex">
         <div className="flex h-16 items-center border-b px-4">
           <img src={autoportLogo.url} alt="Autoport APP" className="h-8 w-auto object-contain" />
@@ -130,6 +134,22 @@ export function AdminShell({
 
       {/* Mobile top bar */}
       <div className="flex w-full flex-col">
+        {/* Desktop top bar with search + notifications */}
+        <header className="hidden h-12 items-center justify-end gap-2 border-b bg-card px-4 md:flex">
+          <button
+            type="button"
+            onClick={() => {
+              const ev = new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true });
+              window.dispatchEvent(ev);
+            }}
+            className="flex items-center gap-2 rounded-md border bg-background px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted"
+          >
+            <Search className="h-3.5 w-3.5" />
+            <span>Hledat…</span>
+            <kbd className="ml-2 rounded border bg-muted px-1.5 py-0.5 text-[10px] font-mono">⌘K</kbd>
+          </button>
+          <NotificationsBell isAdmin={isAdmin} />
+        </header>
         <header className="flex h-14 items-center justify-between border-b bg-card px-4 md:hidden">
           <div className="flex items-center gap-2">
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -157,9 +177,12 @@ export function AdminShell({
               <img src={autoportLogo.url} alt="Autoport APP" className="h-7 w-auto object-contain" />
             </Link>
           </div>
-          <Button variant="ghost" size="icon" onClick={logout} aria-label="Odhlásit">
-            <LogOut className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <NotificationsBell isAdmin={isAdmin} />
+            <Button variant="ghost" size="icon" onClick={logout} aria-label="Odhlásit">
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </header>
         <main className="flex-1 overflow-x-hidden">{denied ?? children}</main>
       </div>
