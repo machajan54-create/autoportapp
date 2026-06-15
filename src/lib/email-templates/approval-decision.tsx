@@ -1,17 +1,15 @@
 import React from 'react'
+import { Head, Heading, Html, Preview, Section, Text } from '@react-email/components'
+import type { TemplateEntry } from './registry'
 import {
   Body,
   Container,
-  Head,
-  Heading,
-  Html,
-  Preview,
-  Section,
-  Text,
-  Link,
+  Footer,
+  Header,
   Hr,
-} from '@react-email/components'
-import type { TemplateEntry } from './registry'
+  PrimaryButton,
+  styles,
+} from './_layout'
 
 export interface ApprovalDecisionProps {
   kind?: 'vacation' | 'purchase' | 'claim'
@@ -51,36 +49,35 @@ const Email = ({
     <Html lang="cs" dir="ltr">
       <Head />
       <Preview>{head}</Preview>
-      <Body style={body}>
-        <Container style={container}>
-          <Section style={{ ...badge, background: approved ? '#dcfce7' : '#fee2e2', color: approved ? '#166534' : '#991b1b' }}>
-            <Text style={badgeText}>{approved ? 'SCHVÁLENO' : status === 'rejected' ? 'ZAMÍTNUTO' : status.toUpperCase()}</Text>
+      <Body style={styles.body}>
+        <Container style={styles.container}>
+          <Header />
+          <Section style={styles.content}>
+            <Section style={{ ...badge, background: approved ? '#dcfce7' : '#fee2e2', color: approved ? '#166534' : '#991b1b' }}>
+              <Text style={badgeText}>{approved ? 'SCHVÁLENO' : status === 'rejected' ? 'ZAMÍTNUTO' : status.toUpperCase()}</Text>
+            </Section>
+            <Heading style={styles.h1}>{head}</Heading>
+            {recipientName ? <Text style={styles.lead}>Dobrý den {recipientName},</Text> : null}
+            {title ? <Text style={styles.title}>{title}</Text> : null}
+            {meta.length > 0 ? (
+              <Section style={styles.metaBox}>
+                {meta.map((m) => (
+                  <Text key={m.label} style={styles.metaRow}>
+                    <strong>{m.label}:</strong> {m.value}
+                  </Text>
+                ))}
+              </Section>
+            ) : null}
+            {note ? (
+              <Section style={noteBox}>
+                <Text style={styles.metaRow}><strong>Poznámka:</strong></Text>
+                <Text style={{ ...styles.metaRow, whiteSpace: 'pre-wrap' as const }}>{note}</Text>
+              </Section>
+            ) : null}
+            <Hr style={styles.hr} />
+            <PrimaryButton href={actionUrl}>Otevřít detail</PrimaryButton>
           </Section>
-          <Heading style={h1}>{head}</Heading>
-          {recipientName ? <Text style={lead}>Dobrý den {recipientName},</Text> : null}
-          {title ? <Text style={titleStyle}>{title}</Text> : null}
-          {meta.length > 0 ? (
-            <Section style={metaBox}>
-              {meta.map((m) => (
-                <Text key={m.label} style={metaRow}>
-                  <strong>{m.label}:</strong> {m.value}
-                </Text>
-              ))}
-            </Section>
-          ) : null}
-          {note ? (
-            <Section style={noteBox}>
-              <Text style={metaRow}><strong>Poznámka:</strong></Text>
-              <Text style={{ ...metaRow, whiteSpace: 'pre-wrap' as const }}>{note}</Text>
-            </Section>
-          ) : null}
-          <Hr style={hr} />
-          <Text style={cta}>
-            <Link href={actionUrl} style={btn}>
-              Otevřít detail
-            </Link>
-          </Text>
-          <Text style={foot}>Autoport App · automatická notifikace</Text>
+          <Footer />
         </Container>
       </Body>
     </Html>
@@ -102,25 +99,6 @@ export const template = {
   },
 } satisfies TemplateEntry
 
-const body = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif', margin: 0 }
-const container = { padding: '24px', maxWidth: '560px' }
 const badge = { display: 'inline-block', padding: '4px 10px', borderRadius: '999px', marginBottom: '12px' }
 const badgeText = { margin: 0, fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em' }
-const h1 = { fontSize: '20px', color: '#0f172a', margin: '0 0 12px' }
-const lead = { fontSize: '15px', color: '#334155', margin: '0 0 8px' }
-const titleStyle = { fontSize: '17px', fontWeight: 600, color: '#0f172a', margin: '8px 0' }
-const metaBox = { background: '#f8fafc', borderRadius: '8px', padding: '12px 14px', margin: '12px 0' }
-const noteBox = { background: '#fffbeb', borderRadius: '8px', padding: '12px 14px', margin: '12px 0' }
-const metaRow = { fontSize: '14px', color: '#0f172a', margin: '2px 0' }
-const hr = { borderColor: '#e2e8f0', margin: '20px 0' }
-const cta = { textAlign: 'center' as const, margin: '8px 0' }
-const btn = {
-  background: '#0f172a',
-  color: '#ffffff',
-  padding: '10px 18px',
-  borderRadius: '8px',
-  textDecoration: 'none',
-  fontSize: '14px',
-  fontWeight: 600,
-}
-const foot = { fontSize: '12px', color: '#94a3b8', textAlign: 'center' as const, marginTop: '16px' }
+const noteBox = { background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', padding: '14px 16px', margin: '14px 0' }
