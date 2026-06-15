@@ -350,7 +350,7 @@ export const setUserModule = createServerFn({ method: "POST" })
     z
       .object({
         user_id: z.string().uuid(),
-        module: z.enum(["claims", "vykupy", "vykupy_external", "users", "approvals", "dashboard", "dochazka", "defects", "deals", "logbook"]),
+        module: z.enum(["claims", "vykupy", "vykupy_external", "users", "approvals", "dashboard", "dochazka", "defects", "deals", "logbook", "tasks"]),
         enable: z.boolean(),
       })
       .parse(d),
@@ -405,7 +405,7 @@ export const getMyAccess = createServerFn({ method: "GET" })
       return {
         isAdmin: true,
         approved: true,
-        modules: ["claims", "vykupy", "vykupy_external", "users", "approvals", "dashboard", "dochazka", "defects", "deals", "logbook"] as const,
+        modules: ["claims", "vykupy", "vykupy_external", "users", "approvals", "dashboard", "dochazka", "defects", "deals", "logbook", "tasks"] as const,
       };
     }
     const { data: mods } = await context.supabase
