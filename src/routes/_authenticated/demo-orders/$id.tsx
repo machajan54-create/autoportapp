@@ -398,6 +398,23 @@ function DemoOrderForm() {
                 <section className="rounded-xl border bg-card p-4">
                   <h2 className="mb-3 font-semibold">Akce</h2>
                   <div className="space-y-2">
+                    <div className="rounded-md border bg-muted/40 p-2 text-xs">
+                      <div className="font-medium">Podpis prodejce</div>
+                      {order?.seller_signed_at ? (
+                        <div className="mt-1 flex items-center justify-between gap-2">
+                          <span className="truncate text-muted-foreground">
+                            ✓ {order.seller_signer_name} · {new Date(order.seller_signed_at).toLocaleDateString("cs-CZ")}
+                          </span>
+                          <button onClick={onClearSellerSignature} className="text-rose-600 hover:underline" disabled={busy === "clear-seller"}>
+                            odstranit
+                          </button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setSellerOpen(true)} className="mt-1 text-primary hover:underline">
+                          Přidat podpis prodejce
+                        </button>
+                      )}
+                    </div>
                     <Button className="w-full justify-start" variant="outline" onClick={onGenerateOrder} disabled={busy === "gen-order"}>
                       {busy === "gen-order" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
                       Vygenerovat PDF objednávky
