@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { listClaims } from "@/lib/claims.functions";
+import { listClaims, deleteClaim, getMyAccess } from "@/lib/claims.functions";
+import { toast } from "sonner";
 import {
   FolderOpen,
   AlertCircle,
@@ -16,6 +17,7 @@ import {
   RotateCcw,
   ChevronRight,
   Download,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -49,12 +51,29 @@ function isActive(s: string) {
 function AdminList() {
   const navigate = useNavigate();
   const fetch = useServerFn(listClaims);
+  const qc = useQueryClient();
+  const deleteFn = useServerFn(deleteClaim);
+  const fetchAccess = useServerFn(getMyAccess);
+  const { data: access } = useQuery({ queryKey: ["my-access"], queryFn: () => fetchAccess() });
+  const isAdmin = !!access?.isAdmin;
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["claims"],
     queryFn: () => fetch({}),
   });
   const [filter, setFilter] = useState<FilterKey>("all");
   const [q, setQ] = useState("");
+
+  async function handleDelete(e: React.MouseEvent, id: string, pu: string | null) {
+    e.stopPropagation();
+    if (!confirm(`Opravdu nenávratně smazat zakázku ${pu ?? ""}? Smažou se i všechny přílohy a úkoly.`)) return;
+    try {
+      await deleteFn({ data: { id } });
+      toast.success("Zakázka byla smazána");
+      qc.invalidateQueries({ queryKey: ["claims"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Nepodařilo se smazat zakázku");
+    }
+  }
 
   const rows = (data ?? []).filter((c) => {
     if (filter === "new" && c.status !== "new") return false;
@@ -175,12 +194,16 @@ function AdminList() {
           {rows.map((c) => {
             const meta = statusMeta[c.status] ?? statusMeta.new;
             return (
-              <button
+              <div
                 key={c.id}
-                onClick={() => navigate({ to: "/admin/$id", params: { id: c.id } })}
                 className="group flex w-full items-center gap-3 rounded-xl border bg-card p-4 text-left transition hover:border-primary/40 hover:shadow-sm"
               >
-                <div className="flex-1 space-y-1">
+                <button
+                  type="button"
+                  onClick={() => navigate({ to: "/admin/$id", params: { id: c.id } })}
+                  className="flex flex-1 items-center gap-3 text-left"
+                >
+                  <div className="flex-1 space-y-1">
                   <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <span className="rounded bg-muted px-2 py-0.5 font-mono">
                       {c.pu_number ?? "—"}
@@ -197,9 +220,21 @@ function AdminList() {
                   {c.claim_number && (
                     <div className="text-xs text-muted-foreground">Číslo škodní: {c.claim_number}</div>
                   )}
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary" />
-              </button>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary" />
+                </button>
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={(e) => handleDelete(e, c.id, c.pu_number)}
+                    className="rounded-md p-2 text-muted-foreground transition hover:bg-rose-50 hover:text-rose-600"
+                    title="Smazat zakázku"
+                    aria-label="Smazat zakázku"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
             );
           })}
         </div>
