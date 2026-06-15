@@ -392,61 +392,93 @@ async function buildInvoicePdf(order: any, client: any, invoiceNumber: string): 
   const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
   const pdf = await PDFDocument.create();
   pdf.setTitle(`Zalohova faktura ${invoiceNumber}`);
+  pdf.setCreator("AutoPort App");
   const page = pdf.addPage([595.28, 841.89]);
   const { width, height } = page.getSize();
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const fontB = await pdf.embedFont(StandardFonts.HelveticaBold);
-  const gray = rgb(0.45, 0.45, 0.45);
+  const black = rgb(...BRAND.dark);
+  const muted = rgb(...BRAND.muted);
+  const primary = rgb(...BRAND.primary);
+  const hair = rgb(...BRAND.hairline);
   const marginX = 48;
 
   const draw = (t: string, x: number, y: number, o: { size?: number; bold?: boolean; color?: any } = {}) => {
-    page.drawText(sanitize(t), { x, y, size: o.size ?? 10, font: o.bold ? fontB : font, color: o.color ?? rgb(0, 0, 0) });
+    page.drawText(sanitize(t), { x, y, size: o.size ?? 9.5, font: o.bold ? fontB : font, color: o.color ?? black });
   };
 
-  let y = height - 60;
-  draw("ZALOHOVA FAKTURA", marginX, y, { size: 18, bold: true });
-  draw(invoiceNumber, width - marginX - 100, y, { size: 14, bold: true });
-  y -= 30;
-  draw("Datum vystaveni: " + fmtDate(new Date().toISOString()), marginX, y, { size: 9, color: gray });
-  draw("Datum splatnosti: " + fmtDate(new Date(Date.now() + 14 * 86400000).toISOString()), width - marginX - 180, y, { size: 9, color: gray });
+  // Header
+  page.drawRectangle({ x: 0, y: height - 90, width, height: 90, color: rgb(...BRAND.dark) });
+  page.drawRectangle({ x: 0, y: height - 94, width, height: 4, color: primary });
+  draw("AUTOPORT", marginX, height - 40, { size: 18, bold: true, color: rgb(1, 1, 1) });
+  draw("Zalohova faktura", marginX, height - 60, { size: 11, color: rgb(0.78, 0.82, 0.88) });
+  draw(invoiceNumber, width - marginX - 160, height - 40, { size: 16, bold: true, color: rgb(1, 1, 1) });
+  draw("Datum vystaveni: " + fmtDate(new Date().toISOString()), width - marginX - 160, height - 60, { size: 8, color: rgb(0.78, 0.82, 0.88) });
+  draw("Splatnost: " + fmtDate(new Date(Date.now() + 14 * 86400000).toISOString()), width - marginX - 160, height - 72, { size: 8, color: rgb(0.78, 0.82, 0.88) });
+
+  let y = height - 120;
+  const cardW = (width - marginX * 2 - 16) / 2;
+  const cardH = 110;
+
+  const card = (x: number, title: string, lines: string[]) => {
+    page.drawRectangle({ x, y: y - cardH, width: cardW, height: cardH, color: rgb(...BRAND.panel) });
+    page.drawRectangle({ x, y: y - 4, width: cardW, height: 4, color: primary });
+    draw(title, x + 12, y - 22, { size: 9, bold: true, color: muted });
+    let ry = y - 40;
+    for (const ln of lines) {
+      draw(ln, x + 12, ry, { size: 9.5 });
+      ry -= 14;
+    }
+  };
+
+  card(marginX, "DODAVATEL", [
+    "AutoPort s.r.o.",
+    "Korytna 47, 100 00 Praha 10",
+    "IC: 49614703   DIC: CZ49614703",
+  ]);
+  card(marginX + cardW + 16, "ODBERATEL", [
+    [client?.full_name, client?.company].filter(Boolean).join(" - ") || "—",
+    client?.address || "",
+    `IC: ${client?.ico || "—"}   DIC: ${client?.dic || "—"}`,
+    client?.email || "",
+  ]);
+  y -= cardH + 28;
+
+  draw("PREDMET PLATBY", marginX, y, { size: 9, bold: true, color: muted });
+  y -= 6;
+  page.drawLine({ start: { x: marginX, y }, end: { x: width - marginX, y }, thickness: 1.2, color: primary });
+  y -= 18;
+  draw(`Zaloha na objednavku ${order.order_number}`, marginX, y, { size: 10, bold: true });
+  y -= 14;
+  draw(order.model_verze || "", marginX, y, { size: 9.5, color: muted });
   y -= 28;
 
-  // supplier + customer
-  draw("Dodavatel", marginX, y, { size: 10, bold: true });
-  draw("Odberatel", width / 2, y, { size: 10, bold: true });
-  y -= 14;
-  const supplier = ["AutoPort s.r.o.", "Korytna 47, 100 00 Praha 10", "IC: 49614703  DIC: CZ49614703"];
-  const customer = [
-    [client?.full_name, client?.company].filter(Boolean).join(" — ") || "—",
-    client?.address || "",
-    `IC: ${client?.ico || "—"}  DIC: ${client?.dic || "—"}`,
-  ];
-  for (let i = 0; i < Math.max(supplier.length, customer.length); i++) {
-    if (supplier[i]) draw(supplier[i], marginX, y, { size: 9 });
-    if (customer[i]) draw(customer[i], width / 2, y, { size: 9 });
-    y -= 12;
-  }
+  // Amount panel
+  page.drawRectangle({ x: marginX, y: y - 70, width: width - marginX * 2, height: 70, color: rgb(...BRAND.dark) });
+  page.drawRectangle({ x: marginX, y: y - 4, width: width - marginX * 2, height: 4, color: primary });
+  draw("CASTKA K UHRADE", marginX + 16, y - 24, { size: 8, color: primary });
+  draw(fmtKc(order.zaloha), marginX + 16, y - 52, { size: 24, bold: true, color: rgb(1, 1, 1) });
+  draw("(zalohova faktura - po pripsani platby vystavime danovy doklad)", marginX + 16, y - 66, { size: 7.5, color: rgb(0.78, 0.82, 0.88) });
+  y -= 90;
 
-  y -= 20;
-  draw("Predmet platby", marginX, y, { size: 10, bold: true });
-  y -= 16;
-  draw(`Zaloha na objednavku ${order.order_number} — ${order.model_verze || ""}`, marginX, y, { size: 9 });
-  y -= 30;
+  draw("PLATEBNI UDAJE", marginX, y, { size: 9, bold: true, color: muted });
+  y -= 6;
+  page.drawLine({ start: { x: marginX, y }, end: { x: width - marginX, y }, thickness: 0.5, color: hair });
+  y -= 18;
+  const kv2 = (k: string, v: string) => {
+    draw(k, marginX, y, { size: 8.5, color: muted });
+    draw(v, marginX + 140, y, { size: 10, bold: true });
+    y -= 16;
+  };
+  kv2("Banka", "doplnte ucet");
+  kv2("Cislo uctu", "doplnte");
+  kv2("Variabilni symbol", invoiceNumber.replace(/[^0-9]/g, ""));
+  kv2("Specificky symbol", order.order_number?.replace(/[^0-9]/g, "") || "");
 
-  // amount box
-  page.drawRectangle({ x: marginX, y: y - 50, width: width - marginX * 2, height: 60, color: rgb(0.96, 0.96, 0.96) });
-  draw("Castka k uhrade", marginX + 14, y - 14, { size: 10, bold: true });
-  draw(fmtKc(order.zaloha), width - marginX - 130, y - 18, { size: 18, bold: true });
-  draw("(zaloha neni dokladem o prijeti platby)", marginX + 14, y - 34, { size: 8, color: gray });
-  y -= 80;
-
-  draw("Platebni udaje", marginX, y, { size: 10, bold: true });
-  y -= 14;
-  draw("Banka: doplnit", marginX, y, { size: 9 }); y -= 12;
-  draw("Cislo uctu: doplnit", marginX, y, { size: 9 }); y -= 12;
-  draw("Variabilni symbol: " + invoiceNumber.replace(/[^0-9]/g, ""), marginX, y, { size: 9 });
-
-  draw("Vygenerovano AutoPort App — " + new Date().toLocaleString("cs-CZ"), marginX, 24, { size: 7, color: gray });
+  // Footer
+  page.drawLine({ start: { x: marginX, y: 40 }, end: { x: width - marginX, y: 40 }, thickness: 0.4, color: hair });
+  draw("AutoPort s.r.o.  -  Korytna 47, 100 00 Praha 10  -  IC 49614703  -  DIC CZ49614703", marginX, 30, { size: 7, color: muted });
+  draw("Vygenerovano AutoPort App  -  " + new Date().toLocaleString("cs-CZ"), marginX, 20, { size: 7, color: muted });
   return await pdf.save();
 }
 
