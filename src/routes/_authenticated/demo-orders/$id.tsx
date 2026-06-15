@@ -18,6 +18,7 @@ import {
   generateOrderPdf, generateInvoicePdf,
   signOrderInPerson, createRemoteSignatureLink,
   sendDocumentsToClient, getDocumentDownloadUrl,
+  saveSellerSignature, clearSellerSignature,
 } from "@/lib/demo-orders.functions";
 import { listClients, createClient } from "@/lib/clients.functions";
 
@@ -82,6 +83,8 @@ function DemoOrderForm() {
   const signRemote = useServerFn(createRemoteSignatureLink);
   const sendDocs = useServerFn(sendDocumentsToClient);
   const getDocUrl = useServerFn(getDocumentDownloadUrl);
+  const saveSeller = useServerFn(saveSellerSignature);
+  const clearSeller = useServerFn(clearSellerSignature);
   const fetchClients = useServerFn(listClients);
   const createClientFn = useServerFn(createClient);
 
@@ -91,6 +94,9 @@ function DemoOrderForm() {
   const [signOpen, setSignOpen] = useState(false);
   const [signerName, setSignerName] = useState("");
   const [sigData, setSigData] = useState<string | null>(null);
+  const [sellerOpen, setSellerOpen] = useState(false);
+  const [sellerName, setSellerName] = useState("");
+  const [sellerSig, setSellerSig] = useState<string | null>(null);
   const [clientOpen, setClientOpen] = useState(false);
   const [newClient, setNewClient] = useState({ full_name: "", company: "", email: "", phone: "", ico: "", dic: "", address: "" });
 
