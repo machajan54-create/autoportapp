@@ -12,6 +12,25 @@ export const TASK_RECURRENCE_LABEL: Record<string, string> = {
   weekly: "Každý týden",
 };
 
+/** Returns next due date (YYYY-MM-DD) given a base date and recurrence rule. */
+export function computeNextDueDate(
+  baseDate: string | null,
+  recurrence: typeof TASK_RECURRENCE[number],
+): string {
+  const base = baseDate ? new Date(baseDate + "T00:00:00Z") : new Date();
+  const d = new Date(base);
+  if (recurrence === "daily") {
+    d.setUTCDate(d.getUTCDate() + 1);
+  } else if (recurrence === "weekly") {
+    d.setUTCDate(d.getUTCDate() + 7);
+  } else if (recurrence === "weekdays") {
+    do {
+      d.setUTCDate(d.getUTCDate() + 1);
+    } while (d.getUTCDay() === 0 || d.getUTCDay() === 6);
+  }
+  return d.toISOString().slice(0, 10);
+}
+
 export const TASK_STATUS_LABEL: Record<string, string> = {
   todo: "K udělání",
   in_progress: "V řešení",
