@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Bell } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { listClaims, getPendingApprovalsCount } from "@/lib/claims.functions";
 import { listDefects } from "@/lib/defects.functions";
+import { listPurchases } from "@/lib/approvals.functions";
+import { supabase } from "@/integrations/supabase/client";
 import {
   listAbsences as listDochAbsences,
   listEmployees as listDochEmployees,
@@ -22,14 +24,33 @@ type NotifItem = {
   tone: "info" | "warn" | "danger";
 };
 
+// Per-category "last seen" timestamps in localStorage so personal notifications
+// disappear after the user opens the bell.
+const LS_KEY = "notif-last-seen-v1";
+type LastSeen = Partial<Record<"purchases" | "defects" | "absences", string>>;
+function readLastSeen(): LastSeen {
+  if (typeof window === "undefined") return {};
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}"); } catch { return {}; }
+}
+function writeLastSeen(v: LastSeen) {
+  if (typeof window === "undefined") return;
+  try { localStorage.setItem(LS_KEY, JSON.stringify(v)); } catch { /* ignore */ }
+}
+
 export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
   const [open, setOpen] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [lastSeen, setLastSeen] = useState<LastSeen>(() => readLastSeen());
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+  }, []);
   const fetchClaims = useServerFn(listClaims);
   const fetchDefects = useServerFn(listDefects);
   const fetchAbs = useServerFn(listDochAbsences);
   const fetchEmp = useServerFn(listDochEmployees);
   const fetchRec = useServerFn(listDochRecords);
   const fetchPending = useServerFn(getPendingApprovalsCount);
+  const fetchPurchases = useServerFn(listPurchases);
 
   const { data: claims } = useQuery({
     queryKey: ["notif", "claims"],
@@ -40,6 +61,19 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
   const { data: defects } = useQuery({
     queryKey: ["notif", "defects"],
     queryFn: () => fetchDefects({}),
+    refetchInterval: 60_000,
+  });
+  // Personal: my purchases + my absences (filtered server-side for non-admin)
+  const { data: myPurchases } = useQuery({
+    queryKey: ["notif", "my-purchases"],
+    queryFn: () => fetchPurchases({}),
+    enabled: !!userId,
+    refetchInterval: 60_000,
+  });
+  const { data: myAbsences } = useQuery({
+    queryKey: ["notif", "my-absences"],
+    queryFn: () => fetchAbs({}),
+    enabled: !!userId && !isAdmin,
     refetchInterval: 60_000,
   });
   const { data: absences } = useQuery({
@@ -70,6 +104,62 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
 
   const items = useMemo<NotifItem[]>(() => {
     const out: NotifItem[] = [];
+
+    // ===== Personal notifications (all users): items I created whose status changed =====
+    if (userId) {
+      const sincePurchase = lastSeen.purchases ? Date.parse(lastSeen.purchases) : 0;
+      const sinceDefects = lastSeen.defects ? Date.parse(lastSeen.defects) : 0;
+      const sinceAbsences = lastSeen.absences ? Date.parse(lastSeen.absences) : 0;
+
+      const mine = (myPurchases ?? []).filter(
+        (p: any) => p.requested_by === userId && p.status !== "pending" && p.decided_at,
+      );
+      for (const p of mine) {
+        if (Date.parse(p.decided_at) <= sincePurchase) continue;
+        const approved = p.status === "approved";
+        out.push({
+          key: `purchase-${p.id}-${p.status}`,
+          title: `Nákup ${approved ? "schválen" : "zamítnut"}: ${p.title}`,
+          detail: p.decision_note ?? undefined,
+          to: "/approvals",
+          tone: approved ? "info" : "warn",
+        });
+      }
+
+      const myDefects = (defects?.rows ?? []).filter(
+        (d: any) => d.reported_by === userId && d.status !== "new",
+      );
+      for (const d of myDefects) {
+        const ts = d.resolved_at ?? d.updated_at;
+        if (!ts || Date.parse(ts) <= sinceDefects) continue;
+        const label =
+          d.status === "in_progress" ? "v řešení" :
+          d.status === "resolved" ? "vyřešena" :
+          d.status === "closed" ? "uzavřena" : d.status;
+        out.push({
+          key: `defect-${d.id}-${d.status}`,
+          title: `Vaše závada ${label}: ${d.title}`,
+          to: "/zavady",
+          tone: d.status === "resolved" || d.status === "closed" ? "info" : "warn",
+        });
+      }
+
+      const personalAbs = (myAbsences ?? []).filter(
+        (a: any) => a.status !== "pending" && a.resolved_at,
+      );
+      for (const a of personalAbs) {
+        if (Date.parse(a.resolved_at) <= sinceAbsences) continue;
+        const approved = a.status === "approved";
+        out.push({
+          key: `absence-${a.id}-${a.status}`,
+          title: `Absence ${approved ? "schválena" : "zamítnuta"} (${a.start_date} – ${a.end_date})`,
+          to: "/dochazka",
+          tone: approved ? "info" : "warn",
+        });
+      }
+    }
+
+    // ===== Admin-only operational notifications =====
 
     if (isAdmin && (pending?.count ?? 0) > 0) {
       out.push({
