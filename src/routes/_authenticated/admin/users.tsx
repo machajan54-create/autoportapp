@@ -15,7 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { UserPlus, KeyRound, Copy, Trash2, Power, Mail, Search, Shield, UserCheck, Users as UsersIcon, AlertCircle } from "lucide-react";
+import { UserPlus, KeyRound, Copy, Trash2, Power, Mail, Search, Shield, UserCheck, Users as UsersIcon, AlertCircle, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -28,6 +28,7 @@ import {
   adminSetUserActive,
   adminDeleteUser,
   adminSendWelcomeEmail,
+  setUserDepartment,
 } from "@/lib/claims.functions";
 import { toast } from "sonner";
 
@@ -36,6 +37,17 @@ export const Route = createFileRoute("/_authenticated/admin/users")({
 });
 
 type ModuleKey = "claims" | "vykupy" | "vykupy_external" | "users" | "approvals" | "dashboard" | "dochazka" | "defects" | "deals" | "logbook" | "tasks" | "demo_orders";
+type DepartmentKey = "vedeni" | "obchod" | "servis" | "nahradni_dily";
+
+const DEPARTMENT_LIST: { key: DepartmentKey; label: string }[] = [
+  { key: "vedeni", label: "Vedení společnosti" },
+  { key: "obchod", label: "Obchod" },
+  { key: "servis", label: "Servis" },
+  { key: "nahradni_dily", label: "Náhradní díly" },
+];
+const DEPARTMENT_LABEL: Record<DepartmentKey, string> = Object.fromEntries(
+  DEPARTMENT_LIST.map((d) => [d.key, d.label]),
+) as Record<DepartmentKey, string>;
 
 const MODULE_LIST: { key: ModuleKey; label: string }[] = [
   { key: "dashboard", label: "Dashboard" },
@@ -63,6 +75,7 @@ function UsersPage() {
   const setActive = useServerFn(adminSetUserActive);
   const deleteUser = useServerFn(adminDeleteUser);
   const sendWelcome = useServerFn(adminSendWelcomeEmail);
+  const setDept = useServerFn(setUserDepartment);
   const { data, isLoading } = useQuery({ queryKey: ["users"], queryFn: () => fetch({}) });
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -111,6 +124,20 @@ function UsersPage() {
       await setApproved({ data: { user_id, approved } });
       qc.invalidateQueries({ queryKey: ["users"] });
       toast.success(approved ? "Účet schválen" : "Schválení odebráno");
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }
+
+  async function changeDepartment(
+    user_id: string,
+    department: DepartmentKey | null,
+    is_department_head?: boolean,
+  ) {
+    try {
+      await setDept({ data: { user_id, department, is_department_head } });
+      qc.invalidateQueries({ queryKey: ["users"] });
+      toast.success("Oddělení uloženo");
     } catch (e) {
       toast.error((e as Error).message);
     }
