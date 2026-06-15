@@ -238,7 +238,11 @@ function TasksPage() {
             {visible.map((r) => (
               <Card key={r.id} className="p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
+                  <button
+                    type="button"
+                    onClick={() => setDetailId(r.id)}
+                    className="min-w-0 flex-1 text-left"
+                  >
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-base font-semibold">{r.title}</h3>
                       <Badge className={cn("border-transparent", PRIORITY_STYLE[r.priority])}>
@@ -247,6 +251,12 @@ function TasksPage() {
                       <Badge className={cn("border-transparent", STATUS_STYLE[r.status])}>
                         {TASK_STATUS_LABEL[r.status] ?? r.status}
                       </Badge>
+                      {r.recurrence && (
+                        <Badge variant="outline" className="gap-1">
+                          <Repeat className="h-3 w-3" />
+                          {TASK_RECURRENCE_LABEL[r.recurrence] ?? r.recurrence}
+                        </Badge>
+                      )}
                     </div>
                     <div className="mt-1 text-xs text-muted-foreground">
                       Vytvořil: {r.creator_name ?? "—"} ·{" "}
@@ -257,7 +267,7 @@ function TasksPage() {
                     {r.description && (
                       <p className="mt-2 whitespace-pre-wrap text-sm">{r.description}</p>
                     )}
-                  </div>
+                  </button>
                   <div className="flex flex-col items-end gap-2">
                     <Select
                       value={r.status}
@@ -270,20 +280,30 @@ function TasksPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(r.id)}
-                    >
-                      <Trash2 className="mr-1 h-4 w-4" /> Smazat
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="sm" onClick={() => setDetailId(r.id)}>
+                        <MessageSquare className="mr-1 h-4 w-4" /> Detail
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(r.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </Card>
             ))}
           </div>
         )}
+
+        <TaskDetailDialog
+          taskId={detailId}
+          onClose={() => setDetailId(null)}
+        />
       </div>
     </AdminShell>
   );
