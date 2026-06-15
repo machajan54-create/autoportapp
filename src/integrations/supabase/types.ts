@@ -21,6 +21,7 @@ export type Database = {
           end_date: string
           id: string
           note: string | null
+          requested_resolver: string | null
           resolved_at: string | null
           resolved_by: string | null
           start_date: string
@@ -34,6 +35,7 @@ export type Database = {
           end_date: string
           id?: string
           note?: string | null
+          requested_resolver?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
           start_date: string
@@ -47,6 +49,7 @@ export type Database = {
           end_date?: string
           id?: string
           note?: string | null
+          requested_resolver?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
           start_date?: string
@@ -60,6 +63,13 @@ export type Database = {
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "attendance_employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_absences_requested_resolver_fkey"
+            columns: ["requested_resolver"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
