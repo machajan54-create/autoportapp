@@ -909,3 +909,48 @@ export const publicSubmissionUpload = createServerFn({ method: "POST" })
       size: bytes.byteLength,
     };
   });
+
+export const setUserDepartment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        user_id: z.string().uuid(),
+        department: z
+          .enum(["vedeni", "obchod", "servis", "nahradni_dily"])
+          .nullable(),
+        is_department_head: z.boolean().optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const { data: meRoles } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    if (!meRoles?.some((r) => r.role === "admin")) throw new Error("Forbidden");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const patch: Record<string, unknown> = { department: data.department };
+    if (typeof data.is_department_head === "boolean") {
+      patch.is_department_head = data.department ? data.is_department_head : false;
+    } else if (!data.department) {
+      patch.is_department_head = false;
+    }
+    const { error } = await supabaseAdmin
+      .from("profiles")
+      .update(patch)
+      .eq("id", data.user_id);
+    if (error) throw new Error(error.message);
+    {
+      const { logEvent } = await import("@/lib/audit.server");
+      await logEvent({
+        actorId: context.userId,
+        actorEmail: context.claims?.email ?? null,
+        module: "users",
+        action: "department_change",
+        entityId: data.user_id,
+        details: { department: data.department, is_department_head: patch.is_department_head },
+      });
+    }
+    return { ok: true };
+  });
