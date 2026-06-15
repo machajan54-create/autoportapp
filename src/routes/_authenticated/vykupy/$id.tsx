@@ -47,6 +47,7 @@ type FormState = {
   datum_vykupu: string;
   stav: string;
   poznamka: string;
+  follow_up_at: string;
   internal_priced_by_user_id: string;
   internal_priced_amount: string;
   internal_priced_at: string;
