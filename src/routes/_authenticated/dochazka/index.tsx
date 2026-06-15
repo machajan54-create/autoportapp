@@ -38,6 +38,7 @@ import {
   getDochazkaSettings, updateDochazkaSettings,
   getMonthCalendar, listResolvers,
 } from "@/lib/dochazka.functions";
+import { getMyAccess } from "@/lib/claims.functions";
 import { Sparkles } from "lucide-react";
 import { autoFillMonth } from "@/lib/dochazka.functions";
 import {
@@ -53,6 +54,9 @@ export const Route = createFileRoute("/_authenticated/dochazka/")({
 function DochazkaPage() {
   // Realtime: refetch when terminal/admin activity changes data
   const qc = useQueryClient();
+  const fetchAccess = useServerFn(getMyAccess);
+  const { data: access } = useQuery({ queryKey: ["my-access"], queryFn: () => fetchAccess({}) });
+  const isAdmin = !!access?.isAdmin;
   useEffect(() => {
     const ch = supabase
       .channel("dochazka-admin")
@@ -89,27 +93,38 @@ function DochazkaPage() {
           </Button>
         </div>
 
-        <Tabs defaultValue="stats" className="mt-6">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 lg:grid-cols-8">
-            <TabsTrigger value="stats"><BarChart3 className="mr-1 h-4 w-4" />Statistiky</TabsTrigger>
-            <TabsTrigger value="calendar"><CalendarDays className="mr-1 h-4 w-4" />Kalendář</TabsTrigger>
-            <TabsTrigger value="employees"><UsersIcon className="mr-1 h-4 w-4" />Zaměstnanci</TabsTrigger>
-            <TabsTrigger value="shifts"><CalendarClock className="mr-1 h-4 w-4" />Směny</TabsTrigger>
-            <TabsTrigger value="records">Záznamy</TabsTrigger>
-            <TabsTrigger value="absences"><PalmtreeIcon className="mr-1 h-4 w-4" />Absence</TabsTrigger>
-            <TabsTrigger value="alerts"><Bell className="mr-1 h-4 w-4" />Upozornění</TabsTrigger>
-            <TabsTrigger value="export"><Download className="mr-1 h-4 w-4" />Export</TabsTrigger>
-          </TabsList>
+        {isAdmin ? (
+          <Tabs defaultValue="stats" className="mt-6">
+            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 lg:grid-cols-8">
+              <TabsTrigger value="stats"><BarChart3 className="mr-1 h-4 w-4" />Statistiky</TabsTrigger>
+              <TabsTrigger value="calendar"><CalendarDays className="mr-1 h-4 w-4" />Kalendář</TabsTrigger>
+              <TabsTrigger value="employees"><UsersIcon className="mr-1 h-4 w-4" />Zaměstnanci</TabsTrigger>
+              <TabsTrigger value="shifts"><CalendarClock className="mr-1 h-4 w-4" />Směny</TabsTrigger>
+              <TabsTrigger value="records">Záznamy</TabsTrigger>
+              <TabsTrigger value="absences"><PalmtreeIcon className="mr-1 h-4 w-4" />Absence</TabsTrigger>
+              <TabsTrigger value="alerts"><Bell className="mr-1 h-4 w-4" />Upozornění</TabsTrigger>
+              <TabsTrigger value="export"><Download className="mr-1 h-4 w-4" />Export</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="stats"><StatsTab /></TabsContent>
-          <TabsContent value="calendar"><CalendarTab /></TabsContent>
-          <TabsContent value="employees"><EmployeesTab /></TabsContent>
-          <TabsContent value="shifts"><ShiftsTab /></TabsContent>
-          <TabsContent value="records"><RecordsTab /></TabsContent>
-          <TabsContent value="absences"><AbsencesTab /></TabsContent>
-          <TabsContent value="alerts"><AlertsTab /></TabsContent>
-          <TabsContent value="export"><ExportTab /></TabsContent>
-        </Tabs>
+            <TabsContent value="stats"><StatsTab /></TabsContent>
+            <TabsContent value="calendar"><CalendarTab /></TabsContent>
+            <TabsContent value="employees"><EmployeesTab /></TabsContent>
+            <TabsContent value="shifts"><ShiftsTab /></TabsContent>
+            <TabsContent value="records"><RecordsTab /></TabsContent>
+            <TabsContent value="absences"><AbsencesTab /></TabsContent>
+            <TabsContent value="alerts"><AlertsTab /></TabsContent>
+            <TabsContent value="export"><ExportTab /></TabsContent>
+          </Tabs>
+        ) : (
+          <Tabs defaultValue="records" className="mt-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="records">Moje docházka</TabsTrigger>
+              <TabsTrigger value="absences"><PalmtreeIcon className="mr-1 h-4 w-4" />Absence</TabsTrigger>
+            </TabsList>
+            <TabsContent value="records"><RecordsTab /></TabsContent>
+            <TabsContent value="absences"><AbsencesTab /></TabsContent>
+          </Tabs>
+        )}
       </div>
     </AdminShell>
   );
