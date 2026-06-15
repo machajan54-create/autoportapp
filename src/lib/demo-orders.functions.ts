@@ -13,6 +13,7 @@ const orderInput = z.object({
   client_id: z.string().uuid(),
   model_verze: z.string().trim().max(200).optional().nullable(),
   vin: z.string().trim().max(40).optional().nullable(),
+  rz: z.string().trim().max(20).optional().nullable(),
   barva: z.string().trim().max(80).optional().nullable(),
   najete_km: z.number().int().min(0).max(2_000_000).optional().nullable(),
   rok_vyroby: z.number().int().min(1990).max(2100).optional().nullable(),
@@ -43,7 +44,7 @@ export const listDemoOrders = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("demo_orders" as never)
-      .select("id,order_number,invoice_number,status,model_verze,cena_celkem_s_dph,datum_objednavky,created_at,client_id")
+      .select("id,order_number,invoice_number,status,model_verze,vin,rz,cena_celkem_s_dph,datum_objednavky,created_at,client_id")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     const rows = (data ?? []) as any[];
@@ -104,6 +105,7 @@ export const createDemoOrder = createServerFn({ method: "POST" })
         client_id: data.client_id,
         model_verze: data.model_verze ?? null,
         vin: data.vin ?? null,
+        rz: data.rz ?? null,
         barva: data.barva ?? null,
         najete_km: data.najete_km ?? null,
         rok_vyroby: data.rok_vyroby ?? null,
