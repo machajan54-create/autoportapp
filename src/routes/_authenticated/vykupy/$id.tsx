@@ -319,6 +319,21 @@ function VykupForm() {
                 <SelectContent>{STAVY.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}</SelectContent>
               </Select>
             </Field>
+            <Field label="Follow-up (připomínka e-mailem)">
+              <Input
+                type="datetime-local"
+                value={form.follow_up_at}
+                onChange={(e) => set("follow_up_at", e.target.value)}
+              />
+            </Field>
+            {existing?.stav_changed_at && (
+              <Field label="Ve stavu od">
+                <Input
+                  readOnly
+                  value={`${new Date(existing.stav_changed_at).toLocaleDateString("cs-CZ")} (${daysSince(existing.stav_changed_at)} dní)`}
+                />
+              </Field>
+            )}
             <div className="sm:col-span-2">
               <Label className="mb-1.5 block text-sm">Poznámka</Label>
               <Textarea rows={3} value={form.poznamka} onChange={(e) => set("poznamka", e.target.value)} />
@@ -329,11 +344,14 @@ function VykupForm() {
             <Button type="button" variant="ghost" onClick={() => navigate({ to: "/vykupy" })}>
               Zrušit
             </Button>
+            {!isNew && canFull && <ContractPdfButton vykupId={id} />}
             <Button type="submit" disabled={saving} className="bg-orange-500 text-white hover:bg-orange-600">
               {saving ? "Ukládám…" : "Uložit"}
             </Button>
           </div>
         </form>
+
+        {!isNew && canFull && <PhotoGallery vykupId={id} />}
       </div>
     </AdminShell>
   );
