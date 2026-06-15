@@ -554,6 +554,51 @@ export type Database = {
         }
         Relationships: []
       }
+      clients: {
+        Row: {
+          address: string | null
+          company: string | null
+          created_at: string
+          dic: string | null
+          email: string | null
+          full_name: string
+          ico: string | null
+          id: string
+          notes: string | null
+          owner_id: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          company?: string | null
+          created_at?: string
+          dic?: string | null
+          email?: string | null
+          full_name: string
+          ico?: string | null
+          id?: string
+          notes?: string | null
+          owner_id?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          company?: string | null
+          created_at?: string
+          dic?: string | null
+          email?: string | null
+          full_name?: string
+          ico?: string | null
+          id?: string
+          notes?: string | null
+          owner_id?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       deal_stage_history: {
         Row: {
           changed_at: string
@@ -702,6 +747,193 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      demo_order_documents: {
+        Row: {
+          client_id: string
+          created_at: string
+          file_name: string
+          id: string
+          kind: string
+          mime: string
+          order_id: string
+          signed_at: string | null
+          storage_path: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          file_name: string
+          id?: string
+          kind: string
+          mime?: string
+          order_id: string
+          signed_at?: string | null
+          storage_path: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          file_name?: string
+          id?: string
+          kind?: string
+          mime?: string
+          order_id?: string
+          signed_at?: string | null
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demo_order_documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demo_order_documents_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "demo_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demo_order_signatures: {
+        Row: {
+          consumed_at: string | null
+          created_at: string
+          id: string
+          ip: string | null
+          mode: string
+          order_id: string
+          signature_data: string | null
+          signed_at: string | null
+          signer_name: string | null
+          token: string | null
+          token_expires_at: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          consumed_at?: string | null
+          created_at?: string
+          id?: string
+          ip?: string | null
+          mode: string
+          order_id: string
+          signature_data?: string | null
+          signed_at?: string | null
+          signer_name?: string | null
+          token?: string | null
+          token_expires_at?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          consumed_at?: string | null
+          created_at?: string
+          id?: string
+          ip?: string | null
+          mode?: string
+          order_id?: string
+          signature_data?: string | null
+          signed_at?: string | null
+          signer_name?: string | null
+          token?: string | null
+          token_expires_at?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demo_order_signatures_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "demo_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demo_orders: {
+        Row: {
+          barva: string | null
+          cena_celkem_bez_dph: number
+          cena_celkem_s_dph: number
+          client_id: string
+          created_at: string
+          created_by: string | null
+          datum_dodani: string | null
+          datum_objednavky: string
+          id: string
+          invoice_number: string | null
+          line_items: Json
+          model_verze: string | null
+          najete_km: number | null
+          notes: string | null
+          order_number: string | null
+          registrace_datum: string | null
+          rok_vyroby: number | null
+          status: string
+          updated_at: string
+          vin: string | null
+          zaloha: number
+          zaruka_spustena_od: string | null
+        }
+        Insert: {
+          barva?: string | null
+          cena_celkem_bez_dph?: number
+          cena_celkem_s_dph?: number
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          datum_dodani?: string | null
+          datum_objednavky?: string
+          id?: string
+          invoice_number?: string | null
+          line_items?: Json
+          model_verze?: string | null
+          najete_km?: number | null
+          notes?: string | null
+          order_number?: string | null
+          registrace_datum?: string | null
+          rok_vyroby?: number | null
+          status?: string
+          updated_at?: string
+          vin?: string | null
+          zaloha?: number
+          zaruka_spustena_od?: string | null
+        }
+        Update: {
+          barva?: string | null
+          cena_celkem_bez_dph?: number
+          cena_celkem_s_dph?: number
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          datum_dodani?: string | null
+          datum_objednavky?: string
+          id?: string
+          invoice_number?: string | null
+          line_items?: Json
+          model_verze?: string | null
+          najete_km?: number | null
+          notes?: string | null
+          order_number?: string | null
+          registrace_datum?: string | null
+          rok_vyroby?: number | null
+          status?: string
+          updated_at?: string
+          vin?: string | null
+          zaloha?: number
+          zaruka_spustena_od?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demo_orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       document_templates: {
         Row: {
@@ -1472,6 +1704,7 @@ export type Database = {
         | "deals"
         | "logbook"
         | "tasks"
+        | "demo_orders"
       app_role: "admin" | "employee"
       approval_status: "pending" | "approved" | "rejected"
       claim_status:
@@ -1634,6 +1867,7 @@ export const Constants = {
         "deals",
         "logbook",
         "tasks",
+        "demo_orders",
       ],
       app_role: ["admin", "employee"],
       approval_status: ["pending", "approved", "rejected"],
