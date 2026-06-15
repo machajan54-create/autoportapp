@@ -18,6 +18,7 @@ import {
   generateOrderPdf, generateInvoicePdf,
   signOrderInPerson, createRemoteSignatureLink,
   sendDocumentsToClient, getDocumentDownloadUrl,
+  saveSellerSignature, clearSellerSignature,
 } from "@/lib/demo-orders.functions";
 import { listClients, createClient } from "@/lib/clients.functions";
 
@@ -82,6 +83,8 @@ function DemoOrderForm() {
   const signRemote = useServerFn(createRemoteSignatureLink);
   const sendDocs = useServerFn(sendDocumentsToClient);
   const getDocUrl = useServerFn(getDocumentDownloadUrl);
+  const saveSeller = useServerFn(saveSellerSignature);
+  const clearSeller = useServerFn(clearSellerSignature);
   const fetchClients = useServerFn(listClients);
   const createClientFn = useServerFn(createClient);
 
@@ -91,6 +94,9 @@ function DemoOrderForm() {
   const [signOpen, setSignOpen] = useState(false);
   const [signerName, setSignerName] = useState("");
   const [sigData, setSigData] = useState<string | null>(null);
+  const [sellerOpen, setSellerOpen] = useState(false);
+  const [sellerName, setSellerName] = useState("");
+  const [sellerSig, setSellerSig] = useState<string | null>(null);
   const [clientOpen, setClientOpen] = useState(false);
   const [newClient, setNewClient] = useState({ full_name: "", company: "", email: "", phone: "", ico: "", dic: "", address: "" });
 
@@ -215,6 +221,26 @@ function DemoOrderForm() {
       qc.invalidateQueries({ queryKey: ["demo-order", id] });
     });
   }
+
+  async function onSaveSellerSignature() {
+    if (!sellerName.trim() || !sellerSig) { toast.error("Doplňte jméno a podpis"); return; }
+    await runBusy("sign-seller", async () => {
+      await saveSeller({ data: { orderId: id, signatureDataUrl: sellerSig!, signerName: sellerName.trim() } });
+      toast.success("Podpis prodejce uložen");
+      setSellerOpen(false); setSellerSig(null); setSellerName("");
+      qc.invalidateQueries({ queryKey: ["demo-order", id] });
+    });
+  }
+
+  async function onClearSellerSignature() {
+    if (!confirm("Opravdu odstranit podpis prodejce?")) return;
+    await runBusy("clear-seller", async () => {
+      await clearSeller({ data: { orderId: id } });
+      toast.success("Podpis prodejce odstraněn");
+      qc.invalidateQueries({ queryKey: ["demo-order", id] });
+    });
+  }
+
   async function onSendSignLink() {
     await runBusy("sign-remote", async () => {
       const r = await signRemote({ data: { orderId: id } });
@@ -372,6 +398,23 @@ function DemoOrderForm() {
                 <section className="rounded-xl border bg-card p-4">
                   <h2 className="mb-3 font-semibold">Akce</h2>
                   <div className="space-y-2">
+                    <div className="rounded-md border bg-muted/40 p-2 text-xs">
+                      <div className="font-medium">Podpis prodejce</div>
+                      {order?.seller_signed_at ? (
+                        <div className="mt-1 flex items-center justify-between gap-2">
+                          <span className="truncate text-muted-foreground">
+                            ✓ {order.seller_signer_name} · {new Date(order.seller_signed_at).toLocaleDateString("cs-CZ")}
+                          </span>
+                          <button onClick={onClearSellerSignature} className="text-rose-600 hover:underline" disabled={busy === "clear-seller"}>
+                            odstranit
+                          </button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setSellerOpen(true)} className="mt-1 text-primary hover:underline">
+                          Přidat podpis prodejce
+                        </button>
+                      )}
+                    </div>
                     <Button className="w-full justify-start" variant="outline" onClick={onGenerateOrder} disabled={busy === "gen-order"}>
                       {busy === "gen-order" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
                       Vygenerovat PDF objednávky
@@ -432,6 +475,25 @@ function DemoOrderForm() {
             <Button onClick={onSignInPerson} disabled={busy === "sign-local"}>
               {busy === "sign-local" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Potvrdit podpis
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Seller signature dialog */}
+      <Dialog open={sellerOpen} onOpenChange={setSellerOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Podpis prodejce</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <Field label="Jméno prodejce"><Input value={sellerName} onChange={(e) => setSellerName(e.target.value)} /></Field>
+            <SignaturePad onChange={setSellerSig} />
+            <p className="text-xs text-muted-foreground">Podpis se automaticky vloží do PDF objednávky.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSellerOpen(false)}>Zrušit</Button>
+            <Button onClick={onSaveSellerSignature} disabled={busy === "sign-seller"}>
+              {busy === "sign-seller" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Uložit podpis
             </Button>
           </DialogFooter>
         </DialogContent>
