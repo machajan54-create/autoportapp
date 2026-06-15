@@ -237,6 +237,8 @@ function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
     description: "",
     supplier_id: "",
     amount: "",
+    amount_net: "",
+    vat_rate: "21",
     currency: "CZK",
   });
 
@@ -249,12 +251,14 @@ function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
           description: form.description || null,
           supplier_id: form.supplier_id || null,
           amount: form.amount ? Number(form.amount) : null,
+          amount_net: form.amount_net ? Number(form.amount_net) : null,
+          vat_rate: form.vat_rate ? Number(form.vat_rate) : 21,
           currency: form.currency || "CZK",
         },
       });
       toast.success("Žádost o nákup vytvořena");
       setOpen(false);
-      setForm({ title: "", description: "", supplier_id: "", amount: "", currency: "CZK" });
+      setForm({ title: "", description: "", supplier_id: "", amount: "", amount_net: "", vat_rate: "21", currency: "CZK" });
       refetch();
     } catch (err: any) {
       toast.error(err.message ?? "Chyba");
