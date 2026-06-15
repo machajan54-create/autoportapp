@@ -416,6 +416,11 @@ function CreateTaskDialog({
               disabled={recurrence === "__none"}
               onChange={(e) => setRecurrenceUntil(e.target.value)}
             />
+            {recurrence !== "__none" && (
+              <p className="text-xs text-muted-foreground">
+                Ponechte prázdné pro opakování bez konce.
+              </p>
+            )}
           </div>
         </div>
       </div>
