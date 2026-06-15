@@ -58,7 +58,7 @@ const MODULE_LIST: { key: ModuleKey; label: string }[] = [
   { key: "defects", label: "Závady" },
   { key: "deals", label: "Obchodní případy" },
   { key: "demo_orders", label: "Předváděcí vozy" },
-  { key: "evidence_zakazek", label: "Evidence zakázek" },
+  { key: "evidence_zakazek", label: "Evidence mytí" },
   { key: "logbook", label: "Kniha jízd" },
   { key: "tasks", label: "Úkoly" },
   { key: "approvals", label: "Schvalování" },

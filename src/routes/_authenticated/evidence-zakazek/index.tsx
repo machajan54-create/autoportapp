@@ -68,9 +68,9 @@ function EvidencePage() {
     <AdminShell requireModule="evidence_zakazek">
       <div className="mx-auto w-full max-w-6xl space-y-6 p-4 md:p-6">
         <header>
-          <h1 className="text-2xl font-semibold">Evidence zakázek</h1>
+          <h1 className="text-2xl font-semibold">Evidence mytí vozů</h1>
           <p className="text-sm text-muted-foreground">
-            Plán předávání nových vozů a vozů ČCR. K zakázce lze přiřadit myče, kteří
+            Plán předávání nových vozů. K zakázce lze přiřadit myče, kteří
             potvrzují převzetí e-mailem.
           </p>
         </header>
