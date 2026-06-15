@@ -205,8 +205,8 @@ const BRAND = {
 // ============= Unicode font loader (Roboto, supports Czech) =============
 // Bundled via roboto-fontface (Vite asset URL). Server fetch resolves locally,
 // no external CDN dependency.
-import robotoRegularUrl from "roboto-fontface/fonts/roboto/Roboto-Regular.ttf?url";
-import robotoBoldUrl from "roboto-fontface/fonts/roboto/Roboto-Bold.ttf?url";
+import robotoRegularUrl from "@/assets/fonts/Roboto-Regular.ttf?url";
+import robotoBoldUrl from "@/assets/fonts/Roboto-Bold.ttf?url";
 let _fontCache: Promise<{ regular: Uint8Array; bold: Uint8Array }> | null = null;
 async function loadUnicodeFonts() {
   if (!_fontCache) {
