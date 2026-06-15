@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { ShieldCheck, FolderKanban, LogOut, Users, Car, Menu, LayoutDashboard, FileText, CheckSquare, Clock, Wrench, Search, History, Briefcase, BookOpen } from "lucide-react";
+import { ShieldCheck, FolderKanban, LogOut, Users, Car, Menu, LayoutDashboard, FileText, CheckSquare, Clock, Wrench, Search, History, Briefcase, BookOpen, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -94,6 +94,7 @@ export function AdminShell({
       {can("logbook") && navItem("/logbook", "Kniha jízd", BookOpen)}
       {(access?.isAdmin || can("approvals")) && navItem("/approvals", "Schvalování", CheckSquare)}
       {access?.isAdmin && navItem("/admin/users", "Uživatelé", Users, pendingCount)}
+      {access?.isAdmin && navItem("/admin/dochazka", "Generování docházky", Sparkles)}
       {access?.isAdmin && navItem("/admin/templates", "Šablony dokumentů", FileText)}
       {access?.isAdmin && navItem("/admin/audit", "Audit log", History)}
     </nav>
