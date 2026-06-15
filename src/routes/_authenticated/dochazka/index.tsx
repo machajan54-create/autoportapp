@@ -742,7 +742,8 @@ function AbsencesTab() {
   }
   async function save() {
     try {
-      await upsert({ data: edit });
+      const payload = { ...edit, requested_resolver: edit.requested_resolver || null };
+      await upsert({ data: payload });
       toast.success("Uloženo"); setOpen(false);
       qc.invalidateQueries({ queryKey: ["dochazka", "absences"] });
     } catch (e: any) { toast.error(e?.message ?? "Chyba"); }
