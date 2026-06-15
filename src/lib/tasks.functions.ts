@@ -45,6 +45,46 @@ async function lookupName(supabase: any, userId: string | null | undefined) {
   return data?.full_name || data?.email || null;
 }
 
+async function notifyAssignee(opts: {
+  assigneeId: string;
+  assignerName: string | null;
+  title: string;
+  description?: string | null;
+  priority?: typeof TASK_PRIORITY[number];
+  dueDate?: string | null;
+  taskId: string;
+}) {
+  try {
+    const { getUserEmail, enqueueTransactionalEmail } = await import(
+      "@/lib/email/notify.server"
+    );
+    const { email, name } = await getUserEmail(opts.assigneeId);
+    if (!email) return;
+    const dueFmt = opts.dueDate
+      ? new Date(opts.dueDate).toLocaleDateString("cs-CZ")
+      : null;
+    await enqueueTransactionalEmail({
+      templateName: "task-assigned",
+      recipientEmail: email,
+      idempotencyKey: `task-assigned-${opts.taskId}-${opts.assigneeId}`,
+      templateData: {
+        assigneeName: name || "",
+        assignerName: opts.assignerName || "Kolega",
+        title: opts.title,
+        description: opts.description || "",
+        priorityLabel: opts.priority
+          ? TASK_PRIORITY_LABEL[opts.priority]
+          : undefined,
+        dueDate: dueFmt,
+        actionUrl: "https://www.autoport-app.cz/ukoly",
+        context: "task",
+      },
+    });
+  } catch (e) {
+    console.error("[tasks] notifyAssignee failed", e);
+  }
+}
+
 export const listTasks = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -78,6 +118,17 @@ export const createTask = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
+    if (data.assignee_id && data.assignee_id !== userId) {
+      await notifyAssignee({
+        assigneeId: data.assignee_id,
+        assignerName: creator_name,
+        title: data.title,
+        description: data.description ?? null,
+        priority: data.priority,
+        dueDate: data.due_date ?? null,
+        taskId: row.id,
+      });
+    }
     return { id: row.id };
   });
 
@@ -85,7 +136,22 @@ export const updateTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => updateInput.parse(d))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    const prev = (
+      await supabase
+        .from("tasks")
+        .select("assignee_id,title,description,priority,due_date")
+        .eq("id", data.id)
+        .maybeSingle()
+    ).data as
+      | {
+          assignee_id: string | null;
+          title: string;
+          description: string | null;
+          priority: typeof TASK_PRIORITY[number];
+          due_date: string | null;
+        }
+      | null;
     type Patch = {
       title?: string;
       description?: string | null;
@@ -111,6 +177,23 @@ export const updateTask = createServerFn({ method: "POST" })
     }
     const { error } = await supabase.from("tasks").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
+    const newAssignee = patch.assignee_id;
+    if (
+      newAssignee &&
+      newAssignee !== userId &&
+      newAssignee !== prev?.assignee_id
+    ) {
+      const assignerName = await lookupName(supabase, userId);
+      await notifyAssignee({
+        assigneeId: newAssignee,
+        assignerName,
+        title: patch.title ?? prev?.title ?? "Úkol",
+        description: patch.description ?? prev?.description ?? null,
+        priority: patch.priority ?? prev?.priority,
+        dueDate: patch.due_date ?? prev?.due_date ?? null,
+        taskId: data.id,
+      });
+    }
     return { ok: true };
   });
 
