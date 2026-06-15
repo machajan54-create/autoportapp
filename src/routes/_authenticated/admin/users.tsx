@@ -213,18 +213,21 @@ function UsersPage() {
 
   return (
     <AdminShell requireModule="users">
-      <main className="mx-auto max-w-5xl px-4 py-10">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+      <main className="mx-auto max-w-6xl px-4 py-8 md:py-10">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Administrace
+        </p>
+        <div className="mt-1 flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">Uživatelé a přístupy</h1>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="text-2xl font-bold md:text-3xl">Uživatelé a přístupy</h1>
+            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
               Super admin (role <b>Admin</b>) má automaticky přístup ke všem modulům.
               Ostatním uživatelům přidělte konkrétní moduly.
             </p>
           </div>
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
-              <Button size="sm">
+              <Button>
                 <UserPlus className="mr-1.5 h-4 w-4" /> Vytvořit uživatele
               </Button>
             </DialogTrigger>
