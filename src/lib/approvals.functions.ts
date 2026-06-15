@@ -18,6 +18,23 @@ async function isAdmin(supabase: any, userId: string): Promise<boolean> {
   return (data ?? []).some((r: any) => r.role === "admin");
 }
 
+/**
+ * Counts pending items waiting for super-admin decision across the /approvals
+ * page (suppliers + purchases). Returns 0 for non-admins.
+ */
+export const countPendingApprovalItems = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    if (!(await isAdmin(context.supabase, context.userId))) return { count: 0 };
+    const [s, p] = await Promise.all([
+      context.supabase
+        .from("suppliers").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      context.supabase
+        .from("purchases").select("id", { count: "exact", head: true }).eq("status", "pending"),
+    ]);
+    return { count: (s.count ?? 0) + (p.count ?? 0) };
+  });
+
 async function attachRequesters<T extends { requested_by?: string | null }>(
   supabase: any,
   rows: T[],
