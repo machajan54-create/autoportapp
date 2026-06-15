@@ -474,16 +474,26 @@ function RecordsTab() {
   const fetchR = useServerFn(listRecords);
   const fetchE = useServerFn(listEmployees);
   const fetchS = useServerFn(listShifts);
+  const fetchSettings = useServerFn(getDochazkaSettings);
   const upsert = useServerFn(upsertRecord);
   const del = useServerFn(deleteRecord);
+  const submitFn = useServerFn(submitRecord);
+  const decideFn = useServerFn(decideRecord);
+  const bulkDecide = useServerFn(bulkDecideRecords);
+  const fetchAccess = useServerFn(getMyAccess);
   const { data: records } = useQuery({ queryKey: ["dochazka", "records"], queryFn: () => fetchR({}) });
   const { data: employees } = useQuery({ queryKey: ["dochazka", "employees"], queryFn: () => fetchE({}) });
   const { data: shifts } = useQuery({ queryKey: ["dochazka", "shifts"], queryFn: () => fetchS({}) });
+  const { data: settings } = useQuery({ queryKey: ["dochazka", "settings"], queryFn: () => fetchSettings({}) });
+  const { data: access } = useQuery({ queryKey: ["my-access"], queryFn: () => fetchAccess({}) });
+  const canApprove = !!access?.isAdmin;
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState<any>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const empMap = useMemo(() => new Map((employees ?? []).map((e) => [e.id, e])), [employees]);
   const shiftMap = useMemo(() => new Map((shifts ?? []).map((s) => [s.id, s])), [shifts]);
+  const dailyThr = Number((settings as any)?.daily_overtime_threshold_hours ?? 8);
 
   function openNew() {
     const now = new Date();
@@ -534,16 +544,54 @@ function RecordsTab() {
     try { await del({ data: { id } }); toast.success("Smazáno"); qc.invalidateQueries({ queryKey: ["dochazka", "records"] }); }
     catch (e: any) { toast.error(e?.message ?? "Chyba"); }
   }
+  async function submit(id: string) {
+    try { await submitFn({ data: { id } }); toast.success("Odesláno ke schválení"); qc.invalidateQueries({ queryKey: ["dochazka", "records"] }); }
+    catch (e: any) { toast.error(e?.message ?? "Chyba"); }
+  }
+  async function decide(id: string, status: "approved" | "rejected") {
+    try { await decideFn({ data: { id, status } }); toast.success(status === "approved" ? "Schváleno" : "Zamítnuto"); qc.invalidateQueries({ queryKey: ["dochazka", "records"] }); }
+    catch (e: any) { toast.error(e?.message ?? "Chyba"); }
+  }
+  async function bulk(status: "approved" | "rejected") {
+    if (selected.size === 0) return;
+    try {
+      await bulkDecide({ data: { ids: Array.from(selected), status } });
+      toast.success(`Hromadně ${status === "approved" ? "schváleno" : "zamítnuto"}: ${selected.size}`);
+      setSelected(new Set());
+      qc.invalidateQueries({ queryKey: ["dochazka", "records"] });
+    } catch (e: any) { toast.error(e?.message ?? "Chyba"); }
+  }
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  }
 
   return (
     <div className="mt-4 space-y-3">
-      <div className="flex flex-wrap justify-end gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          {canApprove && selected.size > 0 && (
+            <>
+              <span className="text-xs text-muted-foreground">Vybráno: {selected.size}</span>
+              <Button size="sm" variant="outline" onClick={() => bulk("approved")}>
+                <Check className="mr-1 h-4 w-4 text-emerald-600" /> Schválit
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => bulk("rejected")}>
+                <X className="mr-1 h-4 w-4 text-rose-600" /> Zamítnout
+              </Button>
+            </>
+          )}
+        </div>
         <Button onClick={openNew}><Plus className="mr-1 h-4 w-4" /> Nový záznam</Button>
       </div>
       <Card>
         <Table>
           <TableHeader>
             <TableRow>
+              {canApprove && <TableHead className="w-8"></TableHead>}
               <TableHead>Datum</TableHead>
               <TableHead>Zaměstnanec</TableHead>
               <TableHead>Směna</TableHead>
@@ -551,26 +599,64 @@ function RecordsTab() {
               <TableHead>Odchod</TableHead>
               <TableHead>Pauza</TableHead>
               <TableHead>Hodiny</TableHead>
+              <TableHead>Stav</TableHead>
               <TableHead className="w-24"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {(records ?? []).length === 0 ? (
-              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground">Žádné záznamy.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={canApprove ? 10 : 9} className="text-center text-muted-foreground">Žádné záznamy.</TableCell></TableRow>
             ) : (records ?? []).map((r) => {
               const emp = empMap.get(r.employee_id);
               const sh = r.shift_id ? shiftMap.get(r.shift_id) : null;
+              const h = Number(r.hours_worked ?? 0);
+              const overtime = h > dailyThr ? h - dailyThr : 0;
+              const status = (r as any).approval_status ?? "draft";
               return (
                 <TableRow key={r.id}>
+                  {canApprove && (
+                    <TableCell>
+                      <input
+                        type="checkbox"
+                        checked={selected.has(r.id)}
+                        onChange={() => toggleSelect(r.id)}
+                        disabled={status === "draft"}
+                      />
+                    </TableCell>
+                  )}
                   <TableCell className="font-mono text-xs">{formatDate(r.date)}</TableCell>
                   <TableCell className="font-medium">{emp?.name ?? "—"}</TableCell>
                   <TableCell>{sh ? <Badge variant="outline" className={cn("border", shiftClasses(sh.color))}>{sh.name}</Badge> : <span className="text-muted-foreground">—</span>}</TableCell>
                   <TableCell className="font-mono">{formatTime(r.check_in)}</TableCell>
                   <TableCell className="font-mono">{r.check_out ? formatTime(r.check_out) : <Badge variant="secondary" className="bg-amber-100 text-amber-700">v práci</Badge>}</TableCell>
                   <TableCell className="text-xs">{r.break_duration} min</TableCell>
-                  <TableCell className="font-mono font-semibold">{formatHours(Number(r.hours_worked))}</TableCell>
+                  <TableCell className="font-mono font-semibold">
+                    {formatHours(h)}
+                    {overtime > 0 && (
+                      <Badge variant="outline" className="ml-1 border-amber-300 bg-amber-50 text-amber-700 text-[10px]">
+                        +{overtime.toFixed(1)}h přesčas
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {status === "draft" && <Badge variant="outline">Koncept</Badge>}
+                    {status === "submitted" && <Badge variant="secondary" className="bg-sky-100 text-sky-700">Ke schválení</Badge>}
+                    {status === "approved" && <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">Schváleno</Badge>}
+                    {status === "rejected" && <Badge variant="secondary" className="bg-rose-100 text-rose-700">Zamítnuto</Badge>}
+                  </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-1">
+                      {status === "draft" && (
+                        <Button size="icon" variant="ghost" onClick={() => submit(r.id)} title="Odeslat ke schválení">
+                          <Send className="h-4 w-4 text-sky-600" />
+                        </Button>
+                      )}
+                      {canApprove && status === "submitted" && (
+                        <>
+                          <Button size="icon" variant="ghost" onClick={() => decide(r.id, "approved")} title="Schválit"><Check className="h-4 w-4 text-emerald-600" /></Button>
+                          <Button size="icon" variant="ghost" onClick={() => decide(r.id, "rejected")} title="Zamítnout"><X className="h-4 w-4 text-rose-600" /></Button>
+                        </>
+                      )}
                       <Button size="icon" variant="ghost" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></Button>
                       <Button size="icon" variant="ghost" onClick={() => onDelete(r.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     </div>
