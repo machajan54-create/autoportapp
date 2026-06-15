@@ -221,6 +221,26 @@ function DemoOrderForm() {
       qc.invalidateQueries({ queryKey: ["demo-order", id] });
     });
   }
+
+  async function onSaveSellerSignature() {
+    if (!sellerName.trim() || !sellerSig) { toast.error("Doplňte jméno a podpis"); return; }
+    await runBusy("sign-seller", async () => {
+      await saveSeller({ data: { orderId: id, signatureDataUrl: sellerSig!, signerName: sellerName.trim() } });
+      toast.success("Podpis prodejce uložen");
+      setSellerOpen(false); setSellerSig(null); setSellerName("");
+      qc.invalidateQueries({ queryKey: ["demo-order", id] });
+    });
+  }
+
+  async function onClearSellerSignature() {
+    if (!confirm("Opravdu odstranit podpis prodejce?")) return;
+    await runBusy("clear-seller", async () => {
+      await clearSeller({ data: { orderId: id } });
+      toast.success("Podpis prodejce odstraněn");
+      qc.invalidateQueries({ queryKey: ["demo-order", id] });
+    });
+  }
+
   async function onSendSignLink() {
     await runBusy("sign-remote", async () => {
       const r = await signRemote({ data: { orderId: id } });
