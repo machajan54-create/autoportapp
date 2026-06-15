@@ -122,13 +122,8 @@ export const upsertEmployee = createServerFn({ method: "POST" })
 export const deleteEmployee = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("attendance_employees")
-      .delete()
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
+  .handler(async () => {
+    throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
   });
 
 // ============ Shifts ============
@@ -174,10 +169,8 @@ export const upsertShift = createServerFn({ method: "POST" })
 export const deleteShift = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("attendance_shifts").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
+  .handler(async () => {
+    throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
   });
 
 // ============ Records ============
@@ -281,10 +274,8 @@ export const upsertRecord = createServerFn({ method: "POST" })
 export const deleteRecord = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("attendance_records").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
+  .handler(async () => {
+    throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
   });
 
 // Terminal check-in: PUBLIC endpoint authenticated by PIN; uses admin client
@@ -499,10 +490,8 @@ export const resolveAbsence = createServerFn({ method: "POST" })
 export const deleteAbsence = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("attendance_absences").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
+  .handler(async () => {
+    throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
   });
 
 // ============ Notifications ============

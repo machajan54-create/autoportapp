@@ -147,22 +147,8 @@ export const updateDemoOrder = createServerFn({ method: "POST" })
 export const deleteDemoOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data, context }) => {
-    const { data: roles } = await context.supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", context.userId);
-    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: docs } = await supabaseAdmin
-      .from("demo_order_documents" as never)
-      .select("storage_path")
-      .eq("order_id", data.id);
-    const paths = ((docs ?? []) as any[]).map((d) => d.storage_path).filter(Boolean);
-    if (paths.length) await supabaseAdmin.storage.from("client-documents").remove(paths);
-    const { error } = await supabaseAdmin.from("demo_orders" as never).delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
+  .handler(async () => {
+    throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
   });
 
 // ============= PDF helpers =============
