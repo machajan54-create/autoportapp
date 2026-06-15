@@ -240,8 +240,8 @@ function OrdersTab() {
                   <th className="py-2 pr-2">Klient</th>
                   <th className="py-2 pr-2">Vozidlo</th>
                   <th className="py-2 pr-2">VIS</th>
-                  <th className="py-2 pr-2">Den</th>
-                  <th className="py-2 pr-2">Hodina</th>
+                  <th className="py-2 pr-2">Vyzvednutí od</th>
+                  <th className="py-2 pr-2">Dokončit do</th>
                   <th className="py-2 pr-2">Kdo</th>
                   <th className="py-2 pr-2">Č. zakázky</th>
                   <th className="py-2 pr-2">Stav</th>
@@ -256,8 +256,8 @@ function OrdersTab() {
                       <td className="py-2 pr-2 font-medium">{o.klient}</td>
                       <td className="py-2 pr-2">{o.vozidlo}</td>
                       <td className="py-2 pr-2 font-mono text-xs">{o.vis ?? "—"}</td>
-                      <td className="py-2 pr-2">{o.den ? new Date(o.den).toLocaleDateString("cs-CZ") : "—"}</td>
-                      <td className="py-2 pr-2">{o.hodina ?? "—"}</td>
+                      <td className="py-2 pr-2">{fmtDt(o.pickup_from) || (o.den ? new Date(o.den).toLocaleDateString("cs-CZ") + (o.hodina ? ` ${o.hodina}` : "") : "—")}</td>
+                      <td className="py-2 pr-2">{fmtDt(o.complete_by) || "—"}</td>
                       <td className="py-2 pr-2">{o.kdo_predava ?? "—"}</td>
                       <td className="py-2 pr-2 font-mono text-xs">{o.cislo_zakazky ?? "—"}</td>
                       <td className="py-2 pr-2">
@@ -281,6 +281,15 @@ function OrdersTab() {
                                 <Badge className={w.cls + " hover:" + w.cls} variant="outline">
                                   {a.washer?.name ?? "?"} · {w.label}
                                 </Badge>
+                                {a.status === "pending" && (a.reminder_count ?? 0) > 0 ? (
+                                  <span
+                                    title={`Posláno upozornění ${a.reminder_count}×`}
+                                    className="inline-flex items-center gap-0.5 text-[10px] text-amber-700"
+                                  >
+                                    <BellRing className="h-3 w-3" />
+                                    {a.reminder_count}
+                                  </span>
+                                ) : null}
                                 <button
                                   type="button"
                                   onClick={() => dropAssign(a.id)}
