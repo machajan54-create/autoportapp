@@ -32,20 +32,21 @@ const Email = ({
     <Body style={styles.body}>
       <Container style={styles.container}>
         <Header />
-        <Section style={styles.card}>
+        <Section style={styles.content}>
           <Heading as="h1" style={styles.h1}>Změna fáze obchodního případu</Heading>
           <Text style={styles.lead}>
             {recipientName ? `Ahoj ${recipientName}, ` : ''}
             {actorName || 'Kolega'} posunul(a) případ {fromStageLabel ? `z „${fromStageLabel}" ` : ''}
             do fáze „{toStageLabel}".
           </Text>
-          <Hr />
-          <Text style={styles.row}><strong>Případ:</strong> {title || '—'}</Text>
-          {vehicle ? <Text style={styles.row}><strong>Vůz:</strong> {vehicle}</Text> : null}
-          {clientName ? <Text style={styles.row}><strong>Klient:</strong> {clientName}</Text> : null}
-          {durationLabel ? (
-            <Text style={styles.row}><strong>Doba v předchozí fázi:</strong> {durationLabel}</Text>
-          ) : null}
+          <Section style={styles.metaBox}>
+            <Text style={styles.metaRow}><strong>Případ:</strong> {title || '—'}</Text>
+            {vehicle ? <Text style={styles.metaRow}><strong>Vůz:</strong> {vehicle}</Text> : null}
+            {clientName ? <Text style={styles.metaRow}><strong>Klient:</strong> {clientName}</Text> : null}
+            {durationLabel ? (
+              <Text style={styles.metaRow}><strong>Doba v předchozí fázi:</strong> {durationLabel}</Text>
+            ) : null}
+          </Section>
           <PrimaryButton href={actionUrl}>Otevřít případ</PrimaryButton>
         </Section>
         <Footer />
