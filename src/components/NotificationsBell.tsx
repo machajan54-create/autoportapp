@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { listClaims, getPendingApprovalsCount } from "@/lib/claims.functions";
 import { listDefects } from "@/lib/defects.functions";
 import { listPurchases } from "@/lib/approvals.functions";
+import { listTasks } from "@/lib/tasks.functions";
 import { supabase } from "@/integrations/supabase/client";
 import {
   listAbsences as listDochAbsences,
@@ -28,7 +29,7 @@ type NotifItem = {
 // disappear after the user closes the bell. Scoped per user so multiple accounts
 // on the same browser don't share state.
 const LS_PREFIX = "notif-last-seen-v2:";
-type LastSeen = Partial<Record<"purchases" | "defects" | "absences", string>>;
+type LastSeen = Partial<Record<"purchases" | "defects" | "absences" | "tasks", string>>;
 function readLastSeen(userId: string | null): LastSeen {
   if (typeof window === "undefined" || !userId) return {};
   try { return JSON.parse(localStorage.getItem(LS_PREFIX + userId) || "{}"); } catch { return {}; }
@@ -50,7 +51,7 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
       // First visit: initialize to "now" so we don't dump the entire history.
       if (uid && !stored.purchases && !stored.defects && !stored.absences) {
         const now = new Date().toISOString();
-        const init: LastSeen = { purchases: now, defects: now, absences: now };
+        const init: LastSeen = { purchases: now, defects: now, absences: now, tasks: now };
         writeLastSeen(uid, init);
         setLastSeen(init);
       } else {
@@ -65,6 +66,7 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
   const fetchRec = useServerFn(listDochRecords);
   const fetchPending = useServerFn(getPendingApprovalsCount);
   const fetchPurchases = useServerFn(listPurchases);
+  const fetchTasks = useServerFn(listTasks);
 
   const { data: claims } = useQuery({
     queryKey: ["notif", "claims"],
@@ -115,6 +117,12 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
     enabled: isAdmin,
     refetchInterval: 60_000,
   });
+  const { data: tasksData } = useQuery({
+    queryKey: ["notif", "tasks"],
+    queryFn: () => fetchTasks({}),
+    enabled: !!userId,
+    refetchInterval: 60_000,
+  });
 
   const items = useMemo<NotifItem[]>(() => {
     const out: NotifItem[] = [];
@@ -124,6 +132,22 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
       const sincePurchase = lastSeen.purchases ? Date.parse(lastSeen.purchases) : 0;
       const sinceDefects = lastSeen.defects ? Date.parse(lastSeen.defects) : 0;
       const sinceAbsences = lastSeen.absences ? Date.parse(lastSeen.absences) : 0;
+      const sinceTasks = lastSeen.tasks ? Date.parse(lastSeen.tasks) : 0;
+
+      const myTasks = (tasksData?.rows ?? []).filter(
+        (t: any) => t.assignee_id === userId && t.created_by !== userId && t.status !== "done",
+      );
+      for (const t of myTasks) {
+        const ts = t.updated_at ?? t.created_at;
+        if (!ts || Date.parse(String(ts)) <= sinceTasks) continue;
+        out.push({
+          key: `task-${t.id}-${t.updated_at ?? t.created_at}`,
+          title: `Nový úkol: ${t.title}`,
+          detail: t.creator_name ? `Od: ${t.creator_name}` : undefined,
+          to: "/ukoly",
+          tone: t.priority === "high" ? "danger" : "info",
+        });
+      }
 
       const mine = (myPurchases ?? []).filter(
         (p: any) => p.requested_by === userId && p.status !== "pending" && p.decided_at,
@@ -248,7 +272,7 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
     }
 
     return out;
-  }, [claims, defects, absences, emps, recs, pending, isAdmin, myPurchases, myAbsences, userId, lastSeen]);
+  }, [claims, defects, absences, emps, recs, pending, isAdmin, myPurchases, myAbsences, tasksData, userId, lastSeen]);
 
   const count = items.length;
 
@@ -261,7 +285,7 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
           // Mark personal notifications as seen AFTER the popover closes,
           // so items remain visible (and clickable) while it's open.
           const now = new Date().toISOString();
-          const next: LastSeen = { purchases: now, defects: now, absences: now };
+          const next: LastSeen = { purchases: now, defects: now, absences: now, tasks: now };
           writeLastSeen(userId, next);
           setLastSeen(next);
         }
