@@ -1,9 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { CheckSquare, Plus, Trash2, Loader2 } from "lucide-react";
+import {
+  CheckSquare, Plus, Trash2, Loader2, MessageSquare, Paperclip,
+  Download, Repeat, Filter as FilterIcon, X,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
@@ -23,7 +26,13 @@ import { listResolvers } from "@/lib/dochazka.functions";
 import {
   listTasks, createTask, updateTask, deleteTask,
   TASK_PRIORITY, TASK_STATUS, TASK_PRIORITY_LABEL, TASK_STATUS_LABEL,
+  TASK_RECURRENCE, TASK_RECURRENCE_LABEL,
 } from "@/lib/tasks.functions";
+import {
+  listTaskComments, addTaskComment, deleteTaskComment,
+  listTaskAttachments, recordTaskAttachment, deleteTaskAttachment,
+  getTaskAttachmentUrl,
+} from "@/lib/task-extras.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/ukoly/")({
