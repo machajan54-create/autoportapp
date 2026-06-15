@@ -51,6 +51,8 @@ function DemoOrdersList() {
     return (
       (r.order_number || "").toLowerCase().includes(t) ||
       (r.model_verze || "").toLowerCase().includes(t) ||
+      (r.rz || "").toLowerCase().includes(t) ||
+      (r.vin || "").toLowerCase().includes(t) ||
       (r.client?.full_name || "").toLowerCase().includes(t) ||
       (r.client?.company || "").toLowerCase().includes(t)
     );
@@ -96,6 +98,7 @@ function DemoOrdersList() {
                 <TableHead>Číslo</TableHead>
                 <TableHead>Klient</TableHead>
                 <TableHead>Model</TableHead>
+                <TableHead>RZ / VIN</TableHead>
                 <TableHead>Datum</TableHead>
                 <TableHead className="text-right">Cena s DPH</TableHead>
                 <TableHead>Stav</TableHead>
@@ -104,16 +107,17 @@ function DemoOrdersList() {
             </TableHeader>
             <TableBody>
               {isLoading && (
-                <TableRow><TableCell colSpan={7} className="text-center text-sm text-muted-foreground">Načítám…</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center text-sm text-muted-foreground">Načítám…</TableCell></TableRow>
               )}
               {!isLoading && rows.length === 0 && (
-                <TableRow><TableCell colSpan={7} className="text-center text-sm text-muted-foreground">Žádné objednávky.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center text-sm text-muted-foreground">Žádné objednávky.</TableCell></TableRow>
               )}
               {rows.map((r: any) => (
                 <TableRow key={r.id} className="cursor-pointer" onClick={() => navigate({ to: "/demo-orders/$id", params: { id: r.id } })}>
                   <TableCell className="font-medium">{r.order_number}</TableCell>
                   <TableCell>{r.client?.full_name || r.client?.company || "—"}</TableCell>
                   <TableCell>{r.model_verze || "—"}</TableCell>
+                  <TableCell className="text-xs tabular-nums">{[r.rz, r.vin].filter(Boolean).join(" / ") || "—"}</TableCell>
                   <TableCell>{r.datum_objednavky ? new Date(r.datum_objednavky).toLocaleDateString("cs-CZ") : "—"}</TableCell>
                   <TableCell className="text-right tabular-nums">{fmtKc(r.cena_celkem_s_dph)}</TableCell>
                   <TableCell>

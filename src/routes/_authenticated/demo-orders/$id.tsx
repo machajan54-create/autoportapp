@@ -53,6 +53,7 @@ function emptyForm() {
     client_id: "",
     model_verze: "",
     vin: "",
+    rz: "",
     barva: "",
     najete_km: "" as string,
     rok_vyroby: "" as string,
@@ -115,6 +116,7 @@ function DemoOrderForm() {
         client_id: o.client_id || "",
         model_verze: o.model_verze || "",
         vin: o.vin || "",
+        rz: o.rz || "",
         barva: o.barva || "",
         najete_km: o.najete_km != null ? String(o.najete_km) : "",
         rok_vyroby: o.rok_vyroby != null ? String(o.rok_vyroby) : "",
@@ -144,6 +146,7 @@ function DemoOrderForm() {
       client_id: form.client_id,
       model_verze: form.model_verze || null,
       vin: form.vin || null,
+      rz: form.rz || null,
       barva: form.barva || null,
       najete_km: form.najete_km ? Number(form.najete_km) : null,
       rok_vyroby: form.rok_vyroby ? Number(form.rok_vyroby) : null,
@@ -348,7 +351,8 @@ function DemoOrderForm() {
               <div className="grid gap-3 md:grid-cols-2">
                 <Field label="Model a verze"><Input value={form.model_verze} onChange={(e) => setForm({ ...form, model_verze: e.target.value })} /></Field>
                 <Field label="Barva"><Input value={form.barva} onChange={(e) => setForm({ ...form, barva: e.target.value })} /></Field>
-                <Field label="VIN / RZ"><Input value={form.vin} onChange={(e) => setForm({ ...form, vin: e.target.value })} /></Field>
+                <Field label="RZ (SPZ)"><Input value={form.rz} onChange={(e) => setForm({ ...form, rz: e.target.value })} /></Field>
+                <Field label="VIN"><Input value={form.vin} onChange={(e) => setForm({ ...form, vin: e.target.value })} /></Field>
                 <Field label="Rok výroby"><Input type="number" value={form.rok_vyroby} onChange={(e) => setForm({ ...form, rok_vyroby: e.target.value })} /></Field>
                 <Field label="Najeté km"><Input type="number" value={form.najete_km} onChange={(e) => setForm({ ...form, najete_km: e.target.value })} /></Field>
                 <Field label="Záruka spuštěna od"><Input value={form.zaruka_spustena_od} onChange={(e) => setForm({ ...form, zaruka_spustena_od: e.target.value })} placeholder="např. 1. registrace" /></Field>
