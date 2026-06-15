@@ -13,6 +13,7 @@ import { template as dealStageChanged } from './deal-stage-changed'
 import { template as dochazkaEmployeeWelcome } from './dochazka-employee-welcome'
 import { template as demoOrderSignatureRequest } from './demo-order-signature-request'
 import { template as demoOrderDocuments } from './demo-order-documents'
+import { template as washAssignment } from './wash-assignment'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -46,4 +47,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'dochazka-employee-welcome': dochazkaEmployeeWelcome,
   'demo-order-signature-request': demoOrderSignatureRequest,
   'demo-order-documents': demoOrderDocuments,
+  'wash-assignment': washAssignment,
 }
