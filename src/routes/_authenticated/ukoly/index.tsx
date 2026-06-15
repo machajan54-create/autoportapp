@@ -24,16 +24,17 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { listResolvers } from "@/lib/dochazka.functions";
 import {
-  listTasks, createTask, updateTask, deleteTask,
+  listTasks, createTask, updateTask,
   TASK_PRIORITY, TASK_STATUS, TASK_PRIORITY_LABEL, TASK_STATUS_LABEL,
   TASK_RECURRENCE, TASK_RECURRENCE_LABEL,
 } from "@/lib/tasks.functions";
 import {
-  listTaskComments, addTaskComment, deleteTaskComment,
-  listTaskAttachments, recordTaskAttachment, deleteTaskAttachment,
+  listTaskComments, addTaskComment,
+  listTaskAttachments, recordTaskAttachment,
   getTaskAttachmentUrl,
 } from "@/lib/task-extras.functions";
 import { cn } from "@/lib/utils";
+import { RequestDeleteButton } from "@/components/RequestDeleteButton";
 
 export const Route = createFileRoute("/_authenticated/ukoly/")({
   component: TasksPage,
@@ -56,7 +57,6 @@ function TasksPage() {
   const fetchUsers = useServerFn(listResolvers);
   const createFn = useServerFn(createTask);
   const updateFn = useServerFn(updateTask);
-  const deleteFn = useServerFn(deleteTask);
 
   const [userId, setUserId] = useState<string | null>(null);
   useEffect(() => {
@@ -117,17 +117,6 @@ function TasksPage() {
       qc.invalidateQueries({ queryKey: ["tasks"] });
     } catch (e: any) {
       toast.error(e?.message || "Nepodařilo se uložit");
-    }
-  }
-
-  async function handleDelete(id: string) {
-    if (!confirm("Opravdu smazat tento úkol?")) return;
-    try {
-      await deleteFn({ data: { id } });
-      toast.success("Úkol smazán");
-      qc.invalidateQueries({ queryKey: ["tasks"] });
-    } catch (e: any) {
-      toast.error(e?.message || "Nepodařilo se smazat");
     }
   }
 
@@ -284,14 +273,13 @@ function TasksPage() {
                       <Button variant="ghost" size="sm" onClick={() => setDetailId(r.id)}>
                         <MessageSquare className="mr-1 h-4 w-4" /> Detail
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      <RequestDeleteButton
+                        entityType="tasks"
+                        entityId={r.id}
+                        entityLabel={r.title}
                         className="text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(r.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                        title="Požádat o smazání úkolu"
+                      />
                     </div>
                   </div>
                 </div>
@@ -446,10 +434,8 @@ function TaskDetailDialog({
   const open = !!taskId;
   const fetchComments = useServerFn(listTaskComments);
   const addComment = useServerFn(addTaskComment);
-  const delComment = useServerFn(deleteTaskComment);
   const fetchAttachments = useServerFn(listTaskAttachments);
   const recordAttachment = useServerFn(recordTaskAttachment);
-  const delAttachment = useServerFn(deleteTaskAttachment);
   const getUrl = useServerFn(getTaskAttachmentUrl);
 
   const { data: commentsData, isLoading: cLoading } = useQuery({
@@ -488,15 +474,6 @@ function TaskDetailDialog({
     }
   }
 
-  async function handleDeleteComment(id: string) {
-    try {
-      await delComment({ data: { id } });
-      qc.invalidateQueries({ queryKey: ["task-comments", taskId] });
-    } catch (e: any) {
-      toast.error(e?.message || "Nepodařilo se smazat");
-    }
-  }
-
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !taskId) return;
@@ -528,16 +505,6 @@ function TaskDetailDialog({
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
-    }
-  }
-
-  async function handleDeleteAttachment(id: string) {
-    if (!confirm("Smazat přílohu?")) return;
-    try {
-      await delAttachment({ data: { id } });
-      qc.invalidateQueries({ queryKey: ["task-attachments", taskId] });
-    } catch (e: any) {
-      toast.error(e?.message || "Nepodařilo se smazat");
     }
   }
 
@@ -604,14 +571,13 @@ function TaskDetailDialog({
                     <Button variant="ghost" size="sm" onClick={() => handleDownload(a.id)}>
                       <Download className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
+                    <RequestDeleteButton
+                      entityType="task_attachments"
+                      entityId={a.id}
+                      entityLabel={a.file_name}
                       className="text-destructive hover:text-destructive"
-                      onClick={() => handleDeleteAttachment(a.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                      title="Požádat o smazání přílohy"
+                    />
                   </li>
                 ))}
               </ul>
@@ -635,14 +601,15 @@ function TaskDetailDialog({
                         {c.author_name ?? "—"} ·{" "}
                         {new Date(c.created_at).toLocaleString("cs-CZ")}
                       </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      <RequestDeleteButton
+                        entityType="task_comments"
+                        entityId={c.id}
+                        entityLabel={c.body?.slice(0, 60)}
                         className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                        onClick={() => handleDeleteComment(c.id)}
+                        title="Požádat o smazání komentáře"
                       >
                         <Trash2 className="h-3 w-3" />
-                      </Button>
+                      </RequestDeleteButton>
                     </div>
                     <p className="mt-1 whitespace-pre-wrap">{c.body}</p>
                   </li>

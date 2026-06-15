@@ -6,7 +6,7 @@ import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { listClaims, deleteClaim, getMyAccess } from "@/lib/claims.functions";
+import { listClaims, getMyAccess } from "@/lib/claims.functions";
 import { toast } from "sonner";
 import {
   FolderOpen,
@@ -20,6 +20,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { RequestDeleteButton } from "@/components/RequestDeleteButton";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   component: AdminList,
@@ -52,7 +53,6 @@ function AdminList() {
   const navigate = useNavigate();
   const fetch = useServerFn(listClaims);
   const qc = useQueryClient();
-  const deleteFn = useServerFn(deleteClaim);
   const fetchAccess = useServerFn(getMyAccess);
   const { data: access } = useQuery({ queryKey: ["my-access"], queryFn: () => fetchAccess() });
   const isAdmin = !!access?.isAdmin;
@@ -62,18 +62,6 @@ function AdminList() {
   });
   const [filter, setFilter] = useState<FilterKey>("all");
   const [q, setQ] = useState("");
-
-  async function handleDelete(e: React.MouseEvent, id: string, pu: string | null) {
-    e.stopPropagation();
-    if (!confirm(`Opravdu nenávratně smazat zakázku ${pu ?? ""}? Smažou se i všechny přílohy a úkoly.`)) return;
-    try {
-      await deleteFn({ data: { id } });
-      toast.success("Zakázka byla smazána");
-      qc.invalidateQueries({ queryKey: ["claims"] });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Nepodařilo se smazat zakázku");
-    }
-  }
 
   const rows = (data ?? []).filter((c) => {
     if (filter === "new" && c.status !== "new") return false;

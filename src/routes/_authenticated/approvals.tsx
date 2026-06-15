@@ -32,12 +32,16 @@ import {
   listSuppliers,
   createSupplier,
   decideSupplier,
-  deleteSupplier,
   listPurchases,
   createPurchase,
   decidePurchase,
-  deletePurchase,
 } from "@/lib/approvals.functions";
+import {
+  listDeletionRequests,
+  decideDeletionRequest,
+  cancelDeletionRequest,
+} from "@/lib/deletion-requests.functions";
+import { RequestDeleteButton } from "@/components/RequestDeleteButton";
 
 export const Route = createFileRoute("/_authenticated/approvals")({
   component: ApprovalsPage,
@@ -77,12 +81,18 @@ function ApprovalsPage() {
             <TabsTrigger value="suppliers">
               <Building2 className="mr-2 h-4 w-4" /> Dodavatelé
             </TabsTrigger>
+            <TabsTrigger value="deletions">
+              <Trash2 className="mr-2 h-4 w-4" /> Žádosti o smazání
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="purchases" className="mt-4">
             <PurchasesTab isAdmin={isAdmin} />
           </TabsContent>
           <TabsContent value="suppliers" className="mt-4">
             <SuppliersTab isAdmin={isAdmin} />
+          </TabsContent>
+          <TabsContent value="deletions" className="mt-4">
+            <DeletionsTab isAdmin={isAdmin} />
           </TabsContent>
         </Tabs>
       </div>
@@ -95,7 +105,6 @@ function SuppliersTab({ isAdmin }: { isAdmin: boolean }) {
   const fetchList = useServerFn(listSuppliers);
   const create = useServerFn(createSupplier);
   const decide = useServerFn(decideSupplier);
-  const del = useServerFn(deleteSupplier);
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["suppliers"],
     queryFn: () => fetchList(),
@@ -132,12 +141,6 @@ function SuppliersTab({ isAdmin }: { isAdmin: boolean }) {
     } catch (err: any) {
       toast.error(err.message ?? "Chyba");
     }
-  }
-
-  async function remove(id: string) {
-    if (!confirm("Smazat dodavatele?")) return;
-    await del({ data: { id } });
-    refetch();
   }
 
   return (
@@ -203,9 +206,12 @@ function SuppliersTab({ isAdmin }: { isAdmin: boolean }) {
                     </Button>
                   )}
                   {isAdmin && (
-                    <Button size="sm" variant="ghost" onClick={() => remove(s.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <RequestDeleteButton
+                      entityType="suppliers"
+                      entityId={s.id}
+                      entityLabel={s.name}
+                      onRequested={() => refetch()}
+                    />
                   )}
                 </div>
               </div>
@@ -217,12 +223,159 @@ function SuppliersTab({ isAdmin }: { isAdmin: boolean }) {
   );
 }
 
+function DeletionsTab({ isAdmin }: { isAdmin: boolean }) {
+  const fetchList = useServerFn(listDeletionRequests);
+  const decide = useServerFn(decideDeletionRequest);
+  const cancel = useServerFn(cancelDeletionRequest);
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ["deletion-requests"],
+    queryFn: () => fetchList({}),
+  });
+  const [statusFilter, setStatusFilter] = useState<"pending" | "all" | "decided">("pending");
+  const [noteOpen, setNoteOpen] = useState<{ id: string; status: "approved" | "rejected" } | null>(null);
+  const [note, setNote] = useState("");
+
+  const rows = (data ?? []).filter((r: any) => {
+    if (statusFilter === "pending") return r.status === "pending";
+    if (statusFilter === "decided") return r.status !== "pending";
+    return true;
+  });
+
+  async function confirmDecision() {
+    if (!noteOpen) return;
+    try {
+      await decide({ data: { id: noteOpen.id, status: noteOpen.status, decision_note: note || null } });
+      toast.success(
+        noteOpen.status === "approved"
+          ? "Žádost schválena a záznam smazán."
+          : "Žádost zamítnuta.",
+      );
+      setNoteOpen(null);
+      setNote("");
+      refetch();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Akce selhala.");
+    }
+  }
+
+  async function cancelOwn(id: string) {
+    if (!confirm("Zrušit vlastní žádost?")) return;
+    try {
+      await cancel({ data: { id } });
+      refetch();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Chyba");
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Žádosti o smazání</CardTitle>
+        <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
+          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="pending">Čekající</SelectItem>
+            <SelectItem value="decided">Rozhodnuté</SelectItem>
+            <SelectItem value="all">Vše</SelectItem>
+          </SelectContent>
+        </Select>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground">Načítám…</p>
+        ) : !rows.length ? (
+          <p className="text-sm text-muted-foreground">Žádné žádosti.</p>
+        ) : (
+          <div className="space-y-2">
+            {rows.map((r: any) => (
+              <div key={r.id} className="flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">{r.type_label}</Badge>
+                    <StatusBadge status={r.status} />
+                  </div>
+                  <div className="mt-1 truncate font-medium">{r.entity_label}</div>
+                  <div className="text-xs text-muted-foreground">
+                    Žádá: {r.requester?.full_name || r.requester?.email || "—"} ·{" "}
+                    {new Date(r.created_at).toLocaleString("cs-CZ")}
+                  </div>
+                  <div className="mt-1 text-sm whitespace-pre-wrap">
+                    <span className="text-muted-foreground">Důvod: </span>{r.reason}
+                  </div>
+                  {r.decision_note && (
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      Poznámka rozhodnutí: {r.decision_note}
+                    </div>
+                  )}
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  {isAdmin && r.status === "pending" && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => { setNote(""); setNoteOpen({ id: r.id, status: "rejected" }); }}
+                      >
+                        <X className="mr-1 h-4 w-4" /> Zamítnout
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => { setNote(""); setNoteOpen({ id: r.id, status: "approved" }); }}
+                      >
+                        <Check className="mr-1 h-4 w-4" /> Schválit a smazat
+                      </Button>
+                    </>
+                  )}
+                  {!isAdmin && r.status === "pending" && (
+                    <Button size="sm" variant="ghost" onClick={() => cancelOwn(r.id)}>
+                      Zrušit žádost
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+
+      <Dialog open={!!noteOpen} onOpenChange={(o) => !o && setNoteOpen(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {noteOpen?.status === "approved" ? "Schválit a smazat" : "Zamítnout žádost"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            {noteOpen?.status === "approved" && (
+              <p className="text-sm text-destructive">
+                Tato akce je nevratná. Záznam bude okamžitě smazán.
+              </p>
+            )}
+            <Label>Poznámka (volitelné)</Label>
+            <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} maxLength={1000} />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setNoteOpen(null)}>Zrušit</Button>
+            <Button
+              variant={noteOpen?.status === "approved" ? "destructive" : "default"}
+              onClick={confirmDecision}
+            >
+              {noteOpen?.status === "approved" ? "Schválit a smazat" : "Zamítnout"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
 function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
   const fetchList = useServerFn(listPurchases);
   const fetchSuppliers = useServerFn(listSuppliers);
   const create = useServerFn(createPurchase);
   const decide = useServerFn(decidePurchase);
-  const del = useServerFn(deletePurchase);
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["purchases"],
     queryFn: () => fetchList(),
@@ -272,12 +425,6 @@ function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
     } catch (err: any) {
       toast.error(err.message ?? "Chyba");
     }
-  }
-
-  async function remove(id: string) {
-    if (!confirm("Smazat nákup?")) return;
-    await del({ data: { id } });
-    refetch();
   }
 
   const approvedSuppliers = (suppliers ?? []).filter((s: any) => s.status === "approved");
@@ -413,9 +560,12 @@ function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
                     </Button>
                   )}
                   {isAdmin && (
-                    <Button size="sm" variant="ghost" onClick={() => remove(p.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <RequestDeleteButton
+                      entityType="purchases"
+                      entityId={p.id}
+                      entityLabel={p.title}
+                      onRequested={() => refetch()}
+                    />
                   )}
                 </div>
               </div>

@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyAccess, getPendingApprovalsCount } from "@/lib/claims.functions";
+import { countPendingDeletionRequests } from "@/lib/deletion-requests.functions";
 import autoportLogo from "@/assets/autoport-logo.png.asset.json";
 import { NotificationsBell } from "@/components/NotificationsBell";
 import { CommandPalette } from "@/components/CommandPalette";
@@ -28,6 +29,7 @@ export function AdminShell({
   const [mobileOpen, setMobileOpen] = useState(false);
   const fetchAccess = useServerFn(getMyAccess);
   const fetchPending = useServerFn(getPendingApprovalsCount);
+  const fetchPendingDeletions = useServerFn(countPendingDeletionRequests);
   const { data: access } = useQuery({
     queryKey: ["my-access"],
     queryFn: () => fetchAccess({}),
@@ -38,7 +40,14 @@ export function AdminShell({
     enabled: !!access?.isAdmin,
     refetchInterval: 60_000,
   });
+  const { data: pendingDel } = useQuery({
+    queryKey: ["pending-deletions"],
+    queryFn: () => fetchPendingDeletions({}),
+    enabled: !!access?.isAdmin,
+    refetchInterval: 60_000,
+  });
   const pendingCount = pending?.count ?? 0;
+  const pendingDeletionCount = pendingDel?.count ?? 0;
   const modules = (access?.modules ?? []) as ReadonlyArray<ModuleKey>;
   const can = (m: ModuleKey) => modules.includes(m);
   const canAny = (m: ModuleKey | ModuleKey[]) =>
@@ -94,7 +103,8 @@ export function AdminShell({
       {can("deals") && navItem("/deals", "Obchodní případy", Briefcase)}
       {can("demo_orders") && navItem("/demo-orders", "Předváděcí vozy", ClipboardSignature)}
       {can("logbook") && navItem("/logbook", "Kniha jízd", BookOpen)}
-      {(access?.isAdmin || can("approvals")) && navItem("/approvals", "Schvalování", CheckSquare)}
+      {(access?.isAdmin || can("approvals")) &&
+        navItem("/approvals", "Schvalování", CheckSquare, pendingDeletionCount)}
       {access?.isAdmin && (
         <Collapsible
           defaultOpen={pathname.startsWith("/admin/")}
