@@ -832,6 +832,13 @@ export const createRemoteSignatureLink = createServerFn({ method: "POST" })
         expiresAt: expires,
       },
     });
+    await logEvent({
+      orderId: data.orderId,
+      type: "signature_link_sent",
+      message: `Odeslán e-mail klientovi (${(client as any).email}) s odkazem pro elektronický podpis.`,
+      actorId: context.userId,
+      meta: { recipient: (client as any).email, expires_at: expires },
+    });
     return { ok: true, signUrl: link };
   });
 
@@ -896,6 +903,12 @@ export const signOrderRemote = createServerFn({ method: "POST" })
       consumed_at: new Date().toISOString(),
     } as never).eq("id", (sig as any).id);
     await supabaseAdmin.from("demo_orders" as never).update({ status: "signed" } as never).eq("id", orderId);
+    await logEvent({
+      orderId,
+      type: "signed_remote",
+      message: `Klient elektronicky podepsal objednávku (${data.signerName}).`,
+      actorId: null,
+    });
     return { ok: true };
   });
 
@@ -949,6 +962,17 @@ export const sendDocumentsToClient = createServerFn({ method: "POST" })
         orderUrl,
         invoiceUrl,
       },
+    });
+    await logEvent({
+      orderId: data.orderId,
+      type: "documents_sent",
+      message: `Odeslán e-mail klientovi (${(client as any).email}) s dokumenty${
+        picked.order && picked.invoice ? " (objednávka + faktura)"
+        : picked.order ? " (objednávka)"
+        : " (faktura)"
+      }.`,
+      actorId: context.userId,
+      meta: { recipient: (client as any).email },
     });
     return { ok: true };
   });
