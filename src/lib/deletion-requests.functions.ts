@@ -95,8 +95,8 @@ const ENTITY_REGISTRY: Record<
   },
   attendance_records: {
     table: "attendance_records",
-    select: "work_date, employee_id",
-    label: (r) => `Docházka ${r?.work_date ?? ""}`,
+    select: "date, employee_id",
+    label: (r) => `Docházka ${r?.date ?? ""}`,
     typeLabel: "Záznam docházky",
   },
   attendance_shifts: {
