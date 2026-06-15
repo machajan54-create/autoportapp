@@ -389,7 +389,7 @@ export const upsertAbsence = createServerFn({ method: "POST" })
       .eq("id", data.employee_id)
       .maybeSingle();
     const notify = await import("@/lib/email/notify.server");
-    const payload = {
+    const mail = {
       templateName: "approval-request" as const,
       templateData: {
         kind: "vacation",
@@ -406,12 +406,12 @@ export const upsertAbsence = createServerFn({ method: "POST" })
     if (data.requested_resolver) {
       const r = await notify.getUserEmail(data.requested_resolver);
       if (r.email) {
-        await notify.enqueueTransactionalEmail({ ...payload, recipientEmail: r.email });
+        await notify.enqueueTransactionalEmail({ ...mail, recipientEmail: r.email });
       } else {
-        await notify.notifyAdmins(payload);
+        await notify.notifyAdmins(mail);
       }
     } else {
-      await notify.notifyAdmins(payload);
+      await notify.notifyAdmins(mail);
     }
     return { id: row.id };
   });
