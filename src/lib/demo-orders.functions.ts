@@ -191,19 +191,16 @@ const BRAND = {
 // ============= Unicode font loader (Roboto, supports Czech) =============
 // Bundled via roboto-fontface (Vite asset URL). Server fetch resolves locally,
 // no external CDN dependency.
-import robotoRegularUrl from "@/assets/fonts/Roboto-Regular.ttf?url";
-import robotoBoldUrl from "@/assets/fonts/Roboto-Bold.ttf?url";
-let _fontCache: Promise<{ regular: Uint8Array; bold: Uint8Array }> | null = null;
+import robotoRegularB64 from "@/assets/fonts/Roboto-Regular.ttf.base64";
+import robotoBoldB64 from "@/assets/fonts/Roboto-Bold.ttf.base64";
+function b64ToBytes(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
 async function loadUnicodeFonts() {
-  if (!_fontCache) {
-    _fontCache = (async () => {
-      const [r, b] = await Promise.all([fetch(robotoRegularUrl), fetch(robotoBoldUrl)]);
-      if (!r.ok || !b.ok) throw new Error("Nepodařilo se načíst font Roboto");
-      const [rb, bb] = await Promise.all([r.arrayBuffer(), b.arrayBuffer()]);
-      return { regular: new Uint8Array(rb), bold: new Uint8Array(bb) };
-    })().catch((e) => { _fontCache = null; throw e; });
-  }
-  return _fontCache;
+  return { regular: b64ToBytes(robotoRegularB64), bold: b64ToBytes(robotoBoldB64) };
 }
 async function embedUnicodeFonts(pdfDoc: any) {
   const fontkit = (await import("@pdf-lib/fontkit")).default;
