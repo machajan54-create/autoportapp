@@ -280,6 +280,17 @@ function ClaimDetail() {
                 ))}
               </SelectContent>
             </Select>
+            {isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDeleteClaim}
+                className="text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                title="Smazat zakázku"
+              >
+                <Trash2 className="mr-1.5 h-4 w-4" /> Smazat
+              </Button>
+            )}
           </div>
         </div>
 
