@@ -122,11 +122,18 @@ export const getDemoOrder = createServerFn({ method: "GET" })
       .select("id,mode,signer_name,signed_at,consumed_at,token,token_expires_at,created_at")
       .eq("order_id", data.id)
       .order("created_at", { ascending: false });
+    const { data: events } = await context.supabase
+      .from("demo_order_events" as never)
+      .select("id,type,message,actor_id,actor_name,meta,created_at")
+      .eq("order_id", data.id)
+      .order("created_at", { ascending: false })
+      .limit(200);
     return {
       order: order as any,
       client: client as any,
       documents: (docs ?? []) as any[],
       signatures: (sigs ?? []) as any[],
+      events: (events ?? []) as any[],
     };
   });
 
