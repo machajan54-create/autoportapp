@@ -871,6 +871,7 @@ export type Database = {
           order_number: string | null
           registrace_datum: string | null
           rok_vyroby: number | null
+          rz: string | null
           seller_signature_data: string | null
           seller_signed_at: string | null
           seller_signer_name: string | null
@@ -898,6 +899,7 @@ export type Database = {
           order_number?: string | null
           registrace_datum?: string | null
           rok_vyroby?: number | null
+          rz?: string | null
           seller_signature_data?: string | null
           seller_signed_at?: string | null
           seller_signer_name?: string | null
@@ -925,6 +927,7 @@ export type Database = {
           order_number?: string | null
           registrace_datum?: string | null
           rok_vyroby?: number | null
+          rz?: string | null
           seller_signature_data?: string | null
           seller_signed_at?: string | null
           seller_signer_name?: string | null

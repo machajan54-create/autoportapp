@@ -1,0 +1,1 @@
+ALTER TABLE public.demo_orders ADD COLUMN IF NOT EXISTS rz TEXT;
