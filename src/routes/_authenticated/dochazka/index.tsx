@@ -25,21 +25,22 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  Clock, Plus, Pencil, Trash2, Download, Check, X, BellOff, BellRing,
+  Clock, Plus, Pencil, Download, Check, X, BellOff, BellRing,
   ExternalLink, Users as UsersIcon, CalendarClock, BarChart3, PalmtreeIcon, Bell,
   CalendarDays, ChevronLeft, ChevronRight, Send, ShieldCheck, AlertTriangle, FileSpreadsheet, Sparkles,
 } from "lucide-react";
 import {
-  listEmployees, upsertEmployee, deleteEmployee,
-  listShifts, upsertShift, deleteShift,
-  listRecords, upsertRecord, deleteRecord,
-  listAbsences, upsertAbsence, resolveAbsence, deleteAbsence,
+  listEmployees, upsertEmployee,
+  listShifts, upsertShift,
+  listRecords, upsertRecord,
+  listAbsences, upsertAbsence, resolveAbsence,
   listNotifications, markNotificationRead, markAllNotificationsRead,
   getDochazkaSettings, updateDochazkaSettings,
   getMonthCalendar, listResolvers,
   submitRecord, decideRecord, bulkDecideRecords, autoFillMonth,
 } from "@/lib/dochazka.functions";
 import { getMyAccess } from "@/lib/claims.functions";
+import { RequestDeleteButton } from "@/components/RequestDeleteButton";
 import {
   ABSENCE_TYPES, ABSENCE_TYPE_LABEL, SHIFT_COLORS, AVATAR_COLORS,
   avatarClasses, shiftClasses, initials, formatTime, formatDate, formatHours, todayISODate,
@@ -212,7 +213,6 @@ function EmployeesTab() {
   const qc = useQueryClient();
   const fetchEmp = useServerFn(listEmployees);
   const upsert = useServerFn(upsertEmployee);
-  const del = useServerFn(deleteEmployee);
   const fetchResolvers = useServerFn(listResolvers);
   const { data, isLoading } = useQuery({ queryKey: ["dochazka", "employees"], queryFn: () => fetchEmp({}) });
   const { data: users } = useQuery({ queryKey: ["dochazka", "users"], queryFn: () => fetchResolvers({}) });
@@ -237,17 +237,6 @@ function EmployeesTab() {
       toast.error(e?.message ?? "Chyba");
     }
   }
-  async function onDelete(id: string) {
-    if (!confirm("Opravdu smazat tohoto zaměstnance?")) return;
-    try {
-      await del({ data: { id } });
-      toast.success("Smazáno");
-      qc.invalidateQueries({ queryKey: ["dochazka", "employees"] });
-    } catch (e: any) {
-      toast.error(e?.message ?? "Chyba");
-    }
-  }
-
   return (
     <div className="mt-4 space-y-3">
       <div className="flex justify-end">
@@ -297,7 +286,14 @@ function EmployeesTab() {
                 <TableCell>
                   <div className="flex justify-end gap-1">
                     <Button size="icon" variant="ghost" onClick={() => openEdit(e)}><Pencil className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" onClick={() => onDelete(e.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    <RequestDeleteButton
+                      entityType="attendance_employees"
+                      entityId={e.id}
+                      entityLabel={e.name}
+                      size="icon"
+                      className="text-destructive"
+                      title="Požádat o smazání zaměstnance"
+                    />
                   </div>
                 </TableCell>
               </TableRow>
@@ -396,7 +392,6 @@ function ShiftsTab() {
   const qc = useQueryClient();
   const fetchS = useServerFn(listShifts);
   const upsert = useServerFn(upsertShift);
-  const del = useServerFn(deleteShift);
   const { data } = useQuery({ queryKey: ["dochazka", "shifts"], queryFn: () => fetchS({}) });
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState<any>(null);
@@ -410,12 +405,6 @@ function ShiftsTab() {
       qc.invalidateQueries({ queryKey: ["dochazka", "shifts"] });
     } catch (e: any) { toast.error(e?.message ?? "Chyba"); }
   }
-  async function onDelete(id: string) {
-    if (!confirm("Smazat směnu?")) return;
-    try { await del({ data: { id } }); toast.success("Smazáno"); qc.invalidateQueries({ queryKey: ["dochazka", "shifts"] }); }
-    catch (e: any) { toast.error(e?.message ?? "Chyba"); }
-  }
-
   return (
     <div className="mt-4 space-y-3">
       <div className="flex justify-end"><Button onClick={openNew}><Plus className="mr-1 h-4 w-4" /> Nová směna</Button></div>
@@ -431,7 +420,14 @@ function ShiftsTab() {
               </div>
               <div className="flex gap-1">
                 <Button size="icon" variant="ghost" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
-                <Button size="icon" variant="ghost" onClick={() => onDelete(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                <RequestDeleteButton
+                  entityType="attendance_shifts"
+                  entityId={s.id}
+                  entityLabel={s.name}
+                  size="icon"
+                  className="text-destructive"
+                  title="Požádat o smazání směny"
+                />
               </div>
             </div>
           </Card>
@@ -478,7 +474,6 @@ function RecordsTab() {
   const fetchS = useServerFn(listShifts);
   const fetchSettings = useServerFn(getDochazkaSettings);
   const upsert = useServerFn(upsertRecord);
-  const del = useServerFn(deleteRecord);
   const submitFn = useServerFn(submitRecord);
   const decideFn = useServerFn(decideRecord);
   const bulkDecide = useServerFn(bulkDecideRecords);
@@ -540,11 +535,6 @@ function RecordsTab() {
       toast.success("Uloženo"); setOpen(false);
       qc.invalidateQueries({ queryKey: ["dochazka", "records"] });
     } catch (e: any) { toast.error(e?.message ?? "Chyba"); }
-  }
-  async function onDelete(id: string) {
-    if (!confirm("Smazat záznam?")) return;
-    try { await del({ data: { id } }); toast.success("Smazáno"); qc.invalidateQueries({ queryKey: ["dochazka", "records"] }); }
-    catch (e: any) { toast.error(e?.message ?? "Chyba"); }
   }
   async function submit(id: string) {
     try { await submitFn({ data: { id } }); toast.success("Odesláno ke schválení"); qc.invalidateQueries({ queryKey: ["dochazka", "records"] }); }
@@ -660,7 +650,14 @@ function RecordsTab() {
                         </>
                       )}
                       <Button size="icon" variant="ghost" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></Button>
-                      <Button size="icon" variant="ghost" onClick={() => onDelete(r.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      <RequestDeleteButton
+                        entityType="attendance_records"
+                        entityId={r.id}
+                        entityLabel={`Docházka ${formatDate(r.date)} – ${empMap.get(r.employee_id)?.name ?? ""}`}
+                        size="icon"
+                        className="text-destructive"
+                        title="Požádat o smazání záznamu"
+                      />
                     </div>
                   </TableCell>
                 </TableRow>
@@ -716,7 +713,6 @@ function AbsencesTab() {
   const fetchR = useServerFn(listResolvers);
   const upsert = useServerFn(upsertAbsence);
   const resolve = useServerFn(resolveAbsence);
-  const del = useServerFn(deleteAbsence);
   const { data: absences } = useQuery({ queryKey: ["dochazka", "absences"], queryFn: () => fetchA({}) });
   const { data: employees } = useQuery({ queryKey: ["dochazka", "employees"], queryFn: () => fetchE({}) });
   const { data: resolvers } = useQuery({ queryKey: ["dochazka", "resolvers"], queryFn: () => fetchR() });
@@ -755,12 +751,6 @@ function AbsencesTab() {
       qc.invalidateQueries({ queryKey: ["dochazka", "absences"] });
     } catch (e: any) { toast.error(e?.message ?? "Chyba"); }
   }
-  async function onDelete(id: string) {
-    if (!confirm("Smazat?")) return;
-    try { await del({ data: { id } }); toast.success("Smazáno"); qc.invalidateQueries({ queryKey: ["dochazka", "absences"] }); }
-    catch (e: any) { toast.error(e?.message ?? "Chyba"); }
-  }
-
   return (
     <div className="mt-4 space-y-3">
       <div className="flex justify-end"><Button onClick={openNew}><Plus className="mr-1 h-4 w-4" /> Nová žádost</Button></div>
@@ -805,7 +795,14 @@ function AbsencesTab() {
                         <Button size="icon" variant="ghost" onClick={() => decide(a.id, "rejected")} title="Zamítnout"><X className="h-4 w-4 text-rose-600" /></Button>
                       </>
                     )}
-                    <Button size="icon" variant="ghost" onClick={() => onDelete(a.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    <RequestDeleteButton
+                      entityType="attendance_absences"
+                      entityId={a.id}
+                      entityLabel={`${ABSENCE_TYPE_LABEL[a.type] ?? a.type} ${formatDate(a.start_date)}–${formatDate(a.end_date)}`}
+                      size="icon"
+                      className="text-destructive"
+                      title="Požádat o smazání absence"
+                    />
                   </div>
                 </TableCell>
               </TableRow>

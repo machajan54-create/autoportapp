@@ -22,8 +22,8 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  listVehicles, upsertVehicle, deleteVehicle,
-  listEntries, upsertEntry, deleteEntry, getReceiptUrls,
+  listVehicles, upsertVehicle,
+  listEntries, upsertEntry, getReceiptUrls,
 } from "@/lib/logbook.functions";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -92,9 +92,7 @@ function LogbookPage() {
   const fetchVehicles = useServerFn(listVehicles);
   const fetchEntries = useServerFn(listEntries);
   const saveVehicleFn = useServerFn(upsertVehicle);
-  const deleteVehicleFn = useServerFn(deleteVehicle);
   const saveEntryFn = useServerFn(upsertEntry);
-  const deleteEntryFn = useServerFn(deleteEntry);
   const fetchReceiptUrls = useServerFn(getReceiptUrls);
 
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | "all">("all");
@@ -191,19 +189,7 @@ function LogbookPage() {
     }
   }
 
-  async function removeVehicle(v: Vehicle) {
-    if (!confirm(`Smazat vozidlo "${v.type}" včetně všech jízd a tankování?`)) return;
-    try {
-      await deleteVehicleFn({ data: { id: v.id } });
-      toast.success("Vozidlo smazáno");
-      if (selectedVehicleId === v.id) setSelectedVehicleId("all");
-      qc.invalidateQueries({ queryKey: ["logbook-vehicles"] });
       qc.invalidateQueries({ queryKey: ["logbook-entries"] });
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Smazání selhalo");
-    }
-  }
-
   // Entry dialog
   const [entryOpen, setEntryOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
@@ -378,17 +364,6 @@ function LogbookPage() {
       toast.success("Export hotov");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Export selhal");
-    }
-  }
-
-  async function removeEntry(e: Entry) {
-    if (!confirm("Smazat záznam?")) return;
-    try {
-      await deleteEntryFn({ data: { id: e.id } });
-      toast.success("Smazáno");
-      qc.invalidateQueries({ queryKey: ["logbook-entries"] });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Smazání selhalo");
     }
   }
 

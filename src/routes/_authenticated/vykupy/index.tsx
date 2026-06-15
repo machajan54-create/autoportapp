@@ -11,7 +11,7 @@ import {
 import { Plus, Search, Pencil, Car, BarChart3 } from "lucide-react";
 import { RequestDeleteButton } from "@/components/RequestDeleteButton";
 import {
-  listVykupy, deleteVykup, formatKc, formatDate, marze, stavBadge,
+  listVykupy, formatKc, formatDate, marze, stavBadge,
 } from "@/lib/vykupy";
 import { getMyAccess } from "@/lib/claims.functions";
 import { useServerFn } from "@tanstack/react-start";
@@ -42,17 +42,6 @@ function VykupyList() {
     const t = q.toLowerCase();
     return v.klient.toLowerCase().includes(t) || v.model.toLowerCase().includes(t);
   });
-
-  async function onDelete(id: string) {
-    if (!confirm("Opravdu smazat tento výkup?")) return;
-    try {
-      await deleteVykup(id);
-      toast.success("Smazáno");
-      qc.invalidateQueries({ queryKey: ["vykupy"] });
-    } catch (e) {
-      toast.error("Chyba při mazání");
-    }
-  }
 
   return (
     <AdminShell requireModule={["vykupy", "vykupy_external"]}>

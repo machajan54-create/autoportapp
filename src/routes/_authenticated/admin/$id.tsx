@@ -20,9 +20,7 @@ import {
   setVatPaid,
   addTask,
   toggleTask,
-  deleteTask,
   notifyClient,
-  deleteClaim,
   getMyAccess,
 } from "@/lib/claims.functions";
 import { toast } from "sonner";
@@ -41,6 +39,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import QRCode from "qrcode";
+import { RequestDeleteButton } from "@/components/RequestDeleteButton";
 
 export const Route = createFileRoute("/_authenticated/admin/$id")({
   component: ClaimDetail,
@@ -69,9 +68,7 @@ function ClaimDetail() {
   const setVat = useServerFn(setVatPaid);
   const addTaskFn = useServerFn(addTask);
   const toggleFn = useServerFn(toggleTask);
-  const deleteFn = useServerFn(deleteTask);
   const notify = useServerFn(notifyClient);
-  const deleteClaimFn = useServerFn(deleteClaim);
   const fetchAccess = useServerFn(getMyAccess);
   const { data: access } = useQuery({ queryKey: ["my-access"], queryFn: () => fetchAccess() });
   const isAdmin = !!access?.isAdmin;
@@ -93,18 +90,6 @@ function ClaimDetail() {
     await update({ data: { id, status: s as any } });
     invalidate();
     toast.success("Stav aktualizován");
-  }
-
-  async function handleDeleteClaim() {
-    if (!confirm("Opravdu nenávratně smazat tuto zakázku včetně všech příloh, úkolů a historie?")) return;
-    try {
-      await deleteClaimFn({ data: { id } });
-      toast.success("Zakázka byla smazána");
-      qc.invalidateQueries({ queryKey: ["claims"] });
-      navigate({ to: "/admin" });
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Nepodařilo se smazat zakázku");
-    }
   }
 
   async function downloadPoa(kind: "jednani" | "plneni") {
@@ -281,15 +266,16 @@ function ClaimDetail() {
               </SelectContent>
             </Select>
             {isAdmin && (
-              <Button
+              <RequestDeleteButton
+                entityType="claims"
+                entityId={id}
+                entityLabel={`Zakázka ${c.pu_number ?? ""}`}
                 variant="outline"
-                size="sm"
-                onClick={handleDeleteClaim}
                 className="text-rose-600 hover:bg-rose-50 hover:text-rose-700"
-                title="Smazat zakázku"
+                title="Požádat o smazání zakázky"
               >
                 <Trash2 className="mr-1.5 h-4 w-4" /> Smazat
-              </Button>
+              </RequestDeleteButton>
             )}
           </div>
         </div>
@@ -493,15 +479,16 @@ function ClaimDetail() {
                 <span className={cn("flex-1", t.done && "text-muted-foreground line-through")}>
                   {t.title}
                 </span>
-                <button
-                  className="text-muted-foreground hover:text-destructive"
-                  onClick={async () => {
-                    await deleteFn({ data: { id: t.id } });
-                    invalidate();
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                <RequestDeleteButton
+                  entityType="claim_tasks"
+                  entityId={t.id}
+                  entityLabel={t.title}
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                  title="Požádat o smazání úkolu"
+                  onRequested={invalidate}
+                />
               </li>
             ))}
           </ul>

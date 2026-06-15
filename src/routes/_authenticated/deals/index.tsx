@@ -23,7 +23,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  listDeals, createDeal, updateDeal, deleteDeal,
+  listDeals, createDeal, updateDeal,
   importDeals, listDealStageHistory,
   DEAL_STAGES, DEAL_STAGE_LABEL, DEAL_VEHICLES,
 } from "@/lib/deals.functions";
@@ -78,7 +78,6 @@ function DealsPage() {
   const fetchList = useServerFn(listDeals);
   const createFn = useServerFn(createDeal);
   const updateFn = useServerFn(updateDeal);
-  const deleteFn = useServerFn(deleteDeal);
   const importFn = useServerFn(importDeals);
   const historyFn = useServerFn(listDealStageHistory);
 
@@ -175,17 +174,6 @@ function DealsPage() {
       toast.error(e instanceof Error ? e.message : "Uložení selhalo");
     } finally {
       setSaving(false);
-    }
-  }
-
-  async function remove(r: DealRow) {
-    if (!confirm(`Smazat případ "${r.title}"?`)) return;
-    try {
-      await deleteFn({ data: { id: r.id } });
-      toast.success("Smazáno");
-      qc.invalidateQueries({ queryKey: ["deals"] });
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Smazání selhalo");
     }
   }
 
