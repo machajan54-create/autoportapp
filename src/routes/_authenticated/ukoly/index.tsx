@@ -24,16 +24,17 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { listResolvers } from "@/lib/dochazka.functions";
 import {
-  listTasks, createTask, updateTask, deleteTask,
+  listTasks, createTask, updateTask,
   TASK_PRIORITY, TASK_STATUS, TASK_PRIORITY_LABEL, TASK_STATUS_LABEL,
   TASK_RECURRENCE, TASK_RECURRENCE_LABEL,
 } from "@/lib/tasks.functions";
 import {
-  listTaskComments, addTaskComment, deleteTaskComment,
-  listTaskAttachments, recordTaskAttachment, deleteTaskAttachment,
+  listTaskComments, addTaskComment,
+  listTaskAttachments, recordTaskAttachment,
   getTaskAttachmentUrl,
 } from "@/lib/task-extras.functions";
 import { cn } from "@/lib/utils";
+import { RequestDeleteButton } from "@/components/RequestDeleteButton";
 
 export const Route = createFileRoute("/_authenticated/ukoly/")({
   component: TasksPage,
@@ -56,7 +57,6 @@ function TasksPage() {
   const fetchUsers = useServerFn(listResolvers);
   const createFn = useServerFn(createTask);
   const updateFn = useServerFn(updateTask);
-  const deleteFn = useServerFn(deleteTask);
 
   const [userId, setUserId] = useState<string | null>(null);
   useEffect(() => {
@@ -117,17 +117,6 @@ function TasksPage() {
       qc.invalidateQueries({ queryKey: ["tasks"] });
     } catch (e: any) {
       toast.error(e?.message || "Nepodařilo se uložit");
-    }
-  }
-
-  async function handleDelete(id: string) {
-    if (!confirm("Opravdu smazat tento úkol?")) return;
-    try {
-      await deleteFn({ data: { id } });
-      toast.success("Úkol smazán");
-      qc.invalidateQueries({ queryKey: ["tasks"] });
-    } catch (e: any) {
-      toast.error(e?.message || "Nepodařilo se smazat");
     }
   }
 
@@ -284,14 +273,13 @@ function TasksPage() {
                       <Button variant="ghost" size="sm" onClick={() => setDetailId(r.id)}>
                         <MessageSquare className="mr-1 h-4 w-4" /> Detail
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      <RequestDeleteButton
+                        entityType="tasks"
+                        entityId={r.id}
+                        entityLabel={r.title}
                         className="text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(r.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                        title="Požádat o smazání úkolu"
+                      />
                     </div>
                   </div>
                 </div>
