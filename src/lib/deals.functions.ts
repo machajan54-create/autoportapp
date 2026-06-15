@@ -87,6 +87,7 @@ export const updateDeal = createServerFn({ method: "POST" })
     for (const [k, v] of Object.entries(rest)) {
       if (v !== undefined) patch[k] = v === "" ? null : v;
     }
+    if ("follow_up_at" in patch) patch.follow_up_notified_at = null;
     const { error } = await context.supabase
       .from("deals")
       .update(patch as never)
