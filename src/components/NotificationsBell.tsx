@@ -25,24 +25,38 @@ type NotifItem = {
 };
 
 // Per-category "last seen" timestamps in localStorage so personal notifications
-// disappear after the user opens the bell.
-const LS_KEY = "notif-last-seen-v1";
+// disappear after the user closes the bell. Scoped per user so multiple accounts
+// on the same browser don't share state.
+const LS_PREFIX = "notif-last-seen-v2:";
 type LastSeen = Partial<Record<"purchases" | "defects" | "absences", string>>;
-function readLastSeen(): LastSeen {
-  if (typeof window === "undefined") return {};
-  try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}"); } catch { return {}; }
+function readLastSeen(userId: string | null): LastSeen {
+  if (typeof window === "undefined" || !userId) return {};
+  try { return JSON.parse(localStorage.getItem(LS_PREFIX + userId) || "{}"); } catch { return {}; }
 }
-function writeLastSeen(v: LastSeen) {
-  if (typeof window === "undefined") return;
-  try { localStorage.setItem(LS_KEY, JSON.stringify(v)); } catch { /* ignore */ }
+function writeLastSeen(userId: string | null, v: LastSeen) {
+  if (typeof window === "undefined" || !userId) return;
+  try { localStorage.setItem(LS_PREFIX + userId, JSON.stringify(v)); } catch { /* ignore */ }
 }
 
 export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
   const [open, setOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [lastSeen, setLastSeen] = useState<LastSeen>(() => readLastSeen());
+  const [lastSeen, setLastSeen] = useState<LastSeen>({});
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+    supabase.auth.getUser().then(({ data }) => {
+      const uid = data.user?.id ?? null;
+      setUserId(uid);
+      const stored = readLastSeen(uid);
+      // First visit: initialize to "now" so we don't dump the entire history.
+      if (uid && !stored.purchases && !stored.defects && !stored.absences) {
+        const now = new Date().toISOString();
+        const init: LastSeen = { purchases: now, defects: now, absences: now };
+        writeLastSeen(uid, init);
+        setLastSeen(init);
+      } else {
+        setLastSeen(stored);
+      }
+    });
   }, []);
   const fetchClaims = useServerFn(listClaims);
   const fetchDefects = useServerFn(listDefects);
@@ -243,13 +257,13 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
       open={open}
       onOpenChange={(v) => {
         setOpen(v);
-        if (v) {
-          // Mark personal notifications as seen
+        if (!v) {
+          // Mark personal notifications as seen AFTER the popover closes,
+          // so items remain visible (and clickable) while it's open.
           const now = new Date().toISOString();
           const next: LastSeen = { purchases: now, defects: now, absences: now };
-          writeLastSeen(next);
-          // Defer state update so the user briefly sees the items, then they clear next render
-          setTimeout(() => setLastSeen(next), 400);
+          writeLastSeen(userId, next);
+          setLastSeen(next);
         }
       }}
     >
