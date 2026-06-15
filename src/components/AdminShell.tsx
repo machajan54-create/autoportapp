@@ -89,7 +89,7 @@ export function AdminShell({
       {(can("vykupy") || can("vykupy_external")) && navItem("/vykupy", "Ojeté vozy", Car)}
       {can("dochazka") && navItem("/dochazka", "Docházka", Clock)}
       {navItem("/zavady", "Závady", Wrench)}
-      {can("tasks") && navItem("/ukoly", "Úkoly", CheckSquare)}
+      {navItem("/ukoly", "Úkoly", CheckSquare)}
       {can("deals") && navItem("/deals", "Obchodní případy", Briefcase)}
       {can("logbook") && navItem("/logbook", "Kniha jízd", BookOpen)}
       {(access?.isAdmin || can("approvals")) && navItem("/approvals", "Schvalování", CheckSquare)}
