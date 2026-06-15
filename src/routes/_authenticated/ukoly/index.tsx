@@ -429,3 +429,242 @@ function CreateTaskDialog({
     </DialogContent>
   );
 }
+
+function TaskDetailDialog({
+  taskId,
+  onClose,
+}: {
+  taskId: string | null;
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const open = !!taskId;
+  const fetchComments = useServerFn(listTaskComments);
+  const addComment = useServerFn(addTaskComment);
+  const delComment = useServerFn(deleteTaskComment);
+  const fetchAttachments = useServerFn(listTaskAttachments);
+  const recordAttachment = useServerFn(recordTaskAttachment);
+  const delAttachment = useServerFn(deleteTaskAttachment);
+  const getUrl = useServerFn(getTaskAttachmentUrl);
+
+  const { data: commentsData, isLoading: cLoading } = useQuery({
+    queryKey: ["task-comments", taskId],
+    queryFn: () => fetchComments({ data: { taskId: taskId! } }),
+    enabled: open,
+  });
+  const { data: attachmentsData, isLoading: aLoading } = useQuery({
+    queryKey: ["task-attachments", taskId],
+    queryFn: () => fetchAttachments({ data: { taskId: taskId! } }),
+    enabled: open,
+  });
+
+  const [body, setBody] = useState("");
+  const [posting, setPosting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!open) {
+      setBody("");
+    }
+  }, [open]);
+
+  async function submitComment() {
+    if (!body.trim() || !taskId) return;
+    setPosting(true);
+    try {
+      await addComment({ data: { taskId, body: body.trim() } });
+      setBody("");
+      qc.invalidateQueries({ queryKey: ["task-comments", taskId] });
+    } catch (e: any) {
+      toast.error(e?.message || "Nepodařilo se uložit komentář");
+    } finally {
+      setPosting(false);
+    }
+  }
+
+  async function handleDeleteComment(id: string) {
+    try {
+      await delComment({ data: { id } });
+      qc.invalidateQueries({ queryKey: ["task-comments", taskId] });
+    } catch (e: any) {
+      toast.error(e?.message || "Nepodařilo se smazat");
+    }
+  }
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !taskId) return;
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("Maximální velikost přílohy je 50 MB");
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "bin";
+      const path = `${taskId}/${crypto.randomUUID()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("task-attachments")
+        .upload(path, file, { contentType: file.type || undefined });
+      if (upErr) throw new Error(upErr.message);
+      await recordAttachment({
+        data: {
+          taskId,
+          file_name: file.name,
+          storage_path: path,
+          size_bytes: file.size,
+          content_type: file.type || null,
+        },
+      });
+      toast.success("Příloha nahrána");
+      qc.invalidateQueries({ queryKey: ["task-attachments", taskId] });
+    } catch (err: any) {
+      toast.error(err?.message || "Nahrání selhalo");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
+  async function handleDeleteAttachment(id: string) {
+    if (!confirm("Smazat přílohu?")) return;
+    try {
+      await delAttachment({ data: { id } });
+      qc.invalidateQueries({ queryKey: ["task-attachments", taskId] });
+    } catch (e: any) {
+      toast.error(e?.message || "Nepodařilo se smazat");
+    }
+  }
+
+  async function handleDownload(id: string) {
+    try {
+      const { url } = await getUrl({ data: { id } });
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (e: any) {
+      toast.error(e?.message || "Nepodařilo se získat odkaz");
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Detail úkolu</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-6">
+          <section className="space-y-2">
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <Paperclip className="h-4 w-4" /> Přílohy
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                ref={fileRef}
+                type="file"
+                className="hidden"
+                onChange={handleUpload}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="mr-2 h-4 w-4" />
+                )}
+                Nahrát soubor
+              </Button>
+              <span className="text-xs text-muted-foreground">max 50 MB</span>
+            </div>
+            {aLoading ? (
+              <p className="text-sm text-muted-foreground">Načítám…</p>
+            ) : (attachmentsData?.rows ?? []).length === 0 ? (
+              <p className="text-sm text-muted-foreground">Žádné přílohy.</p>
+            ) : (
+              <ul className="divide-y rounded border">
+                {(attachmentsData?.rows ?? []).map((a: any) => (
+                  <li
+                    key={a.id}
+                    className="flex items-center justify-between gap-2 p-2 text-sm"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-medium">{a.file_name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {a.uploader_name ?? "—"} ·{" "}
+                        {(a.size_bytes / 1024).toFixed(0)} KB
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => handleDownload(a.id)}>
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => handleDeleteAttachment(a.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section className="space-y-2">
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <MessageSquare className="h-4 w-4" /> Komentáře
+            </div>
+            {cLoading ? (
+              <p className="text-sm text-muted-foreground">Načítám…</p>
+            ) : (commentsData?.rows ?? []).length === 0 ? (
+              <p className="text-sm text-muted-foreground">Žádné komentáře.</p>
+            ) : (
+              <ul className="space-y-2">
+                {(commentsData?.rows ?? []).map((c: any) => (
+                  <li key={c.id} className="rounded border bg-muted/30 p-2 text-sm">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>
+                        {c.author_name ?? "—"} ·{" "}
+                        {new Date(c.created_at).toLocaleString("cs-CZ")}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                        onClick={() => handleDeleteComment(c.id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <p className="mt-1 whitespace-pre-wrap">{c.body}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="flex flex-col gap-2">
+              <Textarea
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                placeholder="Napsat komentář…"
+                rows={3}
+                maxLength={4000}
+              />
+              <div className="flex justify-end">
+                <Button onClick={submitComment} disabled={posting || !body.trim()}>
+                  {posting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Odeslat
+                </Button>
+              </div>
+            </div>
+          </section>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Zavřít</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
