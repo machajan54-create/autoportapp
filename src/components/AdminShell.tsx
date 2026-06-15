@@ -110,7 +110,7 @@ export function AdminShell({
       {navItem("/ukoly", "Úkoly", CheckSquare)}
       {can("deals") && navItem("/deals", "Obchodní případy", Briefcase)}
       {can("demo_orders") && navItem("/demo-orders", "Předváděcí vozy", ClipboardSignature)}
-      {can("evidence_zakazek") && navItem("/evidence-zakazek", "Evidence zakázek", Sparkles)}
+      {can("evidence_zakazek") && navItem("/evidence-zakazek", "Evidence mytí", Sparkles)}
       {can("logbook") && navItem("/logbook", "Kniha jízd", BookOpen)}
       {(access?.isAdmin || can("approvals")) &&
         navItem("/approvals", "Schvalování", CheckSquare, approvalsBadge)}
