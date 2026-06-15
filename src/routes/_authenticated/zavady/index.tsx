@@ -386,10 +386,10 @@ function CreateDefectDialog({
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label>Fotky ({photos.length}/10)</Label>
+          <Label>Přílohy ({photos.length}/10)</Label>
           <Input
             type="file"
-            accept="image/*"
+            accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt"
             multiple
             disabled={uploading || photos.length >= 10}
             onChange={(e) => {
