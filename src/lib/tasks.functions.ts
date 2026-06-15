@@ -4,6 +4,13 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const TASK_STATUS = ["todo", "in_progress", "done"] as const;
 export const TASK_PRIORITY = ["low", "medium", "high"] as const;
+export const TASK_RECURRENCE = ["daily", "weekdays", "weekly"] as const;
+
+export const TASK_RECURRENCE_LABEL: Record<string, string> = {
+  daily: "Každý den",
+  weekdays: "Každý pracovní den",
+  weekly: "Každý týden",
+};
 
 export const TASK_STATUS_LABEL: Record<string, string> = {
   todo: "K udělání",
@@ -23,6 +30,8 @@ const createInput = z.object({
   priority: z.enum(TASK_PRIORITY).default("medium"),
   due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   assignee_id: z.string().uuid().optional().nullable(),
+  recurrence: z.enum(TASK_RECURRENCE).optional().nullable(),
+  recurrence_until: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
 });
 
 const updateInput = z.object({
@@ -114,6 +123,8 @@ export const createTask = createServerFn({ method: "POST" })
         assignee_name,
         created_by: userId,
         creator_name,
+        recurrence: data.recurrence || null,
+        recurrence_until: data.recurrence_until || null,
       })
       .select("id")
       .single();
