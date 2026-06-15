@@ -16,6 +16,12 @@ import { getMyAccess } from "@/lib/claims.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { cn } from "@/lib/utils";
 
+function daysInStav(iso: string): number {
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return 0;
+  return Math.max(0, Math.floor((Date.now() - t) / 86_400_000));
+}
+
 export const Route = createFileRoute("/_authenticated/vykupy/")({
   component: VykupyList,
 });
