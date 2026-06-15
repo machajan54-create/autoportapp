@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Briefcase, Plus, Pencil, Trash2, Upload } from "lucide-react";
+import { Briefcase, Plus, Pencil, Trash2, Upload, History } from "lucide-react";
 import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,8 +23,8 @@ import {
 } from "@/components/ui/table";
 import {
   listDeals, createDeal, updateDeal, deleteDeal,
-  importDeals,
-  DEAL_STAGES, DEAL_STAGE_LABEL,
+  importDeals, listDealStageHistory,
+  DEAL_STAGES, DEAL_STAGE_LABEL, DEAL_VEHICLES,
 } from "@/lib/deals.functions";
 import { cn } from "@/lib/utils";
 
@@ -46,6 +46,7 @@ type DealRow = {
   client_name: string | null;
   contact: string | null;
   value_czk: number | string | null;
+  vehicle: string | null;
   stage: string;
   expected_close_date: string | null;
   notes: string | null;
@@ -58,6 +59,7 @@ const emptyForm = {
   client_name: "",
   contact: "",
   value_czk: "",
+  vehicle: "",
   stage: "lead" as (typeof DEAL_STAGES)[number],
   expected_close_date: "",
   notes: "",
@@ -77,6 +79,7 @@ function DealsPage() {
   const updateFn = useServerFn(updateDeal);
   const deleteFn = useServerFn(deleteDeal);
   const importFn = useServerFn(importDeals);
+  const historyFn = useServerFn(listDealStageHistory);
 
   const { data, isLoading } = useQuery({
     queryKey: ["deals"],
@@ -92,6 +95,16 @@ function DealsPage() {
   const [importOpen, setImportOpen] = useState(false);
   const [importText, setImportText] = useState("");
   const [importing, setImporting] = useState(false);
+  const [historyDeal, setHistoryDeal] = useState<DealRow | null>(null);
+  const [history, setHistory] = useState<Array<{
+    id: string;
+    from_stage: string | null;
+    to_stage: string;
+    changed_at: string;
+    duration_seconds: number | null;
+    changed_by_name: string | null;
+  }>>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const filtered = useMemo(
     () => (filter === "all" ? rows : rows.filter((r) => r.stage === filter)),
@@ -119,6 +132,7 @@ function DealsPage() {
       client_name: r.client_name ?? "",
       contact: r.contact ?? "",
       value_czk: r.value_czk == null ? "" : String(r.value_czk),
+      vehicle: r.vehicle ?? "",
       stage: (r.stage as (typeof DEAL_STAGES)[number]) ?? "lead",
       expected_close_date: r.expected_close_date ?? "",
       notes: r.notes ?? "",
@@ -136,6 +150,7 @@ function DealsPage() {
       client_name: form.client_name.trim() || null,
       contact: form.contact.trim() || null,
       value_czk: form.value_czk === "" ? null : Number(form.value_czk),
+      vehicle: form.vehicle.trim() || null,
       stage: form.stage,
       expected_close_date: form.expected_close_date || null,
       notes: form.notes.trim() || null,
@@ -176,9 +191,24 @@ function DealsPage() {
   async function quickStage(r: DealRow, stage: string) {
     try {
       await updateFn({ data: { id: r.id, stage: stage as (typeof DEAL_STAGES)[number] } });
+      toast.success(`Fáze: ${DEAL_STAGE_LABEL[stage]}`);
       qc.invalidateQueries({ queryKey: ["deals"] });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Změna fáze selhala");
+    }
+  }
+
+  async function openHistory(r: DealRow) {
+    setHistoryDeal(r);
+    setHistory([]);
+    setHistoryLoading(true);
+    try {
+      const res = await historyFn({ data: { deal_id: r.id } });
+      setHistory(res.rows);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Nelze načíst historii");
+    } finally {
+      setHistoryLoading(false);
     }
   }
 
@@ -280,6 +310,7 @@ function DealsPage() {
                 <TableHead>Kontakt</TableHead>
                 <TableHead>Vůz</TableHead>
                 <TableHead>Fáze</TableHead>
+                <TableHead>V této fázi</TableHead>
                 <TableHead>Uzavření</TableHead>
                 <TableHead>Vlastník</TableHead>
                 <TableHead className="text-right">Akce</TableHead>
@@ -287,17 +318,17 @@ function DealsPage() {
             </TableHeader>
             <TableBody>
               {isLoading && (
-                <TableRow><TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">Načítám…</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} className="py-8 text-center text-sm text-muted-foreground">Načítám…</TableCell></TableRow>
               )}
               {!isLoading && filtered.length === 0 && (
-                <TableRow><TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">Žádné případy</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} className="py-8 text-center text-sm text-muted-foreground">Žádné případy</TableCell></TableRow>
               )}
               {filtered.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell className="font-medium">{r.title}</TableCell>
                   <TableCell>{r.client_name || "—"}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">{r.contact || "—"}</TableCell>
-                  <TableCell>{formatCzk(r.value_czk)}</TableCell>
+                  <TableCell className="text-xs">{r.vehicle || "—"}</TableCell>
                   <TableCell>
                     <Select value={r.stage} onValueChange={(v) => quickStage(r, v)}>
                       <SelectTrigger className="h-7 w-[130px]">
@@ -311,9 +342,13 @@ function DealsPage() {
                     </Select>
                     <Badge className={cn("ml-2 hidden", STAGE_STYLE[r.stage])}>{DEAL_STAGE_LABEL[r.stage]}</Badge>
                   </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{stageDurationLabel((r as any).stage_changed_at || r.created_at)}</TableCell>
                   <TableCell className="text-xs">{r.expected_close_date || "—"}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">{r.owner_name || "—"}</TableCell>
                   <TableCell className="text-right">
+                    <Button variant="ghost" size="icon" onClick={() => openHistory(r)} aria-label="Historie fází">
+                      <History className="h-4 w-4" />
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => openEdit(r)} aria-label="Upravit">
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -351,7 +386,18 @@ function DealsPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Vůz</Label>
-                <Input type="number" min="0" step="1" value={form.value_czk} onChange={(e) => setForm({ ...form, value_czk: e.target.value })} />
+                <Select
+                  value={form.vehicle || "__none__"}
+                  onValueChange={(v) => setForm({ ...form, vehicle: v === "__none__" ? "" : v })}
+                >
+                  <SelectTrigger><SelectValue placeholder="Vyberte vůz" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— Neuvedeno —</SelectItem>
+                    {DEAL_VEHICLES.map((v) => (
+                      <SelectItem key={v} value={v}>{v}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label>Fáze</Label>
@@ -364,6 +410,10 @@ function DealsPage() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div>
+              <Label>Hodnota (Kč)</Label>
+              <Input type="number" min="0" step="1" value={form.value_czk} onChange={(e) => setForm({ ...form, value_czk: e.target.value })} />
             </div>
             <div>
               <Label>Očekávané uzavření</Label>
@@ -408,6 +458,61 @@ function DealsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!historyDeal} onOpenChange={(o) => !o && setHistoryDeal(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Historie fází – {historyDeal?.title}</DialogTitle>
+          </DialogHeader>
+          {historyLoading ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">Načítám…</p>
+          ) : history.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">Žádné záznamy</p>
+          ) : (
+            <ol className="relative space-y-3 border-l border-border pl-5">
+              {history.map((h) => (
+                <li key={h.id} className="relative">
+                  <span className="absolute -left-[26px] top-1 h-3 w-3 rounded-full bg-primary" />
+                  <div className="text-sm font-medium">
+                    {h.from_stage ? `${DEAL_STAGE_LABEL[h.from_stage] || h.from_stage} → ` : ""}
+                    {DEAL_STAGE_LABEL[h.to_stage] || h.to_stage}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {new Date(h.changed_at).toLocaleString("cs-CZ", { timeZone: "Europe/Prague" })}
+                    {h.changed_by_name ? ` · ${h.changed_by_name}` : ""}
+                  </div>
+                  {h.duration_seconds != null && h.from_stage ? (
+                    <div className="text-xs text-muted-foreground">
+                      Doba v předchozí fázi: {formatSeconds(h.duration_seconds)}
+                    </div>
+                  ) : null}
+                </li>
+              ))}
+            </ol>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setHistoryDeal(null)}>Zavřít</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminShell>
   );
+}
+
+function formatSeconds(sec: number): string {
+  if (!Number.isFinite(sec) || sec <= 0) return "—";
+  const days = Math.floor(sec / 86400);
+  const hours = Math.floor((sec % 86400) / 3600);
+  const mins = Math.floor((sec % 3600) / 60);
+  if (days > 0) return `${days} d ${hours} h`;
+  if (hours > 0) return `${hours} h ${mins} min`;
+  if (mins > 0) return `${mins} min`;
+  return `${sec} s`;
+}
+
+function stageDurationLabel(since: string | null | undefined): string {
+  if (!since) return "—";
+  const ms = Date.now() - new Date(since).getTime();
+  if (!Number.isFinite(ms) || ms < 0) return "—";
+  return formatSeconds(Math.floor(ms / 1000));
 }
