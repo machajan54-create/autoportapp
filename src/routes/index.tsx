@@ -1,16 +1,13 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Car, Phone, FileWarning } from "lucide-react";
+import autoportLogo from "@/assets/autoport-logo.png.asset.json";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyAccess } from "@/lib/claims.functions";
-import { ensureDemoUser } from "@/lib/demo.functions";
 import { toast } from "sonner";
-
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -23,13 +20,12 @@ export const Route = createFileRoute("/")({
       },
     ],
   }),
-  component: Index,
+  component: IndexAuthPage,
 });
 
-function Index() {
+function IndexAuthPage() {
   const navigate = useNavigate();
   const fetchAccess = useServerFn(getMyAccess);
-  const ensureDemo = useServerFn(ensureDemoUser);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -72,19 +68,6 @@ function Index() {
     }
   }
 
-  async function signUp(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: window.location.origin },
-    });
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success("Účet vytvořen. Vyčkejte na schválení super adminem.");
-  }
-
   async function sendReset(e: React.FormEvent) {
     e.preventDefault();
     if (!resetEmail) return;
@@ -99,214 +82,117 @@ function Index() {
     setResetEmail("");
   }
 
-  async function demoLogin() {
-    setBusy(true);
-    try {
-      const { email: demoEmail, password: demoPassword } = await ensureDemo({});
-      const { error } = await supabase.auth.signInWithPassword({
-        email: demoEmail,
-        password: demoPassword,
-      });
-      if (error) throw error;
-      try {
-        const acc = await fetchAccess({});
-        navigate({ to: acc.isAdmin ? "/dashboard" : "/admin" });
-      } catch {
-        navigate({ to: "/admin" });
-      }
-    } catch (e) {
-      toast.error((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
     <div
-      className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 pb-28 sm:pb-4"
-      style={{ background: "linear-gradient(135deg, #0F172A 0%, #1E293B 100%)" }}
+      className="relative flex min-h-screen items-center justify-center px-4 py-10"
+      style={{
+        background:
+          "radial-gradient(1200px 600px at 50% -10%, rgba(249,115,22,0.10), transparent 60%), linear-gradient(135deg, #0B1220 0%, #0F172A 60%, #111827 100%)",
+      }}
     >
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0F172A] p-8 shadow-2xl">
-        <div className="flex items-center gap-3 text-lg font-semibold text-white">
-          <span
-            className="flex h-10 w-10 items-center justify-center rounded-lg"
-            style={{ backgroundColor: "#F97316" }}
-          >
-            <Car className="h-5 w-5 text-white" />
-          </span>
-          <div className="flex flex-col leading-tight">
-            <span>Autoport APP</span>
-            <span className="text-xs font-normal text-slate-400">Interní systém 2026</span>
+      <div className="w-full max-w-[440px]">
+        {/* Brand header */}
+        <div className="mb-6 flex flex-col items-center gap-3 text-center">
+          <div className="rounded-2xl bg-white px-6 py-3 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.6)]">
+            <img
+              src={autoportLogo.url}
+              alt="Autoport APP"
+              className="h-10 w-auto object-contain"
+            />
           </div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+            Interní systém 2026
+          </p>
         </div>
 
-        <Tabs defaultValue="login" className="mt-6">
-          <TabsList className="grid w-full grid-cols-2 bg-slate-800/60">
-            <TabsTrigger
-              value="login"
-              className="data-[state=active]:bg-[#F97316] data-[state=active]:text-white text-slate-300"
-            >
-              Přihlášení
-            </TabsTrigger>
-            <TabsTrigger
-              value="register"
-              className="data-[state=active]:bg-[#F97316] data-[state=active]:text-white text-slate-300"
-            >
-              Registrace
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="login">
-            {resetMode ? (
-              <form onSubmit={sendReset} className="mt-4 space-y-4">
-                <div>
-                  <Label className="text-slate-200">E-mail pro reset hesla</Label>
-                  <Input
-                    type="email"
-                    className="mt-1 border-slate-700 bg-slate-900 text-white placeholder:text-slate-500"
-                    value={resetEmail}
-                    onChange={(e) => setResetEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full text-white hover:opacity-90"
-                  style={{ backgroundColor: "#F97316" }}
-                  disabled={busy}
-                >
-                  Odeslat odkaz pro reset
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full border-slate-700 bg-transparent text-slate-200 hover:bg-slate-800 hover:text-white"
-                  onClick={() => setResetMode(false)}
-                >
-                  Zpět na přihlášení
-                </Button>
-              </form>
-            ) : (
-              <form onSubmit={signIn} className="mt-4 space-y-4">
-                <div>
-                  <Label className="text-slate-200">E-mail</Label>
-                  <Input
-                    type="email"
-                    className="mt-1 border-slate-700 bg-slate-900 text-white placeholder:text-slate-500"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label className="text-slate-200">Heslo</Label>
-                  <Input
-                    type="password"
-                    className="mt-1 border-slate-700 bg-slate-900 text-white placeholder:text-slate-500"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full text-white hover:opacity-90"
-                  style={{ backgroundColor: "#F97316" }}
-                  disabled={busy}
-                >
-                  Přihlásit se
-                </Button>
-                <button
-                  type="button"
-                  onClick={() => setResetMode(true)}
-                  className="block w-full text-center text-xs text-slate-400 underline hover:text-white"
-                >
-                  Zapomenuté heslo?
-                </button>
-                <div className="mt-2 rounded-lg border border-dashed border-slate-700 bg-slate-900/60 p-3">
-                  <p className="text-center text-[11px] uppercase tracking-wide text-slate-400">
-                    Demo přístup
-                  </p>
-                  <p className="mt-1 text-center text-xs text-slate-300">
-                    demo@autoport.app · Demo1234!
-                  </p>
+        {/* Auth card */}
+        <div className="overflow-hidden rounded-2xl border border-white/10 bg-slate-900/80 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.7)] backdrop-blur">
+          <div className="px-7 pb-7 pt-7">
+            <div className="mb-2 text-center">
+              <h1 className="text-lg font-semibold text-white">Přihlášení</h1>
+              <p className="mt-1 text-xs text-slate-500">
+                Účty zakládá administrátor. Pokud nemáte přístup, kontaktujte ho.
+              </p>
+            </div>
+            <div>
+              {resetMode ? (
+                <form onSubmit={sendReset} className="mt-6 space-y-4">
+                  <div>
+                    <Label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                      E-mail pro reset hesla
+                    </Label>
+                    <Input
+                      type="email"
+                      className="h-11 rounded-xl border-slate-800 bg-slate-950 text-white placeholder:text-slate-600 focus-visible:border-[#F97316]/60 focus-visible:ring-[#F97316]/40"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    className="h-12 w-full rounded-xl text-white shadow-lg shadow-orange-500/20 hover:opacity-90"
+                    style={{ backgroundColor: "#F97316" }}
+                    disabled={busy}
+                  >
+                    Odeslat odkaz pro reset
+                  </Button>
                   <Button
                     type="button"
-                    onClick={demoLogin}
-                    disabled={busy}
                     variant="outline"
-                    className="mt-2 w-full border-slate-700 bg-transparent text-slate-100 hover:bg-slate-800 hover:text-white"
+                    className="h-11 w-full rounded-xl border-slate-800 bg-transparent text-slate-200 hover:bg-slate-800 hover:text-white"
+                    onClick={() => setResetMode(false)}
                   >
-                    Přihlásit jako demo
+                    Zpět na přihlášení
                   </Button>
-                </div>
-              </form>
-            )}
-          </TabsContent>
-
-          <TabsContent value="register">
-            <form onSubmit={signUp} className="mt-4 space-y-4">
-              <div>
-                <Label className="text-slate-200">E-mail</Label>
-                <Input
-                  type="email"
-                  className="mt-1 border-slate-700 bg-slate-900 text-white placeholder:text-slate-500"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <Label className="text-slate-200">Heslo</Label>
-                <Input
-                  type="password"
-                  className="mt-1 border-slate-700 bg-slate-900 text-white placeholder:text-slate-500"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  minLength={6}
-                  required
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full text-white hover:opacity-90"
-                style={{ backgroundColor: "#F97316" }}
-                disabled={busy}
-              >
-                Vytvořit účet
-              </Button>
-            </form>
-          </TabsContent>
-        </Tabs>
-
-        <div className="mt-6 text-center text-sm">
-          <Link to="/nahlasit" className="text-slate-400 hover:text-white">
-            Nahlásit pojistnou událost →
-          </Link>
-        </div>
-      </div>
-
-      {/* Klientská sekce mimo přihlašovací kartu */}
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-white/10 bg-[#0B1220]/95 backdrop-blur px-4 py-3 sm:static sm:mt-6 sm:w-full sm:max-w-md sm:rounded-2xl sm:border sm:bg-[#0F172A] sm:p-5">
-        <p className="text-center text-xs uppercase tracking-wide text-slate-400">
-          Měli jste nehodu? Jsme tu pro vás
-        </p>
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-          <a
-            href="tel:+420800100200"
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-white shadow-lg"
-            style={{ backgroundColor: "#F97316" }}
-          >
-            <Phone className="h-4 w-4" />
-            Zavolat +420 800 100 200
-          </a>
-          <Link
-            to="/nahlasit"
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800"
-          >
-            <FileWarning className="h-4 w-4" />
-            Nahlásit událost
-          </Link>
+                </form>
+              ) : (
+                <form onSubmit={signIn} className="mt-6 space-y-4">
+                  <div>
+                    <Label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                      E-mail
+                    </Label>
+                    <Input
+                      type="email"
+                      placeholder="jmeno@autoport.cz"
+                      className="h-11 rounded-xl border-slate-800 bg-slate-950 text-white placeholder:text-slate-600 focus-visible:border-[#F97316]/60 focus-visible:ring-[#F97316]/40"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                      Heslo
+                    </Label>
+                    <Input
+                      type="password"
+                      placeholder="••••••••"
+                      className="h-11 rounded-xl border-slate-800 bg-slate-950 text-white placeholder:text-slate-600 focus-visible:border-[#F97316]/60 focus-visible:ring-[#F97316]/40"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    className="h-12 w-full rounded-xl text-base font-semibold text-white shadow-lg shadow-orange-500/20 transition-transform hover:opacity-95 active:scale-[0.99]"
+                    style={{ backgroundColor: "#F97316" }}
+                    disabled={busy}
+                  >
+                    Přihlásit se
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => setResetMode(true)}
+                    className="block w-full text-center text-xs text-slate-400 transition-colors hover:text-orange-400"
+                  >
+                    Zapomenuté heslo?
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
