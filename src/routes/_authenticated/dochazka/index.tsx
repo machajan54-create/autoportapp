@@ -39,8 +39,6 @@ import {
   getMonthCalendar, listResolvers,
 } from "@/lib/dochazka.functions";
 import { getMyAccess } from "@/lib/claims.functions";
-import { Sparkles } from "lucide-react";
-import { autoFillMonth } from "@/lib/dochazka.functions";
 import {
   ABSENCE_TYPES, ABSENCE_TYPE_LABEL, SHIFT_COLORS, AVATAR_COLORS,
   avatarClasses, shiftClasses, initials, formatTime, formatDate, formatHours, todayISODate,
@@ -743,7 +741,6 @@ function RecordsTab() {
   return (
     <div className="mt-4 space-y-3">
       <div className="flex flex-wrap justify-end gap-2">
-        <AutoFillButton employees={employees ?? []} shifts={shifts ?? []} onDone={() => qc.invalidateQueries({ queryKey: ["dochazka"] })} />
         <Button onClick={openNew}><Plus className="mr-1 h-4 w-4" /> Nový záznam</Button>
       </div>
       <Card>
