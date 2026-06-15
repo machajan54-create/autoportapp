@@ -341,6 +341,7 @@ const absenceInput = z.object({
   start_date: z.string(),
   end_date: z.string(),
   note: z.string().nullable().optional(),
+  requested_resolver: z.string().uuid().nullable().optional(),
 });
 
 export const listAbsences = createServerFn({ method: "GET" })
@@ -387,8 +388,9 @@ export const upsertAbsence = createServerFn({ method: "POST" })
       .select("name")
       .eq("id", data.employee_id)
       .maybeSingle();
-    await (await import("@/lib/email/notify.server")).notifyAdmins({
-      templateName: "approval-request",
+    const notify = await import("@/lib/email/notify.server");
+    const mail = {
+      templateName: "approval-request" as const,
       templateData: {
         kind: "vacation",
         requesterName: emp?.name ?? "Zaměstnanec",
@@ -400,7 +402,17 @@ export const upsertAbsence = createServerFn({ method: "POST" })
         ],
         actionUrl: "https://www.autoport-app.cz/dochazka",
       },
-    });
+    };
+    if (data.requested_resolver) {
+      const r = await notify.getUserEmail(data.requested_resolver);
+      if (r.email) {
+        await notify.enqueueTransactionalEmail({ ...mail, recipientEmail: r.email });
+      } else {
+        await notify.notifyAdmins(mail);
+      }
+    } else {
+      await notify.notifyAdmins(mail);
+    }
     return { id: row.id };
   });
 

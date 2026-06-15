@@ -15,7 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { UserPlus, KeyRound, Copy } from "lucide-react";
+import { UserPlus, KeyRound, Copy, Trash2, Power } from "lucide-react";
 import {
   listUsers,
   setUserRole,
@@ -23,6 +23,8 @@ import {
   setUserApproved,
   adminCreateUser,
   adminSetUserPassword,
+  adminSetUserActive,
+  adminDeleteUser,
 } from "@/lib/claims.functions";
 import { toast } from "sonner";
 
@@ -54,6 +56,8 @@ function UsersPage() {
   const setApproved = useServerFn(setUserApproved);
   const createUser = useServerFn(adminCreateUser);
   const setPwd = useServerFn(adminSetUserPassword);
+  const setActive = useServerFn(adminSetUserActive);
+  const deleteUser = useServerFn(adminDeleteUser);
   const { data, isLoading } = useQuery({ queryKey: ["users"], queryFn: () => fetch({}) });
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -97,6 +101,27 @@ function UsersPage() {
       await setApproved({ data: { user_id, approved } });
       qc.invalidateQueries({ queryKey: ["users"] });
       toast.success(approved ? "Účet schválen" : "Schválení odebráno");
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }
+
+  async function toggleActive(user_id: string, active: boolean) {
+    try {
+      await setActive({ data: { user_id, active } });
+      qc.invalidateQueries({ queryKey: ["users"] });
+      toast.success(active ? "Uživatel aktivován" : "Uživatel deaktivován");
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }
+
+  async function removeUser(user_id: string, email: string) {
+    if (!confirm(`Opravdu trvale smazat uživatele ${email}? Tato akce je nevratná.`)) return;
+    try {
+      await deleteUser({ data: { user_id } });
+      qc.invalidateQueries({ queryKey: ["users"] });
+      toast.success("Uživatel smazán");
     } catch (e) {
       toast.error((e as Error).message);
     }
@@ -239,8 +264,9 @@ function UsersPage() {
             const isAdmin = u.roles.includes("admin");
             const mods = u.modules ?? [];
             const pending = !u.approved && !isAdmin;
+            const banned = !!(u as any).banned;
             return (
-              <div key={u.id} className="rounded-xl border bg-card p-4">
+              <div key={u.id} className={`rounded-xl border bg-card p-4 ${banned ? "opacity-60" : ""}`}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <div className="flex items-center gap-2 font-medium">
@@ -248,6 +274,11 @@ function UsersPage() {
                       {pending && (
                         <span className="rounded-md border border-amber-300 bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
                           Čeká na schválení
+                        </span>
+                      )}
+                      {banned && (
+                        <span className="rounded-md border border-rose-300 bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-900">
+                          Deaktivován
                         </span>
                       )}
                     </div>
@@ -263,6 +294,13 @@ function UsersPage() {
                         />
                       </label>
                     )}
+                    <label className="flex items-center gap-2" title="Aktivní účet (může se přihlásit)">
+                      <Power className="h-3.5 w-3.5" />
+                      <Switch
+                        checked={!banned}
+                        onCheckedChange={(v) => toggleActive(u.id, v)}
+                      />
+                    </label>
                     <label className="flex items-center gap-2">
                       Zaměstnanec
                       <Switch
@@ -283,6 +321,15 @@ function UsersPage() {
                       onClick={() => openPwd({ id: u.id, email: u.email ?? "" })}
                     >
                       <KeyRound className="mr-1.5 h-3.5 w-3.5" /> Heslo
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => removeUser(u.id, u.email ?? "")}
+                      title="Smazat uživatele"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
