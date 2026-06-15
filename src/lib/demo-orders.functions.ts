@@ -515,6 +515,19 @@ function bytesToBase64(bytes: Uint8Array): string {
   return btoa(bin);
 }
 
+function buildCzIban(account: string, bankCode: string, prefix = ""): string {
+  const bban = bankCode.padStart(4, "0") + prefix.padStart(6, "0") + account.padStart(10, "0");
+  // CZ -> 12, 35  => "123500" appended for check calc
+  const check = 98 - mod97(bban + "123500");
+  return "CZ" + check.toString().padStart(2, "0") + bban;
+}
+
+function mod97(num: string): number {
+  let rem = 0;
+  for (const ch of num) rem = (rem * 10 + (ch.charCodeAt(0) - 48)) % 97;
+  return rem;
+}
+
 async function uploadAndRecord(args: {
   clientId: string;
   orderId: string;
