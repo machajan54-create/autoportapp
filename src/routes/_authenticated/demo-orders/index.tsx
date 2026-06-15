@@ -117,6 +117,7 @@ function DemoOrdersList() {
                   <TableCell className="font-medium">{r.order_number}</TableCell>
                   <TableCell>{r.client?.full_name || r.client?.company || "—"}</TableCell>
                   <TableCell>{r.model_verze || "—"}</TableCell>
+                  <TableCell className="text-xs tabular-nums">{[r.rz, r.vin].filter(Boolean).join(" / ") || "—"}</TableCell>
                   <TableCell>{r.datum_objednavky ? new Date(r.datum_objednavky).toLocaleDateString("cs-CZ") : "—"}</TableCell>
                   <TableCell className="text-right tabular-nums">{fmtKc(r.cena_celkem_s_dph)}</TableCell>
                   <TableCell>
