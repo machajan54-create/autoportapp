@@ -115,7 +115,7 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
         (p: any) => p.requested_by === userId && p.status !== "pending" && p.decided_at,
       );
       for (const p of mine) {
-        if (Date.parse(p.decided_at) <= sincePurchase) continue;
+        if (Date.parse(String(p.decided_at)) <= sincePurchase) continue;
         const approved = p.status === "approved";
         out.push({
           key: `purchase-${p.id}-${p.status}`,
@@ -148,7 +148,7 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
         (a: any) => a.status !== "pending" && a.resolved_at,
       );
       for (const a of personalAbs) {
-        if (Date.parse(a.resolved_at) <= sinceAbsences) continue;
+        if (Date.parse(String(a.resolved_at)) <= sinceAbsences) continue;
         const approved = a.status === "approved";
         out.push({
           key: `absence-${a.id}-${a.status}`,
