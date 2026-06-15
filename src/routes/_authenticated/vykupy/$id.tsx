@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
@@ -11,12 +11,20 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft } from "lucide-react";
+import {
+  ArrowLeft, FileText, Loader2, Upload, AlertTriangle, Trash2, Eye,
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   getVykup, upsertVykup, formatKc, marze,
   ZNACKY, ZDROJE, STAVY, type Vykup,
 } from "@/lib/vykupy";
 import { listEmployees, getMyAccess } from "@/lib/claims.functions";
+import {
+  listVykupPhotos, recordVykupPhoto, updateVykupPhotoDefect,
+  deleteVykupPhoto, getVykupPhotoUrl,
+} from "@/lib/vykup-photos.functions";
+import { generateVykupContract } from "@/lib/vykup-contract.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/vykupy/$id")({
