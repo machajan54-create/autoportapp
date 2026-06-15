@@ -532,22 +532,14 @@ async function buildSignedFromBase(baseBytes: Uint8Array, signatureDataUrl: stri
   const pdf = await PDFDocument.load(baseBytes);
   const pages = pdf.getPages();
   const last = pages[pages.length - 1];
-  const { width } = last.getSize();
   const font = await pdf.embedFont(StandardFonts.Helvetica);
 
-  const dataUrl = signatureDataUrl;
-  const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, "");
-  const bin = atob(base64);
-  const arr = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-  const png = await pdf.embedPng(arr);
-  const sigW = 180;
-  const sigH = (png.height / png.width) * sigW;
-  const x = width - 48 - sigW;
-  const y = 70;
-  last.drawImage(png, { x, y, width: sigW, height: sigH });
-  last.drawText(sanitize(`Podepsal: ${signerName}`), { x, y: y - 12, size: 8, font, color: rgb(0.3, 0.3, 0.3) });
-  last.drawText(sanitize(`${new Date().toLocaleString("cs-CZ")}`), { x, y: y - 22, size: 8, font, color: rgb(0.3, 0.3, 0.3) });
+  await embedSignatureAt(pdf, last, signatureDataUrl, {
+    x: SIG.buyerX, y: SIG.lineY + 4, w: SIG.buyerW, h: SIG.buyerH,
+  });
+  last.drawText(sanitize(`${signerName}  -  ${new Date().toLocaleString("cs-CZ")}`), {
+    x: SIG.buyerX, y: SIG.labelY - 10, size: 7.5, font, color: rgb(0.42, 0.46, 0.52),
+  });
   return await pdf.save();
 }
 
