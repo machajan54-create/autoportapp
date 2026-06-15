@@ -930,12 +930,18 @@ export const setUserDepartment = createServerFn({ method: "POST" })
       .eq("user_id", context.userId);
     if (!meRoles?.some((r) => r.role === "admin")) throw new Error("Forbidden");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const patch: Record<string, unknown> = { department: data.department };
-    if (typeof data.is_department_head === "boolean") {
-      patch.is_department_head = data.department ? data.is_department_head : false;
-    } else if (!data.department) {
-      patch.is_department_head = false;
-    }
+    const isHead =
+      typeof data.is_department_head === "boolean"
+        ? data.department
+          ? data.is_department_head
+          : false
+        : data.department
+          ? undefined
+          : false;
+    const patch = {
+      department: data.department,
+      ...(typeof isHead === "boolean" ? { is_department_head: isHead } : {}),
+    };
     const { error } = await supabaseAdmin
       .from("profiles")
       .update(patch)
@@ -949,7 +955,7 @@ export const setUserDepartment = createServerFn({ method: "POST" })
         module: "users",
         action: "department_change",
         entityId: data.user_id,
-        details: { department: data.department, is_department_head: patch.is_department_head },
+        details: { department: data.department, is_department_head: isHead },
       });
     }
     return { ok: true };
