@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { enqueueTransactionalEmail } from "@/lib/email/notify.server";
 
 const ABSENCE_TYPE_LABEL: Record<string, string> = {
   dovolena: "Dovolená",
@@ -81,6 +82,40 @@ export const upsertEmployee = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
+
+    // Notify the new employee about their profile + how the kiosek works.
+    try {
+      let recipientEmail: string | null = null;
+      if (data.user_id) {
+        const { data: prof } = await context.supabase
+          .from("profiles")
+          .select("email")
+          .eq("id", data.user_id)
+          .maybeSingle();
+        recipientEmail = prof?.email ?? null;
+      }
+      if (recipientEmail) {
+        const origin =
+          process.env.SITE_URL?.replace(/\/$/, "") ||
+          "https://www.autoport-app.cz";
+        await enqueueTransactionalEmail({
+          templateName: "dochazka-employee-welcome",
+          recipientEmail,
+          idempotencyKey: `dochazka-welcome-${row.id}`,
+          templateData: {
+            recipientName: data.name,
+            pin: data.pin,
+            role: data.role,
+            employmentTypes: data.employment_types,
+            terminalUrl: `${origin}/terminal`,
+            appUrl: `${origin}/dochazka`,
+          },
+        });
+      }
+    } catch (e) {
+      console.error("[dochazka] welcome email failed", e);
+    }
+
     return { id: row.id };
   });
 

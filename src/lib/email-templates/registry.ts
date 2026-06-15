@@ -10,6 +10,7 @@ import { template as followupReminder } from './followup-reminder'
 import { template as taskStatusChanged } from './task-status-changed'
 import { template as accountWelcome } from './account-welcome'
 import { template as dealStageChanged } from './deal-stage-changed'
+import { template as dochazkaEmployeeWelcome } from './dochazka-employee-welcome'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -40,4 +41,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'task-status-changed': taskStatusChanged,
   'account-welcome': accountWelcome,
   'deal-stage-changed': dealStageChanged,
+  'dochazka-employee-welcome': dochazkaEmployeeWelcome,
 }
