@@ -423,8 +423,7 @@ async function buildInvoicePdf(order: any, client: any, invoiceNumber: string): 
   pdf.setCreator("AutoPort App");
   const page = pdf.addPage([595.28, 841.89]);
   const { width, height } = page.getSize();
-  const font = await pdf.embedFont(StandardFonts.Helvetica);
-  const fontB = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const { font, fontB } = await embedUnicodeFonts(pdf);
   const black = rgb(...BRAND.dark);
   const muted = rgb(...BRAND.muted);
   const primary = rgb(...BRAND.primary);
