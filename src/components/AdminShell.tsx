@@ -1,5 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { ShieldCheck, FolderKanban, LogOut, Users, Car, Menu, LayoutDashboard, FileText, CheckSquare, Clock, Wrench, Search, History, Briefcase, BookOpen, Sparkles } from "lucide-react";
+import { ShieldCheck, FolderKanban, LogOut, Users, Car, Menu, LayoutDashboard, FileText, CheckSquare, Clock, Wrench, Search, History, Briefcase, BookOpen, Settings, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -93,10 +94,28 @@ export function AdminShell({
       {can("deals") && navItem("/deals", "Obchodní případy", Briefcase)}
       {can("logbook") && navItem("/logbook", "Kniha jízd", BookOpen)}
       {(access?.isAdmin || can("approvals")) && navItem("/approvals", "Schvalování", CheckSquare)}
-      {access?.isAdmin && navItem("/admin/users", "Uživatelé", Users, pendingCount)}
-      {access?.isAdmin && navItem("/admin/dochazka", "Generování docházky", Sparkles)}
-      {access?.isAdmin && navItem("/admin/templates", "Šablony dokumentů", FileText)}
-      {access?.isAdmin && navItem("/admin/audit", "Audit log", History)}
+      {access?.isAdmin && (
+        <Collapsible
+          defaultOpen={pathname.startsWith("/admin/")}
+          className="pt-2"
+        >
+          <CollapsibleTrigger className="group flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-foreground/70 hover:bg-muted hover:text-foreground">
+            <Settings className="h-4 w-4" />
+            <span className="flex-1 text-left">Nastavení</span>
+            {pendingCount > 0 ? (
+              <span className="rounded-full bg-destructive px-2 py-0.5 text-xs font-semibold text-destructive-foreground">
+                {pendingCount}
+              </span>
+            ) : null}
+            <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-1 space-y-1 pl-3">
+            {navItem("/admin/audit", "Audit log", History)}
+            {navItem("/admin/templates", "Šablony dokumentů", FileText)}
+            {navItem("/admin/users", "Uživatelé", Users, pendingCount)}
+          </CollapsibleContent>
+        </Collapsible>
+      )}
     </nav>
   );
 
