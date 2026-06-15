@@ -2,6 +2,42 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+async function logEvent(args: {
+  orderId: string;
+  type: string;
+  message: string;
+  actorId: string | null;
+  meta?: Record<string, unknown>;
+}) {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let actorName: string | null = null;
+    if (args.actorId) {
+      const { data: p } = await supabaseAdmin
+        .from("profiles" as never)
+        .select("full_name,email")
+        .eq("id", args.actorId)
+        .maybeSingle();
+      actorName = (p as any)?.full_name || (p as any)?.email || null;
+    }
+    await supabaseAdmin.from("demo_order_events" as never).insert({
+      order_id: args.orderId,
+      type: args.type,
+      message: args.message,
+      actor_id: args.actorId,
+      actor_name: actorName,
+      meta: args.meta ?? null,
+    } as never);
+  } catch {
+    // events log is best-effort
+  }
+}
+
+async function isAdminUser(supabase: any, userId: string): Promise<boolean> {
+  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+  return (data ?? []).some((r: any) => r.role === "admin");
+}
+
 const lineItemSchema = z.object({
   label: z.string().trim().min(1).max(200),
   category: z.enum(["vehicle", "equipment", "package", "discount", "vip", "other"]).default("equipment"),
