@@ -15,7 +15,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { UserPlus, KeyRound, Copy, Trash2, Power, Mail } from "lucide-react";
+import { UserPlus, KeyRound, Copy, Trash2, Power, Mail, Search, Shield, UserCheck, Users as UsersIcon, AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import {
   listUsers,
