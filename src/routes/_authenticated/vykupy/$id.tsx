@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
@@ -11,12 +11,20 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft } from "lucide-react";
+import {
+  ArrowLeft, FileText, Loader2, Upload, AlertTriangle, Trash2, Eye,
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   getVykup, upsertVykup, formatKc, marze,
   ZNACKY, ZDROJE, STAVY, type Vykup,
 } from "@/lib/vykupy";
 import { listEmployees, getMyAccess } from "@/lib/claims.functions";
+import {
+  listVykupPhotos, recordVykupPhoto, updateVykupPhotoDefect,
+  deleteVykupPhoto, getVykupPhotoUrl,
+} from "@/lib/vykup-photos.functions";
+import { generateVykupContract } from "@/lib/vykup-contract.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/vykupy/$id")({
@@ -39,6 +47,7 @@ type FormState = {
   datum_vykupu: string;
   stav: string;
   poznamka: string;
+  follow_up_at: string;
   internal_priced_by_user_id: string;
   internal_priced_amount: string;
   internal_priced_at: string;
@@ -53,6 +62,7 @@ const empty: FormState = {
   naceneno_od: "", vykoupeno_za: "", prodano_za: "", naklady: "0",
   datum_vykupu: new Date().toISOString().slice(0, 10),
   stav: "Nacenění", poznamka: "",
+  follow_up_at: "",
   internal_priced_by_user_id: "", internal_priced_amount: "", internal_priced_at: "",
   external_priced_by: "", external_priced_amount: "", external_priced_at: "",
 };
@@ -76,6 +86,7 @@ function fromVykup(v: Vykup): FormState {
     naklady: (v.naklady ?? 0).toString(),
     datum_vykupu: v.datum_vykupu ?? "",
     stav: v.stav, poznamka: v.poznamka ?? "",
+    follow_up_at: v.follow_up_at ? v.follow_up_at.slice(0, 16) : "",
     internal_priced_by_user_id: v.internal_priced_by_user_id ?? "",
     internal_priced_amount: v.internal_priced_amount?.toString() ?? "",
     internal_priced_at: v.internal_priced_at ? v.internal_priced_at.slice(0, 10) : "",
@@ -152,6 +163,8 @@ function VykupForm() {
         datum_vykupu: form.datum_vykupu || null,
         stav: form.stav,
         poznamka: form.poznamka.trim() || null,
+        follow_up_at: form.follow_up_at ? new Date(form.follow_up_at).toISOString() : null,
+        follow_up_notified_at: null,
         internal_priced_by_user_id: form.internal_priced_by_user_id || null,
         internal_priced_amount: toNum(form.internal_priced_amount) ?? null,
         internal_priced_at: form.internal_priced_at || null,
@@ -306,6 +319,21 @@ function VykupForm() {
                 <SelectContent>{STAVY.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}</SelectContent>
               </Select>
             </Field>
+            <Field label="Follow-up (připomínka e-mailem)">
+              <Input
+                type="datetime-local"
+                value={form.follow_up_at}
+                onChange={(e) => set("follow_up_at", e.target.value)}
+              />
+            </Field>
+            {existing?.stav_changed_at && (
+              <Field label="Ve stavu od">
+                <Input
+                  readOnly
+                  value={`${new Date(existing.stav_changed_at).toLocaleDateString("cs-CZ")} (${daysSince(existing.stav_changed_at)} dní)`}
+                />
+              </Field>
+            )}
             <div className="sm:col-span-2">
               <Label className="mb-1.5 block text-sm">Poznámka</Label>
               <Textarea rows={3} value={form.poznamka} onChange={(e) => set("poznamka", e.target.value)} />
@@ -316,11 +344,14 @@ function VykupForm() {
             <Button type="button" variant="ghost" onClick={() => navigate({ to: "/vykupy" })}>
               Zrušit
             </Button>
+            {!isNew && canFull && <ContractPdfButton vykupId={id} />}
             <Button type="submit" disabled={saving} className="bg-orange-500 text-white hover:bg-orange-600">
               {saving ? "Ukládám…" : "Uložit"}
             </Button>
           </div>
         </form>
+
+        {!isNew && canFull && <PhotoGallery vykupId={id} />}
       </div>
     </AdminShell>
   );
@@ -341,5 +372,286 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <Label className="mb-1.5 block text-sm">{label}</Label>
       {children}
     </div>
+  );
+}
+
+function daysSince(iso: string): number {
+  const start = new Date(iso).getTime();
+  if (Number.isNaN(start)) return 0;
+  return Math.max(0, Math.floor((Date.now() - start) / 86_400_000));
+}
+
+function ContractPdfButton({ vykupId }: { vykupId: string }) {
+  const generate = useServerFn(generateVykupContract);
+  const [busy, setBusy] = useState(false);
+  async function handle() {
+    setBusy(true);
+    try {
+      const { base64, file_name } = await generate({ data: { vykupId } });
+      const bin = atob(base64);
+      const buf = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+      const blob = new Blob([buf], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = file_name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e: any) {
+      toast.error(e?.message || "Nepodařilo se vygenerovat PDF");
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <Button type="button" variant="outline" onClick={handle} disabled={busy}>
+      {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+      Smlouva (PDF)
+    </Button>
+  );
+}
+
+function PhotoGallery({ vykupId }: { vykupId: string }) {
+  const qc = useQueryClient();
+  const list = useServerFn(listVykupPhotos);
+  const record = useServerFn(recordVykupPhoto);
+  const del = useServerFn(deleteVykupPhoto);
+  const setDefect = useServerFn(updateVykupPhotoDefect);
+  const getUrl = useServerFn(getVykupPhotoUrl);
+
+  const { data } = useQuery({
+    queryKey: ["vykup-photos", vykupId],
+    queryFn: () => list({ data: { vykupId } }),
+  });
+
+  const [thumbs, setThumbs] = useState<Record<string, string>>({});
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const rows = data?.rows ?? [];
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      for (const p of rows) {
+        if (thumbs[p.id]) continue;
+        try {
+          const { url } = await getUrl({ data: { id: p.id } });
+          if (!cancelled) setThumbs((t) => ({ ...t, [p.id]: url }));
+        } catch {
+          // ignore
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows.map((r) => r.id).join(",")]);
+
+  async function uploadFiles(files: FileList | File[]) {
+    const arr = Array.from(files);
+    if (!arr.length) return;
+    setUploading(true);
+    try {
+      for (const file of arr) {
+        if (!file.type.startsWith("image/")) {
+          toast.error(`${file.name}: pouze obrázky`);
+          continue;
+        }
+        if (file.size > 20 * 1024 * 1024) {
+          toast.error(`${file.name}: max 20 MB`);
+          continue;
+        }
+        const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+        const path = `${vykupId}/${crypto.randomUUID()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("vykup-photos")
+          .upload(path, file, { contentType: file.type });
+        if (upErr) {
+          toast.error(`${file.name}: ${upErr.message}`);
+          continue;
+        }
+        await record({
+          data: {
+            vykupId,
+            file_name: file.name,
+            storage_path: path,
+            size_bytes: file.size,
+            content_type: file.type,
+          },
+        });
+      }
+      qc.invalidateQueries({ queryKey: ["vykup-photos", vykupId] });
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm("Smazat fotografii?")) return;
+    try {
+      await del({ data: { id } });
+      setThumbs((t) => {
+        const n = { ...t };
+        delete n[id];
+        return n;
+      });
+      qc.invalidateQueries({ queryKey: ["vykup-photos", vykupId] });
+    } catch (e: any) {
+      toast.error(e?.message || "Nepodařilo se smazat");
+    }
+  }
+
+  async function toggleDefect(p: any) {
+    try {
+      await setDefect({
+        data: { id: p.id, has_defect: !p.has_defect, defect_note: p.defect_note ?? null },
+      });
+      qc.invalidateQueries({ queryKey: ["vykup-photos", vykupId] });
+    } catch (e: any) {
+      toast.error(e?.message || "Nepodařilo se uložit");
+    }
+  }
+
+  async function updateNote(p: any, note: string) {
+    try {
+      await setDefect({
+        data: { id: p.id, has_defect: p.has_defect, defect_note: note || null },
+      });
+      qc.invalidateQueries({ queryKey: ["vykup-photos", vykupId] });
+    } catch (e: any) {
+      toast.error(e?.message || "Nepodařilo se uložit");
+    }
+  }
+
+  return (
+    <section className="mt-6 space-y-3 rounded-xl border bg-card p-5">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          Fotogalerie vozu ({rows.length})
+        </h2>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+        >
+          {uploading ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Upload className="mr-2 h-4 w-4" />
+          )}
+          Nahrát fotky
+        </Button>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            if (e.target.files) uploadFiles(e.target.files);
+            if (inputRef.current) inputRef.current.value = "";
+          }}
+        />
+      </div>
+
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+          if (e.dataTransfer.files?.length) uploadFiles(e.dataTransfer.files);
+        }}
+        className={cn(
+          "rounded-lg border-2 border-dashed p-6 text-center text-sm text-muted-foreground transition-colors",
+          dragOver ? "border-orange-400 bg-orange-50" : "border-muted-foreground/20",
+        )}
+      >
+        Přetáhněte fotografie sem nebo klikněte na „Nahrát fotky". Max 20 MB / soubor.
+      </div>
+
+      {rows.length > 0 && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+          {rows.map((p: any) => (
+            <div
+              key={p.id}
+              className={cn(
+                "group relative overflow-hidden rounded-lg border bg-muted",
+                p.has_defect && "ring-2 ring-rose-400",
+              )}
+            >
+              <div className="aspect-square w-full bg-muted">
+                {thumbs[p.id] ? (
+                  <img
+                    src={thumbs[p.id]}
+                    alt={p.file_name}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+                    Načítám…
+                  </div>
+                )}
+              </div>
+              {p.has_defect && (
+                <div className="absolute left-2 top-2 flex items-center gap-1 rounded bg-rose-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                  <AlertTriangle className="h-3 w-3" /> VADA
+                </div>
+              )}
+              <div className="absolute right-1 top-1 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                {thumbs[p.id] && (
+                  <a
+                    href={thumbs[p.id]}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded bg-black/60 p-1 text-white hover:bg-black/80"
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                  </a>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleDelete(p.id)}
+                  className="rounded bg-black/60 p-1 text-white hover:bg-rose-600"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div className="space-y-1 p-2 text-xs">
+                <label className="flex items-center gap-1.5">
+                  <input
+                    type="checkbox"
+                    checked={p.has_defect}
+                    onChange={() => toggleDefect(p)}
+                  />
+                  <span>Označit jako vadu</span>
+                </label>
+                {p.has_defect && (
+                  <Input
+                    className="h-7 text-xs"
+                    placeholder="Popis vady"
+                    defaultValue={p.defect_note ?? ""}
+                    onBlur={(e) => {
+                      if ((e.target.value || "") !== (p.defect_note ?? ""))
+                        updateNote(p, e.target.value);
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }

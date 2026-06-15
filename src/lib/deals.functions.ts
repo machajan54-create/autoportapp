@@ -19,6 +19,12 @@ const createInput = z.object({
   stage: z.enum(DEAL_STAGES).default("lead"),
   expected_close_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   notes: z.string().trim().max(4000).optional().nullable(),
+  follow_up_at: z
+    .string()
+    .datetime({ offset: true })
+    .or(z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/))
+    .optional()
+    .nullable(),
 });
 
 const updateInput = createInput.partial().extend({ id: z.string().uuid() });
@@ -63,6 +69,7 @@ export const createDeal = createServerFn({ method: "POST" })
         stage: data.stage,
         expected_close_date: data.expected_close_date || null,
         notes: data.notes || null,
+      follow_up_at: data.follow_up_at || null,
         owner_id: userId,
         owner_name,
       })
@@ -80,6 +87,7 @@ export const updateDeal = createServerFn({ method: "POST" })
     for (const [k, v] of Object.entries(rest)) {
       if (v !== undefined) patch[k] = v === "" ? null : v;
     }
+    if ("follow_up_at" in patch) patch.follow_up_notified_at = null;
     const { error } = await context.supabase
       .from("deals")
       .update(patch as never)

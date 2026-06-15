@@ -24,6 +24,9 @@ export type Vykup = {
   external_priced_by: string | null;
   external_priced_amount: number | null;
   external_priced_at: string | null;
+  stav_changed_at: string | null;
+  follow_up_at: string | null;
+  follow_up_notified_at: string | null;
 };
 
 export const ZNACKY = ["Citroen", "Peugeot", "Fiat", "DS", "Jiná"] as const;

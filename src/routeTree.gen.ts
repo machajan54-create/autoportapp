@@ -43,6 +43,7 @@ import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/em
 import { Route as ApiPublicHooksWeeklyReportRouteImport } from './routes/api/public/hooks/weekly-report'
 import { Route as ApiPublicCronTaskRemindersRouteImport } from './routes/api/public/cron/task-reminders'
 import { Route as ApiPublicCronTaskDailyDigestRouteImport } from './routes/api/public/cron/task-daily-digest'
+import { Route as ApiPublicCronFollowupRemindersRouteImport } from './routes/api/public/cron/followup-reminders'
 
 const TerminalRoute = TerminalRouteImport.update({
   id: '/terminal',
@@ -226,6 +227,12 @@ const ApiPublicCronTaskDailyDigestRoute =
     path: '/api/public/cron/task-daily-digest',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronFollowupRemindersRoute =
+  ApiPublicCronFollowupRemindersRouteImport.update({
+    id: '/api/public/cron/followup-reminders',
+    path: '/api/public/cron/followup-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -253,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/ukoly/': typeof AuthenticatedUkolyIndexRoute
   '/vykupy/': typeof AuthenticatedVykupyIndexRoute
   '/zavady/': typeof AuthenticatedZavadyIndexRoute
+  '/api/public/cron/followup-reminders': typeof ApiPublicCronFollowupRemindersRoute
   '/api/public/cron/task-daily-digest': typeof ApiPublicCronTaskDailyDigestRoute
   '/api/public/cron/task-reminders': typeof ApiPublicCronTaskRemindersRoute
   '/api/public/hooks/weekly-report': typeof ApiPublicHooksWeeklyReportRoute
@@ -288,6 +296,7 @@ export interface FileRoutesByTo {
   '/ukoly': typeof AuthenticatedUkolyIndexRoute
   '/vykupy': typeof AuthenticatedVykupyIndexRoute
   '/zavady': typeof AuthenticatedZavadyIndexRoute
+  '/api/public/cron/followup-reminders': typeof ApiPublicCronFollowupRemindersRoute
   '/api/public/cron/task-daily-digest': typeof ApiPublicCronTaskDailyDigestRoute
   '/api/public/cron/task-reminders': typeof ApiPublicCronTaskRemindersRoute
   '/api/public/hooks/weekly-report': typeof ApiPublicHooksWeeklyReportRoute
@@ -325,6 +334,7 @@ export interface FileRoutesById {
   '/_authenticated/ukoly/': typeof AuthenticatedUkolyIndexRoute
   '/_authenticated/vykupy/': typeof AuthenticatedVykupyIndexRoute
   '/_authenticated/zavady/': typeof AuthenticatedZavadyIndexRoute
+  '/api/public/cron/followup-reminders': typeof ApiPublicCronFollowupRemindersRoute
   '/api/public/cron/task-daily-digest': typeof ApiPublicCronTaskDailyDigestRoute
   '/api/public/cron/task-reminders': typeof ApiPublicCronTaskRemindersRoute
   '/api/public/hooks/weekly-report': typeof ApiPublicHooksWeeklyReportRoute
@@ -362,6 +372,7 @@ export interface FileRouteTypes {
     | '/ukoly/'
     | '/vykupy/'
     | '/zavady/'
+    | '/api/public/cron/followup-reminders'
     | '/api/public/cron/task-daily-digest'
     | '/api/public/cron/task-reminders'
     | '/api/public/hooks/weekly-report'
@@ -397,6 +408,7 @@ export interface FileRouteTypes {
     | '/ukoly'
     | '/vykupy'
     | '/zavady'
+    | '/api/public/cron/followup-reminders'
     | '/api/public/cron/task-daily-digest'
     | '/api/public/cron/task-reminders'
     | '/api/public/hooks/weekly-report'
@@ -433,6 +445,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ukoly/'
     | '/_authenticated/vykupy/'
     | '/_authenticated/zavady/'
+    | '/api/public/cron/followup-reminders'
     | '/api/public/cron/task-daily-digest'
     | '/api/public/cron/task-reminders'
     | '/api/public/hooks/weekly-report'
@@ -454,6 +467,7 @@ export interface RootRouteChildren {
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   UploadTokenRoute: typeof UploadTokenRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  ApiPublicCronFollowupRemindersRoute: typeof ApiPublicCronFollowupRemindersRoute
   ApiPublicCronTaskDailyDigestRoute: typeof ApiPublicCronTaskDailyDigestRoute
   ApiPublicCronTaskRemindersRoute: typeof ApiPublicCronTaskRemindersRoute
   ApiPublicHooksWeeklyReportRoute: typeof ApiPublicHooksWeeklyReportRoute
@@ -704,6 +718,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronTaskDailyDigestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/followup-reminders': {
+      id: '/api/public/cron/followup-reminders'
+      path: '/api/public/cron/followup-reminders'
+      fullPath: '/api/public/cron/followup-reminders'
+      preLoaderRoute: typeof ApiPublicCronFollowupRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -759,6 +780,7 @@ const rootRouteChildren: RootRouteChildren = {
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   UploadTokenRoute: UploadTokenRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  ApiPublicCronFollowupRemindersRoute: ApiPublicCronFollowupRemindersRoute,
   ApiPublicCronTaskDailyDigestRoute: ApiPublicCronTaskDailyDigestRoute,
   ApiPublicCronTaskRemindersRoute: ApiPublicCronTaskRemindersRoute,
   ApiPublicHooksWeeklyReportRoute: ApiPublicHooksWeeklyReportRoute,
