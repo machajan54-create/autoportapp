@@ -607,15 +607,9 @@ export const generateInvoicePdf = createServerFn({ method: "POST" })
     let invoiceNumber = (order as any).invoice_number as string | null;
     if (!invoiceNumber) {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data: seq, error: seqErr } = await supabaseAdmin.rpc("nextval" as any, { sequence_name: "public.demo_invoice_seq" } as any);
-      let n: number;
-      if (seqErr || seq == null) {
-        // fallback: use timestamp-derived number
-        n = Math.floor(Math.random() * 9000) + 1000;
-      } else {
-        n = Number(seq);
-      }
-      invoiceNumber = `ZF-${new Date().getFullYear()}-${String(n).padStart(4, "0")}`;
+      const { data: nextNum, error: seqErr } = await supabaseAdmin.rpc("next_demo_invoice_number" as any);
+      if (seqErr || !nextNum) throw new Error("Nepodařilo se vygenerovat číslo faktury: " + (seqErr?.message || "prázdná odpověď"));
+      invoiceNumber = String(nextNum);
       await supabaseAdmin.from("demo_orders" as never).update({ invoice_number: invoiceNumber } as never).eq("id", data.orderId);
     }
     const bytes = await buildInvoicePdf(order, client, invoiceNumber);
