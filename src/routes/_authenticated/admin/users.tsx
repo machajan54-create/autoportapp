@@ -474,6 +474,59 @@ function UsersPage() {
                               onChange={(v) => toggle(u.id, "admin", v)}
                             />
                           </div>
+
+                          <div className="mt-3 rounded-lg border bg-card p-3 text-sm">
+                            <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                              <Building2 className="h-3.5 w-3.5" /> Oddělení
+                            </div>
+                            <select
+                              value={(u as any).department ?? ""}
+                              onChange={(e) =>
+                                changeDepartment(
+                                  u.id,
+                                  (e.target.value || null) as DepartmentKey | null,
+                                )
+                              }
+                              className="w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+                            >
+                              <option value="">— Nezařazen —</option>
+                              {DEPARTMENT_LIST.map((d) => (
+                                <option key={d.key} value={d.key}>
+                                  {d.label}
+                                </option>
+                              ))}
+                            </select>
+                            {(u as any).department && (
+                              <label className="mt-2 flex cursor-pointer items-center justify-between gap-2 rounded-md px-1 py-1 text-xs">
+                                <span className="text-muted-foreground">Vedoucí oddělení</span>
+                                <Switch
+                                  checked={!!(u as any).is_department_head}
+                                  onCheckedChange={(v) =>
+                                    changeDepartment(
+                                      u.id,
+                                      (u as any).department as DepartmentKey,
+                                      v,
+                                    )
+                                  }
+                                />
+                              </label>
+                            )}
+                            <div className="mt-2 text-xs text-muted-foreground">
+                              {isAdmin ? (
+                                <span>Super admin – nad všemi.</span>
+                              ) : (u as any).is_department_head ? (
+                                <span>Vedoucí oddělení – podřízený pouze super adminovi.</span>
+                              ) : (u as any).supervisor ? (
+                                <span>
+                                  Nadřízený: <b className="text-foreground">{(u as any).supervisor.name}</b>
+                                </span>
+                              ) : (u as any).department ? (
+                                <span>Nadřízený: super admin (vedoucí oddělení není určen).</span>
+                              ) : (
+                                <span>Nadřízený: super admin.</span>
+                              )}
+                            </div>
+                          </div>
                         </div>
 
                         <div>
