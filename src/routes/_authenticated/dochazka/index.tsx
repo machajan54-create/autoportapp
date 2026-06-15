@@ -536,11 +536,6 @@ function RecordsTab() {
       qc.invalidateQueries({ queryKey: ["dochazka", "records"] });
     } catch (e: any) { toast.error(e?.message ?? "Chyba"); }
   }
-  async function onDelete(id: string) {
-    if (!confirm("Smazat záznam?")) return;
-    try { await del({ data: { id } }); toast.success("Smazáno"); qc.invalidateQueries({ queryKey: ["dochazka", "records"] }); }
-    catch (e: any) { toast.error(e?.message ?? "Chyba"); }
-  }
   async function submit(id: string) {
     try { await submitFn({ data: { id } }); toast.success("Odesláno ke schválení"); qc.invalidateQueries({ queryKey: ["dochazka", "records"] }); }
     catch (e: any) { toast.error(e?.message ?? "Chyba"); }
