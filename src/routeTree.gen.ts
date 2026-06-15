@@ -32,7 +32,6 @@ import { Route as AuthenticatedVykupyDashboardRouteImport } from './routes/_auth
 import { Route as AuthenticatedVykupyIdRouteImport } from './routes/_authenticated/vykupy/$id'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedAdminTemplatesRouteImport } from './routes/_authenticated/admin/templates'
-import { Route as AuthenticatedAdminDochazkaRouteImport } from './routes/_authenticated/admin/dochazka'
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin/audit'
 import { Route as AuthenticatedAdminIdRouteImport } from './routes/_authenticated/admin/$id'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
@@ -165,12 +164,6 @@ const AuthenticatedAdminTemplatesRoute =
     path: '/admin/templates',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedAdminDochazkaRoute =
-  AuthenticatedAdminDochazkaRouteImport.update({
-    id: '/admin/dochazka',
-    path: '/admin/dochazka',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedAdminAuditRoute = AuthenticatedAdminAuditRouteImport.update({
   id: '/admin/audit',
   path: '/admin/audit',
@@ -247,7 +240,6 @@ export interface FileRoutesByFullPath {
   '/upload/$token': typeof UploadTokenRoute
   '/admin/$id': typeof AuthenticatedAdminIdRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
-  '/admin/dochazka': typeof AuthenticatedAdminDochazkaRoute
   '/admin/templates': typeof AuthenticatedAdminTemplatesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
@@ -283,7 +275,6 @@ export interface FileRoutesByTo {
   '/upload/$token': typeof UploadTokenRoute
   '/admin/$id': typeof AuthenticatedAdminIdRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
-  '/admin/dochazka': typeof AuthenticatedAdminDochazkaRoute
   '/admin/templates': typeof AuthenticatedAdminTemplatesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
@@ -321,7 +312,6 @@ export interface FileRoutesById {
   '/upload/$token': typeof UploadTokenRoute
   '/_authenticated/admin/$id': typeof AuthenticatedAdminIdRoute
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
-  '/_authenticated/admin/dochazka': typeof AuthenticatedAdminDochazkaRoute
   '/_authenticated/admin/templates': typeof AuthenticatedAdminTemplatesRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/vykupy/$id': typeof AuthenticatedVykupyIdRoute
@@ -359,7 +349,6 @@ export interface FileRouteTypes {
     | '/upload/$token'
     | '/admin/$id'
     | '/admin/audit'
-    | '/admin/dochazka'
     | '/admin/templates'
     | '/admin/users'
     | '/vykupy/$id'
@@ -395,7 +384,6 @@ export interface FileRouteTypes {
     | '/upload/$token'
     | '/admin/$id'
     | '/admin/audit'
-    | '/admin/dochazka'
     | '/admin/templates'
     | '/admin/users'
     | '/vykupy/$id'
@@ -432,7 +420,6 @@ export interface FileRouteTypes {
     | '/upload/$token'
     | '/_authenticated/admin/$id'
     | '/_authenticated/admin/audit'
-    | '/_authenticated/admin/dochazka'
     | '/_authenticated/admin/templates'
     | '/_authenticated/admin/users'
     | '/_authenticated/vykupy/$id'
@@ -641,13 +628,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminTemplatesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin/dochazka': {
-      id: '/_authenticated/admin/dochazka'
-      path: '/admin/dochazka'
-      fullPath: '/admin/dochazka'
-      preLoaderRoute: typeof AuthenticatedAdminDochazkaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/admin/audit': {
       id: '/_authenticated/admin/audit'
       path: '/admin/audit'
@@ -733,7 +713,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedAdminIdRoute: typeof AuthenticatedAdminIdRoute
   AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
-  AuthenticatedAdminDochazkaRoute: typeof AuthenticatedAdminDochazkaRoute
   AuthenticatedAdminTemplatesRoute: typeof AuthenticatedAdminTemplatesRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedVykupyIdRoute: typeof AuthenticatedVykupyIdRoute
@@ -752,7 +731,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedAdminIdRoute: AuthenticatedAdminIdRoute,
   AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
-  AuthenticatedAdminDochazkaRoute: AuthenticatedAdminDochazkaRoute,
   AuthenticatedAdminTemplatesRoute: AuthenticatedAdminTemplatesRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedVykupyIdRoute: AuthenticatedVykupyIdRoute,
