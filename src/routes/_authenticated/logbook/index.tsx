@@ -22,8 +22,8 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  listVehicles, upsertVehicle, deleteVehicle,
-  listEntries, upsertEntry, deleteEntry, getReceiptUrls,
+  listVehicles, upsertVehicle,
+  listEntries, upsertEntry, getReceiptUrls,
 } from "@/lib/logbook.functions";
 import { supabase } from "@/integrations/supabase/client";
 
