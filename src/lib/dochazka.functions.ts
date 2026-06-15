@@ -782,3 +782,64 @@ export const autoFillMonth = createServerFn({ method: "POST" })
     const total = Math.round(rows.reduce((s, r) => s + r.hours_worked, 0) * 100) / 100;
     return { ok: true, created: rows.length, total_hours: total, skipped: workdays.length - days.length };
   });
+// ============ Approval workflow ============
+
+export const submitRecord = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("attendance_records")
+      .update({ approval_status: "submitted", approved_by: null, approved_at: null, approval_note: null })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const decideRecord = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      id: z.string().uuid(),
+      status: z.enum(["approved", "rejected"]),
+      note: z.string().max(500).nullable().optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const access = await getDochazkaAccess(context.supabase, context.userId);
+    if (!access.canApproveAll) throw new Error("Nemáte oprávnění schvalovat docházku");
+    const { error } = await context.supabase
+      .from("attendance_records")
+      .update({
+        approval_status: data.status,
+        approved_by: context.userId,
+        approved_at: new Date().toISOString(),
+        approval_note: data.note ?? null,
+      })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const bulkDecideRecords = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      ids: z.array(z.string().uuid()).min(1).max(1000),
+      status: z.enum(["approved", "rejected"]),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const access = await getDochazkaAccess(context.supabase, context.userId);
+    if (!access.canApproveAll) throw new Error("Nemáte oprávnění schvalovat docházku");
+    const { error } = await context.supabase
+      .from("attendance_records")
+      .update({
+        approval_status: data.status,
+        approved_by: context.userId,
+        approved_at: new Date().toISOString(),
+      })
+      .in("id", data.ids);
+    if (error) throw new Error(error.message);
+    return { ok: true, count: data.ids.length };
+  });
