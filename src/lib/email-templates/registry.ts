@@ -9,6 +9,7 @@ import { template as taskDailyDigest } from './task-daily-digest'
 import { template as followupReminder } from './followup-reminder'
 import { template as taskStatusChanged } from './task-status-changed'
 import { template as accountWelcome } from './account-welcome'
+import { template as dealStageChanged } from './deal-stage-changed'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -38,4 +39,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'followup-reminder': followupReminder,
   'task-status-changed': taskStatusChanged,
   'account-welcome': accountWelcome,
+  'deal-stage-changed': dealStageChanged,
 }
