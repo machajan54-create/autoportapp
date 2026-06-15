@@ -462,12 +462,17 @@ export const resolveAbsence = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const access = await getDochazkaAccess(context.supabase, context.userId);
     if (!access.canApproveAll) throw new Error("Nemáte oprávnění schvalovat");
+    const { data: resolverEmp } = await context.supabase
+      .from("attendance_employees")
+      .select("id")
+      .eq("user_id", context.userId)
+      .maybeSingle();
     const { error } = await context.supabase
       .from("attendance_absences")
       .update({
         status: data.status,
         resolved_at: new Date().toISOString(),
-        resolved_by: context.userId,
+        resolved_by: resolverEmp?.id ?? null,
       })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
