@@ -68,13 +68,48 @@ function TasksPage() {
   const rows = data?.rows ?? [];
 
   const [filter, setFilter] = useState<"open" | "mine" | "all">("open");
+  const [assigneeFilter, setAssigneeFilter] = useState<string>("__all");
+  const [priorityFilter, setPriorityFilter] = useState<string>("__all");
+  const [deadlineFilter, setDeadlineFilter] = useState<
+    "all" | "overdue" | "today" | "week" | "none"
+  >("all");
+
   const visible = useMemo(() => {
-    if (filter === "open") return rows.filter((r) => r.status !== "done");
-    if (filter === "mine") return rows.filter((r) => r.assignee_id === userId);
-    return rows;
-  }, [rows, filter, userId]);
+    const today = new Date().toISOString().slice(0, 10);
+    const weekEnd = new Date();
+    weekEnd.setDate(weekEnd.getDate() + 7);
+    const weekEndStr = weekEnd.toISOString().slice(0, 10);
+    return rows.filter((r) => {
+      if (filter === "open" && r.status === "done") return false;
+      if (filter === "mine" && r.assignee_id !== userId) return false;
+      if (assigneeFilter !== "__all") {
+        if (assigneeFilter === "__none" ? r.assignee_id : r.assignee_id !== assigneeFilter)
+          return false;
+      }
+      if (priorityFilter !== "__all" && r.priority !== priorityFilter) return false;
+      if (deadlineFilter !== "all") {
+        if (deadlineFilter === "none" && r.due_date) return false;
+        if (deadlineFilter !== "none" && !r.due_date) return false;
+        if (deadlineFilter === "overdue" && r.due_date && r.due_date >= today) return false;
+        if (deadlineFilter === "today" && r.due_date !== today) return false;
+        if (
+          deadlineFilter === "week" &&
+          r.due_date &&
+          (r.due_date < today || r.due_date > weekEndStr)
+        )
+          return false;
+      }
+      return true;
+    });
+  }, [rows, filter, userId, assigneeFilter, priorityFilter, deadlineFilter]);
+
+  const filtersActive =
+    assigneeFilter !== "__all" ||
+    priorityFilter !== "__all" ||
+    deadlineFilter !== "all";
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   async function handleStatus(id: string, status: typeof TASK_STATUS[number]) {
     try {
