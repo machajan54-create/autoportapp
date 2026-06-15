@@ -298,11 +298,35 @@ export const listUsers = createServerFn({ method: "GET" })
     const { data: modules } = await context.supabase
       .from("user_modules")
       .select("user_id,module");
-    return (profiles ?? []).map((p) => ({
-      ...p,
-      roles: (roles ?? []).filter((r) => r.user_id === p.id).map((r) => r.role),
-      modules: (modules ?? []).filter((m) => m.user_id === p.id).map((m) => m.module),
-    }));
+    // Načti banned_until pro každého uživatele (super admin)
+    const { data: meRoles } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    const isAdmin = !!meRoles?.some((r) => r.role === "admin");
+    const bannedMap = new Map<string, string | null>();
+    if (isAdmin) {
+      try {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { data: au } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+        for (const u of au?.users ?? []) {
+          bannedMap.set(u.id, (u as any).banned_until ?? null);
+        }
+      } catch {
+        // tichá degradace, banned info bude nedostupné
+      }
+    }
+    return (profiles ?? []).map((p) => {
+      const bu = bannedMap.get(p.id) ?? null;
+      const banned = !!bu && new Date(bu).getTime() > Date.now();
+      return {
+        ...p,
+        roles: (roles ?? []).filter((r) => r.user_id === p.id).map((r) => r.role),
+        modules: (modules ?? []).filter((m) => m.user_id === p.id).map((m) => m.module),
+        banned,
+        banned_until: bu,
+      };
+    });
   });
 
 export const setUserRole = createServerFn({ method: "POST" })
