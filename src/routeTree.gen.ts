@@ -29,6 +29,7 @@ import { Route as AuthenticatedDochazkaIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedDemoOrdersIndexRouteImport } from './routes/_authenticated/demo-orders/index'
 import { Route as AuthenticatedDealsIndexRouteImport } from './routes/_authenticated/deals/index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
+import { Route as WashRespondActionTokenRouteImport } from './routes/wash-respond.$action.$token'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as AuthenticatedVykupyDashboardRouteImport } from './routes/_authenticated/vykupy/dashboard'
 import { Route as AuthenticatedVykupyIdRouteImport } from './routes/_authenticated/vykupy/$id'
@@ -151,6 +152,11 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const WashRespondActionTokenRoute = WashRespondActionTokenRouteImport.update({
+  id: '/wash-respond/$action/$token',
+  path: '/wash-respond/$action/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
@@ -267,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/wash-respond/$action/$token': typeof WashRespondActionTokenRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/deals/': typeof AuthenticatedDealsIndexRoute
   '/demo-orders/': typeof AuthenticatedDemoOrdersIndexRoute
@@ -305,6 +312,7 @@ export interface FileRoutesByTo {
   '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/wash-respond/$action/$token': typeof WashRespondActionTokenRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/deals': typeof AuthenticatedDealsIndexRoute
   '/demo-orders': typeof AuthenticatedDemoOrdersIndexRoute
@@ -345,6 +353,7 @@ export interface FileRoutesById {
   '/_authenticated/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/_authenticated/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/wash-respond/$action/$token': typeof WashRespondActionTokenRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/deals/': typeof AuthenticatedDealsIndexRoute
   '/_authenticated/demo-orders/': typeof AuthenticatedDemoOrdersIndexRoute
@@ -385,6 +394,7 @@ export interface FileRouteTypes {
     | '/vykupy/$id'
     | '/vykupy/dashboard'
     | '/lovable/email/suppression'
+    | '/wash-respond/$action/$token'
     | '/admin/'
     | '/deals/'
     | '/demo-orders/'
@@ -423,6 +433,7 @@ export interface FileRouteTypes {
     | '/vykupy/$id'
     | '/vykupy/dashboard'
     | '/lovable/email/suppression'
+    | '/wash-respond/$action/$token'
     | '/admin'
     | '/deals'
     | '/demo-orders'
@@ -462,6 +473,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vykupy/$id'
     | '/_authenticated/vykupy/dashboard'
     | '/lovable/email/suppression'
+    | '/wash-respond/$action/$token'
     | '/_authenticated/admin/'
     | '/_authenticated/deals/'
     | '/_authenticated/demo-orders/'
@@ -493,6 +505,7 @@ export interface RootRouteChildren {
   SignTokenRoute: typeof SignTokenRoute
   UploadTokenRoute: typeof UploadTokenRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  WashRespondActionTokenRoute: typeof WashRespondActionTokenRoute
   ApiPublicCronFollowupRemindersRoute: typeof ApiPublicCronFollowupRemindersRoute
   ApiPublicCronTaskDailyDigestRoute: typeof ApiPublicCronTaskDailyDigestRoute
   ApiPublicCronTaskRemindersRoute: typeof ApiPublicCronTaskRemindersRoute
@@ -645,6 +658,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/wash-respond/$action/$token': {
+      id: '/wash-respond/$action/$token'
+      path: '/wash-respond/$action/$token'
+      fullPath: '/wash-respond/$action/$token'
+      preLoaderRoute: typeof WashRespondActionTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/lovable/email/suppression': {
       id: '/lovable/email/suppression'
@@ -823,6 +843,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignTokenRoute: SignTokenRoute,
   UploadTokenRoute: UploadTokenRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  WashRespondActionTokenRoute: WashRespondActionTokenRoute,
   ApiPublicCronFollowupRemindersRoute: ApiPublicCronFollowupRemindersRoute,
   ApiPublicCronTaskDailyDigestRoute: ApiPublicCronTaskDailyDigestRoute,
   ApiPublicCronTaskRemindersRoute: ApiPublicCronTaskRemindersRoute,
