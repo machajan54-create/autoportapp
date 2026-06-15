@@ -739,6 +739,12 @@ export const signOrderInPerson = createServerFn({ method: "POST" })
       signed_at: new Date().toISOString(),
     } as never);
     await supabaseAdmin.from("demo_orders" as never).update({ status: "signed" } as never).eq("id", data.orderId);
+    await logEvent({
+      orderId: data.orderId,
+      type: "signed_in_person",
+      message: `Klient podepsal objednávku u prodejce (${data.signerName}).`,
+      actorId: context.userId,
+    });
     return { ok: true };
   });
 
@@ -761,6 +767,12 @@ export const saveSellerSignature = createServerFn({ method: "POST" })
       } as never)
       .eq("id", data.orderId);
     if (error) throw new Error(error.message);
+    await logEvent({
+      orderId: data.orderId,
+      type: "seller_signed",
+      message: `Prodejce vložil podpis (${data.signerName}).`,
+      actorId: context.userId,
+    });
     return { ok: true };
   });
 
@@ -777,6 +789,12 @@ export const clearSellerSignature = createServerFn({ method: "POST" })
       } as never)
       .eq("id", data.orderId);
     if (error) throw new Error(error.message);
+    await logEvent({
+      orderId: data.orderId,
+      type: "seller_signature_cleared",
+      message: "Podpis prodejce byl odstraněn.",
+      actorId: context.userId,
+    });
     return { ok: true };
   });
 
