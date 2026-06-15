@@ -31,7 +31,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "Autoport APP"
+const SITE_NAME = "Píše Citroën | Autoport s.r.o."
 const SENDER_DOMAIN = "notify.autoport-app.cz"
 const ROOT_DOMAIN = "autoport-app.cz"
 const FROM_DOMAIN = "autoport-app.cz"
