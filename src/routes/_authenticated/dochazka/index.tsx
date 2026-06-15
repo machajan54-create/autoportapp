@@ -908,6 +908,48 @@ function AlertsTab() {
               <Label className="text-xs">Prefix zpráv</Label>
               <Input value={settings.custom_message_prefix} onChange={(e) => setting("custom_message_prefix", e.target.value)} />
             </div>
+            <div className="mt-2 border-t pt-3">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Zaokrouhlování & přesčasy</p>
+              <div className="grid gap-1">
+                <Label className="text-xs">Zaokrouhlení odpracovaných hodin (min, 0 = vypnuto)</Label>
+                <Select
+                  value={String((settings as any).rounding_minutes ?? 0)}
+                  onValueChange={(v) => setting("rounding_minutes", Number(v))}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Vypnuto (přesně)</SelectItem>
+                    <SelectItem value="5">5 min</SelectItem>
+                    <SelectItem value="10">10 min</SelectItem>
+                    <SelectItem value="15">15 min (čtvrthodina)</SelectItem>
+                    <SelectItem value="30">30 min (půlhodina)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="mt-2 grid gap-1">
+                <Label className="text-xs">Práh denního přesčasu (h)</Label>
+                <Input
+                  type="number" step="0.5" min="0"
+                  value={(settings as any).daily_overtime_threshold_hours ?? 8}
+                  onChange={(e) => setting("daily_overtime_threshold_hours", Number(e.target.value))}
+                />
+              </div>
+              <div className="mt-2 grid gap-1">
+                <Label className="text-xs">Práh týdenního přesčasu (h)</Label>
+                <Input
+                  type="number" step="1" min="0"
+                  value={(settings as any).weekly_overtime_threshold_hours ?? 40}
+                  onChange={(e) => setting("weekly_overtime_threshold_hours", Number(e.target.value))}
+                />
+              </div>
+              <div className="mt-3 flex items-center justify-between">
+                <Label className="text-xs">Vyžadovat schválení záznamů docházky</Label>
+                <Switch
+                  checked={!!(settings as any).require_record_approval}
+                  onCheckedChange={(v) => setting("require_record_approval", v)}
+                />
+              </div>
+            </div>
           </div>
         )}
       </Card>
