@@ -396,7 +396,7 @@ export const setUserModule = createServerFn({ method: "POST" })
     z
       .object({
         user_id: z.string().uuid(),
-        module: z.enum(["claims", "vykupy", "vykupy_external", "users", "approvals", "dashboard", "dochazka", "defects", "deals", "logbook", "tasks", "demo_orders"]),
+        module: z.enum(["claims", "vykupy", "vykupy_external", "users", "approvals", "dashboard", "dochazka", "defects", "deals", "logbook", "tasks", "demo_orders", "evidence_zakazek"]),
         enable: z.boolean(),
       })
       .parse(d),
