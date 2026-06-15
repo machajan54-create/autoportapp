@@ -32,12 +32,16 @@ import {
   listSuppliers,
   createSupplier,
   decideSupplier,
-  deleteSupplier,
   listPurchases,
   createPurchase,
   decidePurchase,
-  deletePurchase,
 } from "@/lib/approvals.functions";
+import {
+  listDeletionRequests,
+  decideDeletionRequest,
+  cancelDeletionRequest,
+} from "@/lib/deletion-requests.functions";
+import { RequestDeleteButton } from "@/components/RequestDeleteButton";
 
 export const Route = createFileRoute("/_authenticated/approvals")({
   component: ApprovalsPage,
@@ -77,12 +81,18 @@ function ApprovalsPage() {
             <TabsTrigger value="suppliers">
               <Building2 className="mr-2 h-4 w-4" /> Dodavatelé
             </TabsTrigger>
+            <TabsTrigger value="deletions">
+              <Trash2 className="mr-2 h-4 w-4" /> Žádosti o smazání
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="purchases" className="mt-4">
             <PurchasesTab isAdmin={isAdmin} />
           </TabsContent>
           <TabsContent value="suppliers" className="mt-4">
             <SuppliersTab isAdmin={isAdmin} />
+          </TabsContent>
+          <TabsContent value="deletions" className="mt-4">
+            <DeletionsTab isAdmin={isAdmin} />
           </TabsContent>
         </Tabs>
       </div>
@@ -95,7 +105,6 @@ function SuppliersTab({ isAdmin }: { isAdmin: boolean }) {
   const fetchList = useServerFn(listSuppliers);
   const create = useServerFn(createSupplier);
   const decide = useServerFn(decideSupplier);
-  const del = useServerFn(deleteSupplier);
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["suppliers"],
     queryFn: () => fetchList(),
@@ -132,12 +141,6 @@ function SuppliersTab({ isAdmin }: { isAdmin: boolean }) {
     } catch (err: any) {
       toast.error(err.message ?? "Chyba");
     }
-  }
-
-  async function remove(id: string) {
-    if (!confirm("Smazat dodavatele?")) return;
-    await del({ data: { id } });
-    refetch();
   }
 
   return (
@@ -203,9 +206,12 @@ function SuppliersTab({ isAdmin }: { isAdmin: boolean }) {
                     </Button>
                   )}
                   {isAdmin && (
-                    <Button size="sm" variant="ghost" onClick={() => remove(s.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <RequestDeleteButton
+                      entityType="suppliers"
+                      entityId={s.id}
+                      entityLabel={s.name}
+                      onRequested={() => refetch()}
+                    />
                   )}
                 </div>
               </div>
@@ -222,7 +228,6 @@ function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
   const fetchSuppliers = useServerFn(listSuppliers);
   const create = useServerFn(createPurchase);
   const decide = useServerFn(decidePurchase);
-  const del = useServerFn(deletePurchase);
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["purchases"],
     queryFn: () => fetchList(),
@@ -272,12 +277,6 @@ function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
     } catch (err: any) {
       toast.error(err.message ?? "Chyba");
     }
-  }
-
-  async function remove(id: string) {
-    if (!confirm("Smazat nákup?")) return;
-    await del({ data: { id } });
-    refetch();
   }
 
   const approvedSuppliers = (suppliers ?? []).filter((s: any) => s.status === "approved");
@@ -413,9 +412,12 @@ function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
                     </Button>
                   )}
                   {isAdmin && (
-                    <Button size="sm" variant="ghost" onClick={() => remove(p.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <RequestDeleteButton
+                      entityType="purchases"
+                      entityId={p.id}
+                      entityLabel={p.title}
+                      onRequested={() => refetch()}
+                    />
                   )}
                 </div>
               </div>
