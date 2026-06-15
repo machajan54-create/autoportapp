@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { ArrowLeft, FileText, FileSignature, Send, Mail, Trash2, Plus, Loader2, Download, Link as LinkIcon } from "lucide-react";
+import { ArrowLeft, FileText, FileSignature, Mail, Trash2, Plus, Loader2, Download, Link as LinkIcon, Lock, Activity } from "lucide-react";
 import { SignaturePad } from "@/components/SignaturePad";
 import {
   getDemoOrder, createDemoOrder, updateDemoOrder,
@@ -21,6 +21,8 @@ import {
   saveSellerSignature, clearSellerSignature,
 } from "@/lib/demo-orders.functions";
 import { listClients, createClient } from "@/lib/clients.functions";
+import { getMyAccess } from "@/lib/claims.functions";
+import { RequestDeleteButton } from "@/components/RequestDeleteButton";
 
 export const Route = createFileRoute("/_authenticated/demo-orders/$id")({
   component: DemoOrderForm,
