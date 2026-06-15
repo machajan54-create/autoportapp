@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Wrench, Plus, Trash2, ImageIcon, Loader2, X } from "lucide-react";
+import { Wrench, Plus, ImageIcon, Loader2, X } from "lucide-react";
+import { RequestDeleteButton } from "@/components/RequestDeleteButton";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
@@ -253,14 +254,17 @@ function DefectsPage() {
                         </Select>
                       )}
                       {canEdit && (
-                        <Button
+                        <RequestDeleteButton
+                          entityType="defects"
+                          entityId={r.id}
+                          entityLabel={`Vada: ${r.title ?? ""}`}
                           variant="ghost"
                           size="sm"
                           className="text-destructive hover:text-destructive"
-                          onClick={() => handleDelete(r.id)}
+                          title="Požádat o smazání závady"
                         >
-                          <Trash2 className="mr-1 h-4 w-4" /> Smazat
-                        </Button>
+                          <Trash2Like />Smazat
+                        </RequestDeleteButton>
                       )}
                     </div>
                   </div>
