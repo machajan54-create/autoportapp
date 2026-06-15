@@ -517,11 +517,14 @@ export type Database = {
           contact: string | null
           created_at: string
           expected_close_date: string | null
+          follow_up_at: string | null
+          follow_up_notified_at: string | null
           id: string
           notes: string | null
           owner_id: string | null
           owner_name: string | null
           stage: string
+          stage_changed_at: string
           title: string
           updated_at: string
           value_czk: number | null
@@ -531,11 +534,14 @@ export type Database = {
           contact?: string | null
           created_at?: string
           expected_close_date?: string | null
+          follow_up_at?: string | null
+          follow_up_notified_at?: string | null
           id?: string
           notes?: string | null
           owner_id?: string | null
           owner_name?: string | null
           stage?: string
+          stage_changed_at?: string
           title: string
           updated_at?: string
           value_czk?: number | null
@@ -545,11 +551,14 @@ export type Database = {
           contact?: string | null
           created_at?: string
           expected_close_date?: string | null
+          follow_up_at?: string | null
+          follow_up_notified_at?: string | null
           id?: string
           notes?: string | null
           owner_id?: string | null
           owner_name?: string | null
           stage?: string
+          stage_changed_at?: string
           title?: string
           updated_at?: string
           value_czk?: number | null
@@ -1178,6 +1187,59 @@ export type Database = {
         }
         Relationships: []
       }
+      vykup_photos: {
+        Row: {
+          content_type: string | null
+          created_at: string
+          defect_note: string | null
+          file_name: string
+          has_defect: boolean
+          id: string
+          size_bytes: number
+          storage_path: string
+          updated_at: string
+          uploader_id: string | null
+          uploader_name: string | null
+          vykup_id: string
+        }
+        Insert: {
+          content_type?: string | null
+          created_at?: string
+          defect_note?: string | null
+          file_name: string
+          has_defect?: boolean
+          id?: string
+          size_bytes?: number
+          storage_path: string
+          updated_at?: string
+          uploader_id?: string | null
+          uploader_name?: string | null
+          vykup_id: string
+        }
+        Update: {
+          content_type?: string | null
+          created_at?: string
+          defect_note?: string | null
+          file_name?: string
+          has_defect?: boolean
+          id?: string
+          size_bytes?: number
+          storage_path?: string
+          updated_at?: string
+          uploader_id?: string | null
+          uploader_name?: string | null
+          vykup_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vykup_photos_vykup_id_fkey"
+            columns: ["vykup_id"]
+            isOneToOne: false
+            referencedRelation: "vykupy"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vykupy: {
         Row: {
           created_at: string
@@ -1185,6 +1247,8 @@ export type Database = {
           external_priced_amount: number | null
           external_priced_at: string | null
           external_priced_by: string | null
+          follow_up_at: string | null
+          follow_up_notified_at: string | null
           id: string
           internal_priced_amount: number | null
           internal_priced_at: string | null
@@ -1198,6 +1262,7 @@ export type Database = {
           prodano_za: number | null
           rok_vyroby: number | null
           stav: string
+          stav_changed_at: string
           telefon: string | null
           vykoupeno_za: number | null
           zdroj: string | null
@@ -1210,6 +1275,8 @@ export type Database = {
           external_priced_amount?: number | null
           external_priced_at?: string | null
           external_priced_by?: string | null
+          follow_up_at?: string | null
+          follow_up_notified_at?: string | null
           id?: string
           internal_priced_amount?: number | null
           internal_priced_at?: string | null
@@ -1223,6 +1290,7 @@ export type Database = {
           prodano_za?: number | null
           rok_vyroby?: number | null
           stav?: string
+          stav_changed_at?: string
           telefon?: string | null
           vykoupeno_za?: number | null
           zdroj?: string | null
@@ -1235,6 +1303,8 @@ export type Database = {
           external_priced_amount?: number | null
           external_priced_at?: string | null
           external_priced_by?: string | null
+          follow_up_at?: string | null
+          follow_up_notified_at?: string | null
           id?: string
           internal_priced_amount?: number | null
           internal_priced_at?: string | null
@@ -1248,6 +1318,7 @@ export type Database = {
           prodano_za?: number | null
           rok_vyroby?: number | null
           stav?: string
+          stav_changed_at?: string
           telefon?: string | null
           vykoupeno_za?: number | null
           zdroj?: string | null
