@@ -164,6 +164,7 @@ function VykupForm() {
         stav: form.stav,
         poznamka: form.poznamka.trim() || null,
         follow_up_at: form.follow_up_at ? new Date(form.follow_up_at).toISOString() : null,
+        follow_up_notified_at: null,
         internal_priced_by_user_id: form.internal_priced_by_user_id || null,
         internal_priced_amount: toNum(form.internal_priced_amount) ?? null,
         internal_priced_at: form.internal_priced_at || null,
