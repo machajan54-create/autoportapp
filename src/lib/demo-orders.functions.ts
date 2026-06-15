@@ -390,6 +390,7 @@ async function buildOrderPdf(order: any, client: any): Promise<Uint8Array> {
 
 async function buildInvoicePdf(order: any, client: any, invoiceNumber: string): Promise<Uint8Array> {
   const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
+  const QRCode = (await import("qrcode")).default;
   const pdf = await PDFDocument.create();
   pdf.setTitle(`Zalohova faktura ${invoiceNumber}`);
   pdf.setCreator("AutoPort App");
@@ -461,19 +462,44 @@ async function buildInvoicePdf(order: any, client: any, invoiceNumber: string): 
   draw("(zalohova faktura - po pripsani platby vystavime danovy doklad)", marginX + 16, y - 66, { size: 7.5, color: rgb(0.78, 0.82, 0.88) });
   y -= 90;
 
+  // Bank details + Czech SPAYD QR code
+  const BANK_ACCOUNT = "313393044";
+  const BANK_CODE = "5500"; // Raiffeisenbank
+  const BANK_NAME = "Raiffeisenbank a.s.";
+  const iban = buildCzIban(BANK_ACCOUNT, BANK_CODE);
+  const ibanPretty = iban.replace(/(.{4})/g, "$1 ").trim();
+  const amount = Number(order.zaloha || 0).toFixed(2);
+  const vs = (order.order_number || "").replace(/[^0-9]/g, "") || invoiceNumber.replace(/[^0-9]/g, "");
+  const spayd = `SPD*1.0*ACC:${iban}*AM:${amount}*CC:CZK*X-VS:${vs}*MSG:ZALOHA ${order.order_number || invoiceNumber}`;
+
   draw("PLATEBNI UDAJE", marginX, y, { size: 9, bold: true, color: muted });
   y -= 6;
   page.drawLine({ start: { x: marginX, y }, end: { x: width - marginX, y }, thickness: 0.5, color: hair });
   y -= 18;
+  const blockTop = y;
   const kv2 = (k: string, v: string) => {
     draw(k, marginX, y, { size: 8.5, color: muted });
-    draw(v, marginX + 140, y, { size: 10, bold: true });
+    draw(v, marginX + 130, y, { size: 10, bold: true });
     y -= 16;
   };
-  kv2("Banka", "doplnte ucet");
-  kv2("Cislo uctu", "doplnte");
-  kv2("Variabilni symbol", invoiceNumber.replace(/[^0-9]/g, ""));
-  kv2("Specificky symbol", order.order_number?.replace(/[^0-9]/g, "") || "");
+  kv2("Banka", BANK_NAME);
+  kv2("Cislo uctu", `${BANK_ACCOUNT}/${BANK_CODE}`);
+  kv2("IBAN", ibanPretty);
+  kv2("Variabilni symbol", vs);
+  kv2("Castka", `${amount} CZK`);
+
+  // QR platba
+  try {
+    const qrDataUrl = await QRCode.toDataURL(spayd, { errorCorrectionLevel: "M", margin: 1, width: 320 });
+    const qrBytes = Uint8Array.from(atob(qrDataUrl.split(",")[1]), (c) => c.charCodeAt(0));
+    const qrImg = await pdf.embedPng(qrBytes);
+    const qrSize = 110;
+    const qrX = width - marginX - qrSize;
+    const qrY = blockTop - qrSize + 8;
+    page.drawRectangle({ x: qrX - 8, y: qrY - 22, width: qrSize + 16, height: qrSize + 30, color: rgb(1, 1, 1), borderColor: hair, borderWidth: 0.5 });
+    page.drawImage(qrImg, { x: qrX, y: qrY, width: qrSize, height: qrSize });
+    draw("QR PLATBA", qrX + qrSize / 2 - 22, qrY - 14, { size: 8, bold: true, color: muted });
+  } catch { /* ignore qr errors */ }
 
   // Footer
   page.drawLine({ start: { x: marginX, y: 40 }, end: { x: width - marginX, y: 40 }, thickness: 0.4, color: hair });
@@ -487,6 +513,19 @@ function bytesToBase64(bytes: Uint8Array): string {
   const chunk = 0x8000;
   for (let i = 0; i < bytes.length; i += chunk) bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
   return btoa(bin);
+}
+
+function buildCzIban(account: string, bankCode: string, prefix = ""): string {
+  const bban = bankCode.padStart(4, "0") + prefix.padStart(6, "0") + account.padStart(10, "0");
+  // CZ -> 12, 35  => "123500" appended for check calc
+  const check = 98 - mod97(bban + "123500");
+  return "CZ" + check.toString().padStart(2, "0") + bban;
+}
+
+function mod97(num: string): number {
+  let rem = 0;
+  for (const ch of num) rem = (rem * 10 + (ch.charCodeAt(0) - 48)) % 97;
+  return rem;
 }
 
 async function uploadAndRecord(args: {
