@@ -111,6 +111,12 @@ const ENTITY_REGISTRY: Record<
     label: (r) => `Absence ${r?.kind ?? ""} od ${r?.date_from ?? ""}`,
     typeLabel: "Absence",
   },
+  attendance_employees: {
+    table: "attendance_employees",
+    select: "name",
+    label: (r) => `Zaměstnanec: ${r?.name ?? ""}`,
+    typeLabel: "Zaměstnanec docházky",
+  },
   task_comments: {
     table: "task_comments",
     select: "body",
