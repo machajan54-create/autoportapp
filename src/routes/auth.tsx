@@ -4,7 +4,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import autoportLogo from "@/assets/autoport-logo.png.asset.json";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyAccess } from "@/lib/claims.functions";
@@ -60,17 +59,6 @@ function AuthPage() {
       setBusy(false);
       return toast.error((e as Error).message);
     }
-  }
-
-  async function signUp(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    const { error } = await supabase.auth.signUp({
-      email, password, options: { emailRedirectTo: window.location.origin },
-    });
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success("Účet vytvořen. Vyčkejte na schválení super adminem.");
   }
 
   async function sendReset(e: React.FormEvent) {
