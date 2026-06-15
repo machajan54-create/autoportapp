@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, ClipboardSignature } from "lucide-react";
 import { RequestDeleteButton } from "@/components/RequestDeleteButton";
-import { listDemoOrders, deleteDemoOrder } from "@/lib/demo-orders.functions";
+import { listDemoOrders } from "@/lib/demo-orders.functions";
 import { getMyAccess } from "@/lib/claims.functions";
 import { cn } from "@/lib/utils";
 
@@ -39,7 +39,6 @@ function DemoOrdersList() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const fetchList = useServerFn(listDemoOrders);
-  const delOrder = useServerFn(deleteDemoOrder);
   const fetchAccess = useServerFn(getMyAccess);
   const { data: access } = useQuery({ queryKey: ["my-access"], queryFn: () => fetchAccess({}) });
   const isAdmin = !!access?.isAdmin;
@@ -58,17 +57,6 @@ function DemoOrdersList() {
       (r.client?.company || "").toLowerCase().includes(t)
     );
   });
-
-  async function onDelete(id: string) {
-    if (!confirm("Opravdu trvale smazat tuto objednávku včetně všech dokumentů?")) return;
-    try {
-      await delOrder({ data: { id } });
-      toast.success("Smazáno");
-      qc.invalidateQueries({ queryKey: ["demo-orders"] });
-    } catch (e) {
-      toast.error((e as Error).message);
-    }
-  }
 
   return (
     <AdminShell requireModule="demo_orders">

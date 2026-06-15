@@ -22,7 +22,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getMyAccess } from "@/lib/claims.functions";
 import {
-  listDefects, createDefect, updateDefect, deleteDefect, getDefectPhotoUrls,
+  listDefects, createDefect, updateDefect, getDefectPhotoUrls,
   DEFECT_PRIORITY, DEFECT_STATUS, DEFECT_PRIORITY_LABEL, DEFECT_STATUS_LABEL,
 } from "@/lib/defects.functions";
 import { cn } from "@/lib/utils";
@@ -53,7 +53,6 @@ function DefectsPage() {
   const fetchAccess = useServerFn(getMyAccess);
   const createFn = useServerFn(createDefect);
   const updateFn = useServerFn(updateDefect);
-  const deleteFn = useServerFn(deleteDefect);
   const signFn = useServerFn(getDefectPhotoUrls);
 
   const [userId, setUserId] = useState<string | null>(null);
@@ -94,17 +93,6 @@ function DefectsPage() {
   const photoUrls = signed?.urls ?? {};
 
   const [createOpen, setCreateOpen] = useState(false);
-
-  async function handleDelete(id: string) {
-    if (!confirm("Opravdu smazat tuto závadu?")) return;
-    try {
-      await deleteFn({ data: { id } });
-      toast.success("Závada smazána");
-      qc.invalidateQueries({ queryKey: ["defects"] });
-    } catch (e: any) {
-      toast.error(e?.message || "Nepodařilo se smazat");
-    }
-  }
 
   async function handleStatus(id: string, status: typeof DEFECT_STATUS[number]) {
     try {
