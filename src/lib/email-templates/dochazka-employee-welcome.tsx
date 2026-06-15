@@ -67,7 +67,7 @@ const Email = ({
 
             <Hr style={styles.hr} />
 
-            <Heading as="h2" style={styles.h2}>Jak modul Docházka funguje</Heading>
+            <Heading as="h2" style={styles.h1}>Jak modul Docházka funguje</Heading>
             <Text style={styles.lead}>
               <strong>1. Píchnutí na kiosku (terminálu).</strong> Na sdíleném
               zařízení v provozovně otevřete docházkový kiosek, zadáte svůj PIN
