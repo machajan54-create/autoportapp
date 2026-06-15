@@ -110,9 +110,16 @@ function VykupyList() {
                     <div className="truncate font-semibold">{v.znacka} {v.model}</div>
                     <div className="truncate text-sm text-muted-foreground">{v.klient}</div>
                   </div>
-                  <span className={cn("shrink-0 rounded-md border px-2 py-0.5 text-xs font-medium", stavBadge[v.stav] ?? "bg-muted")}>
-                    {v.stav}
-                  </span>
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <span className={cn("rounded-md border px-2 py-0.5 text-xs font-medium", stavBadge[v.stav] ?? "bg-muted")}>
+                      {v.stav}
+                    </span>
+                    {v.stav_changed_at && (
+                      <span className="text-[10px] text-muted-foreground">
+                        {daysInStav(v.stav_changed_at)} d ve stavu
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="mt-2 flex items-center justify-between gap-2 text-sm">
                   <div className="text-muted-foreground">{formatDate(v.datum_vykupu)}{v.zpracoval ? ` · ${v.zpracoval}` : ""}</div>
@@ -165,9 +172,16 @@ function VykupyList() {
                       {m == null ? "—" : formatKc(m)}
                     </TableCell>
                     <TableCell>
-                      <span className={cn("inline-block rounded-md border px-2 py-0.5 text-xs font-medium", stavBadge[v.stav] ?? "bg-muted")}>
-                        {v.stav}
-                      </span>
+                      <div className="flex flex-col gap-0.5">
+                        <span className={cn("inline-block w-fit rounded-md border px-2 py-0.5 text-xs font-medium", stavBadge[v.stav] ?? "bg-muted")}>
+                          {v.stav}
+                        </span>
+                        {v.stav_changed_at && (
+                          <span className="text-[10px] text-muted-foreground">
+                            {daysInStav(v.stav_changed_at)} d
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>{v.zpracoval ?? "—"}</TableCell>
                     <TableCell>{formatDate(v.datum_vykupu)}</TableCell>
