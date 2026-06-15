@@ -1812,6 +1812,7 @@ export type Database = {
         | "logbook"
         | "tasks"
         | "demo_orders"
+        | "evidence_zakazek"
       app_role: "admin" | "employee"
       approval_status: "pending" | "approved" | "rejected"
       claim_status:
@@ -1977,6 +1978,7 @@ export const Constants = {
         "logbook",
         "tasks",
         "demo_orders",
+        "evidence_zakazek",
       ],
       app_role: ["admin", "employee"],
       approval_status: ["pending", "approved", "rejected"],
