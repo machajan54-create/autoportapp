@@ -480,6 +480,25 @@ function DemoOrderForm() {
         </DialogContent>
       </Dialog>
 
+      {/* Seller signature dialog */}
+      <Dialog open={sellerOpen} onOpenChange={setSellerOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Podpis prodejce</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <Field label="Jméno prodejce"><Input value={sellerName} onChange={(e) => setSellerName(e.target.value)} /></Field>
+            <SignaturePad onChange={setSellerSig} />
+            <p className="text-xs text-muted-foreground">Podpis se automaticky vloží do PDF objednávky.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSellerOpen(false)}>Zrušit</Button>
+            <Button onClick={onSaveSellerSignature} disabled={busy === "sign-seller"}>
+              {busy === "sign-seller" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Uložit podpis
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* New client dialog */}
       <Dialog open={clientOpen} onOpenChange={setClientOpen}>
         <DialogContent>
