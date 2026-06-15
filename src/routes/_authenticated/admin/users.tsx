@@ -15,7 +15,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { UserPlus, KeyRound, Copy, Trash2, Power } from "lucide-react";
+import { UserPlus, KeyRound, Copy, Trash2, Power, Mail } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import {
   listUsers,
   setUserRole,
@@ -25,6 +26,7 @@ import {
   adminSetUserPassword,
   adminSetUserActive,
   adminDeleteUser,
+  adminSendWelcomeEmail,
 } from "@/lib/claims.functions";
 import { toast } from "sonner";
 
@@ -58,6 +60,7 @@ function UsersPage() {
   const setPwd = useServerFn(adminSetUserPassword);
   const setActive = useServerFn(adminSetUserActive);
   const deleteUser = useServerFn(adminDeleteUser);
+  const sendWelcome = useServerFn(adminSendWelcomeEmail);
   const { data, isLoading } = useQuery({ queryKey: ["users"], queryFn: () => fetch({}) });
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -65,6 +68,10 @@ function UsersPage() {
   const [pwdValue, setPwdValue] = useState("");
   const [pwdBusy, setPwdBusy] = useState(false);
   const [pwdGenerated, setPwdGenerated] = useState<string | null>(null);
+  const [welcomeUser, setWelcomeUser] = useState<{ id: string; email: string } | null>(null);
+  const [welcomePwd, setWelcomePwd] = useState("");
+  const [welcomeNote, setWelcomeNote] = useState("");
+  const [welcomeBusy, setWelcomeBusy] = useState(false);
   const [newUser, setNewUser] = useState({
     email: "",
     password: "",
@@ -124,6 +131,28 @@ function UsersPage() {
       toast.success("Uživatel smazán");
     } catch (e) {
       toast.error((e as Error).message);
+    }
+  }
+
+  async function submitWelcome() {
+    if (!welcomeUser) return;
+    setWelcomeBusy(true);
+    try {
+      await sendWelcome({
+        data: {
+          user_id: welcomeUser.id,
+          password: welcomePwd.trim() || undefined,
+          note: welcomeNote.trim() || undefined,
+        },
+      });
+      toast.success("Informační e-mail odeslán");
+      setWelcomeUser(null);
+      setWelcomePwd("");
+      setWelcomeNote("");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setWelcomeBusy(false);
     }
   }
 
@@ -321,6 +350,18 @@ function UsersPage() {
                       onClick={() => openPwd({ id: u.id, email: u.email ?? "" })}
                     >
                       <KeyRound className="mr-1.5 h-3.5 w-3.5" /> Heslo
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setWelcomeUser({ id: u.id, email: u.email ?? "" });
+                        setWelcomePwd("");
+                        setWelcomeNote("");
+                      }}
+                      title="Zaslat informační e-mail o založení účtu"
+                    >
+                      <Mail className="mr-1.5 h-3.5 w-3.5" /> Info e-mail
                     </Button>
                     <Button
                       size="sm"
