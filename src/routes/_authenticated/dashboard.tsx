@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { AdminShell } from "@/components/AdminShell";
 import { listClaims, getMyAccess } from "@/lib/claims.functions";
 import { listVykupy, formatKc, marze } from "@/lib/vykupy";
@@ -228,16 +229,7 @@ function DashboardPage() {
   }
 
   if (!isAdmin) {
-    return (
-      <AdminShell>
-        <div className="mx-auto max-w-md px-4 py-20 text-center">
-          <h2 className="text-lg font-semibold">Pouze pro majitele / ředitele</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Tento dashboard je dostupný jen super adminům.
-          </p>
-        </div>
-      </AdminShell>
-    );
+    return <UserDashboard modules={(access?.modules ?? []) as string[]} />;
   }
 
   const activeClaims = (claims ?? []).filter((c) => c.status !== "done" && c.status !== "closed").length;
