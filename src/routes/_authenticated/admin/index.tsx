@@ -20,6 +20,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { RequestDeleteButton } from "@/components/RequestDeleteButton";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   component: AdminList,
