@@ -650,7 +650,14 @@ function RecordsTab() {
                         </>
                       )}
                       <Button size="icon" variant="ghost" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></Button>
-                      <Button size="icon" variant="ghost" onClick={() => onDelete(r.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      <RequestDeleteButton
+                        entityType="attendance_records"
+                        entityId={r.id}
+                        entityLabel={`Docházka ${formatDate(r.date)} – ${empMap.get(r.employee_id)?.name ?? ""}`}
+                        size="icon"
+                        className="text-destructive"
+                        title="Požádat o smazání záznamu"
+                      />
                     </div>
                   </TableCell>
                 </TableRow>
