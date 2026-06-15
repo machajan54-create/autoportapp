@@ -259,10 +259,16 @@ function DemoOrderForm() {
     });
   }
   async function onOpenDoc(docId: string) {
+    // Pre-open window synchronously to avoid popup blocker after await.
+    const win = window.open("", "_blank");
     try {
       const r = await getDocUrl({ data: { documentId: docId } });
-      window.open(r.url, "_blank");
-    } catch (e) { toast.error((e as Error).message); }
+      if (win) win.location.href = r.url;
+      else window.location.href = r.url;
+    } catch (e) {
+      if (win) win.close();
+      toast.error((e as Error).message);
+    }
   }
 
   async function onCreateClient() {

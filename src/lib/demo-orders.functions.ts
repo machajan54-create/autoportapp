@@ -168,15 +168,13 @@ export const deleteDemoOrder = createServerFn({ method: "POST" })
 // ============= PDF helpers =============
 
 function sanitize(s: string): string {
-  return (s ?? "")
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^\x20-\x7e\n]/g, "?");
+  // With Unicode fonts (Roboto) embedded we keep diacritics; just strip control chars.
+  return (s ?? "").replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "");
 }
 
 function fmtKc(n: number | null | undefined): string {
   if (n == null) return "—";
-  return new Intl.NumberFormat("cs-CZ").format(Number(n)) + " Kc";
+  return new Intl.NumberFormat("cs-CZ").format(Number(n)) + " Kč";
 }
 
 function fmtDate(s: string | null | undefined): string {
@@ -194,13 +192,41 @@ const SIG = {
 };
 
 const BRAND = {
-  primary: [0.95, 0.42, 0.0] as [number, number, number], // orange
-  dark: [0.10, 0.13, 0.18] as [number, number, number],
+  primary: [0.93, 0.36, 0.04] as [number, number, number], // sytější oranžová
+  primarySoft: [1.0, 0.93, 0.85] as [number, number, number],
+  dark: [0.07, 0.10, 0.15] as [number, number, number],
+  ink: [0.10, 0.13, 0.18] as [number, number, number],
   muted: [0.42, 0.46, 0.52] as [number, number, number],
-  hairline: [0.88, 0.90, 0.92] as [number, number, number],
+  hairline: [0.90, 0.92, 0.94] as [number, number, number],
   panel: [0.97, 0.97, 0.98] as [number, number, number],
   panelStrong: [1, 0.93, 0.78] as [number, number, number],
 };
+
+// ============= Unicode font loader (Roboto, supports Czech) =============
+const FONT_URL_REG = "https://cdn.jsdelivr.net/gh/google/fonts@main/apache/roboto/static/Roboto-Regular.ttf";
+const FONT_URL_BOLD = "https://cdn.jsdelivr.net/gh/google/fonts@main/apache/roboto/static/Roboto-Bold.ttf";
+let _fontCache: Promise<{ regular: Uint8Array; bold: Uint8Array }> | null = null;
+async function loadUnicodeFonts() {
+  if (!_fontCache) {
+    _fontCache = (async () => {
+      const [r, b] = await Promise.all([fetch(FONT_URL_REG), fetch(FONT_URL_BOLD)]);
+      if (!r.ok || !b.ok) throw new Error("Nepodařilo se stáhnout font Roboto");
+      const [rb, bb] = await Promise.all([r.arrayBuffer(), b.arrayBuffer()]);
+      return { regular: new Uint8Array(rb), bold: new Uint8Array(bb) };
+    })().catch((e) => { _fontCache = null; throw e; });
+  }
+  return _fontCache;
+}
+async function embedUnicodeFonts(pdfDoc: any) {
+  const fontkit = (await import("@pdf-lib/fontkit")).default;
+  pdfDoc.registerFontkit(fontkit);
+  const { regular, bold } = await loadUnicodeFonts();
+  const [font, fontB] = await Promise.all([
+    pdfDoc.embedFont(regular, { subset: true }),
+    pdfDoc.embedFont(bold, { subset: true }),
+  ]);
+  return { font, fontB };
+}
 
 async function embedSignatureAt(
   pdfDoc: any,
@@ -229,8 +255,7 @@ async function buildOrderPdf(order: any, client: any): Promise<Uint8Array> {
   pdf.setCreator("AutoPort App");
   let page = pdf.addPage([595.28, 841.89]);
   const { width, height } = page.getSize();
-  const font = await pdf.embedFont(StandardFonts.Helvetica);
-  const fontB = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const { font, fontB } = await embedUnicodeFonts(pdf);
   const black = rgb(0.10, 0.13, 0.18);
   const muted = rgb(...BRAND.muted);
   const primary = rgb(...BRAND.primary);
@@ -398,8 +423,7 @@ async function buildInvoicePdf(order: any, client: any, invoiceNumber: string): 
   pdf.setCreator("AutoPort App");
   const page = pdf.addPage([595.28, 841.89]);
   const { width, height } = page.getSize();
-  const font = await pdf.embedFont(StandardFonts.Helvetica);
-  const fontB = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const { font, fontB } = await embedUnicodeFonts(pdf);
   const black = rgb(...BRAND.dark);
   const muted = rgb(...BRAND.muted);
   const primary = rgb(...BRAND.primary);
@@ -583,15 +607,9 @@ export const generateInvoicePdf = createServerFn({ method: "POST" })
     let invoiceNumber = (order as any).invoice_number as string | null;
     if (!invoiceNumber) {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data: seq, error: seqErr } = await supabaseAdmin.rpc("nextval" as any, { sequence_name: "public.demo_invoice_seq" } as any);
-      let n: number;
-      if (seqErr || seq == null) {
-        // fallback: use timestamp-derived number
-        n = Math.floor(Math.random() * 9000) + 1000;
-      } else {
-        n = Number(seq);
-      }
-      invoiceNumber = `ZF-${new Date().getFullYear()}-${String(n).padStart(4, "0")}`;
+      const { data: nextNum, error: seqErr } = await supabaseAdmin.rpc("next_demo_invoice_number" as any);
+      if (seqErr || !nextNum) throw new Error("Nepodařilo se vygenerovat číslo faktury: " + (seqErr?.message || "prázdná odpověď"));
+      invoiceNumber = String(nextNum);
       await supabaseAdmin.from("demo_orders" as never).update({ invoice_number: invoiceNumber } as never).eq("id", data.orderId);
     }
     const bytes = await buildInvoicePdf(order, client, invoiceNumber);
@@ -605,7 +623,7 @@ async function buildSignedFromBase(baseBytes: Uint8Array, signatureDataUrl: stri
   const pdf = await PDFDocument.load(baseBytes);
   const pages = pdf.getPages();
   const last = pages[pages.length - 1];
-  const font = await pdf.embedFont(StandardFonts.Helvetica);
+  const { font } = await embedUnicodeFonts(pdf);
 
   await embedSignatureAt(pdf, last, signatureDataUrl, {
     x: SIG.buyerX, y: SIG.lineY + 4, w: SIG.buyerW, h: SIG.buyerH,
