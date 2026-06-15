@@ -209,30 +209,6 @@ function AuthPage() {
             </div>
           </div>
 
-          {/* Demo footer */}
-          {!resetMode && (
-            <div className="border-t border-white/5 bg-slate-950/60 px-7 py-5">
-              <div className="rounded-xl border border-dashed border-slate-700/80 p-4">
-                <p className="text-center text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
-                  Demo přístup
-                </p>
-                <p className="mt-2 text-center text-xs text-slate-300">
-                  <span className="font-medium">demo@autoport.app</span>
-                  <span className="mx-2 text-slate-600">·</span>
-                  <span className="font-medium">Demo1234!</span>
-                </p>
-                <Button
-                  type="button"
-                  onClick={demoLogin}
-                  disabled={busy}
-                  variant="outline"
-                  className="mt-3 h-10 w-full rounded-lg border-slate-700 bg-transparent text-sm font-semibold text-slate-100 hover:bg-slate-800 hover:text-white"
-                >
-                  Přihlásit jako demo
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
 
         <div className="mt-6 text-center text-sm">
