@@ -278,7 +278,7 @@ function DealsPage() {
                 <TableHead>Název</TableHead>
                 <TableHead>Klient</TableHead>
                 <TableHead>Kontakt</TableHead>
-                <TableHead>Hodnota</TableHead>
+                <TableHead>Vůz</TableHead>
                 <TableHead>Fáze</TableHead>
                 <TableHead>Uzavření</TableHead>
                 <TableHead>Vlastník</TableHead>
@@ -350,7 +350,7 @@ function DealsPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Hodnota (Kč)</Label>
+                <Label>Vůz</Label>
                 <Input type="number" min="0" step="1" value={form.value_czk} onChange={(e) => setForm({ ...form, value_czk: e.target.value })} />
               </div>
               <div>
