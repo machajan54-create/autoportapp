@@ -474,7 +474,6 @@ function RecordsTab() {
   const fetchS = useServerFn(listShifts);
   const fetchSettings = useServerFn(getDochazkaSettings);
   const upsert = useServerFn(upsertRecord);
-  const del = useServerFn(deleteRecord);
   const submitFn = useServerFn(submitRecord);
   const decideFn = useServerFn(decideRecord);
   const bulkDecide = useServerFn(bulkDecideRecords);
