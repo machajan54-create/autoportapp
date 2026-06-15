@@ -19,7 +19,7 @@ import { listVykupy } from "@/lib/vykupy";
 import { listDefects } from "@/lib/defects.functions";
 import { listEmployees as listDochEmployees } from "@/lib/dochazka.functions";
 
-type ModuleKey = "claims" | "vykupy" | "vykupy_external" | "users" | "approvals" | "dashboard" | "dochazka" | "defects" | "deals" | "logbook";
+type ModuleKey = "claims" | "vykupy" | "vykupy_external" | "users" | "approvals" | "dashboard" | "dochazka" | "defects" | "deals" | "logbook" | "tasks";
 
 export function CommandPalette({
   isAdmin,
