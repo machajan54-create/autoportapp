@@ -255,8 +255,7 @@ async function buildOrderPdf(order: any, client: any): Promise<Uint8Array> {
   pdf.setCreator("AutoPort App");
   let page = pdf.addPage([595.28, 841.89]);
   const { width, height } = page.getSize();
-  const font = await pdf.embedFont(StandardFonts.Helvetica);
-  const fontB = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const { font, fontB } = await embedUnicodeFonts(pdf);
   const black = rgb(0.10, 0.13, 0.18);
   const muted = rgb(...BRAND.muted);
   const primary = rgb(...BRAND.primary);
