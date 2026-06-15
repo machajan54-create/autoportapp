@@ -983,6 +983,54 @@ export type Database = {
         }
         Relationships: []
       }
+      tasks: {
+        Row: {
+          assignee_id: string | null
+          assignee_name: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          creator_name: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          priority: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assignee_id?: string | null
+          assignee_name?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          creator_name?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assignee_id?: string | null
+          assignee_name?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          creator_name?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_modules: {
         Row: {
           created_at: string
@@ -1160,6 +1208,7 @@ export type Database = {
         | "defects"
         | "deals"
         | "logbook"
+        | "tasks"
       app_role: "admin" | "employee"
       approval_status: "pending" | "approved" | "rejected"
       claim_status:
@@ -1321,6 +1370,7 @@ export const Constants = {
         "defects",
         "deals",
         "logbook",
+        "tasks",
       ],
       app_role: ["admin", "employee"],
       approval_status: ["pending", "approved", "rejected"],
