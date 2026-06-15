@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { AdminShell } from "@/components/AdminShell";
 import { listClaims, getMyAccess } from "@/lib/claims.functions";
 import { listVykupy, formatKc, marze } from "@/lib/vykupy";
@@ -228,16 +229,7 @@ function DashboardPage() {
   }
 
   if (!isAdmin) {
-    return (
-      <AdminShell>
-        <div className="mx-auto max-w-md px-4 py-20 text-center">
-          <h2 className="text-lg font-semibold">Pouze pro majitele / ředitele</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Tento dashboard je dostupný jen super adminům.
-          </p>
-        </div>
-      </AdminShell>
-    );
+    return <UserDashboard modules={(access?.modules ?? []) as string[]} />;
   }
 
   const activeClaims = (claims ?? []).filter((c) => c.status !== "done" && c.status !== "closed").length;
@@ -821,6 +813,234 @@ function PricerLeaderboard({
           </span>
         </div>
       ))}
+    </div>
+  );
+}
+
+// ============================================================
+//  USER DASHBOARD (non super-admin)
+// ============================================================
+
+import { listTasks } from "@/lib/tasks.functions";
+
+const MODULE_META: Record<
+  string,
+  { label: string; to: string; description: string; color: string; icon: any }
+> = {
+  claims: { label: "Pojistné zakázky", to: "/admin", description: "Spravujte pojistné události.", color: "bg-blue-500", icon: FolderOpen },
+  vykupy: { label: "Ojeté vozy", to: "/vykupy", description: "Výkupy a prodeje vozidel.", color: "bg-emerald-500", icon: CarIcon },
+  vykupy_external: { label: "Ojeté vozy – externí", to: "/vykupy", description: "Externí nacenění výkupů.", color: "bg-emerald-400", icon: CarIcon },
+  dochazka: { label: "Docházka", to: "/dochazka", description: "Vaše příchody, odchody a dovolené.", color: "bg-amber-500", icon: Timer },
+  defects: { label: "Závady", to: "/zavady", description: "Hlášení a řešení závad.", color: "bg-rose-500", icon: AlertTriangle },
+  deals: { label: "Obchodní případy", to: "/deals", description: "Příležitosti a obchody.", color: "bg-indigo-500", icon: Briefcase },
+  logbook: { label: "Kniha jízd", to: "/logbook", description: "Záznamy o jízdách a tankování.", color: "bg-cyan-500", icon: BookOpen },
+  tasks: { label: "Úkoly", to: "/ukoly", description: "Vaše úkoly a deadliny.", color: "bg-violet-500", icon: CheckSquare },
+  approvals: { label: "Schvalování", to: "/approvals", description: "Vaše žádosti a nákupy.", color: "bg-orange-500", icon: ClipboardList },
+  users: { label: "Uživatelé", to: "/admin/users", description: "Správa uživatelů.", color: "bg-slate-500", icon: Trophy },
+  dashboard: { label: "Dashboard", to: "/dashboard", description: "Přehled.", color: "bg-slate-500", icon: FolderOpen },
+};
+
+function UserDashboard({ modules }: { modules: string[] }) {
+  const [userId, setUserId] = useState<string | null>(null);
+  const [email, setEmail] = useState<string>("");
+  const [fullName, setFullName] = useState<string>("");
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data }) => {
+      const u = data.user;
+      if (!u) return;
+      setUserId(u.id);
+      setEmail(u.email ?? "");
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", u.id)
+        .maybeSingle();
+      setFullName(prof?.full_name ?? "");
+    });
+  }, []);
+
+  const visible = useMemo(
+    () => modules.filter((m) => m !== "dashboard" && m !== "users" && MODULE_META[m]),
+    [modules],
+  );
+
+  // ----- per-module quick stats -----
+  const fetchTasks = useServerFn(listTasks);
+  const { data: tasksData } = useQuery({
+    queryKey: ["user-dash", "tasks"],
+    queryFn: () => fetchTasks(),
+    enabled: modules.includes("tasks"),
+  });
+
+  const fetchDochRec = useServerFn(listDochazkaRecords);
+  const fetchDochAbs = useServerFn(listDochazkaAbsences);
+  const today = new Date().toISOString().slice(0, 10);
+  const monthFrom = today.slice(0, 7) + "-01";
+  const { data: dochRecs } = useQuery({
+    queryKey: ["user-dash", "doch", "recs", monthFrom],
+    queryFn: () => fetchDochRec({ data: { from: monthFrom } }),
+    enabled: modules.includes("dochazka"),
+  });
+  const { data: dochAbs } = useQuery({
+    queryKey: ["user-dash", "doch", "abs"],
+    queryFn: () => fetchDochAbs({}),
+    enabled: modules.includes("dochazka"),
+  });
+
+  const fetchPurchases = useServerFn(listPurchases);
+  const { data: myPurchases } = useQuery({
+    queryKey: ["user-dash", "purchases"],
+    queryFn: () => fetchPurchases({}),
+    enabled: modules.includes("approvals"),
+  });
+
+  const myTaskStats = useMemo(() => {
+    const rows = ((tasksData as any)?.rows ?? []) as any[];
+    const mine = rows.filter((t) => t.assignee_id === userId);
+    const open = mine.filter((t) => t.status !== "done").length;
+    const inProgress = mine.filter((t) => t.status === "in_progress").length;
+    const overdue = mine.filter(
+      (t) => t.status !== "done" && t.due_date && t.due_date < today,
+    ).length;
+    return { total: mine.length, open, inProgress, overdue };
+  }, [tasksData, userId, today]);
+
+  const myDochStats = useMemo(() => {
+    const recs = (dochRecs ?? []) as any[];
+    const hours = recs.reduce((s, r) => s + Number(r.hours_worked ?? 0), 0);
+    const todayRec = recs.find((r) => r.date === today);
+    const inWork = !!todayRec && !todayRec.check_out;
+    const pendingAbs = ((dochAbs ?? []) as any[]).filter((a) => a.status === "pending").length;
+    return { hours, inWork, pendingAbs };
+  }, [dochRecs, dochAbs, today]);
+
+  const myApprovalStats = useMemo(() => {
+    const rows = (myPurchases ?? []) as any[];
+    return {
+      total: rows.length,
+      pending: rows.filter((p) => p.status === "pending").length,
+      approved: rows.filter((p) => p.status === "approved").length,
+    };
+  }, [myPurchases]);
+
+  return (
+    <AdminShell>
+      <div className="mx-auto max-w-5xl p-4 md:p-8">
+        <header>
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            Vítejte zpět
+          </p>
+          <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-slate-900 md:text-3xl">
+            {fullName || email || "Můj přehled"}
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">{email}</p>
+        </header>
+
+        {visible.length === 0 ? (
+          <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
+            Zatím nemáte přidělený žádný modul. Obraťte se na administrátora.
+          </div>
+        ) : (
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {visible.map((key) => {
+              const meta = MODULE_META[key];
+              const Icon = meta.icon;
+              let stats: React.ReactNode = null;
+              if (key === "tasks") {
+                stats = (
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <UserStat label="Otevřené" value={myTaskStats.open} />
+                    <UserStat label="Probíhá" value={myTaskStats.inProgress} />
+                    <UserStat
+                      label="Po termínu"
+                      value={myTaskStats.overdue}
+                      valueClassName={myTaskStats.overdue > 0 ? "text-rose-600" : ""}
+                    />
+                  </div>
+                );
+              } else if (key === "dochazka") {
+                stats = (
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <UserStat label="Hodin / měsíc" value={myDochStats.hours.toFixed(1)} />
+                    <UserStat
+                      label="V práci"
+                      value={myDochStats.inWork ? "Ano" : "Ne"}
+                      valueClassName={myDochStats.inWork ? "text-emerald-600" : "text-slate-400"}
+                    />
+                    <UserStat
+                      label="Žádosti"
+                      value={myDochStats.pendingAbs}
+                      valueClassName={myDochStats.pendingAbs > 0 ? "text-amber-600" : ""}
+                    />
+                  </div>
+                );
+              } else if (key === "approvals") {
+                stats = (
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <UserStat
+                      label="Čeká"
+                      value={myApprovalStats.pending}
+                      valueClassName={myApprovalStats.pending > 0 ? "text-amber-600" : ""}
+                    />
+                    <UserStat label="Schváleno" value={myApprovalStats.approved} />
+                    <UserStat label="Celkem" value={myApprovalStats.total} />
+                  </div>
+                );
+              }
+              return (
+                <Link
+                  key={key}
+                  to={meta.to}
+                  className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="truncate text-base font-bold text-slate-900">
+                        {meta.label}
+                      </h3>
+                      <p className="mt-1 text-xs text-slate-500">{meta.description}</p>
+                    </div>
+                    <div
+                      className={cn(
+                        "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white",
+                        meta.color,
+                      )}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </div>
+                  </div>
+                  {stats && <div className="mt-4 border-t border-slate-100 pt-4">{stats}</div>}
+                  <div className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-slate-500 transition group-hover:text-slate-900">
+                    Otevřít <ArrowRight className="h-3.5 w-3.5" />
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </AdminShell>
+  );
+}
+
+function UserStat({
+  label,
+  value,
+  valueClassName,
+}: {
+  label: string;
+  value: React.ReactNode;
+  valueClassName?: string;
+}) {
+  return (
+    <div>
+      <div className={cn("text-lg font-bold tabular-nums text-slate-900", valueClassName)}>
+        {value}
+      </div>
+      <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+        {label}
+      </div>
     </div>
   );
 }
