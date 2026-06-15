@@ -298,7 +298,34 @@ function DemoOrderForm() {
 
   const order = orderData?.order;
   const client = orderData?.client;
-  const docs = orderData?.documents ?? [];
+  const allDocs = orderData?.documents ?? [];
+  const events = (orderData as any)?.events ?? [];
+
+  // Keep only the latest document of each kind to avoid noise.
+  const latestDocs = useMemo(() => {
+    const seen = new Set<string>();
+    const sorted = [...allDocs].sort(
+      (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+    const out: any[] = [];
+    for (const d of sorted) {
+      if (seen.has(d.kind)) continue;
+      seen.add(d.kind);
+      out.push(d);
+    }
+    return out;
+  }, [allDocs]);
+
+  const locked = !isNew && !!order && order.status !== "draft" && !isAdmin;
+
+  function fmtDateTime(s: string) {
+    try {
+      return new Date(s).toLocaleString("cs-CZ", {
+        day: "numeric", month: "numeric", year: "numeric",
+        hour: "2-digit", minute: "2-digit",
+      });
+    } catch { return s; }
+  }
 
   const updateItem = (i: number, patch: Partial<LineItem>) => {
     setForm((f) => ({ ...f, line_items: f.line_items.map((it, idx) => idx === i ? { ...it, ...patch } : it) }));
