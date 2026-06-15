@@ -35,7 +35,7 @@ export const Route = createFileRoute("/_authenticated/admin/users")({
   component: UsersPage,
 });
 
-type ModuleKey = "claims" | "vykupy" | "vykupy_external" | "users" | "approvals" | "dashboard" | "dochazka" | "defects" | "deals" | "logbook" | "tasks";
+type ModuleKey = "claims" | "vykupy" | "vykupy_external" | "users" | "approvals" | "dashboard" | "dochazka" | "defects" | "deals" | "logbook" | "tasks" | "demo_orders";
 
 const MODULE_LIST: { key: ModuleKey; label: string }[] = [
   { key: "dashboard", label: "Dashboard" },
@@ -45,6 +45,7 @@ const MODULE_LIST: { key: ModuleKey; label: string }[] = [
   { key: "dochazka", label: "Docházka" },
   { key: "defects", label: "Závady" },
   { key: "deals", label: "Obchodní případy" },
+  { key: "demo_orders", label: "Předváděcí vozy" },
   { key: "logbook", label: "Kniha jízd" },
   { key: "tasks", label: "Úkoly" },
   { key: "approvals", label: "Schvalování" },

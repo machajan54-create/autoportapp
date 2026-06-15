@@ -17,6 +17,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UploadTokenRouteImport } from './routes/upload.$token'
+import { Route as SignTokenRouteImport } from './routes/sign.$token'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
@@ -25,11 +26,13 @@ import { Route as AuthenticatedVykupyIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedUkolyIndexRouteImport } from './routes/_authenticated/ukoly/index'
 import { Route as AuthenticatedLogbookIndexRouteImport } from './routes/_authenticated/logbook/index'
 import { Route as AuthenticatedDochazkaIndexRouteImport } from './routes/_authenticated/dochazka/index'
+import { Route as AuthenticatedDemoOrdersIndexRouteImport } from './routes/_authenticated/demo-orders/index'
 import { Route as AuthenticatedDealsIndexRouteImport } from './routes/_authenticated/deals/index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as AuthenticatedVykupyDashboardRouteImport } from './routes/_authenticated/vykupy/dashboard'
 import { Route as AuthenticatedVykupyIdRouteImport } from './routes/_authenticated/vykupy/$id'
+import { Route as AuthenticatedDemoOrdersIdRouteImport } from './routes/_authenticated/demo-orders/$id'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedAdminTemplatesRouteImport } from './routes/_authenticated/admin/templates'
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin/audit'
@@ -83,6 +86,11 @@ const UploadTokenRoute = UploadTokenRouteImport.update({
   path: '/upload/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SignTokenRoute = SignTokenRouteImport.update({
+  id: '/sign/$token',
+  path: '/sign/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
   id: '/email/unsubscribe',
   path: '/email/unsubscribe',
@@ -127,6 +135,12 @@ const AuthenticatedDochazkaIndexRoute =
     path: '/dochazka/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedDemoOrdersIndexRoute =
+  AuthenticatedDemoOrdersIndexRouteImport.update({
+    id: '/demo-orders/',
+    path: '/demo-orders/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDealsIndexRoute = AuthenticatedDealsIndexRouteImport.update({
   id: '/deals/',
   path: '/deals/',
@@ -153,6 +167,12 @@ const AuthenticatedVykupyIdRoute = AuthenticatedVykupyIdRouteImport.update({
   path: '/vykupy/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDemoOrdersIdRoute =
+  AuthenticatedDemoOrdersIdRouteImport.update({
+    id: '/demo-orders/$id',
+    path: '/demo-orders/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
@@ -237,16 +257,19 @@ export interface FileRoutesByFullPath {
   '/approvals': typeof AuthenticatedApprovalsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/sign/$token': typeof SignTokenRoute
   '/upload/$token': typeof UploadTokenRoute
   '/admin/$id': typeof AuthenticatedAdminIdRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/templates': typeof AuthenticatedAdminTemplatesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/demo-orders/$id': typeof AuthenticatedDemoOrdersIdRoute
   '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/deals/': typeof AuthenticatedDealsIndexRoute
+  '/demo-orders/': typeof AuthenticatedDemoOrdersIndexRoute
   '/dochazka/': typeof AuthenticatedDochazkaIndexRoute
   '/logbook/': typeof AuthenticatedLogbookIndexRoute
   '/ukoly/': typeof AuthenticatedUkolyIndexRoute
@@ -272,16 +295,19 @@ export interface FileRoutesByTo {
   '/approvals': typeof AuthenticatedApprovalsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/sign/$token': typeof SignTokenRoute
   '/upload/$token': typeof UploadTokenRoute
   '/admin/$id': typeof AuthenticatedAdminIdRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/templates': typeof AuthenticatedAdminTemplatesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/demo-orders/$id': typeof AuthenticatedDemoOrdersIdRoute
   '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/deals': typeof AuthenticatedDealsIndexRoute
+  '/demo-orders': typeof AuthenticatedDemoOrdersIndexRoute
   '/dochazka': typeof AuthenticatedDochazkaIndexRoute
   '/logbook': typeof AuthenticatedLogbookIndexRoute
   '/ukoly': typeof AuthenticatedUkolyIndexRoute
@@ -309,16 +335,19 @@ export interface FileRoutesById {
   '/_authenticated/approvals': typeof AuthenticatedApprovalsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/sign/$token': typeof SignTokenRoute
   '/upload/$token': typeof UploadTokenRoute
   '/_authenticated/admin/$id': typeof AuthenticatedAdminIdRoute
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/_authenticated/admin/templates': typeof AuthenticatedAdminTemplatesRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/_authenticated/demo-orders/$id': typeof AuthenticatedDemoOrdersIdRoute
   '/_authenticated/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/_authenticated/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/deals/': typeof AuthenticatedDealsIndexRoute
+  '/_authenticated/demo-orders/': typeof AuthenticatedDemoOrdersIndexRoute
   '/_authenticated/dochazka/': typeof AuthenticatedDochazkaIndexRoute
   '/_authenticated/logbook/': typeof AuthenticatedLogbookIndexRoute
   '/_authenticated/ukoly/': typeof AuthenticatedUkolyIndexRoute
@@ -346,16 +375,19 @@ export interface FileRouteTypes {
     | '/approvals'
     | '/dashboard'
     | '/email/unsubscribe'
+    | '/sign/$token'
     | '/upload/$token'
     | '/admin/$id'
     | '/admin/audit'
     | '/admin/templates'
     | '/admin/users'
+    | '/demo-orders/$id'
     | '/vykupy/$id'
     | '/vykupy/dashboard'
     | '/lovable/email/suppression'
     | '/admin/'
     | '/deals/'
+    | '/demo-orders/'
     | '/dochazka/'
     | '/logbook/'
     | '/ukoly/'
@@ -381,16 +413,19 @@ export interface FileRouteTypes {
     | '/approvals'
     | '/dashboard'
     | '/email/unsubscribe'
+    | '/sign/$token'
     | '/upload/$token'
     | '/admin/$id'
     | '/admin/audit'
     | '/admin/templates'
     | '/admin/users'
+    | '/demo-orders/$id'
     | '/vykupy/$id'
     | '/vykupy/dashboard'
     | '/lovable/email/suppression'
     | '/admin'
     | '/deals'
+    | '/demo-orders'
     | '/dochazka'
     | '/logbook'
     | '/ukoly'
@@ -417,16 +452,19 @@ export interface FileRouteTypes {
     | '/_authenticated/approvals'
     | '/_authenticated/dashboard'
     | '/email/unsubscribe'
+    | '/sign/$token'
     | '/upload/$token'
     | '/_authenticated/admin/$id'
     | '/_authenticated/admin/audit'
     | '/_authenticated/admin/templates'
     | '/_authenticated/admin/users'
+    | '/_authenticated/demo-orders/$id'
     | '/_authenticated/vykupy/$id'
     | '/_authenticated/vykupy/dashboard'
     | '/lovable/email/suppression'
     | '/_authenticated/admin/'
     | '/_authenticated/deals/'
+    | '/_authenticated/demo-orders/'
     | '/_authenticated/dochazka/'
     | '/_authenticated/logbook/'
     | '/_authenticated/ukoly/'
@@ -452,6 +490,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   TerminalRoute: typeof TerminalRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
+  SignTokenRoute: typeof SignTokenRoute
   UploadTokenRoute: typeof UploadTokenRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicCronFollowupRemindersRoute: typeof ApiPublicCronFollowupRemindersRoute
@@ -523,6 +562,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UploadTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sign/$token': {
+      id: '/sign/$token'
+      path: '/sign/$token'
+      fullPath: '/sign/$token'
+      preLoaderRoute: typeof SignTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/email/unsubscribe': {
       id: '/email/unsubscribe'
       path: '/email/unsubscribe'
@@ -579,6 +625,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDochazkaIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/demo-orders/': {
+      id: '/_authenticated/demo-orders/'
+      path: '/demo-orders'
+      fullPath: '/demo-orders/'
+      preLoaderRoute: typeof AuthenticatedDemoOrdersIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/deals/': {
       id: '/_authenticated/deals/'
       path: '/deals'
@@ -612,6 +665,13 @@ declare module '@tanstack/react-router' {
       path: '/vykupy/$id'
       fullPath: '/vykupy/$id'
       preLoaderRoute: typeof AuthenticatedVykupyIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/demo-orders/$id': {
+      id: '/_authenticated/demo-orders/$id'
+      path: '/demo-orders/$id'
+      fullPath: '/demo-orders/$id'
+      preLoaderRoute: typeof AuthenticatedDemoOrdersIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/users': {
@@ -715,10 +775,12 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
   AuthenticatedAdminTemplatesRoute: typeof AuthenticatedAdminTemplatesRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
+  AuthenticatedDemoOrdersIdRoute: typeof AuthenticatedDemoOrdersIdRoute
   AuthenticatedVykupyIdRoute: typeof AuthenticatedVykupyIdRoute
   AuthenticatedVykupyDashboardRoute: typeof AuthenticatedVykupyDashboardRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedDealsIndexRoute: typeof AuthenticatedDealsIndexRoute
+  AuthenticatedDemoOrdersIndexRoute: typeof AuthenticatedDemoOrdersIndexRoute
   AuthenticatedDochazkaIndexRoute: typeof AuthenticatedDochazkaIndexRoute
   AuthenticatedLogbookIndexRoute: typeof AuthenticatedLogbookIndexRoute
   AuthenticatedUkolyIndexRoute: typeof AuthenticatedUkolyIndexRoute
@@ -733,10 +795,12 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
   AuthenticatedAdminTemplatesRoute: AuthenticatedAdminTemplatesRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
+  AuthenticatedDemoOrdersIdRoute: AuthenticatedDemoOrdersIdRoute,
   AuthenticatedVykupyIdRoute: AuthenticatedVykupyIdRoute,
   AuthenticatedVykupyDashboardRoute: AuthenticatedVykupyDashboardRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedDealsIndexRoute: AuthenticatedDealsIndexRoute,
+  AuthenticatedDemoOrdersIndexRoute: AuthenticatedDemoOrdersIndexRoute,
   AuthenticatedDochazkaIndexRoute: AuthenticatedDochazkaIndexRoute,
   AuthenticatedLogbookIndexRoute: AuthenticatedLogbookIndexRoute,
   AuthenticatedUkolyIndexRoute: AuthenticatedUkolyIndexRoute,
@@ -756,6 +820,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   TerminalRoute: TerminalRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
+  SignTokenRoute: SignTokenRoute,
   UploadTokenRoute: UploadTokenRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicCronFollowupRemindersRoute: ApiPublicCronFollowupRemindersRoute,
