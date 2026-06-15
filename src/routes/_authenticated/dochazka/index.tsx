@@ -736,6 +736,7 @@ function AbsencesTab() {
       start_date: todayISODate(),
       end_date: todayISODate(),
       note: "",
+      requested_resolver: "",
     });
     setOpen(true);
   }
@@ -836,6 +837,22 @@ function AbsencesTab() {
                 <div className="grid gap-2"><Label>Do</Label><Input type="date" value={edit.end_date} onChange={(e) => setEdit({ ...edit, end_date: e.target.value })} /></div>
               </div>
               <div className="grid gap-2"><Label>Poznámka</Label><Textarea value={edit.note} onChange={(e) => setEdit({ ...edit, note: e.target.value })} /></div>
+              <div className="grid gap-2">
+                <Label>Žádám o schválení</Label>
+                <Select
+                  value={edit.requested_resolver || "__any"}
+                  onValueChange={(v) => setEdit({ ...edit, requested_resolver: v === "__any" ? "" : v })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__any">Kteréhokoliv vedoucího</SelectItem>
+                    {(resolvers ?? []).map((r: any) => (
+                      <SelectItem key={r.id} value={r.id}>{r.full_name || r.email}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Vybrané osobě dorazí e-mail s žádostí.</p>
+              </div>
             </div>
           )}
           <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Zrušit</Button><Button onClick={save}>Uložit</Button></DialogFooter>
