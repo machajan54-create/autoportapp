@@ -167,6 +167,21 @@ export const updateDemoOrder = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => orderInput.partial().extend({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { id, ...rest } = data as any;
+    // Lock editing once signature flow has started, except for super admin.
+    const { data: cur } = await context.supabase
+      .from("demo_orders" as never)
+      .select("status")
+      .eq("id", id)
+      .maybeSingle();
+    const curStatus = (cur as any)?.status as string | undefined;
+    if (curStatus && curStatus !== "draft") {
+      const admin = await isAdminUser(context.supabase, context.userId);
+      if (!admin) {
+        throw new Error(
+          "Objednávka už byla odeslána / podepsána. Úpravy může provést pouze super admin po schválené žádosti.",
+        );
+      }
+    }
     const patch: Record<string, unknown> = { ...rest };
     if (Array.isArray(rest.line_items)) {
       const totals = calcTotals(rest.line_items);
@@ -177,6 +192,14 @@ export const updateDemoOrder = createServerFn({ method: "POST" })
       .update(patch as never)
       .eq("id", id);
     if (error) throw new Error(error.message);
+    if (curStatus && curStatus !== "draft") {
+      await logEvent({
+        orderId: id,
+        type: "edited_after_lock",
+        message: "Super admin upravil objednávku po uzamčení.",
+        actorId: context.userId,
+      });
+    }
     return { ok: true };
   });
 
