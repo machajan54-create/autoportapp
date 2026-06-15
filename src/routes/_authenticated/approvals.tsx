@@ -549,12 +549,12 @@ function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
                   {p.description && <div className="mt-1 text-sm">{p.description}</div>}
                 </div>
                 <div className="flex gap-1">
-                  {isAdmin && p.status !== "approved" && (
+                  {p.can_decide && p.status !== "approved" && (
                     <Button size="sm" variant="outline" onClick={() => setStatus(p.id, "approved")}>
                       <Check className="h-4 w-4" />
                     </Button>
                   )}
-                  {isAdmin && p.status !== "rejected" && (
+                  {p.can_decide && p.status !== "rejected" && (
                     <Button size="sm" variant="outline" onClick={() => setStatus(p.id, "rejected")}>
                       <X className="h-4 w-4" />
                     </Button>
