@@ -197,7 +197,9 @@ function DefectsPage() {
                         <div className="mt-3 flex flex-wrap gap-2">
                           {photos.map((p) => {
                             const url = photoUrls[p.path];
+                            const isImage = /\.(png|jpe?g|gif|webp|heic|heif|bmp|svg)$/i.test(p.name);
                             return url ? (
+                              isImage ? (
                               <a
                                 key={p.path}
                                 href={url}
@@ -207,6 +209,19 @@ function DefectsPage() {
                               >
                                 <img src={url} alt={p.name} className="h-full w-full object-cover" />
                               </a>
+                              ) : (
+                                <a
+                                  key={p.path}
+                                  href={url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="flex h-20 w-20 flex-col items-center justify-center rounded-md border bg-muted p-1 text-center text-[10px] text-muted-foreground hover:bg-muted/70"
+                                  title={p.name}
+                                >
+                                  <ImageIcon className="mb-1 h-5 w-5" />
+                                  <span className="line-clamp-2 break-all">{p.name}</span>
+                                </a>
+                              )
                             ) : (
                               <div
                                 key={p.path}
