@@ -159,12 +159,19 @@ export type Database = {
       }
       attendance_records: {
         Row: {
+          approval_note: string | null
+          approval_status: string
+          approved_at: string | null
+          approved_by: string | null
           break_duration: number
           check_in: string
           check_out: string | null
           created_at: string
           date: string
           employee_id: string
+          geo_accuracy: number | null
+          geo_lat: number | null
+          geo_lng: number | null
           hours_worked: number
           id: string
           note: string | null
@@ -172,12 +179,19 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          approval_note?: string | null
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           break_duration?: number
           check_in: string
           check_out?: string | null
           created_at?: string
           date: string
           employee_id: string
+          geo_accuracy?: number | null
+          geo_lat?: number | null
+          geo_lng?: number | null
           hours_worked?: number
           id?: string
           note?: string | null
@@ -185,12 +199,19 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          approval_note?: string | null
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           break_duration?: number
           check_in?: string
           check_out?: string | null
           created_at?: string
           date?: string
           employee_id?: string
+          geo_accuracy?: number | null
+          geo_lat?: number | null
+          geo_lng?: number | null
           hours_worked?: number
           id?: string
           note?: string | null
@@ -217,6 +238,7 @@ export type Database = {
       attendance_settings: {
         Row: {
           custom_message_prefix: string
+          daily_overtime_threshold_hours: number
           id: boolean
           late_arrival_buffer_minutes: number
           no_show_buffer_minutes: number
@@ -225,11 +247,15 @@ export type Database = {
           notify_employee_shift_ending: boolean
           notify_manager_absence_pending: boolean
           notify_manager_no_show: boolean
+          require_record_approval: boolean
+          rounding_minutes: number
           shift_ending_minutes_threshold: number
           updated_at: string
+          weekly_overtime_threshold_hours: number
         }
         Insert: {
           custom_message_prefix?: string
+          daily_overtime_threshold_hours?: number
           id?: boolean
           late_arrival_buffer_minutes?: number
           no_show_buffer_minutes?: number
@@ -238,11 +264,15 @@ export type Database = {
           notify_employee_shift_ending?: boolean
           notify_manager_absence_pending?: boolean
           notify_manager_no_show?: boolean
+          require_record_approval?: boolean
+          rounding_minutes?: number
           shift_ending_minutes_threshold?: number
           updated_at?: string
+          weekly_overtime_threshold_hours?: number
         }
         Update: {
           custom_message_prefix?: string
+          daily_overtime_threshold_hours?: number
           id?: boolean
           late_arrival_buffer_minutes?: number
           no_show_buffer_minutes?: number
@@ -251,8 +281,11 @@ export type Database = {
           notify_employee_shift_ending?: boolean
           notify_manager_absence_pending?: boolean
           notify_manager_no_show?: boolean
+          require_record_approval?: boolean
+          rounding_minutes?: number
           shift_ending_minutes_threshold?: number
           updated_at?: string
+          weekly_overtime_threshold_hours?: number
         }
         Relationships: []
       }
