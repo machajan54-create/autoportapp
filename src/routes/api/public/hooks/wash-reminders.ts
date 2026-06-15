@@ -26,13 +26,13 @@ function fmtDateTime(d?: string | null) {
 }
 
 /**
- * Daily cron endpoint:
+ * Hourly cron endpoint:
  * Finds pending wash assignments that have not been confirmed/declined
- * within ~24h of the last send/reminder, and re-sends a reminder email
+ * within ~2h of the last send/reminder, and re-sends a reminder email
  * with the same Accept/Decline token.
  *
- * Triggered by pg_cron daily; safe to call multiple times per day —
- * the 24h window prevents duplicates.
+ * Triggered by pg_cron hourly; safe to call multiple times —
+ * the 2h window prevents duplicates.
  */
 export const Route = createFileRoute("/api/public/hooks/wash-reminders")({
   server: {
@@ -45,7 +45,8 @@ export const Route = createFileRoute("/api/public/hooks/wash-reminders")({
           "@/lib/email/notify.server"
         );
 
-        const cutoff = new Date(Date.now() - 23 * 60 * 60 * 1000).toISOString();
+        // ~2h window (1h55m) so hourly cron consistently re-sends after 2h.
+        const cutoff = new Date(Date.now() - 115 * 60 * 1000).toISOString();
 
         // pending assignments where last contact (reminder or send) was > ~24h ago
         const { data: assignments, error } = await supabaseAdmin
