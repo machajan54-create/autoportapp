@@ -1,17 +1,15 @@
 import React from 'react'
+import { Head, Heading, Html, Preview, Section, Text } from '@react-email/components'
+import type { TemplateEntry } from './registry'
 import {
   Body,
   Container,
-  Head,
-  Heading,
-  Html,
-  Preview,
-  Section,
-  Text,
-  Link,
+  Footer,
+  Header,
   Hr,
-} from '@react-email/components'
-import type { TemplateEntry } from './registry'
+  PrimaryButton,
+  styles,
+} from './_layout'
 
 export interface ApprovalRequestProps {
   kind?: 'vacation' | 'purchase' | 'claim'
@@ -41,30 +39,29 @@ const Email = ({
     <Html lang="cs" dir="ltr">
       <Head />
       <Preview>{`${label}: ${title || requesterName}`}</Preview>
-      <Body style={body}>
-        <Container style={container}>
-          <Heading style={h1}>{label}</Heading>
-          <Text style={lead}>
-            {requesterName} podal/a novou žádost ke schválení.
-          </Text>
-          {title ? <Text style={titleStyle}>{title}</Text> : null}
-          {meta.length > 0 ? (
-            <Section style={metaBox}>
-              {meta.map((m) => (
-                <Text key={m.label} style={metaRow}>
-                  <strong>{m.label}:</strong> {m.value}
-                </Text>
-              ))}
-            </Section>
-          ) : null}
-          {details ? <Text style={detailsStyle}>{details}</Text> : null}
-          <Hr style={hr} />
-          <Text style={cta}>
-            <Link href={actionUrl} style={btn}>
-              Otevřít v Autoport App
-            </Link>
-          </Text>
-          <Text style={foot}>Autoport App · automatická notifikace</Text>
+      <Body style={styles.body}>
+        <Container style={styles.container}>
+          <Header />
+          <Section style={styles.content}>
+            <Heading style={styles.h1}>{label}</Heading>
+            <Text style={styles.lead}>
+              {requesterName} podal/a novou žádost ke schválení.
+            </Text>
+            {title ? <Text style={styles.title}>{title}</Text> : null}
+            {meta.length > 0 ? (
+              <Section style={styles.metaBox}>
+                {meta.map((m) => (
+                  <Text key={m.label} style={styles.metaRow}>
+                    <strong>{m.label}:</strong> {m.value}
+                  </Text>
+                ))}
+              </Section>
+            ) : null}
+            {details ? <Text style={styles.details}>{details}</Text> : null}
+            <Hr style={styles.hr} />
+            <PrimaryButton href={actionUrl}>Otevřít v Autoport App</PrimaryButton>
+          </Section>
+          <Footer />
         </Container>
       </Body>
     </Html>
@@ -88,24 +85,3 @@ export const template = {
     actionUrl: 'https://www.autoport-app.cz/approvals',
   },
 } satisfies TemplateEntry
-
-const body = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif', margin: 0 }
-const container = { padding: '24px', maxWidth: '560px' }
-const h1 = { fontSize: '20px', color: '#0f172a', margin: '0 0 12px' }
-const lead = { fontSize: '15px', color: '#334155', margin: '0 0 12px' }
-const titleStyle = { fontSize: '17px', fontWeight: 600, color: '#0f172a', margin: '8px 0' }
-const metaBox = { background: '#f8fafc', borderRadius: '8px', padding: '12px 14px', margin: '12px 0' }
-const metaRow = { fontSize: '14px', color: '#0f172a', margin: '2px 0' }
-const detailsStyle = { fontSize: '14px', color: '#475569', margin: '12px 0', whiteSpace: 'pre-wrap' as const }
-const hr = { borderColor: '#e2e8f0', margin: '20px 0' }
-const cta = { textAlign: 'center' as const, margin: '8px 0' }
-const btn = {
-  background: '#0f172a',
-  color: '#ffffff',
-  padding: '10px 18px',
-  borderRadius: '8px',
-  textDecoration: 'none',
-  fontSize: '14px',
-  fontWeight: 600,
-}
-const foot = { fontSize: '12px', color: '#94a3b8', textAlign: 'center' as const, marginTop: '16px' }
