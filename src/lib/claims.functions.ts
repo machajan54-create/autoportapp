@@ -297,7 +297,7 @@ export const listUsers = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data: profiles } = await context.supabase
       .from("profiles")
-      .select("id,email,full_name,created_at,approved")
+      .select("id,email,full_name,created_at,approved,department,is_department_head")
       .order("created_at", { ascending: false });
     const { data: roles } = await context.supabase.from("user_roles").select("user_id,role");
     const { data: modules } = await context.supabase
@@ -321,15 +321,32 @@ export const listUsers = createServerFn({ method: "GET" })
         // tichá degradace, banned info bude nedostupné
       }
     }
+    // Spočítej vedoucího pro každé oddělení
+    const headByDept = new Map<string, { id: string; full_name: string | null; email: string | null }>();
+    for (const p of profiles ?? []) {
+      if ((p as any).is_department_head && (p as any).department && !headByDept.has((p as any).department)) {
+        headByDept.set((p as any).department, { id: p.id, full_name: p.full_name, email: p.email });
+      }
+    }
     return (profiles ?? []).map((p) => {
       const bu = bannedMap.get(p.id) ?? null;
       const banned = !!bu && new Date(bu).getTime() > Date.now();
+      const userRoles = (roles ?? []).filter((r) => r.user_id === p.id).map((r) => r.role);
+      const isUserAdmin = userRoles.includes("admin");
+      const dept = (p as any).department as string | null;
+      const head = dept ? headByDept.get(dept) ?? null : null;
+      // Nadřízený: vedoucí oddělení (pokud existuje a není to on sám), jinak super admin
+      const supervisor =
+        !isUserAdmin && head && head.id !== p.id
+          ? { id: head.id, name: head.full_name || head.email || "—" }
+          : null;
       return {
         ...p,
-        roles: (roles ?? []).filter((r) => r.user_id === p.id).map((r) => r.role),
+        roles: userRoles,
         modules: (modules ?? []).filter((m) => m.user_id === p.id).map((m) => m.module),
         banned,
         banned_until: bu,
+        supervisor,
       };
     });
   });
@@ -891,4 +908,55 @@ export const publicSubmissionUpload = createServerFn({ method: "POST" })
       mime_type: data.mime_type,
       size: bytes.byteLength,
     };
+  });
+
+export const setUserDepartment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        user_id: z.string().uuid(),
+        department: z
+          .enum(["vedeni", "obchod", "servis", "nahradni_dily"])
+          .nullable(),
+        is_department_head: z.boolean().optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const { data: meRoles } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    if (!meRoles?.some((r) => r.role === "admin")) throw new Error("Forbidden");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const isHead =
+      typeof data.is_department_head === "boolean"
+        ? data.department
+          ? data.is_department_head
+          : false
+        : data.department
+          ? undefined
+          : false;
+    const patch = {
+      department: data.department,
+      ...(typeof isHead === "boolean" ? { is_department_head: isHead } : {}),
+    };
+    const { error } = await supabaseAdmin
+      .from("profiles")
+      .update(patch)
+      .eq("id", data.user_id);
+    if (error) throw new Error(error.message);
+    {
+      const { logEvent } = await import("@/lib/audit.server");
+      await logEvent({
+        actorId: context.userId,
+        actorEmail: context.claims?.email ?? null,
+        module: "users",
+        action: "department_change",
+        entityId: data.user_id,
+        details: { department: data.department, is_department_head: isHead },
+      });
+    }
+    return { ok: true };
   });
