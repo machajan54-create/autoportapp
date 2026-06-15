@@ -594,7 +594,6 @@ async function fetchLatestDoc(orderId: string, kind: "order" | "invoice") {
 
 export const signOrderInPerson = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z.object({
       orderId: z.string().uuid(),
