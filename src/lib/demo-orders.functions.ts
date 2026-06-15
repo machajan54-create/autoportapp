@@ -627,6 +627,44 @@ export const signOrderInPerson = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const saveSellerSignature = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      orderId: z.string().uuid(),
+      signatureDataUrl: z.string().min(20),
+      signerName: z.string().trim().min(1).max(200),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("demo_orders" as never)
+      .update({
+        seller_signature_data: data.signatureDataUrl,
+        seller_signer_name: data.signerName,
+        seller_signed_at: new Date().toISOString(),
+      } as never)
+      .eq("id", data.orderId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const clearSellerSignature = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("demo_orders" as never)
+      .update({
+        seller_signature_data: null,
+        seller_signer_name: null,
+        seller_signed_at: null,
+      } as never)
+      .eq("id", data.orderId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const createRemoteSignatureLink = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
