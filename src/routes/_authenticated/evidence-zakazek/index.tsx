@@ -145,6 +145,8 @@ function OrdersTab() {
     kdo_predava: "",
     cislo_zakazky: "",
     poznamka: "",
+    pickup_from: "",
+    complete_by: "",
   };
   const [form, setForm] = useState(emptyForm);
   const [assignTarget, setAssignTarget] = useState<string | null>(null);
@@ -212,7 +214,9 @@ function OrdersTab() {
                 <div className="col-span-2"><Label>Klient *</Label><Input required value={form.klient} onChange={(e) => setForm({ ...form, klient: e.target.value })} /></div>
                 <div><Label>Vozidlo *</Label><Input required value={form.vozidlo} onChange={(e) => setForm({ ...form, vozidlo: e.target.value })} /></div>
                 <div><Label>VIS / SPZ</Label><Input value={form.vis} onChange={(e) => setForm({ ...form, vis: e.target.value })} /></div>
-                <div><Label>Den</Label><Input type="date" value={form.den} onChange={(e) => setForm({ ...form, den: e.target.value })} /></div>
+                <div><Label>Vyzvednutí od</Label><Input type="datetime-local" value={form.pickup_from} onChange={(e) => setForm({ ...form, pickup_from: e.target.value })} /></div>
+                <div><Label>Dokončit do</Label><Input type="datetime-local" value={form.complete_by} onChange={(e) => setForm({ ...form, complete_by: e.target.value })} /></div>
+                <div><Label>Den (orientačně)</Label><Input type="date" value={form.den} onChange={(e) => setForm({ ...form, den: e.target.value })} /></div>
                 <div><Label>Hodina</Label><Input placeholder="9:00" value={form.hodina} onChange={(e) => setForm({ ...form, hodina: e.target.value })} /></div>
                 <div><Label>Kdo předává</Label><Input value={form.kdo_predava} onChange={(e) => setForm({ ...form, kdo_predava: e.target.value })} /></div>
                 <div><Label>Č. zakázky</Label><Input value={form.cislo_zakazky} onChange={(e) => setForm({ ...form, cislo_zakazky: e.target.value })} /></div>
