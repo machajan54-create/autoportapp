@@ -154,6 +154,8 @@ const purchaseInput = z.object({
   description: z.string().max(2000).optional().nullable(),
   supplier_id: z.string().uuid().optional().nullable(),
   amount: z.number().min(0).max(1_000_000_000).optional().nullable(),
+  amount_net: z.number().min(0).max(1_000_000_000).optional().nullable(),
+  vat_rate: z.number().min(0).max(100).optional().default(21),
   currency: z.string().min(1).max(10).default("CZK"),
 });
 
@@ -161,8 +163,22 @@ export const createPurchase = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => purchaseInput.parse(d))
   .handler(async ({ context, data }) => {
+    const vat = data.vat_rate ?? 21;
+    let amount = data.amount;
+    let amountNet = data.amount_net;
+    if (amount == null && amountNet != null) {
+      amount = Math.round(amountNet * (1 + vat / 100) * 100) / 100;
+    } else if (amountNet == null && amount != null) {
+      amountNet = Math.round((amount / (1 + vat / 100)) * 100) / 100;
+    }
     const { error } = await context.supabase.from("purchases").insert({
-      ...data,
+      title: data.title,
+      description: data.description,
+      supplier_id: data.supplier_id,
+      currency: data.currency,
+      amount,
+      amount_net: amountNet,
+      vat_rate: vat,
       status: "pending",
       requested_by: context.userId,
     });

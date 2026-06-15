@@ -846,6 +846,7 @@ export type Database = {
       purchases: {
         Row: {
           amount: number | null
+          amount_net: number | null
           created_at: string
           currency: string
           decided_at: string | null
@@ -858,9 +859,11 @@ export type Database = {
           supplier_id: string | null
           title: string
           updated_at: string
+          vat_rate: number
         }
         Insert: {
           amount?: number | null
+          amount_net?: number | null
           created_at?: string
           currency?: string
           decided_at?: string | null
@@ -873,9 +876,11 @@ export type Database = {
           supplier_id?: string | null
           title: string
           updated_at?: string
+          vat_rate?: number
         }
         Update: {
           amount?: number | null
+          amount_net?: number | null
           created_at?: string
           currency?: string
           decided_at?: string | null
@@ -888,6 +893,7 @@ export type Database = {
           supplier_id?: string | null
           title?: string
           updated_at?: string
+          vat_rate?: number
         }
         Relationships: [
           {
