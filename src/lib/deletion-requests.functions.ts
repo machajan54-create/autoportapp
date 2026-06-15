@@ -154,6 +154,108 @@ async function assertAdmin(supabase: any, userId: string) {
   }
 }
 
+/**
+ * Collect storage objects that must be removed when a record (and its cascade
+ * children) is deleted. We must collect paths BEFORE the DB delete, because
+ * ON DELETE CASCADE removes the child rows that hold the paths.
+ * Returns groups by bucket.
+ */
+async function collectStoragePaths(
+  supabaseAdmin: any,
+  entityType: string,
+  entityId: string,
+): Promise<Array<{ bucket: string; paths: string[] }>> {
+  const out: Array<{ bucket: string; paths: string[] }> = [];
+  const push = (bucket: string, paths: Array<string | null | undefined>) => {
+    const cleaned = paths.filter((p): p is string => !!p);
+    if (cleaned.length) out.push({ bucket, paths: cleaned });
+  };
+
+  switch (entityType) {
+    case "claim_attachments": {
+      const { data } = await supabaseAdmin
+        .from("claim_attachments").select("file_path").eq("id", entityId).maybeSingle();
+      push("claim-files", [data?.file_path]);
+      break;
+    }
+    case "claims": {
+      const { data } = await supabaseAdmin
+        .from("claim_attachments").select("file_path").eq("claim_id", entityId);
+      push("claim-files", (data ?? []).map((r: any) => r.file_path));
+      break;
+    }
+    case "task_attachments": {
+      const { data } = await supabaseAdmin
+        .from("task_attachments").select("storage_path").eq("id", entityId).maybeSingle();
+      push("task-attachments", [data?.storage_path]);
+      break;
+    }
+    case "tasks": {
+      const { data } = await supabaseAdmin
+        .from("task_attachments").select("storage_path").eq("task_id", entityId);
+      push("task-attachments", (data ?? []).map((r: any) => r.storage_path));
+      break;
+    }
+    case "vykup_photos": {
+      const { data } = await supabaseAdmin
+        .from("vykup_photos").select("storage_path").eq("id", entityId).maybeSingle();
+      push("vykup-photos", [data?.storage_path]);
+      break;
+    }
+    case "vykupy": {
+      const { data } = await supabaseAdmin
+        .from("vykup_photos").select("storage_path").eq("vykup_id", entityId);
+      push("vykup-photos", (data ?? []).map((r: any) => r.storage_path));
+      break;
+    }
+    case "logbook_entries": {
+      const { data } = await supabaseAdmin
+        .from("logbook_entries").select("receipt_path").eq("id", entityId).maybeSingle();
+      push("logbook-receipts", [data?.receipt_path]);
+      break;
+    }
+    case "logbook_vehicles": {
+      const { data } = await supabaseAdmin
+        .from("logbook_entries").select("receipt_path").eq("vehicle_id", entityId);
+      push("logbook-receipts", (data ?? []).map((r: any) => r.receipt_path));
+      break;
+    }
+    case "demo_orders": {
+      const { data } = await supabaseAdmin
+        .from("demo_order_documents").select("storage_path").eq("order_id", entityId);
+      push("client-documents", (data ?? []).map((r: any) => r.storage_path));
+      break;
+    }
+    case "defects": {
+      // Photos live in JSONB column `photos: [{ path, ... }]` on the row itself
+      const { data } = await supabaseAdmin
+        .from("defects").select("photos").eq("id", entityId).maybeSingle();
+      const paths = Array.isArray(data?.photos)
+        ? (data.photos as any[]).map((p) => p?.path).filter(Boolean)
+        : [];
+      push("defect-photos", paths);
+      break;
+    }
+    default:
+      break;
+  }
+  return out;
+}
+
+async function removeStorageObjects(
+  supabaseAdmin: any,
+  groups: Array<{ bucket: string; paths: string[] }>,
+) {
+  for (const g of groups) {
+    if (!g.paths.length) continue;
+    try {
+      await supabaseAdmin.storage.from(g.bucket).remove(g.paths);
+    } catch {
+      // Best-effort cleanup; DB row is already gone, log but don't fail.
+    }
+  }
+}
+
 const requestInput = z.object({
   entity_type: z.enum(ENTITY_TYPES),
   entity_id: z.string().uuid(),
@@ -295,6 +397,12 @@ export const decideDeletionRequest = createServerFn({ method: "POST" })
 
     if (data.status === "approved") {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      // Snapshot file paths BEFORE delete so we can clean up storage afterwards.
+      const storageGroups = await collectStoragePaths(
+        supabaseAdmin,
+        (req as any).entity_type,
+        (req as any).entity_id,
+      );
       const { error: delErr } = await (supabaseAdmin as any)
         .from(reg.table)
         .delete()
@@ -302,6 +410,7 @@ export const decideDeletionRequest = createServerFn({ method: "POST" })
       if (delErr) {
         throw new Error(`Smazání selhalo: ${delErr.message}`);
       }
+      await removeStorageObjects(supabaseAdmin, storageGroups);
     }
 
     const { error: updErr } = await context.supabase
