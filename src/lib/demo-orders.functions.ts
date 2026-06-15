@@ -366,8 +366,8 @@ async function buildOrderPdf(order: any, client: any): Promise<Uint8Array> {
   // Lines
   page.drawLine({ start: { x: SIG.sellerX, y: SIG.lineY }, end: { x: SIG.sellerX + SIG.sellerW, y: SIG.lineY }, thickness: 0.6, color: rgb(0.4, 0.4, 0.45) });
   page.drawLine({ start: { x: SIG.buyerX, y: SIG.lineY }, end: { x: SIG.buyerX + SIG.buyerW, y: SIG.lineY }, thickness: 0.6, color: rgb(0.4, 0.4, 0.45) });
-  draw(page, "Podpis prodavajiciho", SIG.sellerX, SIG.labyY ?? 70, { size: 8, color: muted });
-  draw(page, "Podpis kupujiciho", SIG.buyerX, SIG.labyY ?? 70, { size: 8, color: muted });
+  draw(page, "Podpis prodavajiciho", SIG.sellerX, SIG.labelY, { size: 8, color: muted });
+  draw(page, "Podpis kupujiciho", SIG.buyerX, SIG.labelY, { size: 8, color: muted });
 
   // Seller signature image (if present)
   if (order.seller_signature_data) {
@@ -376,7 +376,7 @@ async function buildOrderPdf(order: any, client: any): Promise<Uint8Array> {
         x: SIG.sellerX, y: SIG.lineY + 4, w: SIG.sellerW, h: SIG.sellerH,
       });
       if (order.seller_signer_name) {
-        draw(page, sanitize(order.seller_signer_name), SIG.sellerX, SIG.labyY ?? 70, { size: 8, color: muted });
+        draw(page, sanitize(order.seller_signer_name), SIG.sellerX, SIG.labelY, { size: 8, color: muted });
       }
     } catch { /* ignore embed errors */ }
   }
