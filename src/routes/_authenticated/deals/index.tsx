@@ -278,7 +278,7 @@ function DealsPage() {
                 <TableHead>Název</TableHead>
                 <TableHead>Klient</TableHead>
                 <TableHead>Kontakt</TableHead>
-                <TableHead>Hodnota</TableHead>
+                <TableHead>Vůz</TableHead>
                 <TableHead>Fáze</TableHead>
                 <TableHead>Uzavření</TableHead>
                 <TableHead>Vlastník</TableHead>
