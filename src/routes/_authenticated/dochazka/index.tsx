@@ -25,7 +25,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  Clock, Plus, Pencil, Trash2, Download, Check, X, BellOff, BellRing,
+  Clock, Plus, Pencil, Download, Check, X, BellOff, BellRing,
   ExternalLink, Users as UsersIcon, CalendarClock, BarChart3, PalmtreeIcon, Bell,
   CalendarDays, ChevronLeft, ChevronRight, Send, ShieldCheck, AlertTriangle, FileSpreadsheet, Sparkles,
 } from "lucide-react";
