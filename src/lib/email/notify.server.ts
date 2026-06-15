@@ -3,7 +3,7 @@ import { render } from '@react-email/components'
 import { supabaseAdmin } from '@/integrations/supabase/client.server'
 import { TEMPLATES } from '@/lib/email-templates/registry'
 
-const SITE_NAME = 'autoportapp'
+const SITE_NAME = 'Píše Citroën | Autoport s.r.o.'
 const SENDER_DOMAIN = 'notify.autoport-app.cz'
 const FROM_DOMAIN = 'autoport-app.cz'
 
