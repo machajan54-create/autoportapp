@@ -79,6 +79,7 @@ function UsersPage() {
     full_name: "",
     role: "employee" as "employee" | "admin",
   });
+  const [search, setSearch] = useState("");
 
   async function toggle(user_id: string, role: "admin" | "employee", enable: boolean) {
     try {
