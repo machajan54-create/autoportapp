@@ -1249,23 +1249,29 @@ export type Database = {
         Row: {
           approved: boolean
           created_at: string
+          department: Database["public"]["Enums"]["app_department"] | null
           email: string | null
           full_name: string | null
           id: string
+          is_department_head: boolean
         }
         Insert: {
           approved?: boolean
           created_at?: string
+          department?: Database["public"]["Enums"]["app_department"] | null
           email?: string | null
           full_name?: string | null
           id: string
+          is_department_head?: boolean
         }
         Update: {
           approved?: boolean
           created_at?: string
+          department?: Database["public"]["Enums"]["app_department"] | null
           email?: string | null
           full_name?: string | null
           id?: string
+          is_department_head?: boolean
         }
         Relationships: []
       }
@@ -1792,6 +1798,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_department: "vedeni" | "obchod" | "servis" | "nahradni_dily"
       app_module:
         | "claims"
         | "vykupy"
@@ -1956,6 +1963,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_department: ["vedeni", "obchod", "servis", "nahradni_dily"],
       app_module: [
         "claims",
         "vykupy",
