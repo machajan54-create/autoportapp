@@ -62,6 +62,7 @@ const empty: FormState = {
   naceneno_od: "", vykoupeno_za: "", prodano_za: "", naklady: "0",
   datum_vykupu: new Date().toISOString().slice(0, 10),
   stav: "Nacenění", poznamka: "",
+  follow_up_at: "",
   internal_priced_by_user_id: "", internal_priced_amount: "", internal_priced_at: "",
   external_priced_by: "", external_priced_amount: "", external_priced_at: "",
 };
@@ -85,6 +86,7 @@ function fromVykup(v: Vykup): FormState {
     naklady: (v.naklady ?? 0).toString(),
     datum_vykupu: v.datum_vykupu ?? "",
     stav: v.stav, poznamka: v.poznamka ?? "",
+    follow_up_at: v.follow_up_at ? v.follow_up_at.slice(0, 16) : "",
     internal_priced_by_user_id: v.internal_priced_by_user_id ?? "",
     internal_priced_amount: v.internal_priced_amount?.toString() ?? "",
     internal_priced_at: v.internal_priced_at ? v.internal_priced_at.slice(0, 10) : "",
