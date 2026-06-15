@@ -748,6 +748,51 @@ export type Database = {
         }
         Relationships: []
       }
+      deletion_requests: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          entity_id: string
+          entity_label: string
+          entity_type: string
+          id: string
+          reason: string
+          requested_by: string
+          status: Database["public"]["Enums"]["deletion_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          entity_id: string
+          entity_label?: string
+          entity_type: string
+          id?: string
+          reason: string
+          requested_by: string
+          status?: Database["public"]["Enums"]["deletion_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          entity_id?: string
+          entity_label?: string
+          entity_type?: string
+          id?: string
+          reason?: string
+          requested_by?: string
+          status?: Database["public"]["Enums"]["deletion_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       demo_order_documents: {
         Row: {
           client_id: string
@@ -1727,6 +1772,7 @@ export type Database = {
         | "in_repair"
         | "waiting_vat"
         | "done"
+      deletion_status: "pending" | "approved" | "rejected"
       dochazka_absence_status: "pending" | "approved" | "rejected"
       dochazka_absence_type:
         | "dovolena"
@@ -1892,6 +1938,7 @@ export const Constants = {
         "waiting_vat",
         "done",
       ],
+      deletion_status: ["pending", "approved", "rejected"],
       dochazka_absence_status: ["pending", "approved", "rejected"],
       dochazka_absence_type: [
         "dovolena",
