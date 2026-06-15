@@ -191,13 +191,16 @@ const BRAND = {
 // ============= Unicode font loader (Roboto, supports Czech) =============
 // Bundled via roboto-fontface (Vite asset URL). Server fetch resolves locally,
 // no external CDN dependency.
-import robotoRegularBuf from "@/assets/fonts/Roboto-Regular.ttf?arraybuffer";
-import robotoBoldBuf from "@/assets/fonts/Roboto-Bold.ttf?arraybuffer";
+import robotoRegularB64 from "@/assets/fonts/Roboto-Regular.ttf.base64";
+import robotoBoldB64 from "@/assets/fonts/Roboto-Bold.ttf.base64";
+function b64ToBytes(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
 async function loadUnicodeFonts() {
-  return {
-    regular: new Uint8Array(robotoRegularBuf as ArrayBuffer),
-    bold: new Uint8Array(robotoBoldBuf as ArrayBuffer),
-  };
+  return { regular: b64ToBytes(robotoRegularB64), bold: b64ToBytes(robotoBoldB64) };
 }
 async function embedUnicodeFonts(pdfDoc: any) {
   const fontkit = (await import("@pdf-lib/fontkit")).default;
