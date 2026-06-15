@@ -26,7 +26,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Send, X, Droplets, ClipboardList } from "lucide-react";
+import { Plus, Send, X, Droplets, ClipboardList, Info, BellRing } from "lucide-react";
 import { getMyAccess } from "@/lib/claims.functions";
 import {
   listEvidenceOrders,
@@ -74,6 +74,29 @@ function EvidencePage() {
             potvrzují převzetí e-mailem.
           </p>
         </header>
+        <div className="flex gap-3 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+          <Info className="mt-0.5 h-4 w-4 shrink-0" />
+          <div className="space-y-1">
+            <div className="font-medium">Jak funguje upozorňování myčů</div>
+            <ul className="list-disc space-y-0.5 pl-4 text-blue-900/90">
+              <li>
+                U každé zakázky vyplňte <strong>Datum vyzvednutí od</strong> a{" "}
+                <strong>Datum dokončení do</strong> — myč ví, v jakém okně mytí probíhá.
+              </li>
+              <li>
+                Po přiřazení myče se odešle e-mail s tlačítky <em>Přijímám / Odmítám</em>.
+              </li>
+              <li>
+                Pokud myč nepotvrdí ani neodmítne do 24 hodin, systém každý den
+                automaticky pošle připomínku.
+              </li>
+              <li>
+                Připomínky končí ve chvíli, kdy myč potvrdí, odmítne, zakázka je
+                zrušena nebo termín dokončení uplynul.
+              </li>
+            </ul>
+          </div>
+        </div>
         <Tabs defaultValue="orders">
           <TabsList>
             <TabsTrigger value="orders">
