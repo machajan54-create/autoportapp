@@ -86,7 +86,17 @@ export const updateTask = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => updateInput.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const patch: Record<string, unknown> = {};
+    type Patch = {
+      title?: string;
+      description?: string | null;
+      priority?: typeof TASK_PRIORITY[number];
+      due_date?: string | null;
+      assignee_id?: string | null;
+      assignee_name?: string | null;
+      status?: typeof TASK_STATUS[number];
+      completed_at?: string | null;
+    };
+    const patch: Patch = {};
     if (data.title !== undefined) patch.title = data.title;
     if (data.description !== undefined) patch.description = data.description;
     if (data.priority !== undefined) patch.priority = data.priority;
