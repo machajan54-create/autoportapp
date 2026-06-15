@@ -282,6 +282,34 @@ export const requestDeletion = createServerFn({ method: "POST" })
     }
     const entity_label = reg.label(row) || `${reg.typeLabel} #${data.entity_id.slice(0, 8)}`;
 
+    // Super admin bypasses the approval queue and deletes immediately.
+    if (await isAdmin(context.supabase, context.userId)) {
+      const storageGroups = await collectStoragePaths(
+        supabaseAdmin,
+        data.entity_type,
+        data.entity_id,
+      );
+      const { error: delErr } = await (supabaseAdmin as any)
+        .from(reg.table)
+        .delete()
+        .eq("id", data.entity_id);
+      if (delErr) throw new Error(`Smazání selhalo: ${delErr.message}`);
+      await removeStorageObjects(supabaseAdmin, storageGroups);
+      const nowIso = new Date().toISOString();
+      await (supabaseAdmin as any).from("deletion_requests").insert({
+        entity_type: data.entity_type,
+        entity_id: data.entity_id,
+        entity_label,
+        reason: data.reason,
+        requested_by: context.userId,
+        status: "approved",
+        decided_by: context.userId,
+        decided_at: nowIso,
+        decision_note: "Smazáno přímo super adminem",
+      });
+      return { ok: true, autoApproved: true as const };
+    }
+
     const { error } = await context.supabase.from("deletion_requests" as any).insert({
       entity_type: data.entity_type,
       entity_id: data.entity_id,

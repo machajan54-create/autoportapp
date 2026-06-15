@@ -64,10 +64,16 @@ export function RequestDeleteButton({
     }
     setBusy(true);
     try {
-      await submitFn({
+      const res: any = await submitFn({
         data: { entity_type: entityType, entity_id: entityId, reason: reason.trim() },
       });
-      toast.success("Žádost o smazání byla odeslána super adminovi.");
+      if (res?.autoApproved) {
+        toast.success("Záznam byl smazán.");
+      } else if (res?.alreadyGone) {
+        toast.success("Záznam již neexistuje.");
+      } else {
+        toast.success("Žádost o smazání byla odeslána super adminovi.");
+      }
       setOpen(false);
       setReason("");
       onRequested?.();
