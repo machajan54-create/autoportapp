@@ -234,12 +234,25 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
     }
 
     return out;
-  }, [claims, defects, absences, emps, recs, pending, isAdmin]);
+  }, [claims, defects, absences, emps, recs, pending, isAdmin, myPurchases, myAbsences, userId, lastSeen]);
 
   const count = items.length;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (v) {
+          // Mark personal notifications as seen
+          const now = new Date().toISOString();
+          const next: LastSeen = { purchases: now, defects: now, absences: now };
+          writeLastSeen(next);
+          // Defer state update so the user briefly sees the items, then they clear next render
+          setTimeout(() => setLastSeen(next), 400);
+        }
+      }}
+    >
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" aria-label="Notifikace" className="relative">
           <Bell className="h-5 w-5" />
