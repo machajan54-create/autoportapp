@@ -1150,6 +1150,7 @@ export type Database = {
       evidence_orders: {
         Row: {
           cislo_zakazky: string | null
+          complete_by: string | null
           created_at: string
           created_by: string | null
           den: string | null
@@ -1157,6 +1158,7 @@ export type Database = {
           id: string
           kdo_predava: string | null
           klient: string
+          pickup_from: string | null
           poznamka: string | null
           stav: string
           updated_at: string
@@ -1165,6 +1167,7 @@ export type Database = {
         }
         Insert: {
           cislo_zakazky?: string | null
+          complete_by?: string | null
           created_at?: string
           created_by?: string | null
           den?: string | null
@@ -1172,6 +1175,7 @@ export type Database = {
           id?: string
           kdo_predava?: string | null
           klient: string
+          pickup_from?: string | null
           poznamka?: string | null
           stav?: string
           updated_at?: string
@@ -1180,6 +1184,7 @@ export type Database = {
         }
         Update: {
           cislo_zakazky?: string | null
+          complete_by?: string | null
           created_at?: string
           created_by?: string | null
           den?: string | null
@@ -1187,6 +1192,7 @@ export type Database = {
           id?: string
           kdo_predava?: string | null
           klient?: string
+          pickup_from?: string | null
           poznamka?: string | null
           stav?: string
           updated_at?: string
@@ -1200,7 +1206,9 @@ export type Database = {
           confirm_token: string
           decided_at: string | null
           id: string
+          last_reminder_at: string | null
           order_id: string
+          reminder_count: number
           sent_at: string
           status: string
           washer_id: string
@@ -1209,7 +1217,9 @@ export type Database = {
           confirm_token?: string
           decided_at?: string | null
           id?: string
+          last_reminder_at?: string | null
           order_id: string
+          reminder_count?: number
           sent_at?: string
           status?: string
           washer_id: string
@@ -1218,7 +1228,9 @@ export type Database = {
           confirm_token?: string
           decided_at?: string | null
           id?: string
+          last_reminder_at?: string | null
           order_id?: string
+          reminder_count?: number
           sent_at?: string
           status?: string
           washer_id?: string
