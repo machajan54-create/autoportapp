@@ -272,7 +272,7 @@ async function buildOrderPdf(order: any, client: any): Promise<Uint8Array> {
     draw(fmtKc(dph), width - marginX - 150, y, { size: 9 });
     draw(fmtKc(s), width - marginX - 80, y, { size: 9 });
     y -= 13;
-    if (y < 160) { y = height - 60; page.addPage([595.28, 841.89]); }
+    if (y < 160) { y = height - 60; pdf.addPage([595.28, 841.89]); }
   }
   y -= 6;
   // Totals box
