@@ -297,7 +297,7 @@ export const listUsers = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data: profiles } = await context.supabase
       .from("profiles")
-      .select("id,email,full_name,created_at,approved")
+      .select("id,email,full_name,created_at,approved,department,is_department_head")
       .order("created_at", { ascending: false });
     const { data: roles } = await context.supabase.from("user_roles").select("user_id,role");
     const { data: modules } = await context.supabase
@@ -321,15 +321,32 @@ export const listUsers = createServerFn({ method: "GET" })
         // tichá degradace, banned info bude nedostupné
       }
     }
+    // Spočítej vedoucího pro každé oddělení
+    const headByDept = new Map<string, { id: string; full_name: string | null; email: string | null }>();
+    for (const p of profiles ?? []) {
+      if ((p as any).is_department_head && (p as any).department && !headByDept.has((p as any).department)) {
+        headByDept.set((p as any).department, { id: p.id, full_name: p.full_name, email: p.email });
+      }
+    }
     return (profiles ?? []).map((p) => {
       const bu = bannedMap.get(p.id) ?? null;
       const banned = !!bu && new Date(bu).getTime() > Date.now();
+      const userRoles = (roles ?? []).filter((r) => r.user_id === p.id).map((r) => r.role);
+      const isUserAdmin = userRoles.includes("admin");
+      const dept = (p as any).department as string | null;
+      const head = dept ? headByDept.get(dept) ?? null : null;
+      // Nadřízený: vedoucí oddělení (pokud existuje a není to on sám), jinak super admin
+      const supervisor =
+        !isUserAdmin && head && head.id !== p.id
+          ? { id: head.id, name: head.full_name || head.email || "—" }
+          : null;
       return {
         ...p,
-        roles: (roles ?? []).filter((r) => r.user_id === p.id).map((r) => r.role),
+        roles: userRoles,
         modules: (modules ?? []).filter((m) => m.user_id === p.id).map((m) => m.module),
         banned,
         banned_until: bu,
+        supervisor,
       };
     });
   });
