@@ -215,6 +215,16 @@ export const upsertRecord = createServerFn({ method: "POST" })
       check_out: data.check_out ?? null,
       note: data.note ?? null,
     };
+    // Zaokrouhli podle nastavení (pokud je vyplněn check_out)
+    if (payload.check_out && payload.check_in) {
+      const stepMin = await getRoundingMinutes(context.supabase);
+      if (stepMin > 0) {
+        const ms = new Date(payload.check_out).getTime() - new Date(payload.check_in).getTime();
+        const breakMs = (payload.break_duration ?? 0) * 60_000;
+        const hours = Math.max(0, (ms - breakMs) / 3_600_000);
+        payload.hours_worked = roundHours(hours, stepMin);
+      }
+    }
     if (data.id) {
       const { error } = await context.supabase
         .from("attendance_records")
