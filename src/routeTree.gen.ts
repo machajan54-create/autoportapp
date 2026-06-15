@@ -31,6 +31,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as AuthenticatedVykupyDashboardRouteImport } from './routes/_authenticated/vykupy/dashboard'
 import { Route as AuthenticatedVykupyIdRouteImport } from './routes/_authenticated/vykupy/$id'
+import { Route as AuthenticatedDemoOrdersIdRouteImport } from './routes/_authenticated/demo-orders/$id'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedAdminTemplatesRouteImport } from './routes/_authenticated/admin/templates'
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin/audit'
@@ -160,6 +161,12 @@ const AuthenticatedVykupyIdRoute = AuthenticatedVykupyIdRouteImport.update({
   path: '/vykupy/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDemoOrdersIdRoute =
+  AuthenticatedDemoOrdersIdRouteImport.update({
+    id: '/demo-orders/$id',
+    path: '/demo-orders/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
@@ -249,6 +256,7 @@ export interface FileRoutesByFullPath {
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/templates': typeof AuthenticatedAdminTemplatesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/demo-orders/$id': typeof AuthenticatedDemoOrdersIdRoute
   '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -285,6 +293,7 @@ export interface FileRoutesByTo {
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/templates': typeof AuthenticatedAdminTemplatesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/demo-orders/$id': typeof AuthenticatedDemoOrdersIdRoute
   '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -323,6 +332,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/_authenticated/admin/templates': typeof AuthenticatedAdminTemplatesRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/_authenticated/demo-orders/$id': typeof AuthenticatedDemoOrdersIdRoute
   '/_authenticated/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/_authenticated/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -361,6 +371,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/templates'
     | '/admin/users'
+    | '/demo-orders/$id'
     | '/vykupy/$id'
     | '/vykupy/dashboard'
     | '/lovable/email/suppression'
@@ -397,6 +408,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/templates'
     | '/admin/users'
+    | '/demo-orders/$id'
     | '/vykupy/$id'
     | '/vykupy/dashboard'
     | '/lovable/email/suppression'
@@ -434,6 +446,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/audit'
     | '/_authenticated/admin/templates'
     | '/_authenticated/admin/users'
+    | '/_authenticated/demo-orders/$id'
     | '/_authenticated/vykupy/$id'
     | '/_authenticated/vykupy/dashboard'
     | '/lovable/email/suppression'
@@ -634,6 +647,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVykupyIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/demo-orders/$id': {
+      id: '/_authenticated/demo-orders/$id'
+      path: '/demo-orders/$id'
+      fullPath: '/demo-orders/$id'
+      preLoaderRoute: typeof AuthenticatedDemoOrdersIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/users': {
       id: '/_authenticated/admin/users'
       path: '/admin/users'
@@ -735,6 +755,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
   AuthenticatedAdminTemplatesRoute: typeof AuthenticatedAdminTemplatesRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
+  AuthenticatedDemoOrdersIdRoute: typeof AuthenticatedDemoOrdersIdRoute
   AuthenticatedVykupyIdRoute: typeof AuthenticatedVykupyIdRoute
   AuthenticatedVykupyDashboardRoute: typeof AuthenticatedVykupyDashboardRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
@@ -754,6 +775,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
   AuthenticatedAdminTemplatesRoute: AuthenticatedAdminTemplatesRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
+  AuthenticatedDemoOrdersIdRoute: AuthenticatedDemoOrdersIdRoute,
   AuthenticatedVykupyIdRoute: AuthenticatedVykupyIdRoute,
   AuthenticatedVykupyDashboardRoute: AuthenticatedVykupyDashboardRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
