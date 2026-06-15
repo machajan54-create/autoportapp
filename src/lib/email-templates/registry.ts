@@ -7,6 +7,7 @@ import { template as taskDueSoon } from './task-due-soon'
 import { template as taskOverdue } from './task-overdue'
 import { template as taskDailyDigest } from './task-daily-digest'
 import { template as followupReminder } from './followup-reminder'
+import { template as taskStatusChanged } from './task-status-changed'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -34,4 +35,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'task-overdue': taskOverdue,
   'task-daily-digest': taskDailyDigest,
   'followup-reminder': followupReminder,
+  'task-status-changed': taskStatusChanged,
 }
