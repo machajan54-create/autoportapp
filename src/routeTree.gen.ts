@@ -25,10 +25,12 @@ import { Route as AuthenticatedZavadyIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedVykupyIndexRouteImport } from './routes/_authenticated/vykupy/index'
 import { Route as AuthenticatedUkolyIndexRouteImport } from './routes/_authenticated/ukoly/index'
 import { Route as AuthenticatedLogbookIndexRouteImport } from './routes/_authenticated/logbook/index'
+import { Route as AuthenticatedEvidenceZakazekIndexRouteImport } from './routes/_authenticated/evidence-zakazek/index'
 import { Route as AuthenticatedDochazkaIndexRouteImport } from './routes/_authenticated/dochazka/index'
 import { Route as AuthenticatedDemoOrdersIndexRouteImport } from './routes/_authenticated/demo-orders/index'
 import { Route as AuthenticatedDealsIndexRouteImport } from './routes/_authenticated/deals/index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
+import { Route as WashRespondActionTokenRouteImport } from './routes/wash-respond.$action.$token'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as AuthenticatedVykupyDashboardRouteImport } from './routes/_authenticated/vykupy/dashboard'
 import { Route as AuthenticatedVykupyIdRouteImport } from './routes/_authenticated/vykupy/$id'
@@ -129,6 +131,12 @@ const AuthenticatedLogbookIndexRoute =
     path: '/logbook/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedEvidenceZakazekIndexRoute =
+  AuthenticatedEvidenceZakazekIndexRouteImport.update({
+    id: '/evidence-zakazek/',
+    path: '/evidence-zakazek/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDochazkaIndexRoute =
   AuthenticatedDochazkaIndexRouteImport.update({
     id: '/dochazka/',
@@ -150,6 +158,11 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const WashRespondActionTokenRoute = WashRespondActionTokenRouteImport.update({
+  id: '/wash-respond/$action/$token',
+  path: '/wash-respond/$action/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
@@ -267,10 +280,12 @@ export interface FileRoutesByFullPath {
   '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/wash-respond/$action/$token': typeof WashRespondActionTokenRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/deals/': typeof AuthenticatedDealsIndexRoute
   '/demo-orders/': typeof AuthenticatedDemoOrdersIndexRoute
   '/dochazka/': typeof AuthenticatedDochazkaIndexRoute
+  '/evidence-zakazek/': typeof AuthenticatedEvidenceZakazekIndexRoute
   '/logbook/': typeof AuthenticatedLogbookIndexRoute
   '/ukoly/': typeof AuthenticatedUkolyIndexRoute
   '/vykupy/': typeof AuthenticatedVykupyIndexRoute
@@ -305,10 +320,12 @@ export interface FileRoutesByTo {
   '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/wash-respond/$action/$token': typeof WashRespondActionTokenRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/deals': typeof AuthenticatedDealsIndexRoute
   '/demo-orders': typeof AuthenticatedDemoOrdersIndexRoute
   '/dochazka': typeof AuthenticatedDochazkaIndexRoute
+  '/evidence-zakazek': typeof AuthenticatedEvidenceZakazekIndexRoute
   '/logbook': typeof AuthenticatedLogbookIndexRoute
   '/ukoly': typeof AuthenticatedUkolyIndexRoute
   '/vykupy': typeof AuthenticatedVykupyIndexRoute
@@ -345,10 +362,12 @@ export interface FileRoutesById {
   '/_authenticated/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/_authenticated/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/wash-respond/$action/$token': typeof WashRespondActionTokenRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/deals/': typeof AuthenticatedDealsIndexRoute
   '/_authenticated/demo-orders/': typeof AuthenticatedDemoOrdersIndexRoute
   '/_authenticated/dochazka/': typeof AuthenticatedDochazkaIndexRoute
+  '/_authenticated/evidence-zakazek/': typeof AuthenticatedEvidenceZakazekIndexRoute
   '/_authenticated/logbook/': typeof AuthenticatedLogbookIndexRoute
   '/_authenticated/ukoly/': typeof AuthenticatedUkolyIndexRoute
   '/_authenticated/vykupy/': typeof AuthenticatedVykupyIndexRoute
@@ -385,10 +404,12 @@ export interface FileRouteTypes {
     | '/vykupy/$id'
     | '/vykupy/dashboard'
     | '/lovable/email/suppression'
+    | '/wash-respond/$action/$token'
     | '/admin/'
     | '/deals/'
     | '/demo-orders/'
     | '/dochazka/'
+    | '/evidence-zakazek/'
     | '/logbook/'
     | '/ukoly/'
     | '/vykupy/'
@@ -423,10 +444,12 @@ export interface FileRouteTypes {
     | '/vykupy/$id'
     | '/vykupy/dashboard'
     | '/lovable/email/suppression'
+    | '/wash-respond/$action/$token'
     | '/admin'
     | '/deals'
     | '/demo-orders'
     | '/dochazka'
+    | '/evidence-zakazek'
     | '/logbook'
     | '/ukoly'
     | '/vykupy'
@@ -462,10 +485,12 @@ export interface FileRouteTypes {
     | '/_authenticated/vykupy/$id'
     | '/_authenticated/vykupy/dashboard'
     | '/lovable/email/suppression'
+    | '/wash-respond/$action/$token'
     | '/_authenticated/admin/'
     | '/_authenticated/deals/'
     | '/_authenticated/demo-orders/'
     | '/_authenticated/dochazka/'
+    | '/_authenticated/evidence-zakazek/'
     | '/_authenticated/logbook/'
     | '/_authenticated/ukoly/'
     | '/_authenticated/vykupy/'
@@ -493,6 +518,7 @@ export interface RootRouteChildren {
   SignTokenRoute: typeof SignTokenRoute
   UploadTokenRoute: typeof UploadTokenRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  WashRespondActionTokenRoute: typeof WashRespondActionTokenRoute
   ApiPublicCronFollowupRemindersRoute: typeof ApiPublicCronFollowupRemindersRoute
   ApiPublicCronTaskDailyDigestRoute: typeof ApiPublicCronTaskDailyDigestRoute
   ApiPublicCronTaskRemindersRoute: typeof ApiPublicCronTaskRemindersRoute
@@ -618,6 +644,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLogbookIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/evidence-zakazek/': {
+      id: '/_authenticated/evidence-zakazek/'
+      path: '/evidence-zakazek'
+      fullPath: '/evidence-zakazek/'
+      preLoaderRoute: typeof AuthenticatedEvidenceZakazekIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dochazka/': {
       id: '/_authenticated/dochazka/'
       path: '/dochazka'
@@ -645,6 +678,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/wash-respond/$action/$token': {
+      id: '/wash-respond/$action/$token'
+      path: '/wash-respond/$action/$token'
+      fullPath: '/wash-respond/$action/$token'
+      preLoaderRoute: typeof WashRespondActionTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/lovable/email/suppression': {
       id: '/lovable/email/suppression'
@@ -782,6 +822,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDealsIndexRoute: typeof AuthenticatedDealsIndexRoute
   AuthenticatedDemoOrdersIndexRoute: typeof AuthenticatedDemoOrdersIndexRoute
   AuthenticatedDochazkaIndexRoute: typeof AuthenticatedDochazkaIndexRoute
+  AuthenticatedEvidenceZakazekIndexRoute: typeof AuthenticatedEvidenceZakazekIndexRoute
   AuthenticatedLogbookIndexRoute: typeof AuthenticatedLogbookIndexRoute
   AuthenticatedUkolyIndexRoute: typeof AuthenticatedUkolyIndexRoute
   AuthenticatedVykupyIndexRoute: typeof AuthenticatedVykupyIndexRoute
@@ -802,6 +843,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDealsIndexRoute: AuthenticatedDealsIndexRoute,
   AuthenticatedDemoOrdersIndexRoute: AuthenticatedDemoOrdersIndexRoute,
   AuthenticatedDochazkaIndexRoute: AuthenticatedDochazkaIndexRoute,
+  AuthenticatedEvidenceZakazekIndexRoute:
+    AuthenticatedEvidenceZakazekIndexRoute,
   AuthenticatedLogbookIndexRoute: AuthenticatedLogbookIndexRoute,
   AuthenticatedUkolyIndexRoute: AuthenticatedUkolyIndexRoute,
   AuthenticatedVykupyIndexRoute: AuthenticatedVykupyIndexRoute,
@@ -823,6 +866,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignTokenRoute: SignTokenRoute,
   UploadTokenRoute: UploadTokenRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  WashRespondActionTokenRoute: WashRespondActionTokenRoute,
   ApiPublicCronFollowupRemindersRoute: ApiPublicCronFollowupRemindersRoute,
   ApiPublicCronTaskDailyDigestRoute: ApiPublicCronTaskDailyDigestRoute,
   ApiPublicCronTaskRemindersRoute: ApiPublicCronTaskRemindersRoute,

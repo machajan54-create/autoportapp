@@ -1147,6 +1147,99 @@ export type Database = {
         }
         Relationships: []
       }
+      evidence_orders: {
+        Row: {
+          cislo_zakazky: string | null
+          created_at: string
+          created_by: string | null
+          den: string | null
+          hodina: string | null
+          id: string
+          kdo_predava: string | null
+          klient: string
+          poznamka: string | null
+          stav: string
+          updated_at: string
+          vis: string | null
+          vozidlo: string
+        }
+        Insert: {
+          cislo_zakazky?: string | null
+          created_at?: string
+          created_by?: string | null
+          den?: string | null
+          hodina?: string | null
+          id?: string
+          kdo_predava?: string | null
+          klient: string
+          poznamka?: string | null
+          stav?: string
+          updated_at?: string
+          vis?: string | null
+          vozidlo: string
+        }
+        Update: {
+          cislo_zakazky?: string | null
+          created_at?: string
+          created_by?: string | null
+          den?: string | null
+          hodina?: string | null
+          id?: string
+          kdo_predava?: string | null
+          klient?: string
+          poznamka?: string | null
+          stav?: string
+          updated_at?: string
+          vis?: string | null
+          vozidlo?: string
+        }
+        Relationships: []
+      }
+      evidence_wash_assignments: {
+        Row: {
+          confirm_token: string
+          decided_at: string | null
+          id: string
+          order_id: string
+          sent_at: string
+          status: string
+          washer_id: string
+        }
+        Insert: {
+          confirm_token?: string
+          decided_at?: string | null
+          id?: string
+          order_id: string
+          sent_at?: string
+          status?: string
+          washer_id: string
+        }
+        Update: {
+          confirm_token?: string
+          decided_at?: string | null
+          id?: string
+          order_id?: string
+          sent_at?: string
+          status?: string
+          washer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidence_wash_assignments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "evidence_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_wash_assignments_washer_id_fkey"
+            columns: ["washer_id"]
+            isOneToOne: false
+            referencedRelation: "washers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       logbook_entries: {
         Row: {
           created_at: string
@@ -1750,6 +1843,36 @@ export type Database = {
         }
         Relationships: []
       }
+      washers: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          email: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          email: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1812,6 +1935,7 @@ export type Database = {
         | "logbook"
         | "tasks"
         | "demo_orders"
+        | "evidence_zakazek"
       app_role: "admin" | "employee"
       approval_status: "pending" | "approved" | "rejected"
       claim_status:
@@ -1977,6 +2101,7 @@ export const Constants = {
         "logbook",
         "tasks",
         "demo_orders",
+        "evidence_zakazek",
       ],
       app_role: ["admin", "employee"],
       approval_status: ["pending", "approved", "rejected"],
