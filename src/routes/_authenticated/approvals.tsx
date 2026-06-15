@@ -70,7 +70,7 @@ function ApprovalsPage() {
           <p className="text-sm text-muted-foreground">
             {isAdmin
               ? "Schvalujte žádosti zaměstnanců o nákupy a dodavatele."
-              : "Vaše žádosti o nákupy a dodavatele. Schvaluje super admin."}
+              : "Vaše žádosti o nákupy a dodavatele. Schvaluje vedoucí oddělení (super admin na vědomí)."}
           </p>
         </header>
         <Tabs defaultValue="purchases">
@@ -195,12 +195,12 @@ function SuppliersTab({ isAdmin }: { isAdmin: boolean }) {
                   )}
                 </div>
                 <div className="flex gap-1">
-                  {isAdmin && s.status !== "approved" && (
+                  {s.can_decide && s.status !== "approved" && (
                     <Button size="sm" variant="outline" onClick={() => setStatus(s.id, "approved")}>
                       <Check className="h-4 w-4" />
                     </Button>
                   )}
-                  {isAdmin && s.status !== "rejected" && (
+                  {s.can_decide && s.status !== "rejected" && (
                     <Button size="sm" variant="outline" onClick={() => setStatus(s.id, "rejected")}>
                       <X className="h-4 w-4" />
                     </Button>
@@ -549,12 +549,12 @@ function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
                   {p.description && <div className="mt-1 text-sm">{p.description}</div>}
                 </div>
                 <div className="flex gap-1">
-                  {isAdmin && p.status !== "approved" && (
+                  {p.can_decide && p.status !== "approved" && (
                     <Button size="sm" variant="outline" onClick={() => setStatus(p.id, "approved")}>
                       <Check className="h-4 w-4" />
                     </Button>
                   )}
-                  {isAdmin && p.status !== "rejected" && (
+                  {p.can_decide && p.status !== "rejected" && (
                     <Button size="sm" variant="outline" onClick={() => setStatus(p.id, "rejected")}>
                       <X className="h-4 w-4" />
                     </Button>

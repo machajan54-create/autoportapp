@@ -6,16 +6,53 @@ const loadNotify = () => import("@/lib/email/notify.server");
 
 const APP_URL = "https://www.autoport-app.cz/approvals";
 
-async function assertAdmin(supabase: any, userId: string) {
-  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
-  if (!(data ?? []).some((r: any) => r.role === "admin")) {
-    throw new Error("Pouze super admin");
-  }
-}
-
 async function isAdmin(supabase: any, userId: string): Promise<boolean> {
   const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
   return (data ?? []).some((r: any) => r.role === "admin");
+}
+
+/** Returns the requester's department head (if any) — used to compute approval scope. */
+async function getDeptHeadFor(supabase: any, requesterId: string | null | undefined) {
+  if (!requesterId) return null;
+  const { data: req } = await supabase
+    .from("profiles")
+    .select("department")
+    .eq("id", requesterId)
+    .maybeSingle();
+  if (!req?.department) return null;
+  const { data: head } = await supabase
+    .from("profiles")
+    .select("id, email, full_name")
+    .eq("department", req.department)
+    .eq("is_department_head", true)
+    .maybeSingle();
+  return head ?? null;
+}
+
+/** True if the user is a super admin OR the department head of the requester. */
+async function canDecideForRequester(
+  supabase: any,
+  userId: string,
+  requesterId: string | null | undefined,
+): Promise<boolean> {
+  if (await isAdmin(supabase, userId)) return true;
+  const head = await getDeptHeadFor(supabase, requesterId);
+  return !!head && head.id === userId;
+}
+
+/** Returns IDs of users in the same department as the given head (so the head can see their requests). */
+async function getDepartmentMemberIds(supabase: any, headUserId: string): Promise<string[]> {
+  const { data: me } = await supabase
+    .from("profiles")
+    .select("department, is_department_head")
+    .eq("id", headUserId)
+    .maybeSingle();
+  if (!me?.is_department_head || !me?.department) return [];
+  const { data: members } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("department", me.department);
+  return (members ?? []).map((m: any) => m.id);
 }
 
 /**
@@ -25,12 +62,25 @@ async function isAdmin(supabase: any, userId: string): Promise<boolean> {
 export const countPendingApprovalItems = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    if (!(await isAdmin(context.supabase, context.userId))) return { count: 0 };
+    const admin = await isAdmin(context.supabase, context.userId);
+    if (admin) {
+      const [s, p] = await Promise.all([
+        context.supabase
+          .from("suppliers").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        context.supabase
+          .from("purchases").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      ]);
+      return { count: (s.count ?? 0) + (p.count ?? 0) };
+    }
+    const memberIds = await getDepartmentMemberIds(context.supabase, context.userId);
+    if (!memberIds.length) return { count: 0 };
     const [s, p] = await Promise.all([
       context.supabase
-        .from("suppliers").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        .from("suppliers").select("id", { count: "exact", head: true })
+        .eq("status", "pending").in("requested_by", memberIds),
       context.supabase
-        .from("purchases").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        .from("purchases").select("id", { count: "exact", head: true })
+        .eq("status", "pending").in("requested_by", memberIds),
     ]);
     return { count: (s.count ?? 0) + (p.count ?? 0) };
   });
@@ -46,15 +96,32 @@ async function attachRequesters<T extends { requested_by?: string | null }>(
   return rows.map((r) => ({ ...r, requester: r.requested_by ? map.get(r.requested_by) ?? null : null }));
 }
 
+/** Annotate rows with `can_decide` for the current viewer. */
+async function annotateDecidable<T extends { requested_by?: string | null }>(
+  supabase: any,
+  viewerId: string,
+  rows: T[],
+): Promise<(T & { can_decide: boolean })[]> {
+  const admin = await isAdmin(supabase, viewerId);
+  if (admin) return rows.map((r) => ({ ...r, can_decide: true }));
+  const memberIds = new Set(await getDepartmentMemberIds(supabase, viewerId));
+  return rows.map((r) => ({ ...r, can_decide: !!r.requested_by && memberIds.has(r.requested_by) }));
+}
+
 export const listSuppliers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const admin = await isAdmin(context.supabase, context.userId);
     let q = context.supabase.from("suppliers").select("*").order("created_at", { ascending: false });
-    if (!admin) q = q.eq("requested_by", context.userId);
+    if (!admin) {
+      const memberIds = await getDepartmentMemberIds(context.supabase, context.userId);
+      const visibleIds = Array.from(new Set([context.userId, ...memberIds]));
+      q = q.in("requested_by", visibleIds);
+    }
     const { data, error } = await q;
     if (error) throw new Error(error.message);
-    return await attachRequesters(context.supabase, data ?? []);
+    const withReq = await attachRequesters(context.supabase, data ?? []);
+    return await annotateDecidable(context.supabase, context.userId, withReq);
   });
 
 const supplierInput = z.object({
@@ -80,7 +147,9 @@ export const createSupplier = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(error.message);
     const me = await (await loadNotify()).getUserEmail(context.userId);
-    await (await loadNotify()).notifyAdmins({
+    const head = await getDeptHeadFor(context.supabase, context.userId);
+    const notify = await loadNotify();
+    const payload = {
       templateName: "approval-request",
       templateData: {
         kind: "purchase",
@@ -94,7 +163,11 @@ export const createSupplier = createServerFn({ method: "POST" })
         ],
         actionUrl: APP_URL,
       },
-    });
+    } as const;
+    await notify.notifyAdmins(payload);
+    if (head && head.email && head.id !== context.userId) {
+      await notify.enqueueTransactionalEmail({ ...payload, recipientEmail: head.email });
+    }
     return { ok: true };
   });
 
@@ -107,12 +180,14 @@ export const decideSupplier = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ context, data }) => {
-    await assertAdmin(context.supabase, context.userId);
     const { data: row } = await context.supabase
       .from("suppliers")
       .select("name, requested_by")
       .eq("id", data.id)
       .maybeSingle();
+    if (!(await canDecideForRequester(context.supabase, context.userId, row?.requested_by))) {
+      throw new Error("Tuto žádost můžete schválit jen jako super admin nebo vedoucí oddělení žadatele.");
+    }
     const { error } = await context.supabase
       .from("suppliers")
       .update({
@@ -157,10 +232,15 @@ export const listPurchases = createServerFn({ method: "GET" })
       .from("purchases")
       .select("*, supplier:suppliers(id,name)")
       .order("created_at", { ascending: false });
-    if (!admin) q = q.eq("requested_by", context.userId);
+    if (!admin) {
+      const memberIds = await getDepartmentMemberIds(context.supabase, context.userId);
+      const visibleIds = Array.from(new Set([context.userId, ...memberIds]));
+      q = q.in("requested_by", visibleIds);
+    }
     const { data, error } = await q;
     if (error) throw new Error(error.message);
-    return await attachRequesters(context.supabase, data ?? []);
+    const withReq = await attachRequesters(context.supabase, data ?? []);
+    return await annotateDecidable(context.supabase, context.userId, withReq);
   });
 
 const purchaseInput = z.object({
@@ -198,7 +278,9 @@ export const createPurchase = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(error.message);
     const me = await (await loadNotify()).getUserEmail(context.userId);
-    await (await loadNotify()).notifyAdmins({
+    const head = await getDeptHeadFor(context.supabase, context.userId);
+    const notify = await loadNotify();
+    const payload = {
       templateName: "approval-request",
       templateData: {
         kind: "purchase",
@@ -212,7 +294,11 @@ export const createPurchase = createServerFn({ method: "POST" })
         ],
         actionUrl: APP_URL,
       },
-    });
+    } as const;
+    await notify.notifyAdmins(payload);
+    if (head && head.email && head.id !== context.userId) {
+      await notify.enqueueTransactionalEmail({ ...payload, recipientEmail: head.email });
+    }
     return { ok: true };
   });
 
@@ -226,12 +312,14 @@ export const decidePurchase = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ context, data }) => {
-    await assertAdmin(context.supabase, context.userId);
     const { data: row } = await context.supabase
       .from("purchases")
       .select("title, amount, currency, requested_by")
       .eq("id", data.id)
       .maybeSingle();
+    if (!(await canDecideForRequester(context.supabase, context.userId, row?.requested_by))) {
+      throw new Error("Tuto žádost můžete schválit jen jako super admin nebo vedoucí oddělení žadatele.");
+    }
     const { error } = await context.supabase
       .from("purchases")
       .update({
