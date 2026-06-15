@@ -102,8 +102,9 @@ function EvidencePage() {
                 Po přiřazení myče se odešle e-mail s tlačítky <em>Přijímám / Odmítám</em>.
               </li>
               <li>
-                Pokud myč nepotvrdí ani neodmítne do 24 hodin, systém každý den
-                automaticky pošle připomínku.
+                Pokud myč nepotvrdí ani neodmítne do 2 hodin, systém mu
+                automaticky pošle připomínku — a opakuje ji každé 2 hodiny,
+                dokud nereaguje.
               </li>
               <li>
                 Připomínky končí ve chvíli, kdy myč potvrdí, odmítne, zakázka je
