@@ -195,12 +195,12 @@ function SuppliersTab({ isAdmin }: { isAdmin: boolean }) {
                   )}
                 </div>
                 <div className="flex gap-1">
-                  {isAdmin && s.status !== "approved" && (
+                  {s.can_decide && s.status !== "approved" && (
                     <Button size="sm" variant="outline" onClick={() => setStatus(s.id, "approved")}>
                       <Check className="h-4 w-4" />
                     </Button>
                   )}
-                  {isAdmin && s.status !== "rejected" && (
+                  {s.can_decide && s.status !== "rejected" && (
                     <Button size="sm" variant="outline" onClick={() => setStatus(s.id, "rejected")}>
                       <X className="h-4 w-4" />
                     </Button>
