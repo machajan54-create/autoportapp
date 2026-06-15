@@ -629,7 +629,7 @@ async function buildSignedFromBase(baseBytes: Uint8Array, signatureDataUrl: stri
   const pdf = await PDFDocument.load(baseBytes);
   const pages = pdf.getPages();
   const last = pages[pages.length - 1];
-  const font = await pdf.embedFont(StandardFonts.Helvetica);
+  const { font } = await embedUnicodeFonts(pdf);
 
   await embedSignatureAt(pdf, last, signatureDataUrl, {
     x: SIG.buyerX, y: SIG.lineY + 4, w: SIG.buyerW, h: SIG.buyerH,
