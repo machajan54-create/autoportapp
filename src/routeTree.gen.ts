@@ -25,6 +25,7 @@ import { Route as AuthenticatedVykupyIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedUkolyIndexRouteImport } from './routes/_authenticated/ukoly/index'
 import { Route as AuthenticatedLogbookIndexRouteImport } from './routes/_authenticated/logbook/index'
 import { Route as AuthenticatedDochazkaIndexRouteImport } from './routes/_authenticated/dochazka/index'
+import { Route as AuthenticatedDemoOrdersIndexRouteImport } from './routes/_authenticated/demo-orders/index'
 import { Route as AuthenticatedDealsIndexRouteImport } from './routes/_authenticated/deals/index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
@@ -125,6 +126,12 @@ const AuthenticatedDochazkaIndexRoute =
   AuthenticatedDochazkaIndexRouteImport.update({
     id: '/dochazka/',
     path: '/dochazka/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDemoOrdersIndexRoute =
+  AuthenticatedDemoOrdersIndexRouteImport.update({
+    id: '/demo-orders/',
+    path: '/demo-orders/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedDealsIndexRoute = AuthenticatedDealsIndexRouteImport.update({
@@ -247,6 +254,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/deals/': typeof AuthenticatedDealsIndexRoute
+  '/demo-orders/': typeof AuthenticatedDemoOrdersIndexRoute
   '/dochazka/': typeof AuthenticatedDochazkaIndexRoute
   '/logbook/': typeof AuthenticatedLogbookIndexRoute
   '/ukoly/': typeof AuthenticatedUkolyIndexRoute
@@ -282,6 +290,7 @@ export interface FileRoutesByTo {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/deals': typeof AuthenticatedDealsIndexRoute
+  '/demo-orders': typeof AuthenticatedDemoOrdersIndexRoute
   '/dochazka': typeof AuthenticatedDochazkaIndexRoute
   '/logbook': typeof AuthenticatedLogbookIndexRoute
   '/ukoly': typeof AuthenticatedUkolyIndexRoute
@@ -319,6 +328,7 @@ export interface FileRoutesById {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/deals/': typeof AuthenticatedDealsIndexRoute
+  '/_authenticated/demo-orders/': typeof AuthenticatedDemoOrdersIndexRoute
   '/_authenticated/dochazka/': typeof AuthenticatedDochazkaIndexRoute
   '/_authenticated/logbook/': typeof AuthenticatedLogbookIndexRoute
   '/_authenticated/ukoly/': typeof AuthenticatedUkolyIndexRoute
@@ -356,6 +366,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/admin/'
     | '/deals/'
+    | '/demo-orders/'
     | '/dochazka/'
     | '/logbook/'
     | '/ukoly/'
@@ -391,6 +402,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/admin'
     | '/deals'
+    | '/demo-orders'
     | '/dochazka'
     | '/logbook'
     | '/ukoly'
@@ -427,6 +439,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/_authenticated/admin/'
     | '/_authenticated/deals/'
+    | '/_authenticated/demo-orders/'
     | '/_authenticated/dochazka/'
     | '/_authenticated/logbook/'
     | '/_authenticated/ukoly/'
@@ -579,6 +592,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDochazkaIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/demo-orders/': {
+      id: '/_authenticated/demo-orders/'
+      path: '/demo-orders'
+      fullPath: '/demo-orders/'
+      preLoaderRoute: typeof AuthenticatedDemoOrdersIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/deals/': {
       id: '/_authenticated/deals/'
       path: '/deals'
@@ -719,6 +739,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVykupyDashboardRoute: typeof AuthenticatedVykupyDashboardRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedDealsIndexRoute: typeof AuthenticatedDealsIndexRoute
+  AuthenticatedDemoOrdersIndexRoute: typeof AuthenticatedDemoOrdersIndexRoute
   AuthenticatedDochazkaIndexRoute: typeof AuthenticatedDochazkaIndexRoute
   AuthenticatedLogbookIndexRoute: typeof AuthenticatedLogbookIndexRoute
   AuthenticatedUkolyIndexRoute: typeof AuthenticatedUkolyIndexRoute
@@ -737,6 +758,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVykupyDashboardRoute: AuthenticatedVykupyDashboardRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedDealsIndexRoute: AuthenticatedDealsIndexRoute,
+  AuthenticatedDemoOrdersIndexRoute: AuthenticatedDemoOrdersIndexRoute,
   AuthenticatedDochazkaIndexRoute: AuthenticatedDochazkaIndexRoute,
   AuthenticatedLogbookIndexRoute: AuthenticatedLogbookIndexRoute,
   AuthenticatedUkolyIndexRoute: AuthenticatedUkolyIndexRoute,
