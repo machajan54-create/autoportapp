@@ -19,6 +19,7 @@ import {
   FolderOpen, AlertCircle, AlertTriangle, LogIn, Timer,
   PalmtreeIcon, Trophy, Wrench, FileWarning, ArrowRight,
   Briefcase, BookOpen, CheckSquare, Car as CarIcon, Fuel,
+  Plus, ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
