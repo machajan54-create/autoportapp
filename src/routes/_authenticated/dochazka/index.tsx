@@ -27,7 +27,7 @@ import {
 import {
   Clock, Plus, Pencil, Trash2, Download, Check, X, BellOff, BellRing,
   ExternalLink, Users as UsersIcon, CalendarClock, BarChart3, PalmtreeIcon, Bell,
-  CalendarDays, ChevronLeft, ChevronRight,
+  CalendarDays, ChevronLeft, ChevronRight, Send, ShieldCheck, AlertTriangle, FileSpreadsheet,
 } from "lucide-react";
 import {
   listEmployees, upsertEmployee, deleteEmployee,
@@ -37,6 +37,7 @@ import {
   listNotifications, markNotificationRead, markAllNotificationsRead,
   getDochazkaSettings, updateDochazkaSettings,
   getMonthCalendar, listResolvers,
+  submitRecord, decideRecord, bulkDecideRecords,
 } from "@/lib/dochazka.functions";
 import { getMyAccess } from "@/lib/claims.functions";
 import {
