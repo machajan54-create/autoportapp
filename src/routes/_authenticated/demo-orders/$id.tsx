@@ -90,6 +90,9 @@ function DemoOrderForm() {
   const clearSeller = useServerFn(clearSellerSignature);
   const fetchClients = useServerFn(listClients);
   const createClientFn = useServerFn(createClient);
+  const fetchAccess = useServerFn(getMyAccess);
+  const { data: access } = useQuery({ queryKey: ["my-access"], queryFn: () => fetchAccess({}) });
+  const isAdmin = !!access?.isAdmin;
 
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
