@@ -322,6 +322,8 @@ function CreateTaskDialog({
   const [priority, setPriority] = useState<typeof TASK_PRIORITY[number]>("medium");
   const [dueDate, setDueDate] = useState("");
   const [assigneeId, setAssigneeId] = useState<string>("__none");
+  const [recurrence, setRecurrence] = useState<string>("__none");
+  const [recurrenceUntil, setRecurrenceUntil] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   async function submit() {
@@ -338,6 +340,8 @@ function CreateTaskDialog({
           priority,
           due_date: dueDate || null,
           assignee_id: assigneeId === "__none" ? null : assigneeId,
+          recurrence: recurrence === "__none" ? null : recurrence,
+          recurrence_until: recurrence === "__none" ? null : recurrenceUntil || null,
         },
       });
       toast.success("Úkol vytvořen");
@@ -389,6 +393,30 @@ function CreateTaskDialog({
               ))}
             </SelectContent>
           </Select>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label>Opakování</Label>
+            <Select value={recurrence} onValueChange={setRecurrence}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none">Jednorázový</SelectItem>
+                {TASK_RECURRENCE.map((r) => (
+                  <SelectItem key={r} value={r}>{TASK_RECURRENCE_LABEL[r]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="t-runtil">Opakovat do</Label>
+            <Input
+              id="t-runtil"
+              type="date"
+              value={recurrenceUntil}
+              disabled={recurrence === "__none"}
+              onChange={(e) => setRecurrenceUntil(e.target.value)}
+            />
+          </div>
         </div>
       </div>
       <DialogFooter>
