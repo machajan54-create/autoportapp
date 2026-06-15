@@ -151,16 +151,23 @@ export const updateTask = createServerFn({ method: "POST" })
     const prev = (
       await supabase
         .from("tasks")
-        .select("assignee_id,title,description,priority,due_date")
+        .select("assignee_id,assignee_name,title,description,priority,due_date,recurrence,recurrence_until,recurrence_parent_id,status,created_by,creator_name")
         .eq("id", data.id)
         .maybeSingle()
     ).data as
       | {
           assignee_id: string | null;
+          assignee_name: string | null;
           title: string;
           description: string | null;
           priority: typeof TASK_PRIORITY[number];
           due_date: string | null;
+          recurrence: typeof TASK_RECURRENCE[number] | null;
+          recurrence_until: string | null;
+          recurrence_parent_id: string | null;
+          status: typeof TASK_STATUS[number];
+          created_by: string;
+          creator_name: string | null;
         }
       | null;
     type Patch = {
@@ -188,6 +195,31 @@ export const updateTask = createServerFn({ method: "POST" })
     }
     const { error } = await supabase.from("tasks").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
+    // Recurrence: when marking a recurring task done, create next occurrence
+    if (
+      patch.status === "done" &&
+      prev &&
+      prev.status !== "done" &&
+      prev.recurrence
+    ) {
+      const nextDue = computeNextDueDate(prev.due_date, prev.recurrence);
+      const untilOk = !prev.recurrence_until || nextDue <= prev.recurrence_until;
+      if (untilOk) {
+        await supabase.from("tasks").insert({
+          title: prev.title,
+          description: prev.description,
+          priority: prev.priority,
+          due_date: nextDue,
+          assignee_id: prev.assignee_id,
+          assignee_name: prev.assignee_name,
+          created_by: prev.created_by,
+          creator_name: prev.creator_name,
+          recurrence: prev.recurrence,
+          recurrence_until: prev.recurrence_until,
+          recurrence_parent_id: prev.recurrence_parent_id ?? data.id,
+        });
+      }
+    }
     const newAssignee = patch.assignee_id;
     if (
       newAssignee &&
