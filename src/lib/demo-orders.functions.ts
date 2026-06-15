@@ -203,14 +203,16 @@ const BRAND = {
 };
 
 // ============= Unicode font loader (Roboto, supports Czech) =============
-const FONT_URL_REG = "https://cdn.jsdelivr.net/gh/google/fonts@main/apache/roboto/static/Roboto-Regular.ttf";
-const FONT_URL_BOLD = "https://cdn.jsdelivr.net/gh/google/fonts@main/apache/roboto/static/Roboto-Bold.ttf";
+// Bundled via roboto-fontface (Vite asset URL). Server fetch resolves locally,
+// no external CDN dependency.
+import robotoRegularUrl from "roboto-fontface/fonts/roboto/Roboto-Regular.ttf?url";
+import robotoBoldUrl from "roboto-fontface/fonts/roboto/Roboto-Bold.ttf?url";
 let _fontCache: Promise<{ regular: Uint8Array; bold: Uint8Array }> | null = null;
 async function loadUnicodeFonts() {
   if (!_fontCache) {
     _fontCache = (async () => {
-      const [r, b] = await Promise.all([fetch(FONT_URL_REG), fetch(FONT_URL_BOLD)]);
-      if (!r.ok || !b.ok) throw new Error("Nepodařilo se stáhnout font Roboto");
+      const [r, b] = await Promise.all([fetch(robotoRegularUrl), fetch(robotoBoldUrl)]);
+      if (!r.ok || !b.ok) throw new Error("Nepodařilo se načíst font Roboto");
       const [rb, bb] = await Promise.all([r.arrayBuffer(), b.arrayBuffer()]);
       return { regular: new Uint8Array(rb), bold: new Uint8Array(bb) };
     })().catch((e) => { _fontCache = null; throw e; });
