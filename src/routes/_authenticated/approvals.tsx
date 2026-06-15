@@ -70,7 +70,7 @@ function ApprovalsPage() {
           <p className="text-sm text-muted-foreground">
             {isAdmin
               ? "Schvalujte žádosti zaměstnanců o nákupy a dodavatele."
-              : "Vaše žádosti o nákupy a dodavatele. Schvaluje super admin."}
+              : "Vaše žádosti o nákupy a dodavatele. Schvaluje vedoucí oddělení (super admin na vědomí)."}
           </p>
         </header>
         <Tabs defaultValue="purchases">
