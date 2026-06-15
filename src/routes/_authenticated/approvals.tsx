@@ -310,9 +310,62 @@ function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
                   <p className="mt-1 text-xs text-muted-foreground">Tip: nejprve schvalte dodavatele v záložce Dodavatelé.</p>
                 )}
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="col-span-2"><Label>Částka</Label><Input type="number" step="0.01" min="0" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} /></div>
-                <div><Label>Měna</Label><Input value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} /></div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label>Cena bez DPH</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.amount_net}
+                    onChange={(e) => {
+                      const net = e.target.value;
+                      const vat = Number(form.vat_rate) || 0;
+                      const gross = net ? (Math.round(Number(net) * (1 + vat / 100) * 100) / 100).toString() : "";
+                      setForm({ ...form, amount_net: net, amount: gross });
+                    }}
+                  />
+                </div>
+                <div>
+                  <Label>Cena s DPH</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.amount}
+                    onChange={(e) => {
+                      const gross = e.target.value;
+                      const vat = Number(form.vat_rate) || 0;
+                      const net = gross ? (Math.round((Number(gross) / (1 + vat / 100)) * 100) / 100).toString() : "";
+                      setForm({ ...form, amount: gross, amount_net: net });
+                    }}
+                  />
+                </div>
+                <div>
+                  <Label>DPH %</Label>
+                  <Select
+                    value={form.vat_rate}
+                    onValueChange={(v) => {
+                      const vat = Number(v) || 0;
+                      // Recompute gross from net when VAT changes
+                      const gross = form.amount_net
+                        ? (Math.round(Number(form.amount_net) * (1 + vat / 100) * 100) / 100).toString()
+                        : form.amount;
+                      setForm({ ...form, vat_rate: v, amount: gross });
+                    }}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">0 %</SelectItem>
+                      <SelectItem value="12">12 %</SelectItem>
+                      <SelectItem value="21">21 %</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Měna</Label>
+                  <Input value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} />
+                </div>
               </div>
               <DialogFooter><Button type="submit">Uložit</Button></DialogFooter>
             </form>
