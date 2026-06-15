@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { ShieldCheck, FolderKanban, LogOut, Users, Car, Menu, LayoutDashboard, FileText, CheckSquare, Clock, Wrench, Search, History, Briefcase, BookOpen, Settings, ChevronDown, ClipboardSignature } from "lucide-react";
+import { ShieldCheck, FolderKanban, LogOut, Users, Car, Menu, LayoutDashboard, FileText, CheckSquare, Clock, Wrench, Search, History, Briefcase, BookOpen, Settings, ChevronDown, ClipboardSignature, Sparkles } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
@@ -15,7 +15,7 @@ import autoportLogo from "@/assets/autoport-logo.png.asset.json";
 import { NotificationsBell } from "@/components/NotificationsBell";
 import { CommandPalette } from "@/components/CommandPalette";
 
-type ModuleKey = "claims" | "vykupy" | "vykupy_external" | "users" | "approvals" | "dashboard" | "dochazka" | "defects" | "deals" | "logbook" | "tasks" | "demo_orders";
+type ModuleKey = "claims" | "vykupy" | "vykupy_external" | "users" | "approvals" | "dashboard" | "dochazka" | "defects" | "deals" | "logbook" | "tasks" | "demo_orders" | "evidence_zakazek";
 
 export function AdminShell({
   children,
@@ -110,6 +110,7 @@ export function AdminShell({
       {navItem("/ukoly", "Úkoly", CheckSquare)}
       {can("deals") && navItem("/deals", "Obchodní případy", Briefcase)}
       {can("demo_orders") && navItem("/demo-orders", "Předváděcí vozy", ClipboardSignature)}
+      {can("evidence_zakazek") && navItem("/evidence-zakazek", "Evidence zakázek", Sparkles)}
       {can("logbook") && navItem("/logbook", "Kniha jízd", BookOpen)}
       {(access?.isAdmin || can("approvals")) &&
         navItem("/approvals", "Schvalování", CheckSquare, approvalsBadge)}
