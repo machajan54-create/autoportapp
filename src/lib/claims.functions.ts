@@ -269,6 +269,54 @@ export const deleteTask = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const deleteClaim = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ context, data }) => {
+    const { data: meRoles } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    if (!meRoles?.some((r) => r.role === "admin")) {
+      throw new Error("Pouze administrátor může smazat zakázku.");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: claim } = await supabaseAdmin
+      .from("claims")
+      .select("pu_number")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (!claim) throw new Error("Zakázka nenalezena.");
+
+    const { data: attachments } = await supabaseAdmin
+      .from("claim_attachments")
+      .select("file_path")
+      .eq("claim_id", data.id);
+    const paths = (attachments ?? [])
+      .map((a) => a.file_path)
+      .filter((p): p is string => !!p);
+    if (paths.length) {
+      await supabaseAdmin.storage.from("claim-files").remove(paths);
+    }
+
+    const { error } = await supabaseAdmin.from("claims").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+
+    {
+      const { logEvent } = await import("@/lib/audit.server");
+      await logEvent({
+        actorId: context.userId,
+        actorEmail: context.claims?.email ?? null,
+        module: "claims",
+        action: "deleted",
+        entityId: data.id,
+        details: { pu_number: claim.pu_number },
+      });
+    }
+    return { ok: true };
+  });
+
 export const notifyClient = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
