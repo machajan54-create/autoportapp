@@ -477,6 +477,56 @@ function UsersPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <Dialog
+          open={!!welcomeUser}
+          onOpenChange={(o) => {
+            if (!o) {
+              setWelcomeUser(null);
+              setWelcomePwd("");
+              setWelcomeNote("");
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Informační e-mail · {welcomeUser?.email}</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              Odešle uživateli uvítací e-mail s informací o založení účtu a
+              odkazem na přihlášení. Pokud chcete v e-mailu poslat i heslo, vyplňte
+              jej níže (jinak se ho v e-mailu uvedeno není).
+            </p>
+            <div className="space-y-2">
+              <Label>Heslo (volitelné)</Label>
+              <Input
+                type="text"
+                maxLength={128}
+                value={welcomePwd}
+                onChange={(e) => setWelcomePwd(e.target.value)}
+                placeholder="Ponechte prázdné pro neuvedení hesla"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Poznámka (volitelné)</Label>
+              <Textarea
+                rows={3}
+                maxLength={2000}
+                value={welcomeNote}
+                onChange={(e) => setWelcomeNote(e.target.value)}
+                placeholder="Doplňující informace pro uživatele…"
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setWelcomeUser(null)} disabled={welcomeBusy}>
+                Zrušit
+              </Button>
+              <Button onClick={submitWelcome} disabled={welcomeBusy}>
+                {welcomeBusy ? "Odesílám…" : "Odeslat e-mail"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </AdminShell>
   );
