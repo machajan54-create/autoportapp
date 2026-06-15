@@ -56,6 +56,21 @@ const WASH_LABEL: Record<string, { label: string; cls: string }> = {
   declined: { label: "Odmítnuto", cls: "bg-red-100 text-red-800" },
 };
 
+function fmtDt(v?: string | null) {
+  if (!v) return "";
+  try {
+    return new Date(v).toLocaleString("cs-CZ", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
+}
+
 function EvidencePage() {
   const fetchAccess = useServerFn(getMyAccess);
   const { data: access } = useQuery({
