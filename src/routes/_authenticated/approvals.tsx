@@ -389,7 +389,8 @@ function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
                   <div className="truncate text-xs text-muted-foreground">
                     {[
                       p.supplier?.name,
-                      p.amount != null && `${Number(p.amount).toLocaleString("cs-CZ")} ${p.currency}`,
+                      p.amount_net != null && `${Number(p.amount_net).toLocaleString("cs-CZ")} ${p.currency} bez DPH`,
+                      p.amount != null && `${Number(p.amount).toLocaleString("cs-CZ")} ${p.currency} s DPH (${Number(p.vat_rate ?? 21)} %)`,
                       new Date(p.created_at).toLocaleDateString("cs-CZ"),
                     ].filter(Boolean).join(" · ")}
                   </div>
