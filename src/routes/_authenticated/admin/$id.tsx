@@ -22,6 +22,8 @@ import {
   toggleTask,
   deleteTask,
   notifyClient,
+  deleteClaim,
+  getMyAccess,
 } from "@/lib/claims.functions";
 import { toast } from "sonner";
 import {
@@ -69,6 +71,10 @@ function ClaimDetail() {
   const toggleFn = useServerFn(toggleTask);
   const deleteFn = useServerFn(deleteTask);
   const notify = useServerFn(notifyClient);
+  const deleteClaimFn = useServerFn(deleteClaim);
+  const fetchAccess = useServerFn(getMyAccess);
+  const { data: access } = useQuery({ queryKey: ["my-access"], queryFn: () => fetchAccess() });
+  const isAdmin = !!access?.isAdmin;
 
   const { data, isLoading } = useQuery({
     queryKey: ["claim", id],
@@ -87,6 +93,18 @@ function ClaimDetail() {
     await update({ data: { id, status: s as any } });
     invalidate();
     toast.success("Stav aktualizován");
+  }
+
+  async function handleDeleteClaim() {
+    if (!confirm("Opravdu nenávratně smazat tuto zakázku včetně všech příloh, úkolů a historie?")) return;
+    try {
+      await deleteClaimFn({ data: { id } });
+      toast.success("Zakázka byla smazána");
+      qc.invalidateQueries({ queryKey: ["claims"] });
+      navigate({ to: "/admin" });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Nepodařilo se smazat zakázku");
+    }
   }
 
   async function downloadPoa(kind: "jednani" | "plneni") {
@@ -262,6 +280,17 @@ function ClaimDetail() {
                 ))}
               </SelectContent>
             </Select>
+            {isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDeleteClaim}
+                className="text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                title="Smazat zakázku"
+              >
+                <Trash2 className="mr-1.5 h-4 w-4" /> Smazat
+              </Button>
+            )}
           </div>
         </div>
 
