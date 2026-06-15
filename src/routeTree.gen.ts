@@ -17,6 +17,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UploadTokenRouteImport } from './routes/upload.$token'
+import { Route as SignTokenRouteImport } from './routes/sign.$token'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
@@ -83,6 +84,11 @@ const IndexRoute = IndexRouteImport.update({
 const UploadTokenRoute = UploadTokenRouteImport.update({
   id: '/upload/$token',
   path: '/upload/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignTokenRoute = SignTokenRouteImport.update({
+  id: '/sign/$token',
+  path: '/sign/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
@@ -251,6 +257,7 @@ export interface FileRoutesByFullPath {
   '/approvals': typeof AuthenticatedApprovalsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/sign/$token': typeof SignTokenRoute
   '/upload/$token': typeof UploadTokenRoute
   '/admin/$id': typeof AuthenticatedAdminIdRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -288,6 +295,7 @@ export interface FileRoutesByTo {
   '/approvals': typeof AuthenticatedApprovalsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/sign/$token': typeof SignTokenRoute
   '/upload/$token': typeof UploadTokenRoute
   '/admin/$id': typeof AuthenticatedAdminIdRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -327,6 +335,7 @@ export interface FileRoutesById {
   '/_authenticated/approvals': typeof AuthenticatedApprovalsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/sign/$token': typeof SignTokenRoute
   '/upload/$token': typeof UploadTokenRoute
   '/_authenticated/admin/$id': typeof AuthenticatedAdminIdRoute
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -366,6 +375,7 @@ export interface FileRouteTypes {
     | '/approvals'
     | '/dashboard'
     | '/email/unsubscribe'
+    | '/sign/$token'
     | '/upload/$token'
     | '/admin/$id'
     | '/admin/audit'
@@ -403,6 +413,7 @@ export interface FileRouteTypes {
     | '/approvals'
     | '/dashboard'
     | '/email/unsubscribe'
+    | '/sign/$token'
     | '/upload/$token'
     | '/admin/$id'
     | '/admin/audit'
@@ -441,6 +452,7 @@ export interface FileRouteTypes {
     | '/_authenticated/approvals'
     | '/_authenticated/dashboard'
     | '/email/unsubscribe'
+    | '/sign/$token'
     | '/upload/$token'
     | '/_authenticated/admin/$id'
     | '/_authenticated/admin/audit'
@@ -478,6 +490,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   TerminalRoute: typeof TerminalRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
+  SignTokenRoute: typeof SignTokenRoute
   UploadTokenRoute: typeof UploadTokenRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicCronFollowupRemindersRoute: typeof ApiPublicCronFollowupRemindersRoute
@@ -547,6 +560,13 @@ declare module '@tanstack/react-router' {
       path: '/upload/$token'
       fullPath: '/upload/$token'
       preLoaderRoute: typeof UploadTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign/$token': {
+      id: '/sign/$token'
+      path: '/sign/$token'
+      fullPath: '/sign/$token'
+      preLoaderRoute: typeof SignTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/email/unsubscribe': {
@@ -800,6 +820,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   TerminalRoute: TerminalRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
+  SignTokenRoute: SignTokenRoute,
   UploadTokenRoute: UploadTokenRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicCronFollowupRemindersRoute: ApiPublicCronFollowupRemindersRoute,
