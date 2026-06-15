@@ -113,6 +113,47 @@ async function notifyAssignee(opts: {
   }
 }
 
+async function notifyCreatorStatus(opts: {
+  creatorId: string;
+  assigneeName: string | null;
+  title: string;
+  description?: string | null;
+  priority?: typeof TASK_PRIORITY[number];
+  dueDate?: string | null;
+  event: "done" | "in_progress" | "todo";
+  taskId: string;
+}) {
+  try {
+    const { getUserEmail, enqueueTransactionalEmail } = await import(
+      "@/lib/email/notify.server"
+    );
+    const { email, name } = await getUserEmail(opts.creatorId);
+    if (!email) return;
+    const dueFmt = opts.dueDate
+      ? new Date(opts.dueDate).toLocaleDateString("cs-CZ")
+      : null;
+    await enqueueTransactionalEmail({
+      templateName: "task-status-changed",
+      recipientEmail: email,
+      idempotencyKey: `task-status-${opts.taskId}-${opts.event}-${Date.now()}`,
+      templateData: {
+        creatorName: name || "",
+        assigneeName: opts.assigneeName || "",
+        title: opts.title,
+        description: opts.description || "",
+        priorityLabel: opts.priority
+          ? TASK_PRIORITY_LABEL[opts.priority]
+          : undefined,
+        dueDate: dueFmt,
+        event: opts.event,
+        actionUrl: "https://www.autoport-app.cz/ukoly",
+      },
+    });
+  } catch (e) {
+    console.error("[tasks] notifyCreatorStatus failed", e);
+  }
+}
+
 export const listTasks = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -253,6 +294,26 @@ export const updateTask = createServerFn({ method: "POST" })
         description: patch.description ?? prev?.description ?? null,
         priority: patch.priority ?? prev?.priority,
         dueDate: patch.due_date ?? prev?.due_date ?? null,
+        taskId: data.id,
+      });
+    }
+    // Notify creator about status change made by someone else (typically assignee)
+    if (
+      patch.status !== undefined &&
+      prev &&
+      patch.status !== prev.status &&
+      prev.created_by &&
+      prev.created_by !== userId
+    ) {
+      const actorName = await lookupName(supabase, userId);
+      await notifyCreatorStatus({
+        creatorId: prev.created_by,
+        assigneeName: actorName || prev.assignee_name,
+        title: patch.title ?? prev.title,
+        description: patch.description ?? prev.description,
+        priority: patch.priority ?? prev.priority,
+        dueDate: patch.due_date ?? prev.due_date,
+        event: patch.status,
         taskId: data.id,
       });
     }
