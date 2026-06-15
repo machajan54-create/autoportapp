@@ -712,7 +712,6 @@ function AbsencesTab() {
   const fetchR = useServerFn(listResolvers);
   const upsert = useServerFn(upsertAbsence);
   const resolve = useServerFn(resolveAbsence);
-  const del = useServerFn(deleteAbsence);
   const { data: absences } = useQuery({ queryKey: ["dochazka", "absences"], queryFn: () => fetchA({}) });
   const { data: employees } = useQuery({ queryKey: ["dochazka", "employees"], queryFn: () => fetchE({}) });
   const { data: resolvers } = useQuery({ queryKey: ["dochazka", "resolvers"], queryFn: () => fetchR() });
@@ -751,12 +750,6 @@ function AbsencesTab() {
       qc.invalidateQueries({ queryKey: ["dochazka", "absences"] });
     } catch (e: any) { toast.error(e?.message ?? "Chyba"); }
   }
-  async function onDelete(id: string) {
-    if (!confirm("Smazat?")) return;
-    try { await del({ data: { id } }); toast.success("Smazáno"); qc.invalidateQueries({ queryKey: ["dochazka", "absences"] }); }
-    catch (e: any) { toast.error(e?.message ?? "Chyba"); }
-  }
-
   return (
     <div className="mt-4 space-y-3">
       <div className="flex justify-end"><Button onClick={openNew}><Plus className="mr-1 h-4 w-4" /> Nová žádost</Button></div>
@@ -801,7 +794,14 @@ function AbsencesTab() {
                         <Button size="icon" variant="ghost" onClick={() => decide(a.id, "rejected")} title="Zamítnout"><X className="h-4 w-4 text-rose-600" /></Button>
                       </>
                     )}
-                    <Button size="icon" variant="ghost" onClick={() => onDelete(a.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    <RequestDeleteButton
+                      entityType="attendance_absences"
+                      entityId={a.id}
+                      entityLabel={`${ABSENCE_TYPE_LABEL[a.type] ?? a.type} ${formatDate(a.start_date)}–${formatDate(a.end_date)}`}
+                      size="icon"
+                      className="text-destructive"
+                      title="Požádat o smazání absence"
+                    />
                   </div>
                 </TableCell>
               </TableRow>
