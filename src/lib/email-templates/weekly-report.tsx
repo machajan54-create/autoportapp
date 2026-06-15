@@ -1,8 +1,7 @@
 import React from 'react'
-import {
-  Body, Container, Head, Heading, Html, Preview, Section, Text, Hr,
-} from '@react-email/components'
+import { Head, Heading, Html, Preview, Section, Text } from '@react-email/components'
 import type { TemplateEntry } from './registry'
+import { Body, Container, Footer, Header, Hr, styles } from './_layout'
 
 export interface WeeklyReportProps {
   periodLabel?: string
@@ -39,9 +38,11 @@ const Email = ({
   <Html lang="cs">
     <Head />
     <Preview>Týdenní přehled Autoport APP — {periodLabel}</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <Heading style={h1}>Týdenní přehled</Heading>
+    <Body style={styles.body}>
+      <Container style={styles.container}>
+        <Header />
+        <Section style={styles.content}>
+        <Heading style={styles.h1}>Týdenní přehled</Heading>
         <Text style={muted}>{periodLabel}</Text>
 
         <Section style={card}>
@@ -82,6 +83,8 @@ const Email = ({
         <Text style={muted}>
           Tento přehled chodí automaticky každé pondělí ráno. Otevřete dashboard pro detail.
         </Text>
+        </Section>
+        <Footer />
       </Container>
     </Body>
   </Html>
@@ -100,9 +103,6 @@ function Row({ label, value, highlight }: { label: string; value: string; highli
   )
 }
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif', margin: 0 }
-const container = { maxWidth: 600, margin: '0 auto', padding: '24px' }
-const h1 = { fontSize: 24, fontWeight: 700, color: '#0f172a', margin: 0 }
 const h2 = { fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '0 0 6px', textTransform: 'uppercase' as const, letterSpacing: '0.04em' }
 const card = { padding: 16, marginTop: 16, border: '1px solid #e2e8f0', borderRadius: 12 }
 const muted = { color: '#64748b', fontSize: 13, marginTop: 4 }
