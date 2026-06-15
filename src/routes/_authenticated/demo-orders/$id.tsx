@@ -482,17 +482,38 @@ function DemoOrderForm() {
 
                 <section className="rounded-xl border bg-card p-4">
                   <h2 className="mb-3 font-semibold">Dokumenty</h2>
-                  {docs.length === 0 ? (
+                  {latestDocs.length === 0 ? (
                     <p className="text-xs text-muted-foreground">Žádné dokumenty zatím nejsou.</p>
                   ) : (
                     <ul className="space-y-1">
-                      {docs.map((d: any) => (
+                      {latestDocs.map((d: any) => (
                         <li key={d.id}>
                           <button onClick={() => onOpenDoc(d.id)} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted">
                             <Download className="h-3.5 w-3.5 text-muted-foreground" />
                             <span className="flex-1 truncate">{KIND_LABEL[d.kind] || d.kind}</span>
-                            <span className="text-[10px] text-muted-foreground">{new Date(d.created_at).toLocaleDateString("cs-CZ")}</span>
+                            <span className="whitespace-nowrap text-[10px] text-muted-foreground">{fmtDateTime(d.created_at)}</span>
                           </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+
+                <section className="rounded-xl border bg-card p-4">
+                  <h2 className="mb-3 flex items-center gap-2 font-semibold">
+                    <Activity className="h-4 w-4" /> Akce
+                  </h2>
+                  {events.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">Zatím žádná aktivita.</p>
+                  ) : (
+                    <ul className="space-y-2 text-xs">
+                      {events.map((e: any) => (
+                        <li key={e.id} className="border-l-2 border-muted pl-2">
+                          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                            {fmtDateTime(e.created_at)}
+                            {e.actor_name ? ` · ${e.actor_name}` : ""}
+                          </div>
+                          <div>{e.message}</div>
                         </li>
                       ))}
                     </ul>
