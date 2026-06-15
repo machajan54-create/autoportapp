@@ -601,6 +601,59 @@ export const adminDeleteUser = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const adminSendWelcomeEmail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        user_id: z.string().uuid(),
+        password: z.string().min(8).max(128).optional(),
+        note: z.string().max(2000).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const { data: meRoles } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    if (!meRoles?.some((r) => r.role === "admin")) throw new Error("Forbidden");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: target, error: tErr } = await supabaseAdmin.auth.admin.getUserById(data.user_id);
+    if (tErr) throw new Error(tErr.message);
+    const email = target.user?.email;
+    if (!email) throw new Error("Uživatel nemá e-mail");
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("full_name")
+      .eq("id", data.user_id)
+      .maybeSingle();
+    const { enqueueTransactionalEmail } = await import("@/lib/email/notify.server");
+    await enqueueTransactionalEmail({
+      templateName: "account-welcome",
+      recipientEmail: email,
+      idempotencyKey: `account-welcome-${data.user_id}-${Date.now()}`,
+      templateData: {
+        recipientName: profile?.full_name ?? "",
+        email,
+        password: data.password ?? "",
+        loginUrl: "https://www.autoport-app.cz/auth",
+        note: data.note ?? "",
+      },
+    });
+    {
+      const { logEvent } = await import("@/lib/audit.server");
+      await logEvent({
+        actorId: context.userId,
+        actorEmail: context.claims?.email ?? null,
+        module: "users",
+        action: "welcome_email_sent",
+        entityId: data.user_id,
+      });
+    }
+    return { ok: true };
+  });
+
 export const generatePoaPdf = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
