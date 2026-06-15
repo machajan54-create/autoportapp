@@ -349,15 +349,37 @@ function DemoOrderForm() {
               <p className="text-sm text-muted-foreground">Stav: {STATUS_LABEL[order?.status] || order?.status}</p>
             )}
           </div>
-          <Button onClick={onSave} disabled={saving}>
-            {saving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
-            {isNew ? "Vytvořit" : "Uložit"}
-          </Button>
+          {!locked && (
+            <Button onClick={onSave} disabled={saving}>
+              {saving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
+              {isNew ? "Vytvořit" : "Uložit"}
+            </Button>
+          )}
         </div>
+
+        {locked && order && (
+          <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+            <Lock className="h-4 w-4 shrink-0" />
+            <span className="flex-1">
+              Objednávka je uzamčena (stav: {STATUS_LABEL[order.status] || order.status}).
+              Po odeslání k podpisu nelze data měnit – požádejte super admina o úpravu nebo smazání.
+            </span>
+            <RequestDeleteButton
+              entityType="demo_orders"
+              entityId={order.id}
+              entityLabel={`Objednávka ${order.order_number}`}
+              variant="outline"
+              size="sm"
+              title="Požádat o úpravu / smazání"
+            >
+              Požádat o úpravu / smazání
+            </RequestDeleteButton>
+          </div>
+        )}
 
         <div className="mt-6 grid gap-6 md:grid-cols-3">
           {/* Left: form */}
-          <div className="md:col-span-2 space-y-6">
+          <fieldset disabled={locked} className="md:col-span-2 space-y-6 disabled:opacity-70">
             <section className="rounded-xl border bg-card p-4">
               <h2 className="mb-3 font-semibold">Klient</h2>
               <div className="flex gap-2">
@@ -431,7 +453,7 @@ function DemoOrderForm() {
                 <Textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
               </div>
             </section>
-          </div>
+          </fieldset>
 
           {/* Right: actions & docs */}
           <aside className="space-y-4">
