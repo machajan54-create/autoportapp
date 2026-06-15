@@ -27,7 +27,7 @@ import {
 import {
   Clock, Plus, Pencil, Trash2, Download, Check, X, BellOff, BellRing,
   ExternalLink, Users as UsersIcon, CalendarClock, BarChart3, PalmtreeIcon, Bell,
-  CalendarDays, ChevronLeft, ChevronRight,
+  CalendarDays, ChevronLeft, ChevronRight, Send, ShieldCheck, AlertTriangle, FileSpreadsheet,
 } from "lucide-react";
 import {
   listEmployees, upsertEmployee, deleteEmployee,
@@ -37,6 +37,7 @@ import {
   listNotifications, markNotificationRead, markAllNotificationsRead,
   getDochazkaSettings, updateDochazkaSettings,
   getMonthCalendar, listResolvers,
+  submitRecord, decideRecord, bulkDecideRecords,
 } from "@/lib/dochazka.functions";
 import { getMyAccess } from "@/lib/claims.functions";
 import {
@@ -473,16 +474,26 @@ function RecordsTab() {
   const fetchR = useServerFn(listRecords);
   const fetchE = useServerFn(listEmployees);
   const fetchS = useServerFn(listShifts);
+  const fetchSettings = useServerFn(getDochazkaSettings);
   const upsert = useServerFn(upsertRecord);
   const del = useServerFn(deleteRecord);
+  const submitFn = useServerFn(submitRecord);
+  const decideFn = useServerFn(decideRecord);
+  const bulkDecide = useServerFn(bulkDecideRecords);
+  const fetchAccess = useServerFn(getMyAccess);
   const { data: records } = useQuery({ queryKey: ["dochazka", "records"], queryFn: () => fetchR({}) });
   const { data: employees } = useQuery({ queryKey: ["dochazka", "employees"], queryFn: () => fetchE({}) });
   const { data: shifts } = useQuery({ queryKey: ["dochazka", "shifts"], queryFn: () => fetchS({}) });
+  const { data: settings } = useQuery({ queryKey: ["dochazka", "settings"], queryFn: () => fetchSettings({}) });
+  const { data: access } = useQuery({ queryKey: ["my-access"], queryFn: () => fetchAccess({}) });
+  const canApprove = !!access?.isAdmin;
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState<any>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const empMap = useMemo(() => new Map((employees ?? []).map((e) => [e.id, e])), [employees]);
   const shiftMap = useMemo(() => new Map((shifts ?? []).map((s) => [s.id, s])), [shifts]);
+  const dailyThr = Number((settings as any)?.daily_overtime_threshold_hours ?? 8);
 
   function openNew() {
     const now = new Date();
@@ -533,16 +544,54 @@ function RecordsTab() {
     try { await del({ data: { id } }); toast.success("Smazáno"); qc.invalidateQueries({ queryKey: ["dochazka", "records"] }); }
     catch (e: any) { toast.error(e?.message ?? "Chyba"); }
   }
+  async function submit(id: string) {
+    try { await submitFn({ data: { id } }); toast.success("Odesláno ke schválení"); qc.invalidateQueries({ queryKey: ["dochazka", "records"] }); }
+    catch (e: any) { toast.error(e?.message ?? "Chyba"); }
+  }
+  async function decide(id: string, status: "approved" | "rejected") {
+    try { await decideFn({ data: { id, status } }); toast.success(status === "approved" ? "Schváleno" : "Zamítnuto"); qc.invalidateQueries({ queryKey: ["dochazka", "records"] }); }
+    catch (e: any) { toast.error(e?.message ?? "Chyba"); }
+  }
+  async function bulk(status: "approved" | "rejected") {
+    if (selected.size === 0) return;
+    try {
+      await bulkDecide({ data: { ids: Array.from(selected), status } });
+      toast.success(`Hromadně ${status === "approved" ? "schváleno" : "zamítnuto"}: ${selected.size}`);
+      setSelected(new Set());
+      qc.invalidateQueries({ queryKey: ["dochazka", "records"] });
+    } catch (e: any) { toast.error(e?.message ?? "Chyba"); }
+  }
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  }
 
   return (
     <div className="mt-4 space-y-3">
-      <div className="flex flex-wrap justify-end gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          {canApprove && selected.size > 0 && (
+            <>
+              <span className="text-xs text-muted-foreground">Vybráno: {selected.size}</span>
+              <Button size="sm" variant="outline" onClick={() => bulk("approved")}>
+                <Check className="mr-1 h-4 w-4 text-emerald-600" /> Schválit
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => bulk("rejected")}>
+                <X className="mr-1 h-4 w-4 text-rose-600" /> Zamítnout
+              </Button>
+            </>
+          )}
+        </div>
         <Button onClick={openNew}><Plus className="mr-1 h-4 w-4" /> Nový záznam</Button>
       </div>
       <Card>
         <Table>
           <TableHeader>
             <TableRow>
+              {canApprove && <TableHead className="w-8"></TableHead>}
               <TableHead>Datum</TableHead>
               <TableHead>Zaměstnanec</TableHead>
               <TableHead>Směna</TableHead>
@@ -550,26 +599,64 @@ function RecordsTab() {
               <TableHead>Odchod</TableHead>
               <TableHead>Pauza</TableHead>
               <TableHead>Hodiny</TableHead>
+              <TableHead>Stav</TableHead>
               <TableHead className="w-24"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {(records ?? []).length === 0 ? (
-              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground">Žádné záznamy.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={canApprove ? 10 : 9} className="text-center text-muted-foreground">Žádné záznamy.</TableCell></TableRow>
             ) : (records ?? []).map((r) => {
               const emp = empMap.get(r.employee_id);
               const sh = r.shift_id ? shiftMap.get(r.shift_id) : null;
+              const h = Number(r.hours_worked ?? 0);
+              const overtime = h > dailyThr ? h - dailyThr : 0;
+              const status = (r as any).approval_status ?? "draft";
               return (
                 <TableRow key={r.id}>
+                  {canApprove && (
+                    <TableCell>
+                      <input
+                        type="checkbox"
+                        checked={selected.has(r.id)}
+                        onChange={() => toggleSelect(r.id)}
+                        disabled={status === "draft"}
+                      />
+                    </TableCell>
+                  )}
                   <TableCell className="font-mono text-xs">{formatDate(r.date)}</TableCell>
                   <TableCell className="font-medium">{emp?.name ?? "—"}</TableCell>
                   <TableCell>{sh ? <Badge variant="outline" className={cn("border", shiftClasses(sh.color))}>{sh.name}</Badge> : <span className="text-muted-foreground">—</span>}</TableCell>
                   <TableCell className="font-mono">{formatTime(r.check_in)}</TableCell>
                   <TableCell className="font-mono">{r.check_out ? formatTime(r.check_out) : <Badge variant="secondary" className="bg-amber-100 text-amber-700">v práci</Badge>}</TableCell>
                   <TableCell className="text-xs">{r.break_duration} min</TableCell>
-                  <TableCell className="font-mono font-semibold">{formatHours(Number(r.hours_worked))}</TableCell>
+                  <TableCell className="font-mono font-semibold">
+                    {formatHours(h)}
+                    {overtime > 0 && (
+                      <Badge variant="outline" className="ml-1 border-amber-300 bg-amber-50 text-amber-700 text-[10px]">
+                        +{overtime.toFixed(1)}h přesčas
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {status === "draft" && <Badge variant="outline">Koncept</Badge>}
+                    {status === "submitted" && <Badge variant="secondary" className="bg-sky-100 text-sky-700">Ke schválení</Badge>}
+                    {status === "approved" && <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">Schváleno</Badge>}
+                    {status === "rejected" && <Badge variant="secondary" className="bg-rose-100 text-rose-700">Zamítnuto</Badge>}
+                  </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-1">
+                      {status === "draft" && (
+                        <Button size="icon" variant="ghost" onClick={() => submit(r.id)} title="Odeslat ke schválení">
+                          <Send className="h-4 w-4 text-sky-600" />
+                        </Button>
+                      )}
+                      {canApprove && status === "submitted" && (
+                        <>
+                          <Button size="icon" variant="ghost" onClick={() => decide(r.id, "approved")} title="Schválit"><Check className="h-4 w-4 text-emerald-600" /></Button>
+                          <Button size="icon" variant="ghost" onClick={() => decide(r.id, "rejected")} title="Zamítnout"><X className="h-4 w-4 text-rose-600" /></Button>
+                        </>
+                      )}
                       <Button size="icon" variant="ghost" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></Button>
                       <Button size="icon" variant="ghost" onClick={() => onDelete(r.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     </div>
@@ -821,6 +908,48 @@ function AlertsTab() {
               <Label className="text-xs">Prefix zpráv</Label>
               <Input value={settings.custom_message_prefix} onChange={(e) => setting("custom_message_prefix", e.target.value)} />
             </div>
+            <div className="mt-2 border-t pt-3">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Zaokrouhlování & přesčasy</p>
+              <div className="grid gap-1">
+                <Label className="text-xs">Zaokrouhlení odpracovaných hodin (min, 0 = vypnuto)</Label>
+                <Select
+                  value={String((settings as any).rounding_minutes ?? 0)}
+                  onValueChange={(v) => setting("rounding_minutes", Number(v))}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Vypnuto (přesně)</SelectItem>
+                    <SelectItem value="5">5 min</SelectItem>
+                    <SelectItem value="10">10 min</SelectItem>
+                    <SelectItem value="15">15 min (čtvrthodina)</SelectItem>
+                    <SelectItem value="30">30 min (půlhodina)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="mt-2 grid gap-1">
+                <Label className="text-xs">Práh denního přesčasu (h)</Label>
+                <Input
+                  type="number" step="0.5" min="0"
+                  value={(settings as any).daily_overtime_threshold_hours ?? 8}
+                  onChange={(e) => setting("daily_overtime_threshold_hours", Number(e.target.value))}
+                />
+              </div>
+              <div className="mt-2 grid gap-1">
+                <Label className="text-xs">Práh týdenního přesčasu (h)</Label>
+                <Input
+                  type="number" step="1" min="0"
+                  value={(settings as any).weekly_overtime_threshold_hours ?? 40}
+                  onChange={(e) => setting("weekly_overtime_threshold_hours", Number(e.target.value))}
+                />
+              </div>
+              <div className="mt-3 flex items-center justify-between">
+                <Label className="text-xs">Vyžadovat schválení záznamů docházky</Label>
+                <Switch
+                  checked={!!(settings as any).require_record_approval}
+                  onCheckedChange={(v) => setting("require_record_approval", v)}
+                />
+              </div>
+            </div>
           </div>
         )}
       </Card>
@@ -842,9 +971,11 @@ function ExportTab() {
   const fetchR = useServerFn(listRecords);
   const fetchE = useServerFn(listEmployees);
   const fetchS = useServerFn(listShifts);
+  const fetchSettings = useServerFn(getDochazkaSettings);
   const { data: records } = useQuery({ queryKey: ["dochazka", "records"], queryFn: () => fetchR({}) });
   const { data: employees } = useQuery({ queryKey: ["dochazka", "employees"], queryFn: () => fetchE({}) });
   const { data: shifts } = useQuery({ queryKey: ["dochazka", "shifts"], queryFn: () => fetchS({}) });
+  const { data: settings } = useQuery({ queryKey: ["dochazka", "settings"], queryFn: () => fetchSettings({}) });
   const [month, setMonth] = useState(() => todayISODate().slice(0, 7));
 
   const empMap = useMemo(() => new Map((employees ?? []).map((e) => [e.id, e])), [employees]);
@@ -875,6 +1006,45 @@ function ExportTab() {
     URL.revokeObjectURL(url);
   }
 
+  async function downloadXlsx(filename: string, sheets: Array<{ name: string; rows: any[][] }>) {
+    const XLSX = await import("xlsx");
+    const wb = XLSX.utils.book_new();
+    for (const s of sheets) {
+      const ws = XLSX.utils.aoa_to_sheet(s.rows);
+      XLSX.utils.book_append_sheet(wb, ws, s.name.slice(0, 31));
+    }
+    XLSX.writeFile(wb, filename);
+  }
+
+  const dailyThr = Number((settings as any)?.daily_overtime_threshold_hours ?? 8);
+
+  function buildPayrollRows(list: typeof filtered) {
+    // Souhrn pro mzdovou účtárnu: po zaměstnancích — odpracované hodiny, počet dní, přesčasy
+    const byEmp = new Map<string, { name: string; type: string; days: Set<string>; hours: number; overtime: number }>();
+    for (const r of list) {
+      const e: any = empMap.get(r.employee_id);
+      const key = r.employee_id;
+      const cur = byEmp.get(key) ?? {
+        name: e?.name ?? "—",
+        type: (e?.employment_types ?? ["HPP"]).join("+"),
+        days: new Set<string>(),
+        hours: 0,
+        overtime: 0,
+      };
+      cur.days.add(r.date);
+      const h = Number(r.hours_worked ?? 0);
+      cur.hours += h;
+      if (h > dailyThr) cur.overtime += h - dailyThr;
+      byEmp.set(key, cur);
+    }
+    const header = ["Zaměstnanec", "Úvazek", "Odpracované dny", "Hodiny celkem", "Z toho přesčas (h)"];
+    const rows: any[][] = [header];
+    for (const v of byEmp.values()) {
+      rows.push([v.name, v.type, v.days.size, Math.round(v.hours * 100) / 100, Math.round(v.overtime * 100) / 100]);
+    }
+    return rows;
+  }
+
   function buildRows(list: typeof filtered, includeType: boolean) {
     const shiftMap = new Map((shifts ?? []).map((s) => [s.id, s.name]));
     const header = ["Datum", "Zaměstnanec", ...(includeType ? ["Úvazek"] : []), "Směna", "Příchod", "Odchod", "Pauza (min)", "Hodiny", "Poznámka"];
@@ -899,6 +1069,15 @@ function ExportTab() {
   function exportHpp() { downloadCsv(`dochazka-HPP-${month}.csv`, buildRows(filteredHpp, false)); }
   function exportDpp() {
     downloadCsv(`dochazka-DPP-${month}.csv`, buildRows(filteredDpp, false));
+  }
+
+  function exportXlsx() {
+    downloadXlsx(`dochazka-${month}.xlsx`, [
+      { name: "Souhrn (mzdy)", rows: buildPayrollRows(filtered) },
+      { name: "Detail", rows: buildRows(filtered, true) },
+      { name: "HPP", rows: buildRows(filteredHpp, false) },
+      { name: "DPP", rows: buildRows(filteredDpp, false) },
+    ]);
   }
 
   const totalHours = filtered.reduce((s, r) => s + Number(r.hours_worked ?? 0), 0);
@@ -956,12 +1135,29 @@ function ExportTab() {
         </Card>
       </div>
 
+      <Card className="p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <Badge variant="outline" className="border-emerald-300 bg-emerald-50 text-emerald-700">XLSX</Badge>
+            <h3 className="mt-2 text-sm font-semibold">Měsíční přehled pro mzdovou účtárnu</h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Excel sešit se 4 listy: Souhrn (osoba / dny / hodiny / přesčas), Detail, HPP, DPP. Přesčas se počítá nad
+              {" "}{dailyThr.toFixed(1)} h/den dle nastavení.
+            </p>
+          </div>
+          <Button onClick={exportXlsx} disabled={filtered.length === 0}>
+            <FileSpreadsheet className="mr-2 h-4 w-4" /> Stáhnout XLSX
+          </Button>
+        </div>
+      </Card>
+
       <Card className="p-4 text-sm text-muted-foreground">
         <p className="font-semibold text-foreground">Tipy</p>
         <ul className="mt-2 list-disc space-y-1 pl-5">
           <li>Export obsahuje BOM, otevře se správně v Excelu.</li>
           <li>Oddělovač je středník (cs-CZ standard).</li>
           <li>DPP docházku vyplňte hromadně přes „Auto-vyplnit měsíc“ na záložce Záznamy.</li>
+          <li>XLSX export obsahuje samostatný list „Souhrn“ pro mzdovou účtárnu se zaokrouhleními a přesčasy.</li>
         </ul>
       </Card>
     </div>

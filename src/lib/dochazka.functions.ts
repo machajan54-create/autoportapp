@@ -159,6 +159,19 @@ const recordInput = z.object({
   hours_worked: z.number().min(0).default(0),
 });
 
+// Zaokrouhlí hodiny dolů/nahoru/nejblíže na daný krok v minutách.
+function roundHours(hours: number, stepMinutes: number) {
+  if (!stepMinutes || stepMinutes <= 0) return Math.round(hours * 100) / 100;
+  const step = stepMinutes / 60;
+  return Math.round((Math.round(hours / step) * step) * 100) / 100;
+}
+
+async function getRoundingMinutes(supabase: any): Promise<number> {
+  const { data } = await supabase
+    .from("attendance_settings").select("rounding_minutes").eq("id", true).maybeSingle();
+  return Number(data?.rounding_minutes ?? 0) | 0;
+}
+
 export const listRecords = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
@@ -202,6 +215,16 @@ export const upsertRecord = createServerFn({ method: "POST" })
       check_out: data.check_out ?? null,
       note: data.note ?? null,
     };
+    // Zaokrouhli podle nastavení (pokud je vyplněn check_out)
+    if (payload.check_out && payload.check_in) {
+      const stepMin = await getRoundingMinutes(context.supabase);
+      if (stepMin > 0) {
+        const ms = new Date(payload.check_out).getTime() - new Date(payload.check_in).getTime();
+        const breakMs = (payload.break_duration ?? 0) * 60_000;
+        const hours = Math.max(0, (ms - breakMs) / 3_600_000);
+        payload.hours_worked = roundHours(hours, stepMin);
+      }
+    }
     if (data.id) {
       const { error } = await context.supabase
         .from("attendance_records")
@@ -235,6 +258,9 @@ export const terminalCheckIn = createServerFn({ method: "POST" })
     z.object({
       pin: z.string().regex(/^\d{4,8}$/, "PIN musí být 4–8 číslic"),
       shift_id: z.string().uuid().nullable().optional(),
+      geo_lat: z.number().min(-90).max(90).nullable().optional(),
+      geo_lng: z.number().min(-180).max(180).nullable().optional(),
+      geo_accuracy: z.number().min(0).max(100000).nullable().optional(),
     }).parse(d),
   )
   .handler(async ({ data }) => {
@@ -266,11 +292,14 @@ export const terminalCheckIn = createServerFn({ method: "POST" })
       const now = Date.now();
       const breakMs = (open.break_duration ?? 0) * 60_000;
       const hours = Math.max(0, (now - checkIn - breakMs) / 3_600_000);
+      const { data: settings } = await supabaseAdmin
+        .from("attendance_settings").select("rounding_minutes").eq("id", true).maybeSingle();
+      const rounded = roundHours(hours, Number(settings?.rounding_minutes ?? 0));
       const { error: updErr } = await supabaseAdmin
         .from("attendance_records")
         .update({
           check_out: new Date().toISOString(),
-          hours_worked: Math.round(hours * 100) / 100,
+          hours_worked: rounded,
         })
         .eq("id", open.id);
       if (updErr) throw new Error(updErr.message);
@@ -284,6 +313,9 @@ export const terminalCheckIn = createServerFn({ method: "POST" })
       check_in: new Date().toISOString(),
       break_duration: 30,
       hours_worked: 0,
+      geo_lat: data.geo_lat ?? null,
+      geo_lng: data.geo_lng ?? null,
+      geo_accuracy: data.geo_accuracy ?? null,
     });
     if (insErr) throw new Error(insErr.message);
     return { action: "checked_in" as const, employee: { id: emp.id, name: emp.name } };
@@ -484,6 +516,10 @@ const settingsInput = z.object({
   notify_manager_absence_pending: z.boolean().optional(),
   notify_employee_absence_resolved: z.boolean().optional(),
   custom_message_prefix: z.string().optional(),
+  rounding_minutes: z.number().int().min(0).max(60).optional(),
+  daily_overtime_threshold_hours: z.number().min(0).max(24).optional(),
+  weekly_overtime_threshold_hours: z.number().min(0).max(168).optional(),
+  require_record_approval: z.boolean().optional(),
 });
 
 export const updateDochazkaSettings = createServerFn({ method: "POST" })
@@ -745,4 +781,65 @@ export const autoFillMonth = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     const total = Math.round(rows.reduce((s, r) => s + r.hours_worked, 0) * 100) / 100;
     return { ok: true, created: rows.length, total_hours: total, skipped: workdays.length - days.length };
+  });
+// ============ Approval workflow ============
+
+export const submitRecord = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("attendance_records")
+      .update({ approval_status: "submitted", approved_by: null, approved_at: null, approval_note: null })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const decideRecord = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      id: z.string().uuid(),
+      status: z.enum(["approved", "rejected"]),
+      note: z.string().max(500).nullable().optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const access = await getDochazkaAccess(context.supabase, context.userId);
+    if (!access.canApproveAll) throw new Error("Nemáte oprávnění schvalovat docházku");
+    const { error } = await context.supabase
+      .from("attendance_records")
+      .update({
+        approval_status: data.status,
+        approved_by: context.userId,
+        approved_at: new Date().toISOString(),
+        approval_note: data.note ?? null,
+      })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const bulkDecideRecords = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      ids: z.array(z.string().uuid()).min(1).max(1000),
+      status: z.enum(["approved", "rejected"]),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const access = await getDochazkaAccess(context.supabase, context.userId);
+    if (!access.canApproveAll) throw new Error("Nemáte oprávnění schvalovat docházku");
+    const { error } = await context.supabase
+      .from("attendance_records")
+      .update({
+        approval_status: data.status,
+        approved_by: context.userId,
+        approved_at: new Date().toISOString(),
+      })
+      .in("id", data.ids);
+    if (error) throw new Error(error.message);
+    return { ok: true, count: data.ids.length };
   });
