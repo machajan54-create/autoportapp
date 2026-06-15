@@ -83,19 +83,8 @@ export const updateVykupPhotoDefect = createServerFn({ method: 'POST' })
 export const deleteVykupPhoto = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data, context }) => {
-    const { supabase } = context
-    const { data: row } = await supabase
-      .from('vykup_photos')
-      .select('storage_path')
-      .eq('id', data.id)
-      .maybeSingle()
-    if (row?.storage_path) {
-      await supabase.storage.from('vykup-photos').remove([row.storage_path])
-    }
-    const { error } = await supabase.from('vykup_photos').delete().eq('id', data.id)
-    if (error) throw new Error(error.message)
-    return { ok: true }
+  .handler(async () => {
+    throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.")
   })
 
 export const getVykupPhotoUrl = createServerFn({ method: 'POST' })

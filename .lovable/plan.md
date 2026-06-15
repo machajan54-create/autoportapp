@@ -1,95 +1,74 @@
-## Modul: Objednávky předváděcích vozů
+## Cíl
 
-Kompletní workflow od založení klienta a objednávky přes generování PDF, digitální podpis (na místě nebo remote přes e-mail), automatickou zálohovou fakturu, archivaci dokumentů v klientské složce a notifikaci klientovi s odkazy ke stažení.
+Odebrat všem uživatelům (včetně adminů na první kliknutí) možnost mazat záznamy. Místo toho každé "Smazat" odešle **žádost o smazání** super adminovi, který ji buď zamítne, nebo schválí — a po schválení se záznam **smaže automaticky**.
 
-### 1) Databáze (migrace)
+## 1) Databáze – nová tabulka
 
-**`clients`** — globální adresář klientů (sdílený do budoucna i mimo tento modul)
-- `full_name`, `company`, `ico`, `dic`, `address`, `phone`, `email`, `notes`, `owner_id`
+`deletion_requests`
+- `entity_type` (text, např. `demo_orders`, `tasks`, `deals`, `claims`, `defects`, `vykupy`, `vykup_photos`, `logbook_vehicles`, `logbook_entries`, `clients`, `suppliers`, `purchases`, `attendance_records`, `attendance_shifts`, `attendance_absences`, `task_comments`, `task_attachments`, `claim_attachments`)
+- `entity_id` (uuid)
+- `entity_label` (text) – snapshot lidsky čitelného popisu („Objednávka OBJ-2026-0001 / Novák")
+- `requested_by` (uuid → auth.users)
+- `reason` (text) – povinný důvod, max 1000 znaků
+- `status` (`pending` | `approved` | `rejected`)
+- `decided_by`, `decided_at`, `decision_note`
+- RLS: uživatel vidí/vytváří jen své žádosti; admin vidí vše a rozhoduje
+- GRANT na `authenticated` + `service_role`
+- Unikátní index `(entity_type, entity_id) WHERE status='pending'` aby nešlo zaduplikovat čekající žádost
 
-**`demo_orders`** — objednávka předváděcího vozu
-- `order_number` (auto: `OBJ-RRRR-NNNN`, sequence)
-- `client_id` → `clients`
-- vůz: `model_verze`, `vin`, `barva`, `najete_km`, `rok_vyroby`
-- záruka: `zaruka_spustena_od`, `registrace_datum`
-- ceny (řádky): `line_items jsonb` (název, cena bez DPH, DPH %, sleva, kategorie: vybava/sleva/vip)
-- součty: `cena_celkem_bez_dph`, `cena_celkem_s_dph`, `zaloha`, `datum_dodani`, `datum_objednavky`
-- stav: `status` (`draft` | `sent_for_signature` | `signed` | `cancelled`)
-- `notes`, `created_by`
+## 2) Server funkce – `src/lib/deletion-requests.functions.ts`
 
-**`demo_order_documents`** — všechny vygenerované soubory (objednávka, faktura, podepsané verze)
-- `order_id`, `client_id`, `kind` (`order`, `order_signed`, `invoice`, `invoice_signed`)
-- `storage_path`, `file_name`, `mime`, `signed_at`
+- `requestDeletion({ entity_type, entity_id, reason })` – validuje typ z whitelistu, najde label, vloží řádek, notifikuje adminy e-mailem
+- `listDeletionRequests({ status? })` – uživatel své, admin vše
+- `decideDeletionRequest({ id, status, decision_note? })` – jen admin:
+  - `rejected` → uloží rozhodnutí, pošle žadateli e-mail
+  - `approved` → zavolá interní `executeDeletion(entity_type, entity_id)` přes `supabaseAdmin`, který provede skutečný `DELETE` (včetně úklidu storage – fotky, podepsané PDF, klientské dokumenty), pak označí žádost jako `approved`. Pokud delete selže, žádost zůstane pending a vrátí chybu.
+- `cancelDeletionRequest({ id })` – žadatel může svou pending žádost zrušit
 
-**`demo_order_signatures`** — podpisové eventy
-- `order_id`, `mode` (`in_person` | `remote`), `signer_name`, `signature_data` (base64 PNG), `ip`, `user_agent`, `signed_at`
-- pro remote: `token` (UUID), `token_expires_at`, `consumed_at`
+## 3) Zrušení přímých `delete*` server funkcí
 
-**`invoice_sequence`** — sekvence `ZF-RRRR-NNNN` (per rok)
+Všechny existující exporty (`deleteDemoOrder`, `deleteVykup`, `deleteVykupPhoto`, `deleteTask`, `deleteDeal`, `deleteClaim`, `deleteDefect`, `deleteSupplier`, `deletePurchase`, `deleteTaskComment`, `deleteTaskAttachment`, mazání v `logbook` a `dochazka`) přepíšeme tak, aby pouze **vyhodily chybu** „Smazání musí schválit super admin – odešlete žádost". Tím se zachová binární kompatibilita pro nezreferencované volání, ale nic skutečně nesmaže.
 
-Plus RLS (auth pro vše, super_admin override), GRANTs, `updated_at` triggery, sekvence pro číslo objednávky a faktury.
+## 4) UI – jednotný komponent `RequestDeleteButton`
 
-**Storage bucket** `client-documents` (private) s RLS: čtení/zápis pro authenticated, signed URL pro stažení.
+Nová komponenta s ikonkou koše, která místo přímého `confirm()` otevře malý dialog:
+- pole pro důvod (povinné)
+- tlačítko „Odeslat žádost"
+- po úspěchu: toast „Žádost odeslána super adminovi"
 
-### 2) Server functions (`src/lib/`)
+Nasadit ji na všech místech, kde teď visí tlačítko `Trash2`:
+- seznam objednávek předváděcích vozů
+- seznam zakázek, reklamací, úkolů, výkupů, dealů, vad
+- detail výkupu (mazání fotek), detail úkolu (mazání komentářů/příloh)
+- admin/users (vlastní detail klienta), schvalovací fronta (dodavatelé/nákupy)
+- kniha jízd, docházka
 
-- `clients.functions.ts` — `listClients`, `createClient`, `updateClient`, `getClient`
-- `demo-orders.functions.ts`:
-  - `listOrders`, `getOrder`, `createOrder`, `updateOrder`, `deleteOrder` (admin)
-  - `generateOrderPdf({ orderId })` — vytvoří PDF objednávky (Citroën branding podle screenshotu), uloží do Storage, zapíše do `demo_order_documents`
-  - `generateInvoicePdf({ orderId })` — zálohová faktura ZF-RRRR-NNNN
-  - `signOrderInPerson({ orderId, signatureDataUrl, signerName })` — vloží podpis do PDF (pdf-lib), uloží jako `order_signed.pdf`
-  - `createRemoteSignatureLink({ orderId })` — vygeneruje token + pošle e-mail klientovi
-  - `signOrderRemote({ token, signatureDataUrl })` — veřejný endpoint pro klienta
-  - `sendDocumentsToClient({ orderId })` — pošle klientovi e-mail s odkazy (signed URL, 7 dní) na podepsanou objednávku + zálohovou fakturu
+## 5) Stránka `/approvals` – nová sekce „Žádosti o smazání"
 
-### 3) PDF generátory (pdf-lib)
+Tabulka pending žádostí: typ entity, popis, žadatel, důvod, kdy. Tlačítka **Zamítnout** (s notou) a **Schválit a smazat** (s potvrzovacím dialogem „Tato akce je nevratná"). Filtr `vše | čekající | rozhodnuto`.
 
-- **Objednávka**: replikuje layout ze screenshotu — hlavička s logem Citroën, číslo objednávky, datum, dvě sekce (vozidlo / klient), tabulka ceník (Bez DPH / DPH / Včetně DPH), barevné zvýraznění "Cena celkem", podpisové pole.
-- **Zálohová faktura**: standardní rozložení (dodavatel AutoPort, odběratel klient, řádky, DPH, QR platba volitelně), č. ZF-RRRR-NNNN.
-- **Podpis**: pdf-lib načte vygenerované PDF, vloží podpisový obrázek a metadata (jméno, datum, IP) na podpisovou plochu.
+V `AdminShell` přidat badge s počtem pending žádostí (vedle stávajícího zvonku notifikací).
 
-### 4) Routy (UI)
+## 6) E-mailové notifikace
 
-- `/clients` — seznam + detail klienta s historií objednávek a galerií dokumentů
-- `/demo-orders` — seznam objednávek (filtry, stavy, hledání)
-- `/demo-orders/new` — formulář (krok 1 klient, krok 2 vůz, krok 3 ceník, krok 4 souhrn)
-- `/demo-orders/$id` — detail:
-  - tlačítka: "Generovat PDF", "Podepsat na místě" (otevře SignaturePad — komponenta už existuje), "Odeslat odkaz k podpisu", "Generovat zálohovou fakturu", "Odeslat klientovi"
-  - tab "Dokumenty" — seznam všech PDF s download/preview
-- `/sign/$token` (public route, mimo `_authenticated/`) — klientova stránka pro remote podpis (zobrazí PDF preview + SignaturePad + tlačítko Podepsat)
+- `deletion-request` – adminům, když přijde nová žádost (žadatel, entita, důvod, odkaz)
+- `deletion-decision` – žadateli, když je rozhodnuto (schváleno/zamítnuto + poznámka)
+- Registrace v `email-templates/registry.ts`
 
-### 5) E-mailové šablony
+## 7) Migrace dat
 
-- `demo-order-signature-request.tsx` — "Prosíme o podpis objednávky" + odkaz `/sign/{token}` (platnost 7 dní)
-- `demo-order-documents.tsx` — "Vaše dokumenty k objednávce" + 2 odkazy (objednávka + faktura, signed URL)
-- Registrace v `registry.ts`
+Žádné. Existující záznamy zůstávají.
 
-### 6) Menu & oprávnění
+## Pořadí
 
-- Nový `app_module = 'demo_orders'` (přidat do enumu)
-- Položka v `AdminShell` / sidebar
-- `users.tsx` — toggle pro nový modul
+1. Migrace (tabulka + RLS + index)
+2. Server fn `deletion-requests.functions.ts` + executor mapy pro každý typ entity
+3. Přepsat všechny `delete*` exporty na throw
+4. `RequestDeleteButton` komponenta + e-mailové šablony
+5. Nasadit RequestDeleteButton na všech UI místech
+6. Sekce v `/approvals`
+7. Badge v `AdminShell`
 
-### Pořadí implementace
+## Poznámka k rozsahu
 
-1. Migrace (tabulky, sekvence, RLS, bucket, modul enum)
-2. Server fn `clients` + `demo-orders` (bez PDF)
-3. Routy `/clients` a `/demo-orders` (list, new, detail) — základní CRUD
-4. PDF generátor objednávky
-5. Podpis na místě (SignaturePad + uložení do PDF)
-6. Remote podpis (token + `/sign/$token` + e-mail)
-7. Zálohová faktura PDF
-8. E-mail s dokumenty + signed URL
-9. Modul v menu + oprávnění + super admin delete
-
-### Poznámky
-
-- Vše české texty (memory rule).
-- Storage layout: `client-documents/{client_id}/{order_id}/{kind}-{timestamp}.pdf`.
-- Číslo faktury i objednávky generuje DB sekvence (atomické, žádné duplicity).
-- Použijeme existující `SignaturePad` komponentu.
-- pdf-lib už je v projektu (viz `vykup-contract.functions.ts`).
-- Citroën logo: použít jako URL v PDF headeru (lze později nahradit firemním).
-
-Rozsah: ~15 nových souborů, 1 velká migrace. Po schválení postavím postupně všech 9 kroků v jedné dlouhé sérii edit-batchů.
+Vztahuje se i na „operativní" mazání: chybný stamp v docházce, špatně nahraná fotka výkupu, překlep v komentáři. Žadatel je nemůže ihned napravit — musí počkat na schválení. (Pokud by to v praxi bylo nepraktické, dá se později vyjmout whitelist „uživatel může mazat svá vlastní data starší než X minut", ale primárně držím tvůj požadavek: **nikdo nesmaže nic přímo**.)

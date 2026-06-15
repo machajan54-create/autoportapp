@@ -92,7 +92,6 @@ export async function upsertVykup(v: Partial<Vykup> & { id?: string }) {
   return (data as { id: string }).id;
 }
 
-export async function deleteVykup(id: string) {
-  const { error } = await supabase.from("vykupy" as never).delete().eq("id", id);
-  if (error) throw error;
+export async function deleteVykup(_id: string): Promise<never> {
+  throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
 }

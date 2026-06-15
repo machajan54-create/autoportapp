@@ -128,11 +128,8 @@ export const decideSupplier = createServerFn({ method: "POST" })
 export const deleteSupplier = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ context, data }) => {
-    await assertAdmin(context.supabase, context.userId);
-    const { error } = await context.supabase.from("suppliers").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
+  .handler(async () => {
+    throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
   });
 
 export const listPurchases = createServerFn({ method: "GET" })
@@ -255,9 +252,6 @@ export const decidePurchase = createServerFn({ method: "POST" })
 export const deletePurchase = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ context, data }) => {
-    await assertAdmin(context.supabase, context.userId);
-    const { error } = await context.supabase.from("purchases").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
+  .handler(async () => {
+    throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
   });

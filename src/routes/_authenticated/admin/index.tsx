@@ -224,15 +224,16 @@ function AdminList() {
                   <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary" />
                 </button>
                 {isAdmin && (
-                  <button
-                    type="button"
-                    onClick={(e) => handleDelete(e, c.id, c.pu_number)}
-                    className="rounded-md p-2 text-muted-foreground transition hover:bg-rose-50 hover:text-rose-600"
-                    title="Smazat zakázku"
-                    aria-label="Smazat zakázku"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <RequestDeleteButton
+                      entityType="claims"
+                      entityId={c.id}
+                      entityLabel={`Zakázka ${c.pu_number ?? ""}`}
+                      size="icon"
+                      className="rounded-md p-2 text-muted-foreground transition hover:bg-rose-50 hover:text-rose-600"
+                      title="Požádat o smazání zakázky"
+                    />
+                  </div>
                 )}
               </div>
             );

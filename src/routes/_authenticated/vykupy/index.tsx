@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, Pencil, Trash2, Car, BarChart3 } from "lucide-react";
+import { Plus, Search, Pencil, Car, BarChart3 } from "lucide-react";
+import { RequestDeleteButton } from "@/components/RequestDeleteButton";
 import {
   listVykupy, deleteVykup, formatKc, formatDate, marze, stavBadge,
 } from "@/lib/vykupy";
@@ -199,9 +200,14 @@ function VykupyList() {
                           </Link>
                         </Button>
                         {canFull && (
-                          <Button size="icon" variant="ghost" className="h-8 w-8 text-rose-600" onClick={() => onDelete(v.id)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <RequestDeleteButton
+                            entityType="vykupy"
+                            entityId={v.id}
+                            entityLabel={`Výkup: ${v.klient ?? ""}`}
+                            size="icon"
+                            className="h-8 w-8 text-rose-600"
+                            title="Požádat o smazání výkupu"
+                          />
                         )}
                       </div>
                     </TableCell>

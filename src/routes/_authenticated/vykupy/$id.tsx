@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
+import { RequestDeleteButton } from "@/components/RequestDeleteButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -619,13 +620,14 @@ function PhotoGallery({ vykupId }: { vykupId: string }) {
                     <Eye className="h-3.5 w-3.5" />
                   </a>
                 )}
-                <button
-                  type="button"
-                  onClick={() => handleDelete(p.id)}
-                  className="rounded bg-black/60 p-1 text-white hover:bg-rose-600"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                <RequestDeleteButton
+                  entityType="vykup_photos"
+                  entityId={p.id}
+                  entityLabel={`Fotka: ${p.file_name ?? ""}`}
+                  size="icon"
+                  className="h-6 w-6 rounded bg-black/60 p-1 text-white hover:bg-rose-600"
+                  title="Požádat o smazání fotky"
+                />
               </div>
               <div className="space-y-1 p-2 text-xs">
                 <label className="flex items-center gap-1.5">

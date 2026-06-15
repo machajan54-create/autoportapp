@@ -7,7 +7,8 @@ import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Trash2, ClipboardSignature } from "lucide-react";
+import { Plus, Search, ClipboardSignature } from "lucide-react";
+import { RequestDeleteButton } from "@/components/RequestDeleteButton";
 import { listDemoOrders, deleteDemoOrder } from "@/lib/demo-orders.functions";
 import { getMyAccess } from "@/lib/claims.functions";
 import { cn } from "@/lib/utils";
@@ -126,11 +127,14 @@ function DemoOrdersList() {
                     </span>
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
-                    {isAdmin && (
-                      <Button size="icon" variant="ghost" className="h-8 w-8 text-rose-600" onClick={() => onDelete(r.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
+                    <RequestDeleteButton
+                      entityType="demo_orders"
+                      entityId={r.id}
+                      entityLabel={`Objednávka ${r.order_number ?? ""}`}
+                      size="icon"
+                      className="h-8 w-8 text-rose-600"
+                      title="Požádat o smazání objednávky"
+                    />
                   </TableCell>
                 </TableRow>
               ))}

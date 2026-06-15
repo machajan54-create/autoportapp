@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { BookOpen, Plus, Pencil, Trash2, Car, Fuel, Route as RouteIcon, Camera, X, Receipt, Download } from "lucide-react";
 import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
+import { RequestDeleteButton } from "@/components/RequestDeleteButton";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -442,9 +443,13 @@ function LogbookPage() {
                 <Button size="sm" variant="ghost" onClick={() => openEditVehicle(selectedVehicle)}>
                   <Pencil className="h-3.5 w-3.5" />
                 </Button>
-                <Button size="sm" variant="ghost" onClick={() => removeVehicle(selectedVehicle)}>
-                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                </Button>
+                <RequestDeleteButton
+                  entityType="logbook_vehicles"
+                  entityId={selectedVehicle.id}
+                  entityLabel={`Vozidlo ${selectedVehicle.type} (${selectedVehicle.spz ?? ""})`}
+                  size="sm"
+                  title="Požádat o smazání vozidla"
+                />
               </div>
             )}
           </div>
@@ -529,9 +534,13 @@ function LogbookPage() {
                       <Button variant="ghost" size="icon" onClick={() => openEditEntry(e)} aria-label="Upravit">
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => removeEntry(e)} aria-label="Smazat">
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <RequestDeleteButton
+                        entityType="logbook_entries"
+                        entityId={e.id}
+                        entityLabel={`Jízda ${e.entry_date ?? ""}`}
+                        size="icon"
+                        title="Požádat o smazání záznamu"
+                      />
                     </TableCell>
                   </TableRow>
                 );
@@ -574,9 +583,13 @@ function LogbookPage() {
                       <Button variant="ghost" size="icon" onClick={() => openEditVehicle(v)} aria-label="Upravit">
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => removeVehicle(v)} aria-label="Smazat">
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <RequestDeleteButton
+                        entityType="logbook_vehicles"
+                        entityId={v.id}
+                        entityLabel={`Vozidlo ${v.type} (${v.spz ?? ""})`}
+                        size="icon"
+                        title="Požádat o smazání vozidla"
+                      />
                     </TableCell>
                   </TableRow>
                 ))}
