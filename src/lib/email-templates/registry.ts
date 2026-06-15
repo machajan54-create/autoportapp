@@ -2,6 +2,7 @@ import type { ComponentType } from 'react'
 import { template as approvalRequest } from './approval-request'
 import { template as approvalDecision } from './approval-decision'
 import { template as weeklyReport } from './weekly-report'
+import { template as taskAssigned } from './task-assigned'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -24,4 +25,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'approval-request': approvalRequest,
   'approval-decision': approvalDecision,
   'weekly-report': weeklyReport,
+  'task-assigned': taskAssigned,
 }
