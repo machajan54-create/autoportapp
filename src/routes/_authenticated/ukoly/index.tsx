@@ -170,6 +170,63 @@ function TasksPage() {
           </TabsList>
         </Tabs>
 
+        <Card className="flex flex-wrap items-end gap-3 p-3">
+          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+            <FilterIcon className="h-4 w-4" /> Filtry:
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Přiřazená osoba</Label>
+            <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+              <SelectTrigger className="h-9 w-48"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">Všichni</SelectItem>
+                <SelectItem value="__none">Bez přiřazení</SelectItem>
+                {(users ?? []).map((u) => (
+                  <SelectItem key={u.id} value={u.id}>{u.full_name || u.email || u.id}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Priorita</Label>
+            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+              <SelectTrigger className="h-9 w-36"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">Všechny</SelectItem>
+                {TASK_PRIORITY.map((p) => (
+                  <SelectItem key={p} value={p}>{TASK_PRIORITY_LABEL[p]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Termín</Label>
+            <Select value={deadlineFilter} onValueChange={(v) => setDeadlineFilter(v as any)}>
+              <SelectTrigger className="h-9 w-44"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Vše</SelectItem>
+                <SelectItem value="overdue">Po termínu</SelectItem>
+                <SelectItem value="today">Dnes</SelectItem>
+                <SelectItem value="week">Příštích 7 dní</SelectItem>
+                <SelectItem value="none">Bez termínu</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {filtersActive && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setAssigneeFilter("__all");
+                setPriorityFilter("__all");
+                setDeadlineFilter("all");
+              }}
+            >
+              <X className="mr-1 h-4 w-4" /> Vyčistit
+            </Button>
+          )}
+        </Card>
+
         {isLoading ? (
           <div className="flex justify-center py-16 text-muted-foreground">
             <Loader2 className="h-6 w-6 animate-spin" />
