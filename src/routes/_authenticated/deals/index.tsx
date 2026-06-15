@@ -3,7 +3,8 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Briefcase, Plus, Pencil, Trash2, Upload, History } from "lucide-react";
+import { Briefcase, Plus, Pencil, Upload, History } from "lucide-react";
+import { RequestDeleteButton } from "@/components/RequestDeleteButton";
 import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -352,9 +353,13 @@ function DealsPage() {
                     <Button variant="ghost" size="icon" onClick={() => openEdit(r)} aria-label="Upravit">
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => remove(r)} aria-label="Smazat">
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    <RequestDeleteButton
+                      entityType="deals"
+                      entityId={r.id}
+                      entityLabel={`Obchod: ${r.title ?? ""}`}
+                      size="icon"
+                      title="Požádat o smazání obchodu"
+                    />
                   </TableCell>
                 </TableRow>
               ))}

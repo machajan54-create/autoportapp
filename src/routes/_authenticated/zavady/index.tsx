@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Wrench, Plus, ImageIcon, Loader2, X } from "lucide-react";
+import { Wrench, Plus, Trash2, ImageIcon, Loader2, X } from "lucide-react";
 import { RequestDeleteButton } from "@/components/RequestDeleteButton";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminShell } from "@/components/AdminShell";
@@ -263,7 +263,7 @@ function DefectsPage() {
                           className="text-destructive hover:text-destructive"
                           title="Požádat o smazání závady"
                         >
-                          <Trash2Like />Smazat
+                          <Trash2 className="mr-1 h-4 w-4" /> Smazat
                         </RequestDeleteButton>
                       )}
                     </div>
