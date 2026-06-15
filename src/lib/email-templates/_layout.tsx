@@ -1,9 +1,11 @@
 import React from 'react'
-import { Body, Container, Section, Text, Link, Hr } from '@react-email/components'
+import { Body, Container, Section, Text, Link, Hr, Img } from '@react-email/components'
 
 export const BRAND = {
   name: 'Autoport App',
   url: 'https://www.autoport-app.cz',
+  logoUrl:
+    'https://www.autoport-app.cz/__l5e/assets-v1/19ff4770-3afd-4865-9129-e2762e7572bc/autoport-logo.png',
   primary: '#2563eb',
   primaryDark: '#1d4ed8',
   ink: '#0f172a',
@@ -32,11 +34,19 @@ export const styles = {
     border: `1px solid ${BRAND.line}`,
   } as React.CSSProperties,
   header: {
-    background: BRAND.primary,
-    padding: '18px 24px',
+    background: '#ffffff',
+    padding: '20px 24px',
+    borderBottom: `1px solid ${BRAND.line}`,
+    textAlign: 'center' as const,
+  } as React.CSSProperties,
+  logo: {
+    height: '40px',
+    width: 'auto',
+    margin: '0 auto',
+    display: 'block',
   } as React.CSSProperties,
   brand: {
-    color: '#ffffff',
+    color: BRAND.primary,
     fontSize: '14px',
     fontWeight: 700,
     letterSpacing: '0.14em',
@@ -113,7 +123,12 @@ export const styles = {
 export function Header() {
   return (
     <Section style={styles.header}>
-      <Text style={styles.brand}>{BRAND.name}</Text>
+      <Img
+        src={BRAND.logoUrl}
+        alt={BRAND.name}
+        height={40}
+        style={styles.logo}
+      />
     </Section>
   )
 }
