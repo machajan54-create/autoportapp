@@ -634,6 +634,12 @@ export const generateOrderPdf = createServerFn({ method: "POST" })
     const bytes = await buildOrderPdf(order, client);
     const file = `objednavka-${(order as any).order_number}.pdf`;
     const rec = await uploadAndRecord({ clientId: (order as any).client_id, orderId: data.orderId, kind: "order", fileName: file, bytes });
+    await logEvent({
+      orderId: data.orderId,
+      type: "order_pdf_generated",
+      message: `Vygenerováno PDF objednávky (${file}).`,
+      actorId: context.userId,
+    });
     return { ok: true, base64: bytesToBase64(bytes), file_name: rec.file_name };
   });
 
@@ -659,6 +665,12 @@ export const generateInvoicePdf = createServerFn({ method: "POST" })
     const bytes = await buildInvoicePdf(order, client, invoiceNumber);
     const file = `zalohova-faktura-${invoiceNumber}.pdf`;
     const rec = await uploadAndRecord({ clientId: (order as any).client_id, orderId: data.orderId, kind: "invoice", fileName: file, bytes });
+    await logEvent({
+      orderId: data.orderId,
+      type: "invoice_pdf_generated",
+      message: `Vygenerována zálohová faktura ${invoiceNumber}.`,
+      actorId: context.userId,
+    });
     return { ok: true, base64: bytesToBase64(bytes), file_name: rec.file_name, invoiceNumber };
   });
 
