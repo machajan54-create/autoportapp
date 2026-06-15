@@ -27,7 +27,7 @@ import {
 import {
   Clock, Plus, Pencil, Trash2, Download, Check, X, BellOff, BellRing,
   ExternalLink, Users as UsersIcon, CalendarClock, BarChart3, PalmtreeIcon, Bell,
-  CalendarDays, ChevronLeft, ChevronRight, Send, ShieldCheck, AlertTriangle, FileSpreadsheet,
+  CalendarDays, ChevronLeft, ChevronRight, Send, ShieldCheck, AlertTriangle, FileSpreadsheet, Sparkles,
 } from "lucide-react";
 import {
   listEmployees, upsertEmployee, deleteEmployee,
@@ -37,7 +37,7 @@ import {
   listNotifications, markNotificationRead, markAllNotificationsRead,
   getDochazkaSettings, updateDochazkaSettings,
   getMonthCalendar, listResolvers,
-  submitRecord, decideRecord, bulkDecideRecords,
+  submitRecord, decideRecord, bulkDecideRecords, autoFillMonth,
 } from "@/lib/dochazka.functions";
 import { getMyAccess } from "@/lib/claims.functions";
 import {
@@ -94,7 +94,7 @@ function DochazkaPage() {
 
         {isAdmin ? (
           <Tabs defaultValue="stats" className="mt-6">
-            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 lg:grid-cols-8">
+            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 lg:grid-cols-9">
               <TabsTrigger value="stats"><BarChart3 className="mr-1 h-4 w-4" />Statistiky</TabsTrigger>
               <TabsTrigger value="calendar"><CalendarDays className="mr-1 h-4 w-4" />Kalendář</TabsTrigger>
               <TabsTrigger value="employees"><UsersIcon className="mr-1 h-4 w-4" />Zaměstnanci</TabsTrigger>
@@ -103,6 +103,7 @@ function DochazkaPage() {
               <TabsTrigger value="absences"><PalmtreeIcon className="mr-1 h-4 w-4" />Absence</TabsTrigger>
               <TabsTrigger value="alerts"><Bell className="mr-1 h-4 w-4" />Upozornění</TabsTrigger>
               <TabsTrigger value="export"><Download className="mr-1 h-4 w-4" />Export</TabsTrigger>
+              <TabsTrigger value="generate"><Sparkles className="mr-1 h-4 w-4" />Generování</TabsTrigger>
             </TabsList>
 
             <TabsContent value="stats"><StatsTab /></TabsContent>
@@ -113,6 +114,7 @@ function DochazkaPage() {
             <TabsContent value="absences"><AbsencesTab /></TabsContent>
             <TabsContent value="alerts"><AlertsTab /></TabsContent>
             <TabsContent value="export"><ExportTab /></TabsContent>
+            <TabsContent value="generate"><GenerateTab /></TabsContent>
           </Tabs>
         ) : (
           <Tabs defaultValue="records" className="mt-6">
