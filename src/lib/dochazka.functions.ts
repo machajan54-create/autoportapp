@@ -341,6 +341,7 @@ const absenceInput = z.object({
   start_date: z.string(),
   end_date: z.string(),
   note: z.string().nullable().optional(),
+  requested_resolver: z.string().uuid().nullable().optional(),
 });
 
 export const listAbsences = createServerFn({ method: "GET" })
