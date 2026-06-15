@@ -276,7 +276,10 @@ export const requestDeletion = createServerFn({ method: "POST" })
       .select(reg.select)
       .eq("id", data.entity_id)
       .maybeSingle();
-    if (!row) throw new Error("Záznam nebyl nalezen.");
+    if (!row) {
+      // Record already gone (e.g. cascade-deleted). Nothing to approve.
+      return { ok: true, alreadyGone: true as const };
+    }
     const entity_label = reg.label(row) || `${reg.typeLabel} #${data.entity_id.slice(0, 8)}`;
 
     const { error } = await context.supabase.from("deletion_requests" as any).insert({
