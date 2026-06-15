@@ -68,7 +68,7 @@ async function handle() {
     for (const t of overdue ?? []) {
       const { email, name } = await getRecipient(supabaseAdmin, t.assignee_id)
       if (!email) continue
-      const days = daysBetween(t.due_date, todayIso)
+      const days = daysBetween(t.due_date as string, todayIso)
       await enqueueTransactionalEmail({
         templateName: 'task-overdue',
         recipientEmail: email,
