@@ -26,7 +26,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Send, X, Droplets, ClipboardList } from "lucide-react";
+import { Plus, Send, X, Droplets, ClipboardList, Info, BellRing } from "lucide-react";
 import { getMyAccess } from "@/lib/claims.functions";
 import {
   listEvidenceOrders,
@@ -56,6 +56,21 @@ const WASH_LABEL: Record<string, { label: string; cls: string }> = {
   declined: { label: "Odmítnuto", cls: "bg-red-100 text-red-800" },
 };
 
+function fmtDt(v?: string | null) {
+  if (!v) return "";
+  try {
+    return new Date(v).toLocaleString("cs-CZ", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
+}
+
 function EvidencePage() {
   const fetchAccess = useServerFn(getMyAccess);
   const { data: access } = useQuery({
@@ -74,6 +89,29 @@ function EvidencePage() {
             potvrzují převzetí e-mailem.
           </p>
         </header>
+        <div className="flex gap-3 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+          <Info className="mt-0.5 h-4 w-4 shrink-0" />
+          <div className="space-y-1">
+            <div className="font-medium">Jak funguje upozorňování myčů</div>
+            <ul className="list-disc space-y-0.5 pl-4 text-blue-900/90">
+              <li>
+                U každé zakázky vyplňte <strong>Datum vyzvednutí od</strong> a{" "}
+                <strong>Datum dokončení do</strong> — myč ví, v jakém okně mytí probíhá.
+              </li>
+              <li>
+                Po přiřazení myče se odešle e-mail s tlačítky <em>Přijímám / Odmítám</em>.
+              </li>
+              <li>
+                Pokud myč nepotvrdí ani neodmítne do 24 hodin, systém každý den
+                automaticky pošle připomínku.
+              </li>
+              <li>
+                Připomínky končí ve chvíli, kdy myč potvrdí, odmítne, zakázka je
+                zrušena nebo termín dokončení uplynul.
+              </li>
+            </ul>
+          </div>
+        </div>
         <Tabs defaultValue="orders">
           <TabsList>
             <TabsTrigger value="orders">
@@ -122,6 +160,8 @@ function OrdersTab() {
     kdo_predava: "",
     cislo_zakazky: "",
     poznamka: "",
+    pickup_from: "",
+    complete_by: "",
   };
   const [form, setForm] = useState(emptyForm);
   const [assignTarget, setAssignTarget] = useState<string | null>(null);
@@ -189,7 +229,9 @@ function OrdersTab() {
                 <div className="col-span-2"><Label>Klient *</Label><Input required value={form.klient} onChange={(e) => setForm({ ...form, klient: e.target.value })} /></div>
                 <div><Label>Vozidlo *</Label><Input required value={form.vozidlo} onChange={(e) => setForm({ ...form, vozidlo: e.target.value })} /></div>
                 <div><Label>VIS / SPZ</Label><Input value={form.vis} onChange={(e) => setForm({ ...form, vis: e.target.value })} /></div>
-                <div><Label>Den</Label><Input type="date" value={form.den} onChange={(e) => setForm({ ...form, den: e.target.value })} /></div>
+                <div><Label>Vyzvednutí od</Label><Input type="datetime-local" value={form.pickup_from} onChange={(e) => setForm({ ...form, pickup_from: e.target.value })} /></div>
+                <div><Label>Dokončit do</Label><Input type="datetime-local" value={form.complete_by} onChange={(e) => setForm({ ...form, complete_by: e.target.value })} /></div>
+                <div><Label>Den (orientačně)</Label><Input type="date" value={form.den} onChange={(e) => setForm({ ...form, den: e.target.value })} /></div>
                 <div><Label>Hodina</Label><Input placeholder="9:00" value={form.hodina} onChange={(e) => setForm({ ...form, hodina: e.target.value })} /></div>
                 <div><Label>Kdo předává</Label><Input value={form.kdo_predava} onChange={(e) => setForm({ ...form, kdo_predava: e.target.value })} /></div>
                 <div><Label>Č. zakázky</Label><Input value={form.cislo_zakazky} onChange={(e) => setForm({ ...form, cislo_zakazky: e.target.value })} /></div>
@@ -213,8 +255,8 @@ function OrdersTab() {
                   <th className="py-2 pr-2">Klient</th>
                   <th className="py-2 pr-2">Vozidlo</th>
                   <th className="py-2 pr-2">VIS</th>
-                  <th className="py-2 pr-2">Den</th>
-                  <th className="py-2 pr-2">Hodina</th>
+                  <th className="py-2 pr-2">Vyzvednutí od</th>
+                  <th className="py-2 pr-2">Dokončit do</th>
                   <th className="py-2 pr-2">Kdo</th>
                   <th className="py-2 pr-2">Č. zakázky</th>
                   <th className="py-2 pr-2">Stav</th>
@@ -229,8 +271,8 @@ function OrdersTab() {
                       <td className="py-2 pr-2 font-medium">{o.klient}</td>
                       <td className="py-2 pr-2">{o.vozidlo}</td>
                       <td className="py-2 pr-2 font-mono text-xs">{o.vis ?? "—"}</td>
-                      <td className="py-2 pr-2">{o.den ? new Date(o.den).toLocaleDateString("cs-CZ") : "—"}</td>
-                      <td className="py-2 pr-2">{o.hodina ?? "—"}</td>
+                      <td className="py-2 pr-2">{fmtDt(o.pickup_from) || (o.den ? new Date(o.den).toLocaleDateString("cs-CZ") + (o.hodina ? ` ${o.hodina}` : "") : "—")}</td>
+                      <td className="py-2 pr-2">{fmtDt(o.complete_by) || "—"}</td>
                       <td className="py-2 pr-2">{o.kdo_predava ?? "—"}</td>
                       <td className="py-2 pr-2 font-mono text-xs">{o.cislo_zakazky ?? "—"}</td>
                       <td className="py-2 pr-2">
@@ -254,6 +296,15 @@ function OrdersTab() {
                                 <Badge className={w.cls + " hover:" + w.cls} variant="outline">
                                   {a.washer?.name ?? "?"} · {w.label}
                                 </Badge>
+                                {a.status === "pending" && (a.reminder_count ?? 0) > 0 ? (
+                                  <span
+                                    title={`Posláno upozornění ${a.reminder_count}×`}
+                                    className="inline-flex items-center gap-0.5 text-[10px] text-amber-700"
+                                  >
+                                    <BellRing className="h-3 w-3" />
+                                    {a.reminder_count}
+                                  </span>
+                                ) : null}
                                 <button
                                   type="button"
                                   onClick={() => dropAssign(a.id)}

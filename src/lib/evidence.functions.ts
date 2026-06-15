@@ -15,6 +15,8 @@ const orderInput = z.object({
   cislo_zakazky: z.string().max(50).optional().nullable(),
   poznamka: z.string().max(2000).optional().nullable(),
   stav: z.enum(["nova", "predano", "zruseno"]).optional(),
+  pickup_from: z.string().max(40).optional().nullable(),
+  complete_by: z.string().max(40).optional().nullable(),
 });
 
 function cleanRow<T extends Record<string, any>>(d: T): T {

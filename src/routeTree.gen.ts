@@ -45,6 +45,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicHooksWeeklyReportRouteImport } from './routes/api/public/hooks/weekly-report'
+import { Route as ApiPublicHooksWashRemindersRouteImport } from './routes/api/public/hooks/wash-reminders'
 import { Route as ApiPublicCronTaskRemindersRouteImport } from './routes/api/public/cron/task-reminders'
 import { Route as ApiPublicCronTaskDailyDigestRouteImport } from './routes/api/public/cron/task-daily-digest'
 import { Route as ApiPublicCronFollowupRemindersRouteImport } from './routes/api/public/cron/followup-reminders'
@@ -241,6 +242,12 @@ const ApiPublicHooksWeeklyReportRoute =
     path: '/api/public/hooks/weekly-report',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksWashRemindersRoute =
+  ApiPublicHooksWashRemindersRouteImport.update({
+    id: '/api/public/hooks/wash-reminders',
+    path: '/api/public/hooks/wash-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronTaskRemindersRoute =
   ApiPublicCronTaskRemindersRouteImport.update({
     id: '/api/public/cron/task-reminders',
@@ -293,6 +300,7 @@ export interface FileRoutesByFullPath {
   '/api/public/cron/followup-reminders': typeof ApiPublicCronFollowupRemindersRoute
   '/api/public/cron/task-daily-digest': typeof ApiPublicCronTaskDailyDigestRoute
   '/api/public/cron/task-reminders': typeof ApiPublicCronTaskRemindersRoute
+  '/api/public/hooks/wash-reminders': typeof ApiPublicHooksWashRemindersRoute
   '/api/public/hooks/weekly-report': typeof ApiPublicHooksWeeklyReportRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -333,6 +341,7 @@ export interface FileRoutesByTo {
   '/api/public/cron/followup-reminders': typeof ApiPublicCronFollowupRemindersRoute
   '/api/public/cron/task-daily-digest': typeof ApiPublicCronTaskDailyDigestRoute
   '/api/public/cron/task-reminders': typeof ApiPublicCronTaskRemindersRoute
+  '/api/public/hooks/wash-reminders': typeof ApiPublicHooksWashRemindersRoute
   '/api/public/hooks/weekly-report': typeof ApiPublicHooksWeeklyReportRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -375,6 +384,7 @@ export interface FileRoutesById {
   '/api/public/cron/followup-reminders': typeof ApiPublicCronFollowupRemindersRoute
   '/api/public/cron/task-daily-digest': typeof ApiPublicCronTaskDailyDigestRoute
   '/api/public/cron/task-reminders': typeof ApiPublicCronTaskRemindersRoute
+  '/api/public/hooks/wash-reminders': typeof ApiPublicHooksWashRemindersRoute
   '/api/public/hooks/weekly-report': typeof ApiPublicHooksWeeklyReportRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -417,6 +427,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/followup-reminders'
     | '/api/public/cron/task-daily-digest'
     | '/api/public/cron/task-reminders'
+    | '/api/public/hooks/wash-reminders'
     | '/api/public/hooks/weekly-report'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -457,6 +468,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/followup-reminders'
     | '/api/public/cron/task-daily-digest'
     | '/api/public/cron/task-reminders'
+    | '/api/public/hooks/wash-reminders'
     | '/api/public/hooks/weekly-report'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -498,6 +510,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/followup-reminders'
     | '/api/public/cron/task-daily-digest'
     | '/api/public/cron/task-reminders'
+    | '/api/public/hooks/wash-reminders'
     | '/api/public/hooks/weekly-report'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -522,6 +535,7 @@ export interface RootRouteChildren {
   ApiPublicCronFollowupRemindersRoute: typeof ApiPublicCronFollowupRemindersRoute
   ApiPublicCronTaskDailyDigestRoute: typeof ApiPublicCronTaskDailyDigestRoute
   ApiPublicCronTaskRemindersRoute: typeof ApiPublicCronTaskRemindersRoute
+  ApiPublicHooksWashRemindersRoute: typeof ApiPublicHooksWashRemindersRoute
   ApiPublicHooksWeeklyReportRoute: typeof ApiPublicHooksWeeklyReportRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -784,6 +798,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksWeeklyReportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/wash-reminders': {
+      id: '/api/public/hooks/wash-reminders'
+      path: '/api/public/hooks/wash-reminders'
+      fullPath: '/api/public/hooks/wash-reminders'
+      preLoaderRoute: typeof ApiPublicHooksWashRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/task-reminders': {
       id: '/api/public/cron/task-reminders'
       path: '/api/public/cron/task-reminders'
@@ -870,6 +891,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCronFollowupRemindersRoute: ApiPublicCronFollowupRemindersRoute,
   ApiPublicCronTaskDailyDigestRoute: ApiPublicCronTaskDailyDigestRoute,
   ApiPublicCronTaskRemindersRoute: ApiPublicCronTaskRemindersRoute,
+  ApiPublicHooksWashRemindersRoute: ApiPublicHooksWashRemindersRoute,
   ApiPublicHooksWeeklyReportRoute: ApiPublicHooksWeeklyReportRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
