@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Clock, Delete, ArrowLeft, LogIn, LogOut } from "lucide-react";
+import { Clock, Delete, ArrowLeft, LogIn, LogOut, MapPin } from "lucide-react";
 import { publicListShifts, terminalCheckIn } from "@/lib/dochazka.functions";
 import { shiftClasses } from "@/lib/dochazka";
 import { cn } from "@/lib/utils";
@@ -25,6 +25,10 @@ function TerminalPage() {
   const [shiftId, setShiftId] = useState<string | null>(null);
   const [now, setNow] = useState(new Date());
   const [busy, setBusy] = useState(false);
+  const [geoEnabled, setGeoEnabled] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("terminal:geo") === "1";
+  });
   const [lastAction, setLastAction] = useState<null | {
     action: "checked_in" | "checked_out";
     name: string;
@@ -61,7 +65,26 @@ function TerminalPage() {
     }
     setBusy(true);
     try {
-      const r = await submit({ data: { pin, shift_id: shiftId } });
+      let geo: { geo_lat?: number; geo_lng?: number; geo_accuracy?: number } = {};
+      if (geoEnabled && typeof navigator !== "undefined" && navigator.geolocation) {
+        try {
+          const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: false,
+              timeout: 4000,
+              maximumAge: 60000,
+            }),
+          );
+          geo = {
+            geo_lat: pos.coords.latitude,
+            geo_lng: pos.coords.longitude,
+            geo_accuracy: pos.coords.accuracy,
+          };
+        } catch {
+          // geolokace selhala — pokračuj bez ní
+        }
+      }
+      const r = await submit({ data: { pin, shift_id: shiftId, ...geo } });
       setLastAction({ action: r.action, name: r.employee.name });
       setPin("");
     } catch (e: any) {
@@ -69,6 +92,20 @@ function TerminalPage() {
       setPin("");
     } finally {
       setBusy(false);
+    }
+  }
+
+  function toggleGeo() {
+    const next = !geoEnabled;
+    setGeoEnabled(next);
+    if (typeof window !== "undefined") localStorage.setItem("terminal:geo", next ? "1" : "0");
+    if (next && typeof navigator !== "undefined" && navigator.geolocation) {
+      // Vyžádej oprávnění předem, aby další píchnutí nečekalo na dialog
+      navigator.geolocation.getCurrentPosition(
+        () => toast.success("Geolokace aktivní"),
+        () => toast.error("Geolokace nedostupná nebo zamítnuta"),
+        { timeout: 5000 },
+      );
     }
   }
 
@@ -149,6 +186,25 @@ function TerminalPage() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="w-full">
+            <button
+              onClick={toggleGeo}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition",
+                geoEnabled
+                  ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                  : "border-slate-300 bg-white text-slate-600 hover:border-slate-400",
+              )}
+              type="button"
+            >
+              <MapPin className="h-3.5 w-3.5" />
+              {geoEnabled ? "Geolokace zapnuta" : "Zapnout geolokaci (volitelné)"}
+            </button>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Poloha se ukládá pouze k záznamu o příchodu pro ověření, že píchnutí proběhlo z pracoviště.
+            </p>
           </div>
         </Card>
 
