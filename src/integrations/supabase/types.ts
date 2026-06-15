@@ -983,6 +983,85 @@ export type Database = {
         }
         Relationships: []
       }
+      task_attachments: {
+        Row: {
+          content_type: string | null
+          created_at: string
+          file_name: string
+          id: string
+          size_bytes: number | null
+          storage_path: string
+          task_id: string
+          uploader_id: string
+          uploader_name: string | null
+        }
+        Insert: {
+          content_type?: string | null
+          created_at?: string
+          file_name: string
+          id?: string
+          size_bytes?: number | null
+          storage_path: string
+          task_id: string
+          uploader_id: string
+          uploader_name?: string | null
+        }
+        Update: {
+          content_type?: string | null
+          created_at?: string
+          file_name?: string
+          id?: string
+          size_bytes?: number | null
+          storage_path?: string
+          task_id?: string
+          uploader_id?: string
+          uploader_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_attachments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_comments: {
+        Row: {
+          author_id: string
+          author_name: string | null
+          body: string
+          created_at: string
+          id: string
+          task_id: string
+        }
+        Insert: {
+          author_id: string
+          author_name?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          task_id: string
+        }
+        Update: {
+          author_id?: string
+          author_name?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_comments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           assignee_id: string | null
@@ -994,7 +1073,13 @@ export type Database = {
           description: string | null
           due_date: string | null
           id: string
+          last_recurrence_at: string | null
+          overdue_notified_at: string | null
           priority: string
+          recurrence: string | null
+          recurrence_parent_id: string | null
+          recurrence_until: string | null
+          reminder_24h_sent_at: string | null
           status: string
           title: string
           updated_at: string
@@ -1009,7 +1094,13 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          last_recurrence_at?: string | null
+          overdue_notified_at?: string | null
           priority?: string
+          recurrence?: string | null
+          recurrence_parent_id?: string | null
+          recurrence_until?: string | null
+          reminder_24h_sent_at?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -1024,12 +1115,26 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          last_recurrence_at?: string | null
+          overdue_notified_at?: string | null
           priority?: string
+          recurrence?: string | null
+          recurrence_parent_id?: string | null
+          recurrence_until?: string | null
+          reminder_24h_sent_at?: string | null
           status?: string
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tasks_recurrence_parent_id_fkey"
+            columns: ["recurrence_parent_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_modules: {
         Row: {

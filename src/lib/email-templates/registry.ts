@@ -3,6 +3,9 @@ import { template as approvalRequest } from './approval-request'
 import { template as approvalDecision } from './approval-decision'
 import { template as weeklyReport } from './weekly-report'
 import { template as taskAssigned } from './task-assigned'
+import { template as taskDueSoon } from './task-due-soon'
+import { template as taskOverdue } from './task-overdue'
+import { template as taskDailyDigest } from './task-daily-digest'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -26,4 +29,7 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'approval-decision': approvalDecision,
   'weekly-report': weeklyReport,
   'task-assigned': taskAssigned,
+  'task-due-soon': taskDueSoon,
+  'task-overdue': taskOverdue,
+  'task-daily-digest': taskDailyDigest,
 }

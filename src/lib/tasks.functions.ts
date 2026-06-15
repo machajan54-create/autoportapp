@@ -4,6 +4,32 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const TASK_STATUS = ["todo", "in_progress", "done"] as const;
 export const TASK_PRIORITY = ["low", "medium", "high"] as const;
+export const TASK_RECURRENCE = ["daily", "weekdays", "weekly"] as const;
+
+export const TASK_RECURRENCE_LABEL: Record<string, string> = {
+  daily: "Každý den",
+  weekdays: "Každý pracovní den",
+  weekly: "Každý týden",
+};
+
+/** Returns next due date (YYYY-MM-DD) given a base date and recurrence rule. */
+export function computeNextDueDate(
+  baseDate: string | null,
+  recurrence: typeof TASK_RECURRENCE[number],
+): string {
+  const base = baseDate ? new Date(baseDate + "T00:00:00Z") : new Date();
+  const d = new Date(base);
+  if (recurrence === "daily") {
+    d.setUTCDate(d.getUTCDate() + 1);
+  } else if (recurrence === "weekly") {
+    d.setUTCDate(d.getUTCDate() + 7);
+  } else if (recurrence === "weekdays") {
+    do {
+      d.setUTCDate(d.getUTCDate() + 1);
+    } while (d.getUTCDay() === 0 || d.getUTCDay() === 6);
+  }
+  return d.toISOString().slice(0, 10);
+}
 
 export const TASK_STATUS_LABEL: Record<string, string> = {
   todo: "K udělání",
@@ -23,6 +49,8 @@ const createInput = z.object({
   priority: z.enum(TASK_PRIORITY).default("medium"),
   due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   assignee_id: z.string().uuid().optional().nullable(),
+  recurrence: z.enum(TASK_RECURRENCE).optional().nullable(),
+  recurrence_until: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
 });
 
 const updateInput = z.object({
@@ -114,6 +142,8 @@ export const createTask = createServerFn({ method: "POST" })
         assignee_name,
         created_by: userId,
         creator_name,
+        recurrence: data.recurrence || null,
+        recurrence_until: data.recurrence_until || null,
       })
       .select("id")
       .single();
@@ -140,16 +170,23 @@ export const updateTask = createServerFn({ method: "POST" })
     const prev = (
       await supabase
         .from("tasks")
-        .select("assignee_id,title,description,priority,due_date")
+        .select("assignee_id,assignee_name,title,description,priority,due_date,recurrence,recurrence_until,recurrence_parent_id,status,created_by,creator_name")
         .eq("id", data.id)
         .maybeSingle()
     ).data as
       | {
           assignee_id: string | null;
+          assignee_name: string | null;
           title: string;
           description: string | null;
           priority: typeof TASK_PRIORITY[number];
           due_date: string | null;
+          recurrence: typeof TASK_RECURRENCE[number] | null;
+          recurrence_until: string | null;
+          recurrence_parent_id: string | null;
+          status: typeof TASK_STATUS[number];
+          created_by: string;
+          creator_name: string | null;
         }
       | null;
     type Patch = {
@@ -177,6 +214,31 @@ export const updateTask = createServerFn({ method: "POST" })
     }
     const { error } = await supabase.from("tasks").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
+    // Recurrence: when marking a recurring task done, create next occurrence
+    if (
+      patch.status === "done" &&
+      prev &&
+      prev.status !== "done" &&
+      prev.recurrence
+    ) {
+      const nextDue = computeNextDueDate(prev.due_date, prev.recurrence);
+      const untilOk = !prev.recurrence_until || nextDue <= prev.recurrence_until;
+      if (untilOk) {
+        await supabase.from("tasks").insert({
+          title: prev.title,
+          description: prev.description,
+          priority: prev.priority,
+          due_date: nextDue,
+          assignee_id: prev.assignee_id,
+          assignee_name: prev.assignee_name,
+          created_by: prev.created_by,
+          creator_name: prev.creator_name,
+          recurrence: prev.recurrence,
+          recurrence_until: prev.recurrence_until,
+          recurrence_parent_id: prev.recurrence_parent_id ?? data.id,
+        });
+      }
+    }
     const newAssignee = patch.assignee_id;
     if (
       newAssignee &&
