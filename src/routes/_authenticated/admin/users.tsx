@@ -624,3 +624,93 @@ function UsersPage() {
     </AdminShell>
   );
 }
+
+function StatTile({
+  label,
+  value,
+  icon,
+  tint,
+}: {
+  label: string;
+  value: number;
+  icon: React.ReactNode;
+  tint: string;
+}) {
+  return (
+    <div className="flex items-center justify-between rounded-xl border bg-card p-4">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </p>
+        <p className="mt-1 text-2xl font-bold">{value}</p>
+      </div>
+      <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg", tint)}>
+        {icon}
+      </div>
+    </div>
+  );
+}
+
+function IconAction({
+  label,
+  onClick,
+  children,
+  destructive,
+}: {
+  label: string;
+  onClick: () => void;
+  children: React.ReactNode;
+  destructive?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      className={cn(
+        "inline-flex h-9 w-9 items-center justify-center rounded-md border bg-card text-muted-foreground transition hover:bg-muted hover:text-foreground",
+        destructive && "hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+function ToggleRow({
+  icon,
+  label,
+  hint,
+  checked,
+  onChange,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  hint?: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <label className="flex cursor-pointer items-center justify-between gap-3 rounded-md px-1.5 py-1 transition hover:bg-muted/60">
+      <span className="flex min-w-0 items-center gap-2">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+          {icon}
+        </span>
+        <span className="min-w-0">
+          <span className="block text-sm font-medium leading-tight">{label}</span>
+          {hint && <span className="block text-[11px] leading-tight text-muted-foreground">{hint}</span>}
+        </span>
+      </span>
+      <Switch checked={checked} onCheckedChange={onChange} />
+    </label>
+  );
+}
+
+function getInitials(fullName?: string | null, email?: string | null) {
+  const src = (fullName || email || "?").trim();
+  const parts = src.split(/[\s@._-]+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
