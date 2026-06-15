@@ -57,7 +57,7 @@ async function handle() {
     // 2) Overdue
     const { data: overdue } = await supabaseAdmin
       .from('tasks')
-      .select('id,title,description,priority,due_date,assignee_id,assignee_name,overdue_notified_at')
+      .select('id,title,description,priority,due_date,assignee_id,assignee_name,created_by,overdue_notified_at')
       .lt('due_date', todayIso)
       .neq('status', 'done')
       .not('assignee_id', 'is', null)
@@ -67,22 +67,45 @@ async function handle() {
     let overdueSent = 0
     for (const t of overdue ?? []) {
       const { email, name } = await getRecipient(supabaseAdmin, t.assignee_id)
-      if (!email) continue
       const days = daysBetween(t.due_date as string, todayIso)
-      await enqueueTransactionalEmail({
-        templateName: 'task-overdue',
-        recipientEmail: email,
-        idempotencyKey: `task-overdue-${t.id}-${todayIso}`,
-        templateData: {
-          assigneeName: name || t.assignee_name || '',
-          title: t.title,
-          description: t.description || '',
-          priorityLabel: TASK_PRIORITY_LABEL[t.priority] ?? t.priority,
-          dueDate: formatDate(t.due_date),
-          daysOverdue: days,
-          actionUrl: 'https://www.autoport-app.cz/ukoly',
-        },
-      })
+      if (email) {
+        await enqueueTransactionalEmail({
+          templateName: 'task-overdue',
+          recipientEmail: email,
+          idempotencyKey: `task-overdue-${t.id}-${todayIso}`,
+          templateData: {
+            assigneeName: name || t.assignee_name || '',
+            title: t.title,
+            description: t.description || '',
+            priorityLabel: TASK_PRIORITY_LABEL[t.priority] ?? t.priority,
+            dueDate: formatDate(t.due_date),
+            daysOverdue: days,
+            actionUrl: 'https://www.autoport-app.cz/ukoly',
+          },
+        })
+      }
+      // Also notify the creator (if different from assignee)
+      if (t.created_by && t.created_by !== t.assignee_id) {
+        const creator = await getRecipient(supabaseAdmin, t.created_by)
+        if (creator.email) {
+          await enqueueTransactionalEmail({
+            templateName: 'task-status-changed',
+            recipientEmail: creator.email,
+            idempotencyKey: `task-overdue-creator-${t.id}-${todayIso}`,
+            templateData: {
+              creatorName: creator.name || '',
+              assigneeName: t.assignee_name || name || '',
+              title: t.title,
+              description: t.description || '',
+              priorityLabel: TASK_PRIORITY_LABEL[t.priority] ?? t.priority,
+              dueDate: formatDate(t.due_date),
+              event: 'overdue',
+              daysOverdue: days,
+              actionUrl: 'https://www.autoport-app.cz/ukoly',
+            },
+          })
+        }
+      }
       await supabaseAdmin
         .from('tasks')
         .update({ overdue_notified_at: new Date().toISOString() })
