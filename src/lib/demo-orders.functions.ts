@@ -2,6 +2,42 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+async function logEvent(args: {
+  orderId: string;
+  type: string;
+  message: string;
+  actorId: string | null;
+  meta?: Record<string, unknown>;
+}) {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let actorName: string | null = null;
+    if (args.actorId) {
+      const { data: p } = await supabaseAdmin
+        .from("profiles" as never)
+        .select("full_name,email")
+        .eq("id", args.actorId)
+        .maybeSingle();
+      actorName = (p as any)?.full_name || (p as any)?.email || null;
+    }
+    await supabaseAdmin.from("demo_order_events" as never).insert({
+      order_id: args.orderId,
+      type: args.type,
+      message: args.message,
+      actor_id: args.actorId,
+      actor_name: actorName,
+      meta: args.meta ?? null,
+    } as never);
+  } catch {
+    // events log is best-effort
+  }
+}
+
+async function isAdminUser(supabase: any, userId: string): Promise<boolean> {
+  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+  return (data ?? []).some((r: any) => r.role === "admin");
+}
+
 const lineItemSchema = z.object({
   label: z.string().trim().min(1).max(200),
   category: z.enum(["vehicle", "equipment", "package", "discount", "vip", "other"]).default("equipment"),
@@ -86,11 +122,18 @@ export const getDemoOrder = createServerFn({ method: "GET" })
       .select("id,mode,signer_name,signed_at,consumed_at,token,token_expires_at,created_at")
       .eq("order_id", data.id)
       .order("created_at", { ascending: false });
+    const { data: events } = await context.supabase
+      .from("demo_order_events" as never)
+      .select("id,type,message,actor_id,actor_name,meta,created_at")
+      .eq("order_id", data.id)
+      .order("created_at", { ascending: false })
+      .limit(200);
     return {
       order: order as any,
       client: client as any,
       documents: (docs ?? []) as any[],
       signatures: (sigs ?? []) as any[],
+      events: (events ?? []) as any[],
     };
   });
 
@@ -131,6 +174,21 @@ export const updateDemoOrder = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => orderInput.partial().extend({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { id, ...rest } = data as any;
+    // Lock editing once signature flow has started, except for super admin.
+    const { data: cur } = await context.supabase
+      .from("demo_orders" as never)
+      .select("status")
+      .eq("id", id)
+      .maybeSingle();
+    const curStatus = (cur as any)?.status as string | undefined;
+    if (curStatus && curStatus !== "draft") {
+      const admin = await isAdminUser(context.supabase, context.userId);
+      if (!admin) {
+        throw new Error(
+          "Objednávka už byla odeslána / podepsána. Úpravy může provést pouze super admin po schválené žádosti.",
+        );
+      }
+    }
     const patch: Record<string, unknown> = { ...rest };
     if (Array.isArray(rest.line_items)) {
       const totals = calcTotals(rest.line_items);
@@ -141,6 +199,14 @@ export const updateDemoOrder = createServerFn({ method: "POST" })
       .update(patch as never)
       .eq("id", id);
     if (error) throw new Error(error.message);
+    if (curStatus && curStatus !== "draft") {
+      await logEvent({
+        orderId: id,
+        type: "edited_after_lock",
+        message: "Super admin upravil objednávku po uzamčení.",
+        actorId: context.userId,
+      });
+    }
     return { ok: true };
   });
 
@@ -575,6 +641,12 @@ export const generateOrderPdf = createServerFn({ method: "POST" })
     const bytes = await buildOrderPdf(order, client);
     const file = `objednavka-${(order as any).order_number}.pdf`;
     const rec = await uploadAndRecord({ clientId: (order as any).client_id, orderId: data.orderId, kind: "order", fileName: file, bytes });
+    await logEvent({
+      orderId: data.orderId,
+      type: "order_pdf_generated",
+      message: `Vygenerováno PDF objednávky (${file}).`,
+      actorId: context.userId,
+    });
     return { ok: true, base64: bytesToBase64(bytes), file_name: rec.file_name };
   });
 
@@ -600,6 +672,12 @@ export const generateInvoicePdf = createServerFn({ method: "POST" })
     const bytes = await buildInvoicePdf(order, client, invoiceNumber);
     const file = `zalohova-faktura-${invoiceNumber}.pdf`;
     const rec = await uploadAndRecord({ clientId: (order as any).client_id, orderId: data.orderId, kind: "invoice", fileName: file, bytes });
+    await logEvent({
+      orderId: data.orderId,
+      type: "invoice_pdf_generated",
+      message: `Vygenerována zálohová faktura ${invoiceNumber}.`,
+      actorId: context.userId,
+    });
     return { ok: true, base64: bytesToBase64(bytes), file_name: rec.file_name, invoiceNumber };
   });
 
@@ -668,6 +746,12 @@ export const signOrderInPerson = createServerFn({ method: "POST" })
       signed_at: new Date().toISOString(),
     } as never);
     await supabaseAdmin.from("demo_orders" as never).update({ status: "signed" } as never).eq("id", data.orderId);
+    await logEvent({
+      orderId: data.orderId,
+      type: "signed_in_person",
+      message: `Klient podepsal objednávku u prodejce (${data.signerName}).`,
+      actorId: context.userId,
+    });
     return { ok: true };
   });
 
@@ -690,6 +774,12 @@ export const saveSellerSignature = createServerFn({ method: "POST" })
       } as never)
       .eq("id", data.orderId);
     if (error) throw new Error(error.message);
+    await logEvent({
+      orderId: data.orderId,
+      type: "seller_signed",
+      message: `Prodejce vložil podpis (${data.signerName}).`,
+      actorId: context.userId,
+    });
     return { ok: true };
   });
 
@@ -706,6 +796,12 @@ export const clearSellerSignature = createServerFn({ method: "POST" })
       } as never)
       .eq("id", data.orderId);
     if (error) throw new Error(error.message);
+    await logEvent({
+      orderId: data.orderId,
+      type: "seller_signature_cleared",
+      message: "Podpis prodejce byl odstraněn.",
+      actorId: context.userId,
+    });
     return { ok: true };
   });
 
@@ -742,6 +838,13 @@ export const createRemoteSignatureLink = createServerFn({ method: "POST" })
         signUrl: link,
         expiresAt: expires,
       },
+    });
+    await logEvent({
+      orderId: data.orderId,
+      type: "signature_link_sent",
+      message: `Odeslán e-mail klientovi (${(client as any).email}) s odkazem pro elektronický podpis.`,
+      actorId: context.userId,
+      meta: { recipient: (client as any).email, expires_at: expires },
     });
     return { ok: true, signUrl: link };
   });
@@ -807,6 +910,12 @@ export const signOrderRemote = createServerFn({ method: "POST" })
       consumed_at: new Date().toISOString(),
     } as never).eq("id", (sig as any).id);
     await supabaseAdmin.from("demo_orders" as never).update({ status: "signed" } as never).eq("id", orderId);
+    await logEvent({
+      orderId,
+      type: "signed_remote",
+      message: `Klient elektronicky podepsal objednávku (${data.signerName}).`,
+      actorId: null,
+    });
     return { ok: true };
   });
 
@@ -860,6 +969,17 @@ export const sendDocumentsToClient = createServerFn({ method: "POST" })
         orderUrl,
         invoiceUrl,
       },
+    });
+    await logEvent({
+      orderId: data.orderId,
+      type: "documents_sent",
+      message: `Odeslán e-mail klientovi (${(client as any).email}) s dokumenty${
+        picked.order && picked.invoice ? " (objednávka + faktura)"
+        : picked.order ? " (objednávka)"
+        : " (faktura)"
+      }.`,
+      actorId: context.userId,
+      meta: { recipient: (client as any).email },
     });
     return { ok: true };
   });

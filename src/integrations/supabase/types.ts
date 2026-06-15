@@ -844,6 +844,47 @@ export type Database = {
           },
         ]
       }
+      demo_order_events: {
+        Row: {
+          actor_id: string | null
+          actor_name: string | null
+          created_at: string
+          id: string
+          message: string
+          meta: Json | null
+          order_id: string
+          type: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          meta?: Json | null
+          order_id: string
+          type: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          meta?: Json | null
+          order_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demo_order_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "demo_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demo_order_signatures: {
         Row: {
           consumed_at: string | null

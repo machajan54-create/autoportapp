@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { ArrowLeft, FileText, FileSignature, Send, Mail, Trash2, Plus, Loader2, Download, Link as LinkIcon } from "lucide-react";
+import { ArrowLeft, FileText, FileSignature, Mail, Trash2, Plus, Loader2, Download, Link as LinkIcon, Lock, Activity } from "lucide-react";
 import { SignaturePad } from "@/components/SignaturePad";
 import {
   getDemoOrder, createDemoOrder, updateDemoOrder,
@@ -21,6 +21,8 @@ import {
   saveSellerSignature, clearSellerSignature,
 } from "@/lib/demo-orders.functions";
 import { listClients, createClient } from "@/lib/clients.functions";
+import { getMyAccess } from "@/lib/claims.functions";
+import { RequestDeleteButton } from "@/components/RequestDeleteButton";
 
 export const Route = createFileRoute("/_authenticated/demo-orders/$id")({
   component: DemoOrderForm,
@@ -88,6 +90,9 @@ function DemoOrderForm() {
   const clearSeller = useServerFn(clearSellerSignature);
   const fetchClients = useServerFn(listClients);
   const createClientFn = useServerFn(createClient);
+  const fetchAccess = useServerFn(getMyAccess);
+  const { data: access } = useQuery({ queryKey: ["my-access"], queryFn: () => fetchAccess({}) });
+  const isAdmin = !!access?.isAdmin;
 
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
@@ -293,7 +298,34 @@ function DemoOrderForm() {
 
   const order = orderData?.order;
   const client = orderData?.client;
-  const docs = orderData?.documents ?? [];
+  const allDocs = orderData?.documents ?? [];
+  const events = (orderData as any)?.events ?? [];
+
+  // Keep only the latest document of each kind to avoid noise.
+  const latestDocs = useMemo(() => {
+    const seen = new Set<string>();
+    const sorted = [...allDocs].sort(
+      (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+    const out: any[] = [];
+    for (const d of sorted) {
+      if (seen.has(d.kind)) continue;
+      seen.add(d.kind);
+      out.push(d);
+    }
+    return out;
+  }, [allDocs]);
+
+  const locked = !isNew && !!order && order.status !== "draft" && !isAdmin;
+
+  function fmtDateTime(s: string) {
+    try {
+      return new Date(s).toLocaleString("cs-CZ", {
+        day: "numeric", month: "numeric", year: "numeric",
+        hour: "2-digit", minute: "2-digit",
+      });
+    } catch { return s; }
+  }
 
   const updateItem = (i: number, patch: Partial<LineItem>) => {
     setForm((f) => ({ ...f, line_items: f.line_items.map((it, idx) => idx === i ? { ...it, ...patch } : it) }));
@@ -317,15 +349,37 @@ function DemoOrderForm() {
               <p className="text-sm text-muted-foreground">Stav: {STATUS_LABEL[order?.status] || order?.status}</p>
             )}
           </div>
-          <Button onClick={onSave} disabled={saving}>
-            {saving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
-            {isNew ? "Vytvořit" : "Uložit"}
-          </Button>
+          {!locked && (
+            <Button onClick={onSave} disabled={saving}>
+              {saving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
+              {isNew ? "Vytvořit" : "Uložit"}
+            </Button>
+          )}
         </div>
+
+        {locked && order && (
+          <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+            <Lock className="h-4 w-4 shrink-0" />
+            <span className="flex-1">
+              Objednávka je uzamčena (stav: {STATUS_LABEL[order.status] || order.status}).
+              Po odeslání k podpisu nelze data měnit – požádejte super admina o úpravu nebo smazání.
+            </span>
+            <RequestDeleteButton
+              entityType="demo_orders"
+              entityId={order.id}
+              entityLabel={`Objednávka ${order.order_number}`}
+              variant="outline"
+              size="sm"
+              title="Požádat o úpravu / smazání"
+            >
+              Požádat o úpravu / smazání
+            </RequestDeleteButton>
+          </div>
+        )}
 
         <div className="mt-6 grid gap-6 md:grid-cols-3">
           {/* Left: form */}
-          <div className="md:col-span-2 space-y-6">
+          <fieldset disabled={locked} className="md:col-span-2 space-y-6 disabled:opacity-70">
             <section className="rounded-xl border bg-card p-4">
               <h2 className="mb-3 font-semibold">Klient</h2>
               <div className="flex gap-2">
@@ -399,7 +453,7 @@ function DemoOrderForm() {
                 <Textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
               </div>
             </section>
-          </div>
+          </fieldset>
 
           {/* Right: actions & docs */}
           <aside className="space-y-4">
@@ -450,17 +504,38 @@ function DemoOrderForm() {
 
                 <section className="rounded-xl border bg-card p-4">
                   <h2 className="mb-3 font-semibold">Dokumenty</h2>
-                  {docs.length === 0 ? (
+                  {latestDocs.length === 0 ? (
                     <p className="text-xs text-muted-foreground">Žádné dokumenty zatím nejsou.</p>
                   ) : (
                     <ul className="space-y-1">
-                      {docs.map((d: any) => (
+                      {latestDocs.map((d: any) => (
                         <li key={d.id}>
                           <button onClick={() => onOpenDoc(d.id)} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted">
                             <Download className="h-3.5 w-3.5 text-muted-foreground" />
                             <span className="flex-1 truncate">{KIND_LABEL[d.kind] || d.kind}</span>
-                            <span className="text-[10px] text-muted-foreground">{new Date(d.created_at).toLocaleDateString("cs-CZ")}</span>
+                            <span className="whitespace-nowrap text-[10px] text-muted-foreground">{fmtDateTime(d.created_at)}</span>
                           </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+
+                <section className="rounded-xl border bg-card p-4">
+                  <h2 className="mb-3 flex items-center gap-2 font-semibold">
+                    <Activity className="h-4 w-4" /> Akce
+                  </h2>
+                  {events.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">Zatím žádná aktivita.</p>
+                  ) : (
+                    <ul className="space-y-2 text-xs">
+                      {events.map((e: any) => (
+                        <li key={e.id} className="border-l-2 border-muted pl-2">
+                          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                            {fmtDateTime(e.created_at)}
+                            {e.actor_name ? ` · ${e.actor_name}` : ""}
+                          </div>
+                          <div>{e.message}</div>
                         </li>
                       ))}
                     </ul>
