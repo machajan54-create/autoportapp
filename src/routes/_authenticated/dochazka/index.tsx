@@ -971,9 +971,11 @@ function ExportTab() {
   const fetchR = useServerFn(listRecords);
   const fetchE = useServerFn(listEmployees);
   const fetchS = useServerFn(listShifts);
+  const fetchSettings = useServerFn(getDochazkaSettings);
   const { data: records } = useQuery({ queryKey: ["dochazka", "records"], queryFn: () => fetchR({}) });
   const { data: employees } = useQuery({ queryKey: ["dochazka", "employees"], queryFn: () => fetchE({}) });
   const { data: shifts } = useQuery({ queryKey: ["dochazka", "shifts"], queryFn: () => fetchS({}) });
+  const { data: settings } = useQuery({ queryKey: ["dochazka", "settings"], queryFn: () => fetchSettings({}) });
   const [month, setMonth] = useState(() => todayISODate().slice(0, 7));
 
   const empMap = useMemo(() => new Map((employees ?? []).map((e) => [e.id, e])), [employees]);
@@ -1004,6 +1006,45 @@ function ExportTab() {
     URL.revokeObjectURL(url);
   }
 
+  async function downloadXlsx(filename: string, sheets: Array<{ name: string; rows: any[][] }>) {
+    const XLSX = await import("xlsx");
+    const wb = XLSX.utils.book_new();
+    for (const s of sheets) {
+      const ws = XLSX.utils.aoa_to_sheet(s.rows);
+      XLSX.utils.book_append_sheet(wb, ws, s.name.slice(0, 31));
+    }
+    XLSX.writeFile(wb, filename);
+  }
+
+  const dailyThr = Number((settings as any)?.daily_overtime_threshold_hours ?? 8);
+
+  function buildPayrollRows(list: typeof filtered) {
+    // Souhrn pro mzdovou účtárnu: po zaměstnancích — odpracované hodiny, počet dní, přesčasy
+    const byEmp = new Map<string, { name: string; type: string; days: Set<string>; hours: number; overtime: number }>();
+    for (const r of list) {
+      const e: any = empMap.get(r.employee_id);
+      const key = r.employee_id;
+      const cur = byEmp.get(key) ?? {
+        name: e?.name ?? "—",
+        type: (e?.employment_types ?? ["HPP"]).join("+"),
+        days: new Set<string>(),
+        hours: 0,
+        overtime: 0,
+      };
+      cur.days.add(r.date);
+      const h = Number(r.hours_worked ?? 0);
+      cur.hours += h;
+      if (h > dailyThr) cur.overtime += h - dailyThr;
+      byEmp.set(key, cur);
+    }
+    const header = ["Zaměstnanec", "Úvazek", "Odpracované dny", "Hodiny celkem", "Z toho přesčas (h)"];
+    const rows: any[][] = [header];
+    for (const v of byEmp.values()) {
+      rows.push([v.name, v.type, v.days.size, Math.round(v.hours * 100) / 100, Math.round(v.overtime * 100) / 100]);
+    }
+    return rows;
+  }
+
   function buildRows(list: typeof filtered, includeType: boolean) {
     const shiftMap = new Map((shifts ?? []).map((s) => [s.id, s.name]));
     const header = ["Datum", "Zaměstnanec", ...(includeType ? ["Úvazek"] : []), "Směna", "Příchod", "Odchod", "Pauza (min)", "Hodiny", "Poznámka"];
@@ -1028,6 +1069,15 @@ function ExportTab() {
   function exportHpp() { downloadCsv(`dochazka-HPP-${month}.csv`, buildRows(filteredHpp, false)); }
   function exportDpp() {
     downloadCsv(`dochazka-DPP-${month}.csv`, buildRows(filteredDpp, false));
+  }
+
+  function exportXlsx() {
+    downloadXlsx(`dochazka-${month}.xlsx`, [
+      { name: "Souhrn (mzdy)", rows: buildPayrollRows(filtered) },
+      { name: "Detail", rows: buildRows(filtered, true) },
+      { name: "HPP", rows: buildRows(filteredHpp, false) },
+      { name: "DPP", rows: buildRows(filteredDpp, false) },
+    ]);
   }
 
   const totalHours = filtered.reduce((s, r) => s + Number(r.hours_worked ?? 0), 0);
@@ -1085,12 +1135,29 @@ function ExportTab() {
         </Card>
       </div>
 
+      <Card className="p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <Badge variant="outline" className="border-emerald-300 bg-emerald-50 text-emerald-700">XLSX</Badge>
+            <h3 className="mt-2 text-sm font-semibold">Měsíční přehled pro mzdovou účtárnu</h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Excel sešit se 4 listy: Souhrn (osoba / dny / hodiny / přesčas), Detail, HPP, DPP. Přesčas se počítá nad
+              {" "}{dailyThr.toFixed(1)} h/den dle nastavení.
+            </p>
+          </div>
+          <Button onClick={exportXlsx} disabled={filtered.length === 0}>
+            <FileSpreadsheet className="mr-2 h-4 w-4" /> Stáhnout XLSX
+          </Button>
+        </div>
+      </Card>
+
       <Card className="p-4 text-sm text-muted-foreground">
         <p className="font-semibold text-foreground">Tipy</p>
         <ul className="mt-2 list-disc space-y-1 pl-5">
           <li>Export obsahuje BOM, otevře se správně v Excelu.</li>
           <li>Oddělovač je středník (cs-CZ standard).</li>
           <li>DPP docházku vyplňte hromadně přes „Auto-vyplnit měsíc“ na záložce Záznamy.</li>
+          <li>XLSX export obsahuje samostatný list „Souhrn“ pro mzdovou účtárnu se zaokrouhleními a přesčasy.</li>
         </ul>
       </Card>
     </div>
