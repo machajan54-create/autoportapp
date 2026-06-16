@@ -1094,5 +1094,82 @@ export const bulkDecideRecords = createServerFn({ method: "POST" })
       })
       .in("id", data.ids);
     if (error) throw new Error(error.message);
+
+    // Po schválení uložit ke každému zaměstnanci CSV výkaz daného měsíce/ů
+    if (data.status === "approved") {
+      try {
+        const { data: recs } = await context.supabase
+          .from("attendance_records")
+          .select("id,employee_id,date,check_in,check_out,break_duration,hours_worked,note")
+          .in("id", data.ids);
+        const groups = new Map<string, typeof recs>();
+        for (const r of (recs ?? []) as any[]) {
+          const key = `${r.employee_id}::${String(r.date).slice(0, 7)}`;
+          if (!groups.has(key)) groups.set(key, [] as any);
+          (groups.get(key) as any[]).push(r);
+        }
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        for (const [key, list] of groups) {
+          const [employeeId, monthStr] = key.split("::");
+          const { data: emp } = await context.supabase
+            .from("attendance_employees").select("name").eq("id", employeeId).maybeSingle();
+          const sorted = (list as any[]).slice().sort((a, b) => a.date.localeCompare(b.date));
+          const csv = buildAttendanceCsv(emp?.name ?? "Zaměstnanec", monthStr, sorted as any);
+          const ts = new Date().toISOString().replace(/[:.]/g, "-");
+          const path = `${employeeId}/${monthStr}_schvaleno_${ts}.csv`;
+          await supabaseAdmin.storage
+            .from("attendance-reports")
+            .upload(path, new Blob([csv], { type: "text/csv;charset=utf-8" }), {
+              contentType: "text/csv;charset=utf-8",
+              upsert: false,
+            });
+        }
+      } catch (e) {
+        console.error("[dochazka] failed to archive approved reports", e);
+      }
+    }
     return { ok: true, count: data.ids.length };
+  });
+
+// ============ Reports storage ============
+
+export const listEmployeeReports = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ employee_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const access = await getDochazkaAccess(context.supabase, context.userId);
+    if (!access.canApproveAll) {
+      // Zaměstnanec smí vidět jen své soubory
+      if (access.myEmployeeId !== data.employee_id) {
+        throw new Error("Nemáte oprávnění");
+      }
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: files, error } = await supabaseAdmin.storage
+      .from("attendance-reports")
+      .list(data.employee_id, { limit: 200, sortBy: { column: "created_at", order: "desc" } });
+    if (error) throw new Error(error.message);
+    return (files ?? []).map((f: any) => ({
+      name: f.name,
+      created_at: f.created_at ?? null,
+      size: f.metadata?.size ?? null,
+      path: `${data.employee_id}/${f.name}`,
+    }));
+  });
+
+export const getEmployeeReportUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ path: z.string().min(1).max(500) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const access = await getDochazkaAccess(context.supabase, context.userId);
+    const folder = data.path.split("/")[0];
+    if (!access.canApproveAll && access.myEmployeeId !== folder) {
+      throw new Error("Nemáte oprávnění");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: signed, error } = await supabaseAdmin.storage
+      .from("attendance-reports")
+      .createSignedUrl(data.path, 300);
+    if (error) throw new Error(error.message);
+    return { url: signed.signedUrl };
   });
