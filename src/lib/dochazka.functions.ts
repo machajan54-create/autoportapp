@@ -15,18 +15,81 @@ const ABSENCE_TYPE_LABEL: Record<string, string> = {
 // - isAdmin: super admin role
 // - canApproveAll: can see everyone's data (admin or employee.can_approve_absences)
 // - myEmployeeId: paired attendance_employees row (or null)
+// - isDepartmentHead / myDepartment: vedoucí oddělení (z profiles)
+// - departmentEmployeeIds: ID zaměstnanců (attendance_employees), kteří patří
+//   do stejného oddělení jako vedoucí — používá se pro filtrování seznamů
+//   a pro kontrolu, zda smí vedoucí schválit konkrétní žádost.
 async function getDochazkaAccess(supabase: any, userId: string) {
-  const [{ data: roles }, { data: emp }] = await Promise.all([
+  const [{ data: roles }, { data: emp }, { data: prof }] = await Promise.all([
     supabase.from("user_roles").select("role").eq("user_id", userId),
     supabase
       .from("attendance_employees")
       .select("id,can_approve_absences")
       .eq("user_id", userId)
       .maybeSingle(),
+    supabase
+      .from("profiles")
+      .select("department,is_department_head")
+      .eq("id", userId)
+      .maybeSingle(),
   ]);
   const isAdmin = (roles ?? []).some((r: any) => r.role === "admin");
   const canApproveAll = isAdmin || !!emp?.can_approve_absences;
-  return { isAdmin, canApproveAll, myEmployeeId: emp?.id ?? null };
+  const isDepartmentHead = !!prof?.is_department_head && !!prof?.department;
+  const myDepartment = prof?.department ?? null;
+
+  let departmentEmployeeIds: string[] = [];
+  if (!canApproveAll && isDepartmentHead && myDepartment) {
+    // Najdi všechny uživatele ve stejném oddělení a k nim spárované zaměstnance
+    const { data: mates } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("department", myDepartment);
+    const userIds = (mates ?? []).map((m: any) => m.id);
+    if (userIds.length) {
+      const { data: emps } = await supabase
+        .from("attendance_employees")
+        .select("id")
+        .in("user_id", userIds);
+      departmentEmployeeIds = (emps ?? []).map((e: any) => e.id);
+    }
+  }
+  return {
+    isAdmin,
+    canApproveAll,
+    myEmployeeId: emp?.id ?? null,
+    isDepartmentHead,
+    myDepartment,
+    departmentEmployeeIds,
+    canApproveTeam: isDepartmentHead && !canApproveAll,
+  };
+}
+
+/** Vrátí e-mail vedoucího oddělení žadatele (na základě jeho profilu). */
+async function getDeptHeadEmailForEmployee(
+  supabase: any,
+  employeeId: string,
+): Promise<{ id: string; email: string | null; name: string | null } | null> {
+  const { data: emp } = await supabase
+    .from("attendance_employees")
+    .select("user_id")
+    .eq("id", employeeId)
+    .maybeSingle();
+  if (!emp?.user_id) return null;
+  const { data: prof } = await supabase
+    .from("profiles")
+    .select("department")
+    .eq("id", emp.user_id)
+    .maybeSingle();
+  if (!prof?.department) return null;
+  const { data: head } = await supabase
+    .from("profiles")
+    .select("id,email,full_name")
+    .eq("department", prof.department)
+    .eq("is_department_head", true)
+    .maybeSingle();
+  if (!head) return null;
+  return { id: head.id, email: head.email ?? null, name: head.full_name ?? null };
 }
 
 // ============ Employees ============
