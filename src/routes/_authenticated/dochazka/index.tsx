@@ -1551,3 +1551,84 @@ function GenerateTab() {
     </Card>
   );
 }
+
+// ============= Files (admin) =============
+function FilesTab() {
+  const fetchE = useServerFn(listEmployees);
+  const listFiles = useServerFn(listEmployeeReports);
+  const getUrl = useServerFn(getEmployeeReportUrl);
+  const { data: employees } = useQuery({ queryKey: ["dochazka", "employees"], queryFn: () => fetchE({}) });
+  const [employeeId, setEmployeeId] = useState<string>("");
+  const { data: files, refetch, isFetching } = useQuery({
+    queryKey: ["dochazka", "files", employeeId],
+    queryFn: () => (employeeId ? listFiles({ data: { employee_id: employeeId } }) : Promise.resolve([])),
+    enabled: !!employeeId,
+  });
+
+  async function download(path: string) {
+    try {
+      const { url } = await getUrl({ data: { path } });
+      window.open(url, "_blank");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Nepodařilo se otevřít soubor");
+    }
+  }
+
+  return (
+    <Card className="mt-4 max-w-3xl space-y-3 p-5">
+      <h2 className="flex items-center gap-2 text-lg font-semibold">
+        <FileSpreadsheet className="h-5 w-5 text-emerald-500" />
+        Archiv výkazů docházky
+      </h2>
+      <p className="text-sm text-muted-foreground">
+        Vygenerované a schválené měsíční výkazy uložené ke každému zaměstnanci.
+      </p>
+      <div className="grid gap-2">
+        <Label>Zaměstnanec</Label>
+        <Select value={employeeId} onValueChange={setEmployeeId}>
+          <SelectTrigger><SelectValue placeholder="Vyberte…" /></SelectTrigger>
+          <SelectContent>
+            {(employees ?? []).map((e: any) => (
+              <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      {employeeId ? (
+        isFetching ? (
+          <p className="text-sm text-muted-foreground">Načítám…</p>
+        ) : (files?.length ?? 0) === 0 ? (
+          <p className="text-sm text-muted-foreground">Žádné soubory.</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Soubor</TableHead>
+                <TableHead>Vytvořeno</TableHead>
+                <TableHead className="text-right">Akce</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(files ?? []).map((f: any) => (
+                <TableRow key={f.path}>
+                  <TableCell className="font-mono text-xs">{f.name}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {f.created_at ? new Date(f.created_at).toLocaleString("cs-CZ") : "—"}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button size="sm" variant="outline" onClick={() => download(f.path)}>
+                      <Download className="mr-1 h-4 w-4" /> Stáhnout
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )
+      ) : null}
+      <div>
+        <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={!employeeId}>Obnovit</Button>
+      </div>
+    </Card>
+  );
+}
