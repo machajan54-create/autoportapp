@@ -106,6 +106,15 @@ sub-rows (tasks, attachments) when the workflow needs it.
 | `claim_events`        | `has_module('claims')`          | `has_module('claims')` + trigger | —                              | —                            |
 | `claim_tasks`         | `has_module('claims')`          | `has_module('claims')`          | `has_module('claims')`          | `has_module('claims')`       |
 | `vykupy`              | `has_module('vykupy')`          | `has_module('vykupy')`          | `has_module('vykupy')`          | `has_role('admin')`          |
+| `defects`             | `has_module('defects')`         | `reported_by = auth.uid()`      | own row OR `has_role('admin')`  | own row OR `has_role('admin')` |
+| `attendance_settings` | `has_module('dochazka')`        | `has_role('admin')`             | `has_role('admin')`             | `has_role('admin')`          |
+| `attendance_*` (records, shifts, absences, notifications, employees) | `has_module('dochazka')` | `has_module('dochazka')` | `has_module('dochazka')` | `has_module('dochazka')` |
+| `deals`, `deal_stage_history` | `has_module('deals')`   | `has_module('deals')`           | `has_module('deals')`           | `has_role('admin')`          |
+| `logbook_*`           | `has_module('logbook')`         | `has_module('logbook')`         | `has_module('logbook')`         | `has_role('admin')`          |
+| `tasks`, `task_comments`, `task_attachments` | `has_module('tasks')` | `has_module('tasks')` | `has_module('tasks')` | `has_module('tasks')` |
+| `clients`, `demo_orders`, `demo_order_*` | `has_module('demo_orders')` | `has_module('demo_orders')` | `has_module('demo_orders')` | `has_role('admin')` |
+| `evidence_orders`, `evidence_wash_assignments`, `washers` | `has_module('evidence_zakazek')` | `has_module('evidence_zakazek')` | `has_module('evidence_zakazek')` | `has_role('admin')` |
+| `audit_log`           | `has_role('admin')`             | server only                     | —                               | —                            |
 | `suppliers`           | `has_role('admin')` (FOR ALL)   | same                            | same                            | same                         |
 | `purchases`           | `has_role('admin')` (FOR ALL)   | same                            | same                            | same                         |
 | `document_templates`  | `has_role('admin')` (FOR ALL)   | same                            | same                            | same                         |
