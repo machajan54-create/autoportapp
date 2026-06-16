@@ -44,12 +44,23 @@ row — so policies never need to OR `has_role` and `has_module` themselves.
 | ------------ | ------------------------------------------------------------------- |
 | `claims`     | Pojistné události: `claims`, `claim_attachments`, `claim_events`, `claim_tasks`, claim-files storage reads |
 | `vykupy`     | Ojeté vozy: `vykupy`                                                |
-| `users`      | (Reserved — admin-only screens already gated by `isAdmin`)          |
+| `vykupy_external` | Externí výkupní formulář (UI gating)                           |
+| `dochazka`   | Docházka: `attendance_*` (čtení nastavení; zápis nastavení = admin) |
+| `defects`    | Závady: `defects`, defect-photos storage                            |
+| `deals`      | Obchodní případy: `deals`, `deal_stage_history`                     |
+| `logbook`    | Kniha jízd: `logbook_entries`, `logbook_vehicles`                   |
+| `tasks`      | Úkoly: `tasks`, `task_comments`, `task_attachments`                 |
+| `demo_orders`| Předváděcí vozy: `clients`, `demo_orders`, `demo_order_*`           |
+| `evidence_zakazek` | Evidence mytí: `evidence_orders`, `evidence_wash_assignments`, `washers` |
+| `approvals`  | Schvalování: `suppliers`, `purchases` (gating UI; tabulky jsou admin-only) |
+| `dashboard`  | Přehled napříč moduly                                               |
+| `users`      | (Rezervováno — admin-only obrazovky jsou gated `isAdmin`)           |
 
 Admin-only surfaces (no module needed, gated by `isAdmin` in the UI and
 by `has_role('admin')` in policies):
 - `/admin/users` — schvalování účtů, přidělování modulů
 - `/admin/templates` — šablony dokumentů
+- `/admin/audit` — audit log
 - `/approvals` — Schvalování: `suppliers`, `purchases`
 - `/dashboard` — přehled napříč moduly
 
