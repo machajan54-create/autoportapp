@@ -15,18 +15,81 @@ const ABSENCE_TYPE_LABEL: Record<string, string> = {
 // - isAdmin: super admin role
 // - canApproveAll: can see everyone's data (admin or employee.can_approve_absences)
 // - myEmployeeId: paired attendance_employees row (or null)
+// - isDepartmentHead / myDepartment: vedoucí oddělení (z profiles)
+// - departmentEmployeeIds: ID zaměstnanců (attendance_employees), kteří patří
+//   do stejného oddělení jako vedoucí — používá se pro filtrování seznamů
+//   a pro kontrolu, zda smí vedoucí schválit konkrétní žádost.
 async function getDochazkaAccess(supabase: any, userId: string) {
-  const [{ data: roles }, { data: emp }] = await Promise.all([
+  const [{ data: roles }, { data: emp }, { data: prof }] = await Promise.all([
     supabase.from("user_roles").select("role").eq("user_id", userId),
     supabase
       .from("attendance_employees")
       .select("id,can_approve_absences")
       .eq("user_id", userId)
       .maybeSingle(),
+    supabase
+      .from("profiles")
+      .select("department,is_department_head")
+      .eq("id", userId)
+      .maybeSingle(),
   ]);
   const isAdmin = (roles ?? []).some((r: any) => r.role === "admin");
   const canApproveAll = isAdmin || !!emp?.can_approve_absences;
-  return { isAdmin, canApproveAll, myEmployeeId: emp?.id ?? null };
+  const isDepartmentHead = !!prof?.is_department_head && !!prof?.department;
+  const myDepartment = prof?.department ?? null;
+
+  let departmentEmployeeIds: string[] = [];
+  if (!canApproveAll && isDepartmentHead && myDepartment) {
+    // Najdi všechny uživatele ve stejném oddělení a k nim spárované zaměstnance
+    const { data: mates } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("department", myDepartment);
+    const userIds = (mates ?? []).map((m: any) => m.id);
+    if (userIds.length) {
+      const { data: emps } = await supabase
+        .from("attendance_employees")
+        .select("id")
+        .in("user_id", userIds);
+      departmentEmployeeIds = (emps ?? []).map((e: any) => e.id);
+    }
+  }
+  return {
+    isAdmin,
+    canApproveAll,
+    myEmployeeId: emp?.id ?? null,
+    isDepartmentHead,
+    myDepartment,
+    departmentEmployeeIds,
+    canApproveTeam: isDepartmentHead && !canApproveAll,
+  };
+}
+
+/** Vrátí e-mail vedoucího oddělení žadatele (na základě jeho profilu). */
+async function getDeptHeadEmailForEmployee(
+  supabase: any,
+  employeeId: string,
+): Promise<{ id: string; email: string | null; name: string | null } | null> {
+  const { data: emp } = await supabase
+    .from("attendance_employees")
+    .select("user_id")
+    .eq("id", employeeId)
+    .maybeSingle();
+  if (!emp?.user_id) return null;
+  const { data: prof } = await supabase
+    .from("profiles")
+    .select("department")
+    .eq("id", emp.user_id)
+    .maybeSingle();
+  if (!prof?.department) return null;
+  const { data: head } = await supabase
+    .from("profiles")
+    .select("id,email,full_name")
+    .eq("department", prof.department)
+    .eq("is_department_head", true)
+    .maybeSingle();
+  if (!head) return null;
+  return { id: head.id, email: head.email ?? null, name: head.full_name ?? null };
 }
 
 // ============ Employees ============
@@ -52,9 +115,20 @@ export const listEmployees = createServerFn({ method: "GET" })
       .select("id,name,role,avatar_color,active,can_approve_absences,user_id,employment_types,created_at,updated_at")
       .order("name");
     if (!access.canApproveAll) {
-      // Non-admin / non-approver sees only their own paired employee row
-      if (!access.myEmployeeId) return [];
-      q = q.eq("id", access.myEmployeeId);
+      if (access.canApproveTeam) {
+        const ids = Array.from(
+          new Set([
+            ...(access.myEmployeeId ? [access.myEmployeeId] : []),
+            ...access.departmentEmployeeIds,
+          ]),
+        );
+        if (!ids.length) return [];
+        q = q.in("id", ids);
+      } else {
+        // Non-admin / non-approver sees only their own paired employee row
+        if (!access.myEmployeeId) return [];
+        q = q.eq("id", access.myEmployeeId);
+      }
     }
     const { data, error } = await q;
     if (error) throw new Error(error.message);
@@ -225,8 +299,19 @@ export const listRecords = createServerFn({ method: "GET" })
     if (data?.employee_id) q = q.eq("employee_id", data.employee_id);
     const access = await getDochazkaAccess(context.supabase, context.userId);
     if (!access.canApproveAll) {
-      if (!access.myEmployeeId) return [];
-      q = q.eq("employee_id", access.myEmployeeId);
+      if (access.canApproveTeam) {
+        const ids = Array.from(
+          new Set([
+            ...(access.myEmployeeId ? [access.myEmployeeId] : []),
+            ...access.departmentEmployeeIds,
+          ]),
+        );
+        if (!ids.length) return [];
+        q = q.in("employee_id", ids);
+      } else {
+        if (!access.myEmployeeId) return [];
+        q = q.eq("employee_id", access.myEmployeeId);
+      }
     }
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
@@ -380,8 +465,19 @@ export const listAbsences = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false })
       .limit(2000);
     if (!access.canApproveAll) {
-      if (!access.myEmployeeId) return [];
-      q = q.eq("employee_id", access.myEmployeeId);
+      if (access.canApproveTeam) {
+        const ids = Array.from(
+          new Set([
+            ...(access.myEmployeeId ? [access.myEmployeeId] : []),
+            ...access.departmentEmployeeIds,
+          ]),
+        );
+        if (!ids.length) return [];
+        q = q.in("employee_id", ids);
+      } else {
+        if (!access.myEmployeeId) return [];
+        q = q.eq("employee_id", access.myEmployeeId);
+      }
     }
     const { data, error } = await q;
     if (error) throw new Error(error.message);
@@ -437,7 +533,13 @@ export const upsertAbsence = createServerFn({ method: "POST" })
         await notify.notifyAdmins(mail);
       }
     } else {
-      await notify.notifyAdmins(mail);
+      // Pošli vedoucímu oddělení žadatele, jinak fallback na super adminy.
+      const head = await getDeptHeadEmailForEmployee(context.supabase, data.employee_id);
+      if (head?.email) {
+        await notify.enqueueTransactionalEmail({ ...mail, recipientEmail: head.email });
+      } else {
+        await notify.notifyAdmins(mail);
+      }
     }
     return { id: row.id };
   });
@@ -452,7 +554,22 @@ export const resolveAbsence = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const access = await getDochazkaAccess(context.supabase, context.userId);
-    if (!access.canApproveAll) throw new Error("Nemáte oprávnění schvalovat");
+    // Načti žádost (kvůli kontrole oddělení a notifikaci žadateli)
+    const { data: absRow } = await context.supabase
+      .from("attendance_absences")
+      .select("type, start_date, end_date, employee_id, note")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (!absRow) throw new Error("Žádost nenalezena");
+
+    if (!access.canApproveAll) {
+      if (!access.canApproveTeam) {
+        throw new Error("Nemáte oprávnění schvalovat");
+      }
+      if (!access.departmentEmployeeIds.includes(absRow.employee_id)) {
+        throw new Error("Tuto žádost můžete schválit pouze vedoucí jejího oddělení nebo super admin.");
+      }
+    }
     const { data: resolverEmp } = await context.supabase
       .from("attendance_employees")
       .select("id")
@@ -467,6 +584,38 @@ export const resolveAbsence = createServerFn({ method: "POST" })
       })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
+    // Notifikace žadateli o rozhodnutí
+    try {
+      const { data: emp } = await context.supabase
+        .from("attendance_employees")
+        .select("name,user_id")
+        .eq("id", absRow.employee_id)
+        .maybeSingle();
+      if (emp?.user_id) {
+        const notify = await import("@/lib/email/notify.server");
+        const u = await notify.getUserEmail(emp.user_id);
+        if (u.email) {
+          await notify.enqueueTransactionalEmail({
+            templateName: "approval-decision",
+            recipientEmail: u.email,
+            idempotencyKey: `absence-${data.id}-${data.status}`,
+            templateData: {
+              kind: "vacation",
+              status: data.status,
+              recipientName: u.name ?? emp.name ?? "",
+              title: ABSENCE_TYPE_LABEL[absRow.type] ?? absRow.type,
+              meta: [
+                { label: "Od", value: absRow.start_date },
+                { label: "Do", value: absRow.end_date },
+              ],
+              actionUrl: "https://www.autoport-app.cz/dochazka",
+            },
+          });
+        }
+      }
+    } catch (e) {
+      console.error("[dochazka] absence decision email failed", e);
+    }
     {
       const { logEvent } = await import("@/lib/audit.server");
       const { data: abs } = await context.supabase
@@ -607,12 +756,25 @@ export const getMonthCalendar = createServerFn({ method: "GET" })
       .lte("start_date", next)
       .gte("end_date", start);
     if (!access.canApproveAll) {
-      if (!access.myEmployeeId) {
-        return { employees: [], records: [], absences: [] };
+      if (access.canApproveTeam) {
+        const ids = Array.from(
+          new Set([
+            ...(access.myEmployeeId ? [access.myEmployeeId] : []),
+            ...access.departmentEmployeeIds,
+          ]),
+        );
+        if (!ids.length) return { employees: [], records: [], absences: [] };
+        empQ = empQ.in("id", ids);
+        recsQ = recsQ.in("employee_id", ids);
+        absQ = absQ.in("employee_id", ids);
+      } else {
+        if (!access.myEmployeeId) {
+          return { employees: [], records: [], absences: [] };
+        }
+        empQ = empQ.eq("id", access.myEmployeeId);
+        recsQ = recsQ.eq("employee_id", access.myEmployeeId);
+        absQ = absQ.eq("employee_id", access.myEmployeeId);
       }
-      empQ = empQ.eq("id", access.myEmployeeId);
-      recsQ = recsQ.eq("employee_id", access.myEmployeeId);
-      absQ = absQ.eq("employee_id", access.myEmployeeId);
     }
     const [emp, recs, abs] = await Promise.all([empQ, recsQ, absQ]);
     if (emp.error) throw new Error(emp.error.message);
