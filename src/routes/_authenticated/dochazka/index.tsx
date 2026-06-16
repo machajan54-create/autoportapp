@@ -38,6 +38,7 @@ import {
   getDochazkaSettings, updateDochazkaSettings,
   getMonthCalendar, listResolvers,
   submitRecord, decideRecord, bulkDecideRecords, autoFillMonth,
+  listEmployeeReports, getEmployeeReportUrl,
 } from "@/lib/dochazka.functions";
 import { getMyAccess } from "@/lib/claims.functions";
 import { RequestDeleteButton } from "@/components/RequestDeleteButton";
@@ -95,7 +96,7 @@ function DochazkaPage() {
 
         {isAdmin ? (
           <Tabs defaultValue="stats" className="mt-6">
-            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 lg:grid-cols-9">
+            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 lg:grid-cols-10">
               <TabsTrigger value="stats"><BarChart3 className="mr-1 h-4 w-4" />Statistiky</TabsTrigger>
               <TabsTrigger value="calendar"><CalendarDays className="mr-1 h-4 w-4" />Kalendář</TabsTrigger>
               <TabsTrigger value="employees"><UsersIcon className="mr-1 h-4 w-4" />Zaměstnanci</TabsTrigger>
@@ -105,6 +106,7 @@ function DochazkaPage() {
               <TabsTrigger value="alerts"><Bell className="mr-1 h-4 w-4" />Upozornění</TabsTrigger>
               <TabsTrigger value="export"><Download className="mr-1 h-4 w-4" />Export</TabsTrigger>
               <TabsTrigger value="generate"><Sparkles className="mr-1 h-4 w-4" />Generování</TabsTrigger>
+              <TabsTrigger value="files"><FileSpreadsheet className="mr-1 h-4 w-4" />Soubory</TabsTrigger>
             </TabsList>
 
             <TabsContent value="stats"><StatsTab /></TabsContent>
@@ -116,6 +118,7 @@ function DochazkaPage() {
             <TabsContent value="alerts"><AlertsTab /></TabsContent>
             <TabsContent value="export"><ExportTab /></TabsContent>
             <TabsContent value="generate"><GenerateTab /></TabsContent>
+            <TabsContent value="files"><FilesTab /></TabsContent>
           </Tabs>
         ) : (
           <Tabs defaultValue="records" className="mt-6">
@@ -1365,7 +1368,7 @@ function GenerateTab() {
     mode: "HPP" as "HPP" | "DPP",
     hours_per_day: 8,
     total_hours: 100,
-    start_hour: 8,
+    start_time: "08:00",
     break_minutes: 30,
     shift_id: "",
   });
@@ -1390,12 +1393,24 @@ function GenerateTab() {
           mode: form.mode,
           hours_per_day: form.hours_per_day,
           total_hours: form.total_hours,
-          start_hour: form.start_hour,
+          start_time: form.start_time,
           break_minutes: form.break_minutes,
           shift_id: form.shift_id || null,
         },
       });
       toast.success(`Vygenerováno ${r.created} dní · celkem ${r.total_hours} h${r.skipped ? ` (přeskočeno ${r.skipped})` : ""}`);
+      // Auto-download CSV
+      if (r.csv) {
+        const blob = new Blob([r.csv], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = r.filename ?? `dochazka_${form.month}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
       qc.invalidateQueries({ queryKey: ["dochazka"] });
     } catch (e: any) {
       toast.error(e?.message ?? "Chyba");
@@ -1498,8 +1513,11 @@ function GenerateTab() {
       <div className="grid grid-cols-3 gap-3">
         <div className="grid gap-2">
           <Label>Začátek</Label>
-          <Input type="number" min="0" max="23" value={form.start_hour}
-            onChange={(e) => setForm({ ...form, start_hour: Number(e.target.value) })} />
+          <Input
+            type="time"
+            value={form.start_time}
+            onChange={(e) => setForm({ ...form, start_time: e.target.value })}
+          />
         </div>
         <div className="grid gap-2">
           <Label>Pauza (min)</Label>
@@ -1529,6 +1547,87 @@ function GenerateTab() {
           <Sparkles className="mr-1 h-4 w-4" />
           {busy ? "Generuji…" : "Vygenerovat"}
         </Button>
+      </div>
+    </Card>
+  );
+}
+
+// ============= Files (admin) =============
+function FilesTab() {
+  const fetchE = useServerFn(listEmployees);
+  const listFiles = useServerFn(listEmployeeReports);
+  const getUrl = useServerFn(getEmployeeReportUrl);
+  const { data: employees } = useQuery({ queryKey: ["dochazka", "employees"], queryFn: () => fetchE({}) });
+  const [employeeId, setEmployeeId] = useState<string>("");
+  const { data: files, refetch, isFetching } = useQuery({
+    queryKey: ["dochazka", "files", employeeId],
+    queryFn: () => (employeeId ? listFiles({ data: { employee_id: employeeId } }) : Promise.resolve([])),
+    enabled: !!employeeId,
+  });
+
+  async function download(path: string) {
+    try {
+      const { url } = await getUrl({ data: { path } });
+      window.open(url, "_blank");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Nepodařilo se otevřít soubor");
+    }
+  }
+
+  return (
+    <Card className="mt-4 max-w-3xl space-y-3 p-5">
+      <h2 className="flex items-center gap-2 text-lg font-semibold">
+        <FileSpreadsheet className="h-5 w-5 text-emerald-500" />
+        Archiv výkazů docházky
+      </h2>
+      <p className="text-sm text-muted-foreground">
+        Vygenerované a schválené měsíční výkazy uložené ke každému zaměstnanci.
+      </p>
+      <div className="grid gap-2">
+        <Label>Zaměstnanec</Label>
+        <Select value={employeeId} onValueChange={setEmployeeId}>
+          <SelectTrigger><SelectValue placeholder="Vyberte…" /></SelectTrigger>
+          <SelectContent>
+            {(employees ?? []).map((e: any) => (
+              <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      {employeeId ? (
+        isFetching ? (
+          <p className="text-sm text-muted-foreground">Načítám…</p>
+        ) : (files?.length ?? 0) === 0 ? (
+          <p className="text-sm text-muted-foreground">Žádné soubory.</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Soubor</TableHead>
+                <TableHead>Vytvořeno</TableHead>
+                <TableHead className="text-right">Akce</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(files ?? []).map((f: any) => (
+                <TableRow key={f.path}>
+                  <TableCell className="font-mono text-xs">{f.name}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {f.created_at ? new Date(f.created_at).toLocaleString("cs-CZ") : "—"}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button size="sm" variant="outline" onClick={() => download(f.path)}>
+                      <Download className="mr-1 h-4 w-4" /> Stáhnout
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )
+      ) : null}
+      <div>
+        <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={!employeeId}>Obnovit</Button>
       </div>
     </Card>
   );
