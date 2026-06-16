@@ -38,6 +38,7 @@ import {
   getDochazkaSettings, updateDochazkaSettings,
   getMonthCalendar, listResolvers,
   submitRecord, decideRecord, bulkDecideRecords, autoFillMonth,
+  listEmployeeReports, getEmployeeReportUrl,
 } from "@/lib/dochazka.functions";
 import { getMyAccess } from "@/lib/claims.functions";
 import { RequestDeleteButton } from "@/components/RequestDeleteButton";
@@ -1365,7 +1366,7 @@ function GenerateTab() {
     mode: "HPP" as "HPP" | "DPP",
     hours_per_day: 8,
     total_hours: 100,
-    start_hour: 8,
+    start_time: "08:00",
     break_minutes: 30,
     shift_id: "",
   });
@@ -1390,12 +1391,24 @@ function GenerateTab() {
           mode: form.mode,
           hours_per_day: form.hours_per_day,
           total_hours: form.total_hours,
-          start_hour: form.start_hour,
+          start_time: form.start_time,
           break_minutes: form.break_minutes,
           shift_id: form.shift_id || null,
         },
       });
       toast.success(`Vygenerováno ${r.created} dní · celkem ${r.total_hours} h${r.skipped ? ` (přeskočeno ${r.skipped})` : ""}`);
+      // Auto-download CSV
+      if (r.csv) {
+        const blob = new Blob([r.csv], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = r.filename ?? `dochazka_${form.month}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
       qc.invalidateQueries({ queryKey: ["dochazka"] });
     } catch (e: any) {
       toast.error(e?.message ?? "Chyba");
@@ -1498,8 +1511,11 @@ function GenerateTab() {
       <div className="grid grid-cols-3 gap-3">
         <div className="grid gap-2">
           <Label>Začátek</Label>
-          <Input type="number" min="0" max="23" value={form.start_hour}
-            onChange={(e) => setForm({ ...form, start_hour: Number(e.target.value) })} />
+          <Input
+            type="time"
+            value={form.start_time}
+            onChange={(e) => setForm({ ...form, start_time: e.target.value })}
+          />
         </div>
         <div className="grid gap-2">
           <Label>Pauza (min)</Label>
