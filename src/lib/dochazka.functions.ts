@@ -872,7 +872,10 @@ export const autoFillMonth = createServerFn({ method: "POST" })
         mode: z.enum(["HPP", "DPP"]),
         total_hours: z.number().min(0).max(744).optional(),
         hours_per_day: z.number().min(0.25).max(24).default(8),
-        start_hour: z.number().int().min(0).max(23).default(8),
+        start_time: z
+          .string()
+          .regex(/^([01]?\d|2[0-3]):[0-5]\d$/, "Začátek musí být HH:MM")
+          .default("08:00"),
         break_minutes: z.number().int().min(0).max(240).default(30),
         shift_id: z.string().uuid().nullable().optional(),
       })
@@ -881,6 +884,8 @@ export const autoFillMonth = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const access = await getDochazkaAccess(context.supabase, context.userId);
     if (!access.canApproveAll) throw new Error("Nemáte oprávnění");
+
+    const [startHour, startMinute] = data.start_time.split(":").map(Number);
 
     const monthStr = `${data.year}-${String(data.month).padStart(2, "0")}`;
     const start = `${monthStr}-01`;
@@ -964,7 +969,7 @@ export const autoFillMonth = createServerFn({ method: "POST" })
     const rows = days.map((date, idx) => {
       const hours = perDay[idx];
       const day = Number(date.slice(8, 10));
-      const checkIn = new Date(Date.UTC(data.year, data.month - 1, day, data.start_hour, 0, 0));
+      const checkIn = new Date(Date.UTC(data.year, data.month - 1, day, startHour, startMinute, 0));
       const checkOut = new Date(
         checkIn.getTime() + (hours * 60 + data.break_minutes) * 60_000,
       );
@@ -983,8 +988,53 @@ export const autoFillMonth = createServerFn({ method: "POST" })
     const { error } = await context.supabase.from("attendance_records").insert(rows);
     if (error) throw new Error(error.message);
     const total = Math.round(rows.reduce((s, r) => s + r.hours_worked, 0) * 100) / 100;
-    return { ok: true, created: rows.length, total_hours: total, skipped: workdays.length - days.length };
+
+    // Vygeneruj CSV výkaz a ulož ho ke zaměstnanci do storage
+    const csv = buildAttendanceCsv(emp.name, monthStr, rows);
+    const ts = new Date().toISOString().replace(/[:.]/g, "-");
+    const path = `${data.employee_id}/${monthStr}_vygenerovano_${ts}.csv`;
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await supabaseAdmin.storage
+        .from("attendance-reports")
+        .upload(path, new Blob([csv], { type: "text/csv;charset=utf-8" }), {
+          contentType: "text/csv;charset=utf-8",
+          upsert: false,
+        });
+    } catch (e) {
+      console.error("[dochazka] failed to upload generated CSV", e);
+    }
+
+    return {
+      ok: true,
+      created: rows.length,
+      total_hours: total,
+      skipped: workdays.length - days.length,
+      csv,
+      filename: `dochazka_${emp.name.replace(/\s+/g, "_")}_${monthStr}.csv`,
+      storage_path: path,
+    };
   });
+
+function buildAttendanceCsv(
+  employeeName: string,
+  monthStr: string,
+  rows: Array<{ date: string; check_in: string; check_out: string; break_duration: number; hours_worked: number; note?: string }>,
+): string {
+  const fmtTime = (iso: string) => {
+    const d = new Date(iso);
+    return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+  };
+  const head = ["Zaměstnanec", employeeName, "Měsíc", monthStr].join(";");
+  const cols = ["Datum", "Příchod", "Odchod", "Pauza (min)", "Odpracováno (h)", "Poznámka"].join(";");
+  const body = rows
+    .map((r) =>
+      [r.date, fmtTime(r.check_in), fmtTime(r.check_out), r.break_duration, r.hours_worked, (r.note ?? "").replace(/;/g, ",")].join(";"),
+    )
+    .join("\n");
+  const total = Math.round(rows.reduce((s, r) => s + r.hours_worked, 0) * 100) / 100;
+  return `\uFEFF${head}\n${cols}\n${body}\nCelkem;${total}\n`;
+}
 // ============ Approval workflow ============
 
 export const submitRecord = createServerFn({ method: "POST" })
