@@ -299,8 +299,19 @@ export const listRecords = createServerFn({ method: "GET" })
     if (data?.employee_id) q = q.eq("employee_id", data.employee_id);
     const access = await getDochazkaAccess(context.supabase, context.userId);
     if (!access.canApproveAll) {
-      if (!access.myEmployeeId) return [];
-      q = q.eq("employee_id", access.myEmployeeId);
+      if (access.canApproveTeam) {
+        const ids = Array.from(
+          new Set([
+            ...(access.myEmployeeId ? [access.myEmployeeId] : []),
+            ...access.departmentEmployeeIds,
+          ]),
+        );
+        if (!ids.length) return [];
+        q = q.in("employee_id", ids);
+      } else {
+        if (!access.myEmployeeId) return [];
+        q = q.eq("employee_id", access.myEmployeeId);
+      }
     }
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
