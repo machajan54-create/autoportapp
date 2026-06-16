@@ -44,12 +44,23 @@ row — so policies never need to OR `has_role` and `has_module` themselves.
 | ------------ | ------------------------------------------------------------------- |
 | `claims`     | Pojistné události: `claims`, `claim_attachments`, `claim_events`, `claim_tasks`, claim-files storage reads |
 | `vykupy`     | Ojeté vozy: `vykupy`                                                |
-| `users`      | (Reserved — admin-only screens already gated by `isAdmin`)          |
+| `vykupy_external` | Externí výkupní formulář (UI gating)                           |
+| `dochazka`   | Docházka: `attendance_*` (čtení nastavení; zápis nastavení = admin) |
+| `defects`    | Závady: `defects`, defect-photos storage                            |
+| `deals`      | Obchodní případy: `deals`, `deal_stage_history`                     |
+| `logbook`    | Kniha jízd: `logbook_entries`, `logbook_vehicles`                   |
+| `tasks`      | Úkoly: `tasks`, `task_comments`, `task_attachments`                 |
+| `demo_orders`| Předváděcí vozy: `clients`, `demo_orders`, `demo_order_*`           |
+| `evidence_zakazek` | Evidence mytí: `evidence_orders`, `evidence_wash_assignments`, `washers` |
+| `approvals`  | Schvalování: `suppliers`, `purchases` (gating UI; tabulky jsou admin-only) |
+| `dashboard`  | Přehled napříč moduly                                               |
+| `users`      | (Rezervováno — admin-only obrazovky jsou gated `isAdmin`)           |
 
 Admin-only surfaces (no module needed, gated by `isAdmin` in the UI and
 by `has_role('admin')` in policies):
 - `/admin/users` — schvalování účtů, přidělování modulů
 - `/admin/templates` — šablony dokumentů
+- `/admin/audit` — audit log
 - `/approvals` — Schvalování: `suppliers`, `purchases`
 - `/dashboard` — přehled napříč moduly
 
@@ -95,6 +106,15 @@ sub-rows (tasks, attachments) when the workflow needs it.
 | `claim_events`        | `has_module('claims')`          | `has_module('claims')` + trigger | —                              | —                            |
 | `claim_tasks`         | `has_module('claims')`          | `has_module('claims')`          | `has_module('claims')`          | `has_module('claims')`       |
 | `vykupy`              | `has_module('vykupy')`          | `has_module('vykupy')`          | `has_module('vykupy')`          | `has_role('admin')`          |
+| `defects`             | `has_module('defects')`         | `reported_by = auth.uid()`      | own row OR `has_role('admin')`  | own row OR `has_role('admin')` |
+| `attendance_settings` | `has_module('dochazka')`        | `has_role('admin')`             | `has_role('admin')`             | `has_role('admin')`          |
+| `attendance_*` (records, shifts, absences, notifications, employees) | `has_module('dochazka')` | `has_module('dochazka')` | `has_module('dochazka')` | `has_module('dochazka')` |
+| `deals`, `deal_stage_history` | `has_module('deals')`   | `has_module('deals')`           | `has_module('deals')`           | `has_role('admin')`          |
+| `logbook_*`           | `has_module('logbook')`         | `has_module('logbook')`         | `has_module('logbook')`         | `has_role('admin')`          |
+| `tasks`, `task_comments`, `task_attachments` | `has_module('tasks')` | `has_module('tasks')` | `has_module('tasks')` | `has_module('tasks')` |
+| `clients`, `demo_orders`, `demo_order_*` | `has_module('demo_orders')` | `has_module('demo_orders')` | `has_module('demo_orders')` | `has_role('admin')` |
+| `evidence_orders`, `evidence_wash_assignments`, `washers` | `has_module('evidence_zakazek')` | `has_module('evidence_zakazek')` | `has_module('evidence_zakazek')` | `has_role('admin')` |
+| `audit_log`           | `has_role('admin')`             | server only                     | —                               | —                            |
 | `suppliers`           | `has_role('admin')` (FOR ALL)   | same                            | same                            | same                         |
 | `purchases`           | `has_role('admin')` (FOR ALL)   | same                            | same                            | same                         |
 | `document_templates`  | `has_role('admin')` (FOR ALL)   | same                            | same                            | same                         |
