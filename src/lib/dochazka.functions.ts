@@ -115,9 +115,20 @@ export const listEmployees = createServerFn({ method: "GET" })
       .select("id,name,role,avatar_color,active,can_approve_absences,user_id,employment_types,created_at,updated_at")
       .order("name");
     if (!access.canApproveAll) {
-      // Non-admin / non-approver sees only their own paired employee row
-      if (!access.myEmployeeId) return [];
-      q = q.eq("id", access.myEmployeeId);
+      if (access.canApproveTeam) {
+        const ids = Array.from(
+          new Set([
+            ...(access.myEmployeeId ? [access.myEmployeeId] : []),
+            ...access.departmentEmployeeIds,
+          ]),
+        );
+        if (!ids.length) return [];
+        q = q.in("id", ids);
+      } else {
+        // Non-admin / non-approver sees only their own paired employee row
+        if (!access.myEmployeeId) return [];
+        q = q.eq("id", access.myEmployeeId);
+      }
     }
     const { data, error } = await q;
     if (error) throw new Error(error.message);
