@@ -465,8 +465,19 @@ export const listAbsences = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false })
       .limit(2000);
     if (!access.canApproveAll) {
-      if (!access.myEmployeeId) return [];
-      q = q.eq("employee_id", access.myEmployeeId);
+      if (access.canApproveTeam) {
+        const ids = Array.from(
+          new Set([
+            ...(access.myEmployeeId ? [access.myEmployeeId] : []),
+            ...access.departmentEmployeeIds,
+          ]),
+        );
+        if (!ids.length) return [];
+        q = q.in("employee_id", ids);
+      } else {
+        if (!access.myEmployeeId) return [];
+        q = q.eq("employee_id", access.myEmployeeId);
+      }
     }
     const { data, error } = await q;
     if (error) throw new Error(error.message);
