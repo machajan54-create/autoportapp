@@ -756,12 +756,25 @@ export const getMonthCalendar = createServerFn({ method: "GET" })
       .lte("start_date", next)
       .gte("end_date", start);
     if (!access.canApproveAll) {
-      if (!access.myEmployeeId) {
-        return { employees: [], records: [], absences: [] };
+      if (access.canApproveTeam) {
+        const ids = Array.from(
+          new Set([
+            ...(access.myEmployeeId ? [access.myEmployeeId] : []),
+            ...access.departmentEmployeeIds,
+          ]),
+        );
+        if (!ids.length) return { employees: [], records: [], absences: [] };
+        empQ = empQ.in("id", ids);
+        recsQ = recsQ.in("employee_id", ids);
+        absQ = absQ.in("employee_id", ids);
+      } else {
+        if (!access.myEmployeeId) {
+          return { employees: [], records: [], absences: [] };
+        }
+        empQ = empQ.eq("id", access.myEmployeeId);
+        recsQ = recsQ.eq("employee_id", access.myEmployeeId);
+        absQ = absQ.eq("employee_id", access.myEmployeeId);
       }
-      empQ = empQ.eq("id", access.myEmployeeId);
-      recsQ = recsQ.eq("employee_id", access.myEmployeeId);
-      absQ = absQ.eq("employee_id", access.myEmployeeId);
     }
     const [emp, recs, abs] = await Promise.all([empQ, recsQ, absQ]);
     if (emp.error) throw new Error(emp.error.message);
