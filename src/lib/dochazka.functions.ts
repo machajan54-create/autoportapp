@@ -533,7 +533,13 @@ export const upsertAbsence = createServerFn({ method: "POST" })
         await notify.notifyAdmins(mail);
       }
     } else {
-      await notify.notifyAdmins(mail);
+      // Pošli vedoucímu oddělení žadatele, jinak fallback na super adminy.
+      const head = await getDeptHeadEmailForEmployee(context.supabase, data.employee_id);
+      if (head?.email) {
+        await notify.enqueueTransactionalEmail({ ...mail, recipientEmail: head.email });
+      } else {
+        await notify.notifyAdmins(mail);
+      }
     }
     return { id: row.id };
   });
@@ -548,7 +554,22 @@ export const resolveAbsence = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const access = await getDochazkaAccess(context.supabase, context.userId);
-    if (!access.canApproveAll) throw new Error("Nemáte oprávnění schvalovat");
+    // Načti žádost (kvůli kontrole oddělení a notifikaci žadateli)
+    const { data: absRow } = await context.supabase
+      .from("attendance_absences")
+      .select("type, start_date, end_date, employee_id, note")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (!absRow) throw new Error("Žádost nenalezena");
+
+    if (!access.canApproveAll) {
+      if (!access.canApproveTeam) {
+        throw new Error("Nemáte oprávnění schvalovat");
+      }
+      if (!access.departmentEmployeeIds.includes(absRow.employee_id)) {
+        throw new Error("Tuto žádost můžete schválit pouze vedoucí jejího oddělení nebo super admin.");
+      }
+    }
     const { data: resolverEmp } = await context.supabase
       .from("attendance_employees")
       .select("id")
@@ -563,6 +584,38 @@ export const resolveAbsence = createServerFn({ method: "POST" })
       })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
+    // Notifikace žadateli o rozhodnutí
+    try {
+      const { data: emp } = await context.supabase
+        .from("attendance_employees")
+        .select("name,user_id")
+        .eq("id", absRow.employee_id)
+        .maybeSingle();
+      if (emp?.user_id) {
+        const notify = await import("@/lib/email/notify.server");
+        const u = await notify.getUserEmail(emp.user_id);
+        if (u.email) {
+          await notify.enqueueTransactionalEmail({
+            templateName: "approval-decision",
+            recipientEmail: u.email,
+            idempotencyKey: `absence-${data.id}-${data.status}`,
+            templateData: {
+              kind: "vacation",
+              status: data.status,
+              recipientName: u.name ?? emp.name ?? "",
+              title: ABSENCE_TYPE_LABEL[absRow.type] ?? absRow.type,
+              meta: [
+                { label: "Od", value: absRow.start_date },
+                { label: "Do", value: absRow.end_date },
+              ],
+              actionUrl: "https://www.autoport-app.cz/dochazka",
+            },
+          });
+        }
+      }
+    } catch (e) {
+      console.error("[dochazka] absence decision email failed", e);
+    }
     {
       const { logEvent } = await import("@/lib/audit.server");
       const { data: abs } = await context.supabase
