@@ -42,6 +42,7 @@ import {
   cancelDeletionRequest,
 } from "@/lib/deletion-requests.functions";
 import { RequestDeleteButton } from "@/components/RequestDeleteButton";
+import { ForwardAsTaskDialog } from "@/components/ForwardAsTaskDialog";
 
 export const Route = createFileRoute("/_authenticated/approvals")({
   component: ApprovalsPage,
@@ -204,6 +205,15 @@ function SuppliersTab({ isAdmin }: { isAdmin: boolean }) {
                     <Button size="sm" variant="outline" onClick={() => setStatus(s.id, "rejected")}>
                       <X className="h-4 w-4" />
                     </Button>
+                  )}
+                  {s.status === "approved" && (s.can_decide || isAdmin) && (
+                    <ForwardAsTaskDialog
+                      sourceTitle={s.name}
+                      sourceTypeLabel="dodavatele"
+                      sourceDetails={[s.ico && `IČO ${s.ico}`, s.contact_person, s.email, s.phone, s.address]
+                        .filter(Boolean)
+                        .join(" · ") || null}
+                    />
                   )}
                   {isAdmin && (
                     <RequestDeleteButton
@@ -558,6 +568,20 @@ function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
                     <Button size="sm" variant="outline" onClick={() => setStatus(p.id, "rejected")}>
                       <X className="h-4 w-4" />
                     </Button>
+                  )}
+                  {p.status === "approved" && (p.can_decide || isAdmin) && (
+                    <ForwardAsTaskDialog
+                      sourceTitle={p.title}
+                      sourceTypeLabel="nákup"
+                      sourceDetails={[
+                        p.supplier?.name && `Dodavatel: ${p.supplier.name}`,
+                        p.amount_net != null && `Bez DPH: ${Number(p.amount_net).toLocaleString("cs-CZ")} ${p.currency}`,
+                        p.amount != null && `S DPH: ${Number(p.amount).toLocaleString("cs-CZ")} ${p.currency}`,
+                        p.description,
+                      ]
+                        .filter(Boolean)
+                        .join("\n") || null}
+                    />
                   )}
                   {isAdmin && (
                     <RequestDeleteButton
