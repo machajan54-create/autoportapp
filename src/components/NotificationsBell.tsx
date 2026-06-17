@@ -134,15 +134,29 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
       const sinceAbsences = lastSeen.absences ? Date.parse(lastSeen.absences) : 0;
       const sinceTasks = lastSeen.tasks ? Date.parse(lastSeen.tasks) : 0;
 
+      // Tasks where I'm involved (creator or assignee) and someone else did the last activity.
       const myTasks = (tasksData?.rows ?? []).filter(
-        (t: any) => t.assignee_id === userId && t.created_by !== userId && t.status !== "done",
+        (t: any) =>
+          (t.assignee_id === userId || t.created_by === userId) &&
+          t.last_activity_by &&
+          t.last_activity_by !== userId,
       );
       for (const t of myTasks) {
-        const ts = t.updated_at ?? t.created_at;
+        const ts = t.last_activity_at ?? t.updated_at ?? t.created_at;
         if (!ts || Date.parse(String(ts)) <= sinceTasks) continue;
+        const isNew =
+          !t.updated_at ||
+          Math.abs(Date.parse(String(t.last_activity_at ?? t.updated_at)) - Date.parse(String(t.created_at))) < 2000;
+        const isAssignee = t.assignee_id === userId;
+        let title: string;
+        if (isNew && isAssignee) {
+          title = `Nový úkol: ${t.title}`;
+        } else {
+          title = `Aktivita v úkolu: ${t.title}`;
+        }
         out.push({
-          key: `task-${t.id}-${t.updated_at ?? t.created_at}`,
-          title: `Nový úkol: ${t.title}`,
+          key: `task-${t.id}-${t.last_activity_at ?? t.updated_at ?? t.created_at}`,
+          title,
           detail: t.creator_name ? `Od: ${t.creator_name}` : undefined,
           to: "/ukoly",
           tone: t.priority === "high" ? "danger" : "info",
