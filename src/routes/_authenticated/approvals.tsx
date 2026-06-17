@@ -569,6 +569,20 @@ function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
                       <X className="h-4 w-4" />
                     </Button>
                   )}
+                  {p.status === "approved" && (p.can_decide || isAdmin) && (
+                    <ForwardAsTaskDialog
+                      sourceTitle={p.title}
+                      sourceTypeLabel="nákup"
+                      sourceDetails={[
+                        p.supplier?.name && `Dodavatel: ${p.supplier.name}`,
+                        p.amount_net != null && `Bez DPH: ${Number(p.amount_net).toLocaleString("cs-CZ")} ${p.currency}`,
+                        p.amount != null && `S DPH: ${Number(p.amount).toLocaleString("cs-CZ")} ${p.currency}`,
+                        p.description,
+                      ]
+                        .filter(Boolean)
+                        .join("\n") || null}
+                    />
+                  )}
                   {isAdmin && (
                     <RequestDeleteButton
                       entityType="purchases"
