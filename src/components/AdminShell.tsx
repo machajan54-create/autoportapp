@@ -1,4 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { APP_VERSION, LAST_UPDATE_DATE } from "@/lib/version";
 import { ShieldCheck, FolderKanban, LogOut, Users, Car, Menu, LayoutDashboard, FileText, CheckSquare, Clock, Wrench, Search, History, Briefcase, BookOpen, Settings, ChevronDown, ClipboardSignature, Sparkles } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
@@ -173,6 +174,9 @@ export function AdminShell({
             <LogOut className="mr-2 h-4 w-4" />
             Odhlásit
           </Button>
+          <div className="mt-2 px-2 text-[10px] text-muted-foreground/60">
+            Verze {APP_VERSION} · Aktualizováno {LAST_UPDATE_DATE}
+          </div>
         </div>
       </aside>
 
@@ -214,6 +218,9 @@ export function AdminShell({
                     <LogOut className="mr-2 h-4 w-4" />
                     Odhlásit
                   </Button>
+                  <div className="mt-2 px-2 text-[10px] text-muted-foreground/60">
+                    Verze {APP_VERSION} · Aktualizováno {LAST_UPDATE_DATE}
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>
