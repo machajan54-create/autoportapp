@@ -50,6 +50,47 @@ export const addTaskComment = createServerFn({ method: 'POST' })
       .select('id')
       .single()
     if (error) throw new Error(error.message)
+    // Bump task activity (used by in-app bell to detect activity by other users)
+    await supabase
+      .from('tasks')
+      .update({ last_activity_by: userId, last_activity_at: new Date().toISOString() })
+      .eq('id', data.taskId)
+    // Notify the other participants (creator + assignee), excluding the author.
+    try {
+      const { data: task } = await supabase
+        .from('tasks')
+        .select('title,created_by,assignee_id')
+        .eq('id', data.taskId)
+        .maybeSingle()
+      if (task) {
+        const recipients = new Set<string>()
+        if (task.created_by && task.created_by !== userId) recipients.add(task.created_by)
+        if (task.assignee_id && task.assignee_id !== userId) recipients.add(task.assignee_id)
+        if (recipients.size > 0) {
+          const { getUserEmail, enqueueTransactionalEmail } = await import(
+            '@/lib/email/notify.server'
+          )
+          for (const rid of recipients) {
+            const { email, name } = await getUserEmail(rid)
+            if (!email) continue
+            await enqueueTransactionalEmail({
+              templateName: 'task-comment',
+              recipientEmail: email,
+              idempotencyKey: `task-comment-${row.id}-${rid}`,
+              templateData: {
+                recipientName: name || '',
+                authorName: author_name || 'Kolega',
+                title: task.title,
+                body: data.body,
+                actionUrl: 'https://www.autoport-app.cz/ukoly',
+              },
+            })
+          }
+        }
+      }
+    } catch (e) {
+      console.error('[tasks] notify on comment failed', e)
+    }
     return { id: row.id }
   })
 
