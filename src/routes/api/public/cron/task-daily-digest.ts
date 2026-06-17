@@ -1,11 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { TASK_PRIORITY_LABEL } from '@/lib/tasks.functions'
+import { requireCronAuth } from '@/lib/cron-auth.server'
 
 export const Route = createFileRoute('/api/public/cron/task-daily-digest')({
   server: { handlers: { POST: handle, GET: handle } },
 })
 
-async function handle() {
+async function handle({ request }: { request: Request }) {
+  const unauthorized = requireCronAuth(request)
+  if (unauthorized) return unauthorized
   try {
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
     const { enqueueTransactionalEmail } = await import('@/lib/email/notify.server')
