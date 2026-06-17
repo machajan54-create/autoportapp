@@ -226,6 +226,8 @@ export const createTask = createServerFn({ method: "POST" })
         creator_name,
         recurrence: data.recurrence || null,
         recurrence_until: data.recurrence_until || null,
+        last_activity_by: userId,
+        last_activity_at: new Date().toISOString(),
       })
       .select("id")
       .single();
