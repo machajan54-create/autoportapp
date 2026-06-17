@@ -81,6 +81,32 @@ export type Database = {
           },
         ]
       }
+      attendance_employee_pins: {
+        Row: {
+          employee_id: string
+          pin: string
+          updated_at: string
+        }
+        Insert: {
+          employee_id: string
+          pin: string
+          updated_at?: string
+        }
+        Update: {
+          employee_id?: string
+          pin?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_employee_pins_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "attendance_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance_employees: {
         Row: {
           active: boolean
@@ -90,7 +116,6 @@ export type Database = {
           employment_types: string[]
           id: string
           name: string
-          pin: string
           role: string
           updated_at: string
           user_id: string | null
@@ -103,7 +128,6 @@ export type Database = {
           employment_types?: string[]
           id?: string
           name: string
-          pin: string
           role?: string
           updated_at?: string
           user_id?: string | null
@@ -116,7 +140,6 @@ export type Database = {
           employment_types?: string[]
           id?: string
           name?: string
-          pin?: string
           role?: string
           updated_at?: string
           user_id?: string | null
@@ -1968,6 +1991,13 @@ export type Database = {
           message: Json
           msg_id: number
           read_ct: number
+        }[]
+      }
+      verify_employee_pin: {
+        Args: { _pin: string }
+        Returns: {
+          employee_id: string
+          name: string
         }[]
       }
     }
