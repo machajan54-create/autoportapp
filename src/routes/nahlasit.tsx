@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { createClaim, publicSubmissionUpload } from "@/lib/claims.functions";
+import { resizeImage } from "@/lib/resize-image";
 import { Phone, X, FileText, Check, CheckCircle2, Copy } from "lucide-react";
 
 export const Route = createFileRoute("/nahlasit")({

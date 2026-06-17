@@ -26,6 +26,7 @@ import {
   deleteVykupPhoto, getVykupPhotoUrl,
 } from "@/lib/vykup-photos.functions";
 import { generateVykupContract } from "@/lib/vykup-contract.functions";
+import { resizeImage } from "@/lib/resize-image";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/vykupy/$id")({

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { publicGetClaimByToken, publicUploadPhoto } from "@/lib/claims.functions";
+import { resizeImage } from "@/lib/resize-image";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Camera, CheckCircle2, ShieldCheck } from "lucide-react";
