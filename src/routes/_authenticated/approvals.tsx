@@ -42,6 +42,7 @@ import {
   cancelDeletionRequest,
 } from "@/lib/deletion-requests.functions";
 import { RequestDeleteButton } from "@/components/RequestDeleteButton";
+import { ForwardAsTaskDialog } from "@/components/ForwardAsTaskDialog";
 
 export const Route = createFileRoute("/_authenticated/approvals")({
   component: ApprovalsPage,
