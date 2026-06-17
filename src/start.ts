@@ -3,9 +3,9 @@ import { createStart, createMiddleware } from "@tanstack/react-start";
 import { renderErrorPage } from "./lib/error-page";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
-const errorMiddleware = createMiddleware().server(async ({ request, next }) => {
+const errorMiddleware = createMiddleware({ type: "request" }).server(async ({ request, next }) => {
   const url = new URL(request.url);
-  if (url.pathname.startsWith("/lovable/")) {
+  if (url.pathname.startsWith("/lovable/") || url.pathname.startsWith("/_serverFn/")) {
     return next();
   }
   try {
