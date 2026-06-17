@@ -26,6 +26,7 @@ import {
   deleteVykupPhoto, getVykupPhotoUrl,
 } from "@/lib/vykup-photos.functions";
 import { generateVykupContract } from "@/lib/vykup-contract.functions";
+import { resizeImage } from "@/lib/resize-image";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/vykupy/$id")({
@@ -462,26 +463,27 @@ function PhotoGallery({ vykupId }: { vykupId: string }) {
           toast.error(`${file.name}: pouze obrázky`);
           continue;
         }
-        if (file.size > 20 * 1024 * 1024) {
-          toast.error(`${file.name}: max 20 MB`);
+        const resized = await resizeImage(file, { maxWidth: 1920, maxHeight: 1920 });
+        if (resized.size > 20 * 1024 * 1024) {
+          toast.error(`${resized.name}: max 20 MB`);
           continue;
         }
-        const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+        const ext = resized.name.split(".").pop()?.toLowerCase() || "jpg";
         const path = `${vykupId}/${crypto.randomUUID()}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from("vykup-photos")
-          .upload(path, file, { contentType: file.type });
+          .upload(path, resized, { contentType: resized.type });
         if (upErr) {
-          toast.error(`${file.name}: ${upErr.message}`);
+          toast.error(`${resized.name}: ${upErr.message}`);
           continue;
         }
         await record({
           data: {
             vykupId,
-            file_name: file.name,
+            file_name: resized.name,
             storage_path: path,
-            size_bytes: file.size,
-            content_type: file.type,
+            size_bytes: resized.size,
+            content_type: resized.type,
           },
         });
       }

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { createClaim, publicSubmissionUpload } from "@/lib/claims.functions";
+import { resizeImage } from "@/lib/resize-image";
 import { Phone, X, FileText, Check, CheckCircle2, Copy } from "lucide-react";
 
 export const Route = createFileRoute("/nahlasit")({
@@ -168,10 +169,11 @@ function Page() {
       const uploaded: { category: string; file_path: string; file_name: string; mime_type?: string; size?: number }[] = [];
       for (const cat of Object.keys(files) as FileCategory[]) {
         for (const file of files[cat]) {
-          if (file.size > 10 * 1024 * 1024) {
-            throw new Error(`Soubor "${file.name}" je větší než 10 MB.`);
+          const resized = await resizeImage(file, { maxWidth: 1920, maxHeight: 1920 });
+          if (resized.size > 10 * 1024 * 1024) {
+            throw new Error(`Soubor "${resized.name}" je větší než 10 MB.`);
           }
-          const buf = await file.arrayBuffer();
+          const buf = await resized.arrayBuffer();
           // base64 encode in chunks to avoid stack overflow on large files
           let binary = "";
           const bytes = new Uint8Array(buf);
@@ -187,8 +189,8 @@ function Page() {
             data: {
               temp_id: tempId,
               category: cat,
-              file_name: file.name,
-              mime_type: file.type || "application/octet-stream",
+              file_name: resized.name,
+              mime_type: resized.type || "application/octet-stream",
               data_base64,
             },
           });
