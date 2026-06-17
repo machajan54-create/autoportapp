@@ -31,11 +31,12 @@ function UploadPage() {
     let done = 0;
     try {
       for (const file of Array.from(list)) {
-        if (file.size > 8 * 1024 * 1024) {
-          toast.error(`${file.name}: větší než 8 MB`);
+        const resized = await resizeImage(file, { maxWidth: 1920, maxHeight: 1920 });
+        if (resized.size > 8 * 1024 * 1024) {
+          toast.error(`${resized.name}: větší než 8 MB`);
           continue;
         }
-        const buf = await file.arrayBuffer();
+        const buf = await resized.arrayBuffer();
         const bytes = new Uint8Array(buf);
         let bin = "";
         for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
@@ -43,8 +44,8 @@ function UploadPage() {
         await upload({
           data: {
             token,
-            file_name: file.name,
-            mime_type: file.type || "application/octet-stream",
+            file_name: resized.name,
+            mime_type: resized.type || "application/octet-stream",
             data_base64: b64,
           },
         });
