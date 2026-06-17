@@ -204,7 +204,7 @@ function ClaimDetail() {
           </div>
 
           <div class="center">
-            <div class="qr"><img src="${qrUrl}" alt="QR ${zak}"/></div>
+            <div class="qr"><img src="${qrSrc}" alt="QR ${zak}"/></div>
           </div>
           <div class="zak-label">${zak || "—"}</div>
           <div class="zak-sub">Kód zakázky</div>
