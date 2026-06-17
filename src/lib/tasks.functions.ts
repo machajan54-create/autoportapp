@@ -154,6 +154,47 @@ async function notifyCreatorStatus(opts: {
   }
 }
 
+async function notifyTaskUpdated(opts: {
+  recipientId: string;
+  actorName: string | null;
+  title: string;
+  description?: string | null;
+  priority?: typeof TASK_PRIORITY[number];
+  dueDate?: string | null;
+  changes: string[];
+  taskId: string;
+}) {
+  try {
+    const { getUserEmail, enqueueTransactionalEmail } = await import(
+      "@/lib/email/notify.server"
+    );
+    const { email, name } = await getUserEmail(opts.recipientId);
+    if (!email) return;
+    const dueFmt = opts.dueDate
+      ? new Date(opts.dueDate).toLocaleDateString("cs-CZ")
+      : null;
+    await enqueueTransactionalEmail({
+      templateName: "task-updated",
+      recipientEmail: email,
+      idempotencyKey: `task-updated-${opts.taskId}-${Date.now()}`,
+      templateData: {
+        recipientName: name || "",
+        actorName: opts.actorName || "Kolega",
+        title: opts.title,
+        description: opts.description || "",
+        priorityLabel: opts.priority
+          ? TASK_PRIORITY_LABEL[opts.priority]
+          : undefined,
+        dueDate: dueFmt,
+        changes: opts.changes,
+        actionUrl: "https://www.autoport-app.cz/ukoly",
+      },
+    });
+  } catch (e) {
+    console.error("[tasks] notifyTaskUpdated failed", e);
+  }
+}
+
 export const listTasks = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -185,6 +226,8 @@ export const createTask = createServerFn({ method: "POST" })
         creator_name,
         recurrence: data.recurrence || null,
         recurrence_until: data.recurrence_until || null,
+        last_activity_by: userId,
+        last_activity_at: new Date().toISOString(),
       })
       .select("id")
       .single();
@@ -255,6 +298,11 @@ export const updateTask = createServerFn({ method: "POST" })
     }
     const { error } = await supabase.from("tasks").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
+    // Track activity (used by bell + change detection)
+    await supabase
+      .from("tasks")
+      .update({ last_activity_by: userId, last_activity_at: new Date().toISOString() })
+      .eq("id", data.id);
     // Recurrence: when marking a recurring task done, create next occurrence
     if (
       patch.status === "done" &&
@@ -316,6 +364,57 @@ export const updateTask = createServerFn({ method: "POST" })
         event: patch.status,
         taskId: data.id,
       });
+    }
+    // Notify participants about non-status edits (title, description, priority, due_date, assignee).
+    // Only between creator and assignee, never the actor themselves.
+    if (prev) {
+      const changes: string[] = [];
+      if (patch.title !== undefined && patch.title !== prev.title) {
+        changes.push(`Název: „${prev.title}" → „${patch.title}"`);
+      }
+      if (patch.description !== undefined && (patch.description || "") !== (prev.description || "")) {
+        changes.push("Popis byl upraven");
+      }
+      if (patch.priority !== undefined && patch.priority !== prev.priority) {
+        changes.push(
+          `Priorita: ${TASK_PRIORITY_LABEL[prev.priority]} → ${TASK_PRIORITY_LABEL[patch.priority]}`,
+        );
+      }
+      if (patch.due_date !== undefined && (patch.due_date || null) !== (prev.due_date || null)) {
+        const fmt = (d: string | null) =>
+          d ? new Date(d).toLocaleDateString("cs-CZ") : "—";
+        changes.push(`Termín: ${fmt(prev.due_date)} → ${fmt(patch.due_date || null)}`);
+      }
+      if (
+        patch.assignee_id !== undefined &&
+        (patch.assignee_id || null) !== (prev.assignee_id || null)
+      ) {
+        changes.push(
+          `Řešitel: ${prev.assignee_name || "—"} → ${patch.assignee_name || "—"}`,
+        );
+      }
+      if (changes.length > 0) {
+        const actorName = await lookupName(supabase, userId);
+        const recipients = new Set<string>();
+        if (prev.created_by && prev.created_by !== userId) recipients.add(prev.created_by);
+        if (prev.assignee_id && prev.assignee_id !== userId) recipients.add(prev.assignee_id);
+        // Skip newly-assigned user — they already get "task-assigned"
+        if (patch.assignee_id && patch.assignee_id !== prev.assignee_id) {
+          recipients.delete(patch.assignee_id);
+        }
+        for (const rid of recipients) {
+          await notifyTaskUpdated({
+            recipientId: rid,
+            actorName,
+            title: patch.title ?? prev.title,
+            description: patch.description ?? prev.description,
+            priority: patch.priority ?? prev.priority,
+            dueDate: patch.due_date ?? prev.due_date,
+            changes,
+            taskId: data.id,
+          });
+        }
+      }
     }
     return { ok: true };
   });

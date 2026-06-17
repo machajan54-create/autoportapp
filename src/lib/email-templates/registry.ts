@@ -8,6 +8,8 @@ import { template as taskOverdue } from './task-overdue'
 import { template as taskDailyDigest } from './task-daily-digest'
 import { template as followupReminder } from './followup-reminder'
 import { template as taskStatusChanged } from './task-status-changed'
+import { template as taskUpdated } from './task-updated'
+import { template as taskComment } from './task-comment'
 import { template as accountWelcome } from './account-welcome'
 import { template as dealStageChanged } from './deal-stage-changed'
 import { template as dochazkaEmployeeWelcome } from './dochazka-employee-welcome'
@@ -43,6 +45,8 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'task-daily-digest': taskDailyDigest,
   'followup-reminder': followupReminder,
   'task-status-changed': taskStatusChanged,
+  'task-updated': taskUpdated,
+  'task-comment': taskComment,
   'account-welcome': accountWelcome,
   'deal-stage-changed': dealStageChanged,
   'dochazka-employee-welcome': dochazkaEmployeeWelcome,

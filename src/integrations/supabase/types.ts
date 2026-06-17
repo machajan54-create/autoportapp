@@ -1610,6 +1610,8 @@ export type Database = {
           description: string | null
           due_date: string | null
           id: string
+          last_activity_at: string
+          last_activity_by: string | null
           last_recurrence_at: string | null
           overdue_notified_at: string | null
           priority: string
@@ -1631,6 +1633,8 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          last_activity_at?: string
+          last_activity_by?: string | null
           last_recurrence_at?: string | null
           overdue_notified_at?: string | null
           priority?: string
@@ -1652,6 +1656,8 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          last_activity_at?: string
+          last_activity_by?: string | null
           last_recurrence_at?: string | null
           overdue_notified_at?: string | null
           priority?: string
