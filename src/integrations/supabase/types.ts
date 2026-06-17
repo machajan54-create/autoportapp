@@ -474,9 +474,12 @@ export type Database = {
         Row: {
           accident_record: string | null
           address: string | null
+          assignee_id: string | null
+          assignee_name: string | null
           claim_number: string | null
           company: string | null
           created_at: string
+          created_by: string | null
           email: string | null
           event_at: string | null
           first_name: string
@@ -501,9 +504,12 @@ export type Database = {
         Insert: {
           accident_record?: string | null
           address?: string | null
+          assignee_id?: string | null
+          assignee_name?: string | null
           claim_number?: string | null
           company?: string | null
           created_at?: string
+          created_by?: string | null
           email?: string | null
           event_at?: string | null
           first_name: string
@@ -528,9 +534,12 @@ export type Database = {
         Update: {
           accident_record?: string | null
           address?: string | null
+          assignee_id?: string | null
+          assignee_name?: string | null
           claim_number?: string | null
           company?: string | null
           created_at?: string
+          created_by?: string | null
           email?: string | null
           event_at?: string | null
           first_name?: string
@@ -940,6 +949,8 @@ export type Database = {
       }
       demo_orders: {
         Row: {
+          assignee_id: string | null
+          assignee_name: string | null
           barva: string | null
           cena_celkem_bez_dph: number
           cena_celkem_s_dph: number
@@ -968,6 +979,8 @@ export type Database = {
           zaruka_spustena_od: string | null
         }
         Insert: {
+          assignee_id?: string | null
+          assignee_name?: string | null
           barva?: string | null
           cena_celkem_bez_dph?: number
           cena_celkem_s_dph?: number
@@ -996,6 +1009,8 @@ export type Database = {
           zaruka_spustena_od?: string | null
         }
         Update: {
+          assignee_id?: string | null
+          assignee_name?: string | null
           barva?: string | null
           cena_celkem_bez_dph?: number
           cena_celkem_s_dph?: number
@@ -1149,6 +1164,8 @@ export type Database = {
       }
       evidence_orders: {
         Row: {
+          assignee_id: string | null
+          assignee_name: string | null
           cislo_zakazky: string | null
           complete_by: string | null
           created_at: string
@@ -1166,6 +1183,8 @@ export type Database = {
           vozidlo: string
         }
         Insert: {
+          assignee_id?: string | null
+          assignee_name?: string | null
           cislo_zakazky?: string | null
           complete_by?: string | null
           created_at?: string
@@ -1183,6 +1202,8 @@ export type Database = {
           vozidlo: string
         }
         Update: {
+          assignee_id?: string | null
+          assignee_name?: string | null
           cislo_zakazky?: string | null
           complete_by?: string | null
           created_at?: string
@@ -1322,6 +1343,7 @@ export type Database = {
           created_by: string | null
           id: string
           responsible_person: string | null
+          responsible_user_id: string | null
           spz: string | null
           type: string
           updated_at: string
@@ -1333,6 +1355,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           responsible_person?: string | null
+          responsible_user_id?: string | null
           spz?: string | null
           type: string
           updated_at?: string
@@ -1344,6 +1367,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           responsible_person?: string | null
+          responsible_user_id?: string | null
           spz?: string | null
           type?: string
           updated_at?: string
@@ -1776,7 +1800,10 @@ export type Database = {
       }
       vykupy: {
         Row: {
+          assignee_id: string | null
+          assignee_name: string | null
           created_at: string
+          created_by: string | null
           datum_vykupu: string | null
           external_priced_amount: number | null
           external_priced_at: string | null
@@ -1804,7 +1831,10 @@ export type Database = {
           zpracoval: string | null
         }
         Insert: {
+          assignee_id?: string | null
+          assignee_name?: string | null
           created_at?: string
+          created_by?: string | null
           datum_vykupu?: string | null
           external_priced_amount?: number | null
           external_priced_at?: string | null
@@ -1832,7 +1862,10 @@ export type Database = {
           zpracoval?: string | null
         }
         Update: {
+          assignee_id?: string | null
+          assignee_name?: string | null
           created_at?: string
+          created_by?: string | null
           datum_vykupu?: string | null
           external_priced_amount?: number | null
           external_priced_at?: string | null
