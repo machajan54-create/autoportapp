@@ -206,6 +206,15 @@ function SuppliersTab({ isAdmin }: { isAdmin: boolean }) {
                       <X className="h-4 w-4" />
                     </Button>
                   )}
+                  {s.status === "approved" && (s.can_decide || isAdmin) && (
+                    <ForwardAsTaskDialog
+                      sourceTitle={s.name}
+                      sourceTypeLabel="dodavatele"
+                      sourceDetails={[s.ico && `IČO ${s.ico}`, s.contact_person, s.email, s.phone, s.address]
+                        .filter(Boolean)
+                        .join(" · ") || null}
+                    />
+                  )}
                   {isAdmin && (
                     <RequestDeleteButton
                       entityType="suppliers"
