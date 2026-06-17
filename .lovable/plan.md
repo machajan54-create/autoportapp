@@ -1,74 +1,64 @@
-## Cíl
+## Princip (platí napříč aplikací)
 
-Odebrat všem uživatelům (včetně adminů na první kliknutí) možnost mazat záznamy. Místo toho každé "Smazat" odešle **žádost o smazání** super adminovi, který ji buď zamítne, nebo schválí — a po schválení se záznam **smaže automaticky**.
+- **Admin / super admin**: vidí a edituje vše.
+- **Ostatní přihlášení**: vidí záznam jen pokud jsou jeho **autor** nebo **přiřazený řešitel**.
+- **Mazání**: i nadále jen přes žádost (super admin).
+- **Stará data** bez autora → viditelná pouze adminovi (admin je doplní/přiřadí). Žádné automatické „vidí to všichni z modulu" pro historii — jinak to obchází princip.
 
-## 1) Databáze – nová tabulka
+## Moduly a mapování polí
 
-`deletion_requests`
-- `entity_type` (text, např. `demo_orders`, `tasks`, `deals`, `claims`, `defects`, `vykupy`, `vykup_photos`, `logbook_vehicles`, `logbook_entries`, `clients`, `suppliers`, `purchases`, `attendance_records`, `attendance_shifts`, `attendance_absences`, `task_comments`, `task_attachments`, `claim_attachments`)
-- `entity_id` (uuid)
-- `entity_label` (text) – snapshot lidsky čitelného popisu („Objednávka OBJ-2026-0001 / Novák")
-- `requested_by` (uuid → auth.users)
-- `reason` (text) – povinný důvod, max 1000 znaků
-- `status` (`pending` | `approved` | `rejected`)
-- `decided_by`, `decided_at`, `decision_note`
-- RLS: uživatel vidí/vytváří jen své žádosti; admin vidí vše a rozhoduje
-- GRANT na `authenticated` + `service_role`
-- Unikátní index `(entity_type, entity_id) WHERE status='pending'` aby nešlo zaduplikovat čekající žádost
+| Modul | Autor | Řešitel | Poznámka |
+|---|---|---|---|
+| Úkoly (tasks) | created_by | assignee_id | hotovo |
+| Komentáře/přílohy úkolů | dědí z úkolu | — | join na tasks |
+| Výkupy (vykupy) | **přidat** created_by | **přidat** assignee_id (+ assignee_name) | dnes je `zpracoval` jen text |
+| Reklamace (claims) | **přidat** created_by (NULL = z webu) | **přidat** assignee_id | nepřiřazené reklamace z webu uvidí jen admin, dokud je nepřidělí |
+| Závady (defects) | reported_by | resolved_by | zatím prázdné `resolved_by` ⇒ vidí jen autor + admin |
+| Demo objednávky | created_by | **přidat** assignee_id | |
+| Evidence zakázek | created_by | **přidat** assignee_id | |
+| Kniha jízd – záznamy | created_by | (bez řešitele) | jízdu vidí jen řidič + admin |
+| Kniha jízd – vozidla | created_by | **přidat** responsible_user_id | dnes `responsible_person` jen text |
+| Obchodní případy (deals) | owner_id | owner_id | jeden vlastník |
+| Nákupy (purchases) | requested_by | decided_by | |
+| Dodavatelé (suppliers) | requested_by | decided_by | |
+| Docházka – záznamy | employee_id → user_id | — | zaměstnanec vidí jen své; admin vše |
+| Docházka – absence | employee_id → user_id | — | dtto |
 
-## 2) Server funkce – `src/lib/deletion-requests.functions.ts`
+## Co se změní v UI
 
-- `requestDeletion({ entity_type, entity_id, reason })` – validuje typ z whitelistu, najde label, vloží řádek, notifikuje adminy e-mailem
-- `listDeletionRequests({ status? })` – uživatel své, admin vše
-- `decideDeletionRequest({ id, status, decision_note? })` – jen admin:
-  - `rejected` → uloží rozhodnutí, pošle žadateli e-mail
-  - `approved` → zavolá interní `executeDeletion(entity_type, entity_id)` přes `supabaseAdmin`, který provede skutečný `DELETE` (včetně úklidu storage – fotky, podepsané PDF, klientské dokumenty), pak označí žádost jako `approved`. Pokud delete selže, žádost zůstane pending a vrátí chybu.
-- `cancelDeletionRequest({ id })` – žadatel může svou pending žádost zrušit
+- Všude, kde přibyl `assignee_id`, přidám výběr řešitele do formuláře (Výkupy, Reklamace, Demo objednávky, Evidence zakázek, Vozidla v knize jízd).
+- Listy/dashboards budou nově zobrazovat jen relevantní záznamy (díky RLS automaticky).
+- Notifikace (zvoneček + e-mail) budou rozšířeny po vzoru úkolů — při změně / přidělení dostane upozornění druhý zúčastněný.
 
-## 3) Zrušení přímých `delete*` server funkcí
+## Co se NEMĚNÍ
 
-Všechny existující exporty (`deleteDemoOrder`, `deleteVykup`, `deleteVykupPhoto`, `deleteTask`, `deleteDeal`, `deleteClaim`, `deleteDefect`, `deleteSupplier`, `deletePurchase`, `deleteTaskComment`, `deleteTaskAttachment`, mazání v `logbook` a `dochazka`) přepíšeme tak, aby pouze **vyhodily chybu** „Smazání musí schválit super admin – odešlete žádost". Tím se zachová binární kompatibilita pro nezreferencované volání, ale nic skutečně nesmaže.
+- `clients` (klientela) – sdílený číselník, zůstává viditelná všem schváleným uživatelům.
+- `attendance_employees`, `attendance_settings`, `attendance_shifts` – konfigurace docházky, admin/HR.
+- `washers`, `document_templates`, `suppliers` číselník – číselníky.
+- Veřejné formuláře (claims z webu, upload tokeny, sign tokeny) – fungují dál (service role).
 
-## 4) UI – jednotný komponent `RequestDeleteButton`
+## Technicky
 
-Nová komponenta s ikonkou koše, která místo přímého `confirm()` otevře malý dialog:
-- pole pro důvod (povinné)
-- tlačítko „Odeslat žádost"
-- po úspěchu: toast „Žádost odeslána super adminovi"
+1. **Migrace 1** – přidá chybějící sloupce (`created_by`, `assignee_id`, `assignee_name`, `responsible_user_id`) jako nullable. Default `auth.uid()` přes trigger pro `created_by`.
+2. **Migrace 2** – nahradí stávající široké RLS politiky novými ve formátu:
+   ```sql
+   USING ( has_role(auth.uid(),'admin')
+           OR created_by = auth.uid()
+           OR assignee_id = auth.uid() )
+   ```
+   (přizpůsobeno názvům polí v každé tabulce)
+3. **Server functions** – `createXxx` doplní `created_by = userId`; `updateXxx` při změně přiřazení pošle notifikaci.
+4. **UI** – formuláře dostanou pole „Řešitel" (select uživatelů s daným modulem).
+5. **Notifikace** – stejný vzor jako u úkolů (e-mail + zvoneček) i pro Výkupy, Reklamace, Defekty, Demo objednávky, Evidence, Deals, Purchases.
 
-Nasadit ji na všech místech, kde teď visí tlačítko `Trash2`:
-- seznam objednávek předváděcích vozů
-- seznam zakázek, reklamací, úkolů, výkupů, dealů, vad
-- detail výkupu (mazání fotek), detail úkolu (mazání komentářů/příloh)
-- admin/users (vlastní detail klienta), schvalovací fronta (dodavatelé/nákupy)
-- kniha jízd, docházka
+## Rizika / na co upozornit
 
-## 5) Stránka `/approvals` – nová sekce „Žádosti o smazání"
+- **Historická data**: cokoli bez vyplněného `created_by` (téměř všechny stávající záznamy) uvidí po nasazení **pouze admin**. Admin pak postupně přiřadí. Pokud nechceš tohle chování, jediná alternativa je dočasně udržet „kdo má modul, vidí staré záznamy" — řekni a přidám výjimku.
+- **Reklamace z webu** mají `created_by = NULL` napořád (zakládá je externí klient). Logika: dokud admin nepřidělí řešitele, vidí ji jen admin.
+- Velký zásah, doporučuji nasadit najednou (jedna migrace + jedna várka kódu) ať aplikace není v půli cesty.
 
-Tabulka pending žádostí: typ entity, popis, žadatel, důvod, kdy. Tlačítka **Zamítnout** (s notou) a **Schválit a smazat** (s potvrzovacím dialogem „Tato akce je nevratná"). Filtr `vše | čekající | rozhodnuto`.
+## Otázky před spuštěním
 
-V `AdminShell` přidat badge s počtem pending žádostí (vedle stávajícího zvonku notifikací).
-
-## 6) E-mailové notifikace
-
-- `deletion-request` – adminům, když přijde nová žádost (žadatel, entita, důvod, odkaz)
-- `deletion-decision` – žadateli, když je rozhodnuto (schváleno/zamítnuto + poznámka)
-- Registrace v `email-templates/registry.ts`
-
-## 7) Migrace dat
-
-Žádné. Existující záznamy zůstávají.
-
-## Pořadí
-
-1. Migrace (tabulka + RLS + index)
-2. Server fn `deletion-requests.functions.ts` + executor mapy pro každý typ entity
-3. Přepsat všechny `delete*` exporty na throw
-4. `RequestDeleteButton` komponenta + e-mailové šablony
-5. Nasadit RequestDeleteButton na všech UI místech
-6. Sekce v `/approvals`
-7. Badge v `AdminShell`
-
-## Poznámka k rozsahu
-
-Vztahuje se i na „operativní" mazání: chybný stamp v docházce, špatně nahraná fotka výkupu, překlep v komentáři. Žadatel je nemůže ihned napravit — musí počkat na schválení. (Pokud by to v praxi bylo nepraktické, dá se později vyjmout whitelist „uživatel může mazat svá vlastní data starší než X minut", ale primárně držím tvůj požadavek: **nikdo nesmaže nic přímo**.)
+1. **Historická data** – nechat „viditelné jen pro admina dokud nepřiřadí" (čisté), nebo dočasná výjimka „vidí to všichni s daným modulem"? *(doporučuji čisté)*
+2. **Deals** – stačí jeden `owner_id`, nebo chceš i `created_by` zvlášť? *(dnes je tam jen owner_id)*
+3. **Kniha jízd** – jízdu vidí jen řidič + admin. Stačí? *(žádný „přidělující")*
