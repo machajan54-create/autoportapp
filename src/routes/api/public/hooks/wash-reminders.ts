@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { requireCronAuth } from "@/lib/cron-auth.server";
 
 const APP_BASE = "https://www.autoport-app.cz";
 
@@ -37,7 +38,9 @@ function fmtDateTime(d?: string | null) {
 export const Route = createFileRoute("/api/public/hooks/wash-reminders")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const unauthorized = requireCronAuth(request);
+        if (unauthorized) return unauthorized;
         const { supabaseAdmin } = await import(
           "@/integrations/supabase/client.server"
         );
