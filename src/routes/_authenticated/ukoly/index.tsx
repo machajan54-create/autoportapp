@@ -139,15 +139,17 @@ function TasksPage() {
             <DialogTrigger asChild>
               <Button><Plus className="mr-2 h-4 w-4" /> Nový úkol</Button>
             </DialogTrigger>
-            <CreateTaskDialog
-              users={users ?? []}
-              onClose={() => setCreateOpen(false)}
-              onCreated={() => {
-                setCreateOpen(false);
-                qc.invalidateQueries({ queryKey: ["tasks"] });
-              }}
-              createFn={createFn}
-            />
+            {createOpen && (
+              <CreateTaskDialog
+                users={users ?? []}
+                onClose={() => setCreateOpen(false)}
+                onCreated={() => {
+                  setCreateOpen(false);
+                  qc.invalidateQueries({ queryKey: ["tasks"] });
+                }}
+                createFn={createFn}
+              />
+            )}
           </Dialog>
         </div>
 
