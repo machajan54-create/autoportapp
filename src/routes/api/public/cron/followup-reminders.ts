@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { requireCronAuth } from '@/lib/cron-auth.server'
 
 export const Route = createFileRoute('/api/public/cron/followup-reminders')({
   server: {
@@ -9,7 +10,9 @@ export const Route = createFileRoute('/api/public/cron/followup-reminders')({
   },
 })
 
-async function handle() {
+async function handle({ request }: { request: Request }) {
+  const unauthorized = requireCronAuth(request)
+  if (unauthorized) return unauthorized
   try {
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
     const { enqueueTransactionalEmail } = await import('@/lib/email/notify.server')

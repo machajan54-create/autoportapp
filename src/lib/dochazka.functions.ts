@@ -141,21 +141,31 @@ export const upsertEmployee = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const access = await getDochazkaAccess(context.supabase, context.userId);
     if (!access.isAdmin) throw new Error("Pouze super admin");
+    // PIN je v samostatne tabulce attendance_employee_pins (admin-only).
+    const { pin, ...employeeData } = data;
     if (data.id) {
       const { error } = await context.supabase
         .from("attendance_employees")
-        .update(data)
+        .update(employeeData)
         .eq("id", data.id);
       if (error) throw new Error(error.message);
+      const { error: pinErr } = await context.supabase
+        .from("attendance_employee_pins")
+        .upsert({ employee_id: data.id, pin });
+      if (pinErr) throw new Error(pinErr.message);
       return { id: data.id };
     }
-    const { id: _id, ...insert } = data;
+    const { id: _id, ...insert } = employeeData;
     const { data: row, error } = await context.supabase
       .from("attendance_employees")
       .insert(insert)
       .select("id")
       .single();
     if (error) throw new Error(error.message);
+    const { error: pinErr } = await context.supabase
+      .from("attendance_employee_pins")
+      .upsert({ employee_id: row.id, pin });
+    if (pinErr) throw new Error(pinErr.message);
 
     // Notify the new employee about their profile + how the kiosek works.
     try {
@@ -376,14 +386,16 @@ export const terminalCheckIn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: emp, error: empErr } = await supabaseAdmin
-      .from("attendance_employees")
-      .select("id,name,active")
+    const { data: pinRow, error: empErr } = await supabaseAdmin
+      .from("attendance_employee_pins")
+      .select("employee_id, attendance_employees!inner(id,name,active)")
       .eq("pin", data.pin)
-      .eq("active", true)
       .maybeSingle();
     if (empErr) throw new Error(empErr.message);
-    if (!emp) throw new Error("Neplatný PIN");
+    const emp = (pinRow as any)?.attendance_employees as
+      | { id: string; name: string; active: boolean }
+      | undefined;
+    if (!emp || !emp.active) throw new Error("Neplatný PIN");
 
     const today = new Date();
     const dateStr = today.toISOString().slice(0, 10);

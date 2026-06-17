@@ -154,14 +154,26 @@ export const ensureDemoUser = createServerFn({ method: "POST" }).handler(async (
     .from("attendance_employees").select("*", { count: "exact", head: true });
 
   if (!attEmpCount) {
-    const { data: emps } = await supabaseAdmin.from("attendance_employees").insert([
+    const seedEmployees = [
       { name: "Hrubý Patrik", role: "Ředitel", pin: "1111", avatar_color: "slate", can_approve_absences: true },
       { name: "Hák Marek", role: "Provozní manažer", pin: "2222", avatar_color: "blue", can_approve_absences: true },
       { name: "Hochmanová Alena", role: "Personalistka", pin: "3333", avatar_color: "purple", can_approve_absences: true },
       { name: "Kolář Michal", role: "Vedoucí logistiky", pin: "4444", avatar_color: "emerald" },
       { name: "Bálek Jakub", role: "Skladový operátor", pin: "5555", avatar_color: "amber" },
       { name: "Píša Martin", role: "Brigádník", pin: "6666", avatar_color: "rose" },
-    ]).select("id,name");
+    ];
+    const { data: emps } = await supabaseAdmin
+      .from("attendance_employees")
+      .insert(seedEmployees.map(({ pin: _pin, ...e }) => e))
+      .select("id,name");
+    if (emps) {
+      await supabaseAdmin.from("attendance_employee_pins").insert(
+        emps.map((e) => ({
+          employee_id: e.id,
+          pin: seedEmployees.find((s) => s.name === e.name)?.pin ?? "0000",
+        })),
+      );
+    }
 
     const { data: shifts } = await supabaseAdmin.from("attendance_shifts").insert([
       { name: "Ranní směna", start_time: "06:00", end_time: "14:30", color: "amber" },

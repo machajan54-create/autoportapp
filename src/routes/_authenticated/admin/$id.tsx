@@ -127,10 +127,20 @@ function ClaimDetail() {
     if (!qrUrl || !data) return;
     const w = window.open("", "_blank", "width=820,height=1100");
     if (!w) return;
-    const zak = data.claim.pu_number ?? "";
-    const klient = [data.claim.first_name, data.claim.last_name].filter(Boolean).join(" ");
-    const vozidlo = data.claim.insurer ?? "";
-    const dnes = new Date().toLocaleDateString("cs-CZ");
+    const esc = (s: string) =>
+      s
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    const zak = esc(data.claim.pu_number ?? "");
+    const klient = esc(
+      [data.claim.first_name, data.claim.last_name].filter(Boolean).join(" "),
+    );
+    const vozidlo = esc(data.claim.insurer ?? "");
+    const qrSrc = esc(qrUrl);
+    const dnes = esc(new Date().toLocaleDateString("cs-CZ"));
     w.document.write(`<!doctype html><html><head>
       <meta charset="utf-8"/>
       <title>QR štítek ${zak}</title>
@@ -194,7 +204,7 @@ function ClaimDetail() {
           </div>
 
           <div class="center">
-            <div class="qr"><img src="${qrUrl}" alt="QR ${zak}"/></div>
+            <div class="qr"><img src="${qrSrc}" alt="QR ${zak}"/></div>
           </div>
           <div class="zak-label">${zak || "—"}</div>
           <div class="zak-sub">Kód zakázky</div>

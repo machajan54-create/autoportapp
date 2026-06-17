@@ -1,14 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { requireCronAuth } from "@/lib/cron-auth.server";
 
 /**
  * Týdenní přehled pro adminy — voláno přes pg_cron každé pondělí v 7:00.
- * Žádný shared secret: route je na /api/public (bypass auth) a vstupní data
- * se nečtou. Bezpečnost: výstup neobsahuje PII, recipient je vždy admin.
+ * Autorizace: hlavička `apikey` musí obsahovat Supabase publishable klíč
+ * (posílá pg_cron job). Bez ní vrací 401.
  */
 export const Route = createFileRoute("/api/public/hooks/weekly-report")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const unauthorized = requireCronAuth(request);
+        if (unauthorized) return unauthorized;
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           const { notifyAdmins } = await import("@/lib/email/notify.server");
