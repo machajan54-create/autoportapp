@@ -386,14 +386,16 @@ export const terminalCheckIn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: emp, error: empErr } = await supabaseAdmin
-      .from("attendance_employees")
-      .select("id,name,active")
+    const { data: pinRow, error: empErr } = await supabaseAdmin
+      .from("attendance_employee_pins")
+      .select("employee_id, attendance_employees!inner(id,name,active)")
       .eq("pin", data.pin)
-      .eq("active", true)
       .maybeSingle();
     if (empErr) throw new Error(empErr.message);
-    if (!emp) throw new Error("Neplatný PIN");
+    const emp = (pinRow as any)?.attendance_employees as
+      | { id: string; name: string; active: boolean }
+      | undefined;
+    if (!emp || !emp.active) throw new Error("Neplatný PIN");
 
     const today = new Date();
     const dateStr = today.toISOString().slice(0, 10);
