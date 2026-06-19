@@ -1952,6 +1952,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_approve_attendance: { Args: { _uid: string }; Returns: boolean }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -1975,6 +1976,10 @@ export type Database = {
         Returns: boolean
       }
       is_approved_user: { Args: { _uid: string }; Returns: boolean }
+      is_dept_head_of: {
+        Args: { _head: string; _requester: string }
+        Returns: boolean
+      }
       move_to_dlq: {
         Args: {
           dlq_name: string
