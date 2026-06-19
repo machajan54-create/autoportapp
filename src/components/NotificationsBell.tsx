@@ -299,7 +299,24 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
     return out;
   }, [claims, defects, absences, emps, recs, pending, isAdmin, myPurchases, myAbsences, tasksData, userId, lastSeen]);
 
-  const count = items.length;
+  const visibleItems = useMemo(() => items.filter((it) => !dismissed[it.key]), [items, dismissed]);
+  const count = visibleItems.length;
+
+  function dismissOne(key: string) {
+    const next = { ...dismissed, [key]: true as const };
+    setDismissed(next);
+    writeDismissed(userId, next);
+  }
+  function dismissAll() {
+    const next: Record<string, true> = { ...dismissed };
+    for (const it of items) next[it.key] = true;
+    setDismissed(next);
+    writeDismissed(userId, next);
+    const now = new Date().toISOString();
+    const seen: LastSeen = { purchases: now, defects: now, absences: now, tasks: now };
+    writeLastSeen(userId, seen);
+    setLastSeen(seen);
+  }
 
   return (
     <Popover
