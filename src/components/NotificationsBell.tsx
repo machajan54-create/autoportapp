@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bell } from "lucide-react";
+import { Bell, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
@@ -29,6 +29,7 @@ type NotifItem = {
 // disappear after the user closes the bell. Scoped per user so multiple accounts
 // on the same browser don't share state.
 const LS_PREFIX = "notif-last-seen-v2:";
+const LS_DISMISSED_PREFIX = "notif-dismissed-v1:";
 type LastSeen = Partial<Record<"purchases" | "defects" | "absences" | "tasks", string>>;
 function readLastSeen(userId: string | null): LastSeen {
   if (typeof window === "undefined" || !userId) return {};
@@ -38,16 +39,26 @@ function writeLastSeen(userId: string | null, v: LastSeen) {
   if (typeof window === "undefined" || !userId) return;
   try { localStorage.setItem(LS_PREFIX + userId, JSON.stringify(v)); } catch { /* ignore */ }
 }
+function readDismissed(userId: string | null): Record<string, true> {
+  if (typeof window === "undefined" || !userId) return {};
+  try { return JSON.parse(localStorage.getItem(LS_DISMISSED_PREFIX + userId) || "{}"); } catch { return {}; }
+}
+function writeDismissed(userId: string | null, v: Record<string, true>) {
+  if (typeof window === "undefined" || !userId) return;
+  try { localStorage.setItem(LS_DISMISSED_PREFIX + userId, JSON.stringify(v)); } catch { /* ignore */ }
+}
 
 export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
   const [open, setOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [lastSeen, setLastSeen] = useState<LastSeen>({});
+  const [dismissed, setDismissed] = useState<Record<string, true>>({});
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       const uid = data.user?.id ?? null;
       setUserId(uid);
       const stored = readLastSeen(uid);
+      setDismissed(readDismissed(uid));
       // First visit: initialize to "now" so we don't dump the entire history.
       if (uid && !stored.purchases && !stored.defects && !stored.absences) {
         const now = new Date().toISOString();
