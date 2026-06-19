@@ -346,34 +346,64 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
       <PopoverContent align="end" className="w-80 p-0">
         <div className="flex items-center justify-between border-b px-3 py-2">
           <span className="text-sm font-semibold">Notifikace</span>
-          <span className="text-xs text-muted-foreground">{count} {count === 1 ? "položka" : "položek"}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">{count} {count === 1 ? "položka" : "položek"}</span>
+            {count > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={dismissAll}
+              >
+                Skrýt vše
+              </Button>
+            )}
+          </div>
         </div>
         {count === 0 ? (
           <div className="px-3 py-6 text-center text-sm text-muted-foreground">Vše v pořádku 🎉</div>
         ) : (
           <ul className="max-h-96 divide-y overflow-y-auto">
-            {items.map((it) => (
+            {visibleItems.map((it) => (
               <li key={it.key}>
-                <Link
-                  to={it.to}
-                  onClick={() => setOpen(false)}
-                  className="flex items-start gap-3 px-3 py-2.5 hover:bg-muted"
-                >
-                  <span
-                    className={cn(
-                      "mt-1.5 h-2 w-2 shrink-0 rounded-full",
-                      it.tone === "danger" && "bg-rose-500",
-                      it.tone === "warn" && "bg-amber-500",
-                      it.tone === "info" && "bg-sky-500",
-                    )}
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium">{it.title}</span>
-                    {it.detail && (
-                      <span className="block text-xs text-muted-foreground">{it.detail}</span>
-                    )}
-                  </span>
-                </Link>
+                <div className="group relative flex items-stretch hover:bg-muted">
+                  <Link
+                    to={it.to}
+                    onClick={() => {
+                      dismissOne(it.key);
+                      setOpen(false);
+                    }}
+                    className="flex flex-1 items-start gap-3 px-3 py-2.5 pr-9"
+                  >
+                    <span
+                      className={cn(
+                        "mt-1.5 h-2 w-2 shrink-0 rounded-full",
+                        it.tone === "danger" && "bg-rose-500",
+                        it.tone === "warn" && "bg-amber-500",
+                        it.tone === "info" && "bg-sky-500",
+                      )}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium">{it.title}</span>
+                      {it.detail && (
+                        <span className="block text-xs text-muted-foreground">{it.detail}</span>
+                      )}
+                    </span>
+                  </Link>
+                  <button
+                    type="button"
+                    aria-label="Skrýt notifikaci"
+                    title="Skrýt"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      dismissOne(it.key);
+                    }}
+                    className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-background hover:text-foreground group-hover:opacity-100"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
