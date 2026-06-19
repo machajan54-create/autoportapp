@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bell } from "lucide-react";
+import { Bell, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
@@ -29,6 +29,7 @@ type NotifItem = {
 // disappear after the user closes the bell. Scoped per user so multiple accounts
 // on the same browser don't share state.
 const LS_PREFIX = "notif-last-seen-v2:";
+const LS_DISMISSED_PREFIX = "notif-dismissed-v1:";
 type LastSeen = Partial<Record<"purchases" | "defects" | "absences" | "tasks", string>>;
 function readLastSeen(userId: string | null): LastSeen {
   if (typeof window === "undefined" || !userId) return {};
@@ -38,16 +39,26 @@ function writeLastSeen(userId: string | null, v: LastSeen) {
   if (typeof window === "undefined" || !userId) return;
   try { localStorage.setItem(LS_PREFIX + userId, JSON.stringify(v)); } catch { /* ignore */ }
 }
+function readDismissed(userId: string | null): Record<string, true> {
+  if (typeof window === "undefined" || !userId) return {};
+  try { return JSON.parse(localStorage.getItem(LS_DISMISSED_PREFIX + userId) || "{}"); } catch { return {}; }
+}
+function writeDismissed(userId: string | null, v: Record<string, true>) {
+  if (typeof window === "undefined" || !userId) return;
+  try { localStorage.setItem(LS_DISMISSED_PREFIX + userId, JSON.stringify(v)); } catch { /* ignore */ }
+}
 
 export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
   const [open, setOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [lastSeen, setLastSeen] = useState<LastSeen>({});
+  const [dismissed, setDismissed] = useState<Record<string, true>>({});
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       const uid = data.user?.id ?? null;
       setUserId(uid);
       const stored = readLastSeen(uid);
+      setDismissed(readDismissed(uid));
       // First visit: initialize to "now" so we don't dump the entire history.
       if (uid && !stored.purchases && !stored.defects && !stored.absences) {
         const now = new Date().toISOString();
@@ -288,7 +299,24 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
     return out;
   }, [claims, defects, absences, emps, recs, pending, isAdmin, myPurchases, myAbsences, tasksData, userId, lastSeen]);
 
-  const count = items.length;
+  const visibleItems = useMemo(() => items.filter((it) => !dismissed[it.key]), [items, dismissed]);
+  const count = visibleItems.length;
+
+  function dismissOne(key: string) {
+    const next = { ...dismissed, [key]: true as const };
+    setDismissed(next);
+    writeDismissed(userId, next);
+  }
+  function dismissAll() {
+    const next: Record<string, true> = { ...dismissed };
+    for (const it of items) next[it.key] = true;
+    setDismissed(next);
+    writeDismissed(userId, next);
+    const now = new Date().toISOString();
+    const seen: LastSeen = { purchases: now, defects: now, absences: now, tasks: now };
+    writeLastSeen(userId, seen);
+    setLastSeen(seen);
+  }
 
   return (
     <Popover
@@ -318,34 +346,64 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
       <PopoverContent align="end" className="w-80 p-0">
         <div className="flex items-center justify-between border-b px-3 py-2">
           <span className="text-sm font-semibold">Notifikace</span>
-          <span className="text-xs text-muted-foreground">{count} {count === 1 ? "položka" : "položek"}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">{count} {count === 1 ? "položka" : "položek"}</span>
+            {count > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={dismissAll}
+              >
+                Skrýt vše
+              </Button>
+            )}
+          </div>
         </div>
         {count === 0 ? (
           <div className="px-3 py-6 text-center text-sm text-muted-foreground">Vše v pořádku 🎉</div>
         ) : (
           <ul className="max-h-96 divide-y overflow-y-auto">
-            {items.map((it) => (
+            {visibleItems.map((it) => (
               <li key={it.key}>
-                <Link
-                  to={it.to}
-                  onClick={() => setOpen(false)}
-                  className="flex items-start gap-3 px-3 py-2.5 hover:bg-muted"
-                >
-                  <span
-                    className={cn(
-                      "mt-1.5 h-2 w-2 shrink-0 rounded-full",
-                      it.tone === "danger" && "bg-rose-500",
-                      it.tone === "warn" && "bg-amber-500",
-                      it.tone === "info" && "bg-sky-500",
-                    )}
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium">{it.title}</span>
-                    {it.detail && (
-                      <span className="block text-xs text-muted-foreground">{it.detail}</span>
-                    )}
-                  </span>
-                </Link>
+                <div className="group relative flex items-stretch hover:bg-muted">
+                  <Link
+                    to={it.to}
+                    onClick={() => {
+                      dismissOne(it.key);
+                      setOpen(false);
+                    }}
+                    className="flex flex-1 items-start gap-3 px-3 py-2.5 pr-9"
+                  >
+                    <span
+                      className={cn(
+                        "mt-1.5 h-2 w-2 shrink-0 rounded-full",
+                        it.tone === "danger" && "bg-rose-500",
+                        it.tone === "warn" && "bg-amber-500",
+                        it.tone === "info" && "bg-sky-500",
+                      )}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium">{it.title}</span>
+                      {it.detail && (
+                        <span className="block text-xs text-muted-foreground">{it.detail}</span>
+                      )}
+                    </span>
+                  </Link>
+                  <button
+                    type="button"
+                    aria-label="Skrýt notifikaci"
+                    title="Skrýt"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      dismissOne(it.key);
+                    }}
+                    className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-background hover:text-foreground group-hover:opacity-100"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
