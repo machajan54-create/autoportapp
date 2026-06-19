@@ -14,16 +14,12 @@ async function handle({ request }: { request: Request }) {
     const { enqueueTransactionalEmail } = await import('@/lib/email/notify.server')
 
     const todayIso = new Date().toISOString().slice(0, 10)
-    const in7 = new Date()
-    in7.setUTCDate(in7.getUTCDate() + 7)
-    const in7Iso = in7.toISOString().slice(0, 10)
 
     const { data: open } = await supabaseAdmin
       .from('tasks')
       .select('id,title,priority,due_date,assignee_id,assignee_name')
       .neq('status', 'done')
       .not('assignee_id', 'is', null)
-      .lte('due_date', in7Iso)
       .order('due_date', { ascending: true })
       .limit(2000)
 
