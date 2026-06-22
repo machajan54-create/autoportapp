@@ -1961,6 +1961,7 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      get_cron_auth_secret: { Args: never; Returns: string }
       has_module: {
         Args: {
           _module: Database["public"]["Enums"]["app_module"]
