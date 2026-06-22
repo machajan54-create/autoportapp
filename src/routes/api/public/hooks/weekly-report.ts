@@ -10,7 +10,7 @@ export const Route = createFileRoute("/api/public/hooks/weekly-report")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const unauthorized = requireCronAuth(request);
+        const unauthorized = await requireCronAuth(request);
         if (unauthorized) return unauthorized;
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

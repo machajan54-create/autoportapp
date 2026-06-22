@@ -7,7 +7,7 @@ export const Route = createFileRoute('/api/public/cron/task-daily-digest')({
 })
 
 async function handle({ request }: { request: Request }) {
-  const unauthorized = requireCronAuth(request)
+  const unauthorized = await requireCronAuth(request)
   if (unauthorized) return unauthorized
   try {
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
