@@ -41,8 +41,12 @@ const ENTITY_REGISTRY: Record<
   },
   claims: {
     table: "claims",
-    select: "pu_number, title",
-    label: (r) => `Zakázka ${r?.pu_number ?? ""} ${r?.title ? "– " + r.title : ""}`.trim(),
+    select: "pu_number, first_name, last_name, insurer",
+    label: (r) => {
+      const owner = [r?.first_name, r?.last_name].filter(Boolean).join(" ").trim();
+      const parts = [r?.pu_number, r?.insurer, owner].filter(Boolean);
+      return `Zakázka ${parts.join(" – ")}`.trim();
+    },
     typeLabel: "Reklamace / zakázka",
   },
   defects: {
@@ -161,7 +165,7 @@ async function assertAdmin(supabase: any, userId: string) {
  * Returns groups by bucket.
  */
 async function collectStoragePaths(
-  supabaseAdmin: any,
+  db: any,
   entityType: string,
   entityId: string,
 ): Promise<Array<{ bucket: string; paths: string[] }>> {
@@ -173,62 +177,62 @@ async function collectStoragePaths(
 
   switch (entityType) {
     case "claim_attachments": {
-      const { data } = await supabaseAdmin
+      const { data } = await db
         .from("claim_attachments").select("file_path").eq("id", entityId).maybeSingle();
       push("claim-files", [data?.file_path]);
       break;
     }
     case "claims": {
-      const { data } = await supabaseAdmin
+      const { data } = await db
         .from("claim_attachments").select("file_path").eq("claim_id", entityId);
       push("claim-files", (data ?? []).map((r: any) => r.file_path));
       break;
     }
     case "task_attachments": {
-      const { data } = await supabaseAdmin
+      const { data } = await db
         .from("task_attachments").select("storage_path").eq("id", entityId).maybeSingle();
       push("task-attachments", [data?.storage_path]);
       break;
     }
     case "tasks": {
-      const { data } = await supabaseAdmin
+      const { data } = await db
         .from("task_attachments").select("storage_path").eq("task_id", entityId);
       push("task-attachments", (data ?? []).map((r: any) => r.storage_path));
       break;
     }
     case "vykup_photos": {
-      const { data } = await supabaseAdmin
+      const { data } = await db
         .from("vykup_photos").select("storage_path").eq("id", entityId).maybeSingle();
       push("vykup-photos", [data?.storage_path]);
       break;
     }
     case "vykupy": {
-      const { data } = await supabaseAdmin
+      const { data } = await db
         .from("vykup_photos").select("storage_path").eq("vykup_id", entityId);
       push("vykup-photos", (data ?? []).map((r: any) => r.storage_path));
       break;
     }
     case "logbook_entries": {
-      const { data } = await supabaseAdmin
+      const { data } = await db
         .from("logbook_entries").select("receipt_path").eq("id", entityId).maybeSingle();
       push("logbook-receipts", [data?.receipt_path]);
       break;
     }
     case "logbook_vehicles": {
-      const { data } = await supabaseAdmin
+      const { data } = await db
         .from("logbook_entries").select("receipt_path").eq("vehicle_id", entityId);
       push("logbook-receipts", (data ?? []).map((r: any) => r.receipt_path));
       break;
     }
     case "demo_orders": {
-      const { data } = await supabaseAdmin
+      const { data } = await db
         .from("demo_order_documents").select("storage_path").eq("order_id", entityId);
       push("client-documents", (data ?? []).map((r: any) => r.storage_path));
       break;
     }
     case "defects": {
       // Photos live in JSONB column `photos: [{ path, ... }]` on the row itself
-      const { data } = await supabaseAdmin
+      const { data } = await db
         .from("defects").select("photos").eq("id", entityId).maybeSingle();
       const paths = Array.isArray(data?.photos)
         ? (data.photos as any[]).map((p) => p?.path).filter(Boolean)
@@ -269,13 +273,18 @@ export const requestDeletion = createServerFn({ method: "POST" })
     const reg = ENTITY_REGISTRY[data.entity_type];
     if (!reg) throw new Error("Neznámý typ záznamu");
 
-    // resolve label via admin client (snapshot persists past deletion)
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: row } = await (supabaseAdmin as any)
+    // Resolve label via the user's authed client. The service-role key in
+    // Lovable Cloud is `sb_secret_…` format which the Data API rejects, so
+    // we keep `supabaseAdmin` only for Storage cleanup below.
+    const { data: row, error: lookupErr } = await (context.supabase as any)
       .from(reg.table)
       .select(reg.select)
       .eq("id", data.entity_id)
       .maybeSingle();
+    if (lookupErr) {
+      console.error("[requestDeletion lookup]", reg.table, lookupErr);
+      throw new Error(`Nepodařilo se ověřit záznam: ${lookupErr.message}`);
+    }
     if (!row) {
       // Record already gone (e.g. cascade-deleted). Nothing to approve.
       return { ok: true, alreadyGone: true as const };
@@ -284,19 +293,20 @@ export const requestDeletion = createServerFn({ method: "POST" })
 
     // Super admin bypasses the approval queue and deletes immediately.
     if (await isAdmin(context.supabase, context.userId)) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const storageGroups = await collectStoragePaths(
-        supabaseAdmin,
+        context.supabase,
         data.entity_type,
         data.entity_id,
       );
-      const { error: delErr } = await (supabaseAdmin as any)
+      const { error: delErr } = await (context.supabase as any)
         .from(reg.table)
         .delete()
         .eq("id", data.entity_id);
       if (delErr) throw new Error(`Smazání selhalo: ${delErr.message}`);
       await removeStorageObjects(supabaseAdmin, storageGroups);
       const nowIso = new Date().toISOString();
-      await (supabaseAdmin as any).from("deletion_requests").insert({
+      await (context.supabase as any).from("deletion_requests").insert({
         entity_type: data.entity_type,
         entity_id: data.entity_id,
         entity_label,
@@ -430,11 +440,11 @@ export const decideDeletionRequest = createServerFn({ method: "POST" })
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       // Snapshot file paths BEFORE delete so we can clean up storage afterwards.
       const storageGroups = await collectStoragePaths(
-        supabaseAdmin,
+        context.supabase,
         (req as any).entity_type,
         (req as any).entity_id,
       );
-      const { error: delErr } = await (supabaseAdmin as any)
+      const { error: delErr } = await (context.supabase as any)
         .from(reg.table)
         .delete()
         .eq("id", (req as any).entity_id);
