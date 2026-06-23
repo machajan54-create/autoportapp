@@ -41,8 +41,12 @@ const ENTITY_REGISTRY: Record<
   },
   claims: {
     table: "claims",
-    select: "pu_number, title",
-    label: (r) => `Zakázka ${r?.pu_number ?? ""} ${r?.title ? "– " + r.title : ""}`.trim(),
+    select: "pu_number, first_name, last_name, insurer",
+    label: (r) => {
+      const owner = [r?.first_name, r?.last_name].filter(Boolean).join(" ").trim();
+      const parts = [r?.pu_number, r?.insurer, owner].filter(Boolean);
+      return `Zakázka ${parts.join(" – ")}`.trim();
+    },
     typeLabel: "Reklamace / zakázka",
   },
   defects: {
