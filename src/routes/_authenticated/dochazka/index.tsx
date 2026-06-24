@@ -580,7 +580,9 @@ function RecordsTab() {
             </>
           )}
         </div>
-        <Button onClick={openNew}><Plus className="mr-1 h-4 w-4" /> Nový záznam</Button>
+        {canApprove && (
+          <Button onClick={openNew}><Plus className="mr-1 h-4 w-4" /> Nový záznam</Button>
+        )}
       </div>
       <Card>
         <Table>
@@ -652,7 +654,10 @@ function RecordsTab() {
                           <Button size="icon" variant="ghost" onClick={() => decide(r.id, "rejected")} title="Zamítnout"><X className="h-4 w-4 text-rose-600" /></Button>
                         </>
                       )}
-                      <Button size="icon" variant="ghost" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></Button>
+                      {canApprove && (
+                        <Button size="icon" variant="ghost" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></Button>
+                      )}
+                      {canApprove && (
                       <RequestDeleteButton
                         entityType="attendance_records"
                         entityId={r.id}
@@ -661,6 +666,7 @@ function RecordsTab() {
                         className="text-destructive"
                         title="Požádat o smazání záznamu"
                       />
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
