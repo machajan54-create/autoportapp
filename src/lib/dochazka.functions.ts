@@ -235,6 +235,8 @@ export const upsertShift = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => shiftInput.parse(d))
   .handler(async ({ data, context }) => {
+    const access = await getDochazkaAccess(context.supabase, context.userId);
+    if (!access.isAdmin) throw new Error("Úpravy směn může provádět pouze super admin.");
     if (data.id) {
       const { error } = await context.supabase.from("attendance_shifts").update(data).eq("id", data.id);
       if (error) throw new Error(error.message);
@@ -504,6 +506,25 @@ export const upsertAbsence = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => absenceInput.parse(d))
   .handler(async ({ data, context }) => {
+    const access = await getDochazkaAccess(context.supabase, context.userId);
+    // Běžný zaměstnanec smí podat žádost pouze za sebe a nesmí měnit existující záznam.
+    if (!access.canApproveAll && !access.canApproveTeam) {
+      if (!access.myEmployeeId || data.employee_id !== access.myEmployeeId) {
+        throw new Error("Můžete podat žádost pouze za sebe.");
+      }
+      if (data.id) {
+        throw new Error("Úpravy absencí může provádět pouze super admin nebo schvalovatel.");
+      }
+    } else if (access.canApproveTeam && !access.canApproveAll) {
+      // Vedoucí oddělení smí jen v rámci svého oddělení (nebo sebe).
+      const allowed = new Set([
+        ...(access.myEmployeeId ? [access.myEmployeeId] : []),
+        ...access.departmentEmployeeIds,
+      ]);
+      if (!allowed.has(data.employee_id)) {
+        throw new Error("Nemáte oprávnění upravovat absence mimo své oddělení.");
+      }
+    }
     const payload = { ...data, note: data.note ?? null };
     if (data.id) {
       const { error } = await context.supabase
@@ -679,10 +700,16 @@ export const markNotificationRead = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid(), read: z.boolean().default(true) }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
+    const access = await getDochazkaAccess(context.supabase, context.userId);
+    let q = context.supabase
       .from("attendance_notifications")
       .update({ read: data.read })
       .eq("id", data.id);
+    if (!access.isAdmin) {
+      if (!access.myEmployeeId) throw new Error("Nemáte oprávnění");
+      q = q.eq("recipient_employee_id", access.myEmployeeId);
+    }
+    const { error } = await q;
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -690,10 +717,16 @@ export const markNotificationRead = createServerFn({ method: "POST" })
 export const markAllNotificationsRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { error } = await context.supabase
+    const access = await getDochazkaAccess(context.supabase, context.userId);
+    let q = context.supabase
       .from("attendance_notifications")
       .update({ read: true })
       .eq("read", false);
+    if (!access.isAdmin) {
+      if (!access.myEmployeeId) return { ok: true };
+      q = q.eq("recipient_employee_id", access.myEmployeeId);
+    }
+    const { error } = await q;
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -732,6 +765,8 @@ export const updateDochazkaSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => settingsInput.parse(d))
   .handler(async ({ data, context }) => {
+    const access = await getDochazkaAccess(context.supabase, context.userId);
+    if (!access.isAdmin) throw new Error("Nastavení docházky může měnit pouze super admin.");
     const { error } = await context.supabase
       .from("attendance_settings")
       .update(data)
@@ -899,7 +934,7 @@ export const autoFillMonth = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const access = await getDochazkaAccess(context.supabase, context.userId);
-    if (!access.canApproveAll) throw new Error("Nemáte oprávnění");
+    if (!access.isAdmin) throw new Error("Auto-vyplnění může provést pouze super admin.");
 
     const [startHour, startMinute] = data.start_time.split(":").map(Number);
 
@@ -1057,6 +1092,23 @@ export const submitRecord = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
+    const access = await getDochazkaAccess(context.supabase, context.userId);
+    // Ověř, že záznam patří aktuálnímu uživateli (nebo je admin/schvalovatel)
+    const { data: rec } = await context.supabase
+      .from("attendance_records")
+      .select("employee_id")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (!rec) throw new Error("Záznam nenalezen");
+    if (!access.canApproveAll) {
+      const allowed = new Set([
+        ...(access.myEmployeeId ? [access.myEmployeeId] : []),
+        ...(access.canApproveTeam ? access.departmentEmployeeIds : []),
+      ]);
+      if (!allowed.has(rec.employee_id)) {
+        throw new Error("Můžete odeslat ke schválení pouze vlastní záznamy.");
+      }
+    }
     const { error } = await context.supabase
       .from("attendance_records")
       .update({ approval_status: "submitted", approved_by: null, approved_at: null, approval_note: null })
