@@ -332,6 +332,10 @@ export const upsertRecord = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => recordInput.parse(d))
   .handler(async ({ data, context }) => {
+    const access = await getDochazkaAccess(context.supabase, context.userId);
+    if (!access.isAdmin) {
+      throw new Error("Úpravy docházky může provádět pouze super admin.");
+    }
     const payload = {
       ...data,
       shift_id: data.shift_id ?? null,
