@@ -403,8 +403,8 @@ export const terminalCheckIn = createServerFn({ method: "POST" })
       | undefined;
     if (!emp || !emp.active) throw new Error("Neplatný PIN");
 
-    const today = new Date();
-    const dateStr = today.toISOString().slice(0, 10);
+    // Datum v lokální (Praha) zóně, aby odpovídalo zobrazení v aplikaci.
+    const dateStr = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Prague" });
 
     // Check if there's an open record today
     const { data: open } = await supabaseAdmin
