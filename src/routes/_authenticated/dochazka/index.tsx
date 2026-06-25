@@ -141,7 +141,12 @@ function StatsTab() {
   const fetchRec = useServerFn(listRecords);
   const fetchAbs = useServerFn(listAbsences);
   const { data: employees } = useQuery({ queryKey: ["dochazka", "employees"], queryFn: () => fetchEmp({}) });
-  const { data: records } = useQuery({ queryKey: ["dochazka", "records"], queryFn: () => fetchRec({}) });
+  const { data: records } = useQuery({
+    queryKey: ["dochazka", "records"],
+    queryFn: () => fetchRec({}),
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+  });
   const { data: absences } = useQuery({ queryKey: ["dochazka", "absences"], queryFn: () => fetchAbs({}) });
 
   const today = todayISODate();
@@ -151,8 +156,11 @@ function StatsTab() {
     const recs = records ?? [];
     const monthly = recs.filter((r) => r.date.startsWith(monthPrefix));
     const totalHours = monthly.reduce((sum, r) => sum + Number(r.hours_worked ?? 0), 0);
-    const openToday = recs.filter((r) => r.date === today && !r.check_out);
-    const closedToday = recs.filter((r) => r.date === today && r.check_out);
+    // Akceptuj záznamy s dnešním datem v lokální i UTC podobě (terminál ukládá UTC datum).
+    const utcToday = new Date().toISOString().slice(0, 10);
+    const isToday = (d: string) => d === today || d === utcToday;
+    const openToday = recs.filter((r) => isToday(r.date) && !r.check_out);
+    const closedToday = recs.filter((r) => isToday(r.date) && r.check_out);
     const pendingAbs = (absences ?? []).filter((a) => a.status === "pending").length;
     const hoursByEmp = new Map<string, number>();
     monthly.forEach((r) => {
@@ -165,7 +173,20 @@ function StatsTab() {
       })
       .sort((a, b) => b.hours - a.hours)
       .slice(0, 10);
-    return { totalHours, openToday: openToday.length, closedToday: closedToday.length, pendingAbs, ranking };
+    const presentList = openToday
+      .map((r) => {
+        const emp = employees?.find((e) => e.id === r.employee_id);
+        return { id: r.id, name: emp?.name ?? "Neznámý", check_in: r.check_in };
+      })
+      .sort((a, b) => new Date(a.check_in).getTime() - new Date(b.check_in).getTime());
+    return {
+      totalHours,
+      openToday: openToday.length,
+      closedToday: closedToday.length,
+      pendingAbs,
+      ranking,
+      presentList,
+    };
   }, [records, employees, absences, monthPrefix, today]);
 
   return (
@@ -176,6 +197,23 @@ function StatsTab() {
         <StatCard label="Odpracováno (měsíc)" value={`${stats.totalHours.toFixed(1)} h`} accent="text-purple-600" />
         <StatCard label="Čekající absence" value={stats.pendingAbs} accent="text-amber-600" />
       </div>
+      <Card className="p-4">
+        <h3 className="text-sm font-semibold">Kdo je právě v práci</h3>
+        {stats.presentList.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">Nikdo není aktuálně přihlášen.</p>
+        ) : (
+          <ul className="mt-3 divide-y">
+            {stats.presentList.map((p) => (
+              <li key={p.id} className="flex items-center justify-between py-2 text-sm">
+                <span className="font-medium">{p.name}</span>
+                <span className="font-mono tabular-nums text-muted-foreground">
+                  od {formatTime(p.check_in)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
       <Card className="p-4">
         <h3 className="text-sm font-semibold">Top 10 zaměstnanců — odpracované hodiny ({monthPrefix})</h3>
         {stats.ranking.length === 0 ? (
