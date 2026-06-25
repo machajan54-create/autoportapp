@@ -659,14 +659,26 @@ function RecordsTab() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {(records ?? []).length === 0 ? (
+            {visibleRecords.length === 0 ? (
               <TableRow><TableCell colSpan={canApprove ? 10 : 9} className="text-center text-muted-foreground">Žádné záznamy.</TableCell></TableRow>
-            ) : (records ?? []).map((r) => {
+            ) : visibleRecords.map((r) => {
               const emp = empMap.get(r.employee_id);
               const sh = r.shift_id ? shiftMap.get(r.shift_id) : null;
               const h = Number(r.hours_worked ?? 0);
               const overtime = h > dailyThr ? h - dailyThr : 0;
               const status = (r as any).approval_status ?? "draft";
+              // Odešel dříve? Porovnání s koncem směny (HH:MM v lokálním čase).
+              let leftEarlyMin = 0;
+              if (r.check_out && sh?.end_time) {
+                const co = new Date(r.check_out);
+                const [eh, em] = String(sh.end_time).split(":").map((x) => Number(x));
+                if (Number.isFinite(eh) && Number.isFinite(em)) {
+                  const endRef = new Date(co);
+                  endRef.setHours(eh, em, 0, 0);
+                  const diffMin = Math.round((endRef.getTime() - co.getTime()) / 60000);
+                  if (diffMin > 5) leftEarlyMin = diffMin;
+                }
+              }
               return (
                 <TableRow key={r.id}>
                   {canApprove && (
@@ -683,7 +695,20 @@ function RecordsTab() {
                   <TableCell className="font-medium">{emp?.name ?? "—"}</TableCell>
                   <TableCell>{sh ? <Badge variant="outline" className={cn("border", shiftClasses(sh.color))}>{sh.name}</Badge> : <span className="text-muted-foreground">—</span>}</TableCell>
                   <TableCell className="font-mono">{formatTime(r.check_in)}</TableCell>
-                  <TableCell className="font-mono">{r.check_out ? formatTime(r.check_out) : <Badge variant="secondary" className="bg-amber-100 text-amber-700">v práci</Badge>}</TableCell>
+                  <TableCell className="font-mono">
+                    {r.check_out ? (
+                      <div className="flex items-center gap-1">
+                        <span>{formatTime(r.check_out)}</span>
+                        {leftEarlyMin > 0 && (
+                          <Badge variant="outline" className="border-rose-300 bg-rose-50 text-rose-700 text-[10px]">
+                            Dříve o {leftEarlyMin >= 60 ? `${Math.floor(leftEarlyMin / 60)}h ${leftEarlyMin % 60}m` : `${leftEarlyMin}m`}
+                          </Badge>
+                        )}
+                      </div>
+                    ) : (
+                      <Badge variant="secondary" className="bg-amber-100 text-amber-700">v práci</Badge>
+                    )}
+                  </TableCell>
                   <TableCell className="text-xs">{r.break_duration} min</TableCell>
                   <TableCell className="font-mono font-semibold">
                     {formatHours(h)}
