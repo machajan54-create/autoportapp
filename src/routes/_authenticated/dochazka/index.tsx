@@ -533,6 +533,26 @@ function RecordsTab() {
   const shiftMap = useMemo(() => new Map((shifts ?? []).map((s) => [s.id, s])), [shifts]);
   const dailyThr = Number((settings as any)?.daily_overtime_threshold_hours ?? 8);
 
+  // Pro běžné uživatele zobrazujeme jen reálná píchnutí z terminálu —
+  // skryjeme autogenerované záznamy (Auto-vyplněno…) i ručně doplněné admin záznamy.
+  const visibleRecords = useMemo(() => {
+    const all = records ?? [];
+    if (canApprove) return all;
+    return all.filter((r: any) => {
+      const note: string = String(r.note ?? "");
+      if (note.startsWith("Auto-vyplněno")) return false;
+      // Heuristika: terminál ukládá break_duration = 30 a hours_worked = 0 při příchodu;
+      // ručně vložené záznamy admina nemají zaokrouhlené sekundy. Tady raději vezmeme
+      // pravidlo: záznam je reálné píchnutí, pokud check_in má nenulové sekundy nebo
+      // milisekundy (terminál ukládá přesný čas), nebo pokud je dosud otevřený.
+      if (!r.check_out) return true;
+      const ci = new Date(r.check_in);
+      const co = new Date(r.check_out);
+      const hasPreciseTime = ci.getUTCSeconds() !== 0 || co.getUTCSeconds() !== 0;
+      return hasPreciseTime;
+    });
+  }, [records, canApprove]);
+
   function openNew() {
     const now = new Date();
     const iso = now.toISOString().slice(0, 16);
