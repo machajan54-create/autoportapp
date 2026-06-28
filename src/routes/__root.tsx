@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import autoportLogo from "@/assets/autoport-logo.png.asset.json";
+import autoportAppIcon from "@/assets/autoport-app-icon.png.asset.json";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -97,7 +98,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", type: "image/png", href: autoportLogo.url },
-      { rel: "apple-touch-icon", href: autoportLogo.url },
+      { rel: "apple-touch-icon", sizes: "180x180", href: autoportAppIcon.url },
+      { rel: "apple-touch-icon", sizes: "1024x1024", href: autoportAppIcon.url },
       { rel: "manifest", href: "/manifest.webmanifest" },
     ],
   }),
