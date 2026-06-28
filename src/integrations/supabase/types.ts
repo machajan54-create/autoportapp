@@ -2060,6 +2060,10 @@ export type Database = {
           read_ct: number
         }[]
       }
+      set_employee_pin: {
+        Args: { _employee_id: string; _pin: string }
+        Returns: undefined
+      }
       verify_employee_pin_v2: {
         Args: { _ip?: unknown; _pin: string }
         Returns: {
