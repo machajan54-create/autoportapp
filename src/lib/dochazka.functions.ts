@@ -149,10 +149,14 @@ export const upsertEmployee = createServerFn({ method: "POST" })
         .update(employeeData)
         .eq("id", data.id);
       if (error) throw new Error(error.message);
-      const { error: pinErr } = await context.supabase
-        .from("attendance_employee_pins")
-        .upsert({ employee_id: data.id, pin });
-      if (pinErr) throw new Error(pinErr.message);
+      if (pin) {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { error: pinErr } = await supabaseAdmin.rpc("set_employee_pin", {
+          _employee_id: data.id,
+          _pin: pin,
+        });
+        if (pinErr) throw new Error(pinErr.message);
+      }
       return { id: data.id };
     }
     const { id: _id, ...insert } = employeeData;
@@ -162,10 +166,14 @@ export const upsertEmployee = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
-    const { error: pinErr } = await context.supabase
-      .from("attendance_employee_pins")
-      .upsert({ employee_id: row.id, pin });
-    if (pinErr) throw new Error(pinErr.message);
+    if (pin) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { error: pinErr } = await supabaseAdmin.rpc("set_employee_pin", {
+        _employee_id: row.id,
+        _pin: pin,
+      });
+      if (pinErr) throw new Error(pinErr.message);
+    }
 
     // Notify the new employee about their profile + how the kiosek works.
     try {
