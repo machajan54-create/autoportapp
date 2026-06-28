@@ -149,10 +149,14 @@ export const upsertEmployee = createServerFn({ method: "POST" })
         .update(employeeData)
         .eq("id", data.id);
       if (error) throw new Error(error.message);
-      const { error: pinErr } = await context.supabase
-        .from("attendance_employee_pins")
-        .upsert({ employee_id: data.id, pin });
-      if (pinErr) throw new Error(pinErr.message);
+      if (pin) {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { error: pinErr } = await supabaseAdmin.rpc("set_employee_pin", {
+          _employee_id: data.id,
+          _pin: pin,
+        });
+        if (pinErr) throw new Error(pinErr.message);
+      }
       return { id: data.id };
     }
     const { id: _id, ...insert } = employeeData;
@@ -162,10 +166,14 @@ export const upsertEmployee = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
-    const { error: pinErr } = await context.supabase
-      .from("attendance_employee_pins")
-      .upsert({ employee_id: row.id, pin });
-    if (pinErr) throw new Error(pinErr.message);
+    if (pin) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { error: pinErr } = await supabaseAdmin.rpc("set_employee_pin", {
+        _employee_id: row.id,
+        _pin: pin,
+      });
+      if (pinErr) throw new Error(pinErr.message);
+    }
 
     // Notify the new employee about their profile + how the kiosek works.
     try {
@@ -392,16 +400,33 @@ export const terminalCheckIn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: pinRow, error: empErr } = await supabaseAdmin
-      .from("attendance_employee_pins")
-      .select("employee_id, attendance_employees!inner(id,name,active)")
-      .eq("pin", data.pin)
-      .maybeSingle();
-    if (empErr) throw new Error(empErr.message);
-    const emp = (pinRow as any)?.attendance_employees as
-      | { id: string; name: string; active: boolean }
-      | undefined;
-    if (!emp || !emp.active) throw new Error("Neplatný PIN");
+    // Zjisti IP klienta z hlaviček (Cloudflare / reverse proxy).
+    let clientIp: string | null = null;
+    try {
+      const { getRequestHeader } = await import("@tanstack/react-start/server");
+      clientIp =
+        getRequestHeader("cf-connecting-ip") ||
+        (getRequestHeader("x-forwarded-for") || "").split(",")[0]?.trim() ||
+        getRequestHeader("x-real-ip") ||
+        null;
+      if (!clientIp) clientIp = null;
+    } catch {
+      clientIp = null;
+    }
+    const { data: verifyRows, error: verifyErr } = await supabaseAdmin.rpc(
+      "verify_employee_pin_v2",
+      { _pin: data.pin, _ip: clientIp },
+    );
+    if (verifyErr) throw new Error(verifyErr.message);
+    const v = Array.isArray(verifyRows) ? verifyRows[0] : verifyRows;
+    if (!v || v.status !== "ok") {
+      if (v?.status === "ip_locked")
+        throw new Error(`Příliš mnoho pokusů z této IP. Zkuste to za ${Math.ceil((v.retry_after_seconds ?? 900) / 60)} min.`);
+      if (v?.status === "employee_locked")
+        throw new Error(`Účet je dočasně uzamčen. Zkuste to za ${Math.ceil((v.retry_after_seconds ?? 900) / 60)} min.`);
+      throw new Error("Neplatný PIN");
+    }
+    const emp = { id: v.employee_id as string, name: v.name as string, active: true };
 
     // Datum v lokální (Praha) zóně, aby odpovídalo zobrazení v aplikaci.
     const dateStr = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Prague" });

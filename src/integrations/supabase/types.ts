@@ -84,17 +84,29 @@ export type Database = {
       attendance_employee_pins: {
         Row: {
           employee_id: string
+          failed_attempts: number
+          lock_until: string | null
           pin: string
+          pin_hash: string | null
+          pin_lookup: string | null
           updated_at: string
         }
         Insert: {
           employee_id: string
+          failed_attempts?: number
+          lock_until?: string | null
           pin: string
+          pin_hash?: string | null
+          pin_lookup?: string | null
           updated_at?: string
         }
         Update: {
           employee_id?: string
+          failed_attempts?: number
+          lock_until?: string | null
           pin?: string
+          pin_hash?: string | null
+          pin_lookup?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -189,6 +201,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      attendance_pin_ip_allowlist: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          ip_cidr: unknown
+          label: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ip_cidr: unknown
+          label?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ip_cidr?: unknown
+          label?: string | null
+        }
+        Relationships: []
       }
       attendance_records: {
         Row: {
@@ -1397,6 +1433,30 @@ export type Database = {
         }
         Relationships: []
       }
+      pin_attempt_log: {
+        Row: {
+          attempted_at: string
+          employee_id: string | null
+          id: number
+          ip: unknown
+          success: boolean
+        }
+        Insert: {
+          attempted_at?: string
+          employee_id?: string | null
+          id?: number
+          ip?: unknown
+          success: boolean
+        }
+        Update: {
+          attempted_at?: string
+          employee_id?: string | null
+          id?: number
+          ip?: unknown
+          success?: boolean
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           approved: boolean
@@ -1961,6 +2021,7 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      get_attendance_pin_pepper: { Args: never; Returns: string }
       get_cron_auth_secret: { Args: never; Returns: string }
       has_module: {
         Args: {
@@ -1999,11 +2060,17 @@ export type Database = {
           read_ct: number
         }[]
       }
-      verify_employee_pin: {
-        Args: { _pin: string }
+      set_employee_pin: {
+        Args: { _employee_id: string; _pin: string }
+        Returns: undefined
+      }
+      verify_employee_pin_v2: {
+        Args: { _ip?: unknown; _pin: string }
         Returns: {
           employee_id: string
           name: string
+          retry_after_seconds: number
+          status: string
         }[]
       }
     }
