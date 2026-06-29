@@ -1885,6 +1885,7 @@ export type Database = {
         Row: {
           assignee_id: string | null
           assignee_name: string | null
+          barva: string | null
           created_at: string
           created_by: string | null
           datum_vykupu: string | null
@@ -1901,10 +1902,14 @@ export type Database = {
           model: string
           naceneno_od: number | null
           naklady: number
+          naklady_popis: string | null
+          new_in_cz: boolean | null
+          owner_expectation_czk: number | null
           pocet_km: number | null
           poznamka: string | null
           prodano_za: number | null
           rok_vyroby: number | null
+          service_history: boolean | null
           stav: string
           stav_changed_at: string
           telefon: string | null
@@ -1916,6 +1921,7 @@ export type Database = {
         Insert: {
           assignee_id?: string | null
           assignee_name?: string | null
+          barva?: string | null
           created_at?: string
           created_by?: string | null
           datum_vykupu?: string | null
@@ -1932,10 +1938,14 @@ export type Database = {
           model: string
           naceneno_od?: number | null
           naklady?: number
+          naklady_popis?: string | null
+          new_in_cz?: boolean | null
+          owner_expectation_czk?: number | null
           pocet_km?: number | null
           poznamka?: string | null
           prodano_za?: number | null
           rok_vyroby?: number | null
+          service_history?: boolean | null
           stav?: string
           stav_changed_at?: string
           telefon?: string | null
@@ -1947,6 +1957,7 @@ export type Database = {
         Update: {
           assignee_id?: string | null
           assignee_name?: string | null
+          barva?: string | null
           created_at?: string
           created_by?: string | null
           datum_vykupu?: string | null
@@ -1963,10 +1974,14 @@ export type Database = {
           model?: string
           naceneno_od?: number | null
           naklady?: number
+          naklady_popis?: string | null
+          new_in_cz?: boolean | null
+          owner_expectation_czk?: number | null
           pocet_km?: number | null
           poznamka?: string | null
           prodano_za?: number | null
           rok_vyroby?: number | null
+          service_history?: boolean | null
           stav?: string
           stav_changed_at?: string
           telefon?: string | null
