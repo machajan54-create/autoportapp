@@ -1456,25 +1456,27 @@ function GenerateTab() {
   const [form, setForm] = useState({
     employee_id: "",
     month: defaultMonth,
-    mode: "HPP" as "HPP" | "DPP",
-    hours_per_day: 8,
-    total_hours: 100,
+    hours_per_day: "8",
     start_time: "08:00",
-    break_minutes: 30,
+    break_minutes: "30",
     shift_id: "",
     overwrite: false,
   });
   const [busy, setBusy] = useState(false);
 
-  const emps = employees ?? [];
+  // Generátor je určen jen pro HPP – DPP má vlastní záložku.
+  const emps = (employees ?? []).filter((e: any) =>
+    ((e.employment_types as string[]) ?? ["HPP"]).includes("HPP"),
+  );
   const shs = shifts ?? [];
-  const employee = emps.find((e: any) => e.id === form.employee_id);
-  const empTypes: string[] = (employee?.employment_types as string[]) ?? [];
-  const availableModes = empTypes.length ? empTypes : ["HPP"];
 
   async function submit() {
     if (!form.employee_id) { toast.error("Vyberte zaměstnance"); return; }
     const [y, m] = form.month.split("-").map(Number);
+    const hpd = Number(form.hours_per_day);
+    const brk = Number(form.break_minutes);
+    if (!Number.isFinite(hpd) || hpd <= 0) { toast.error("Zadejte počet hodin na den"); return; }
+    if (!Number.isFinite(brk) || brk < 0) { toast.error("Zadejte pauzu v minutách"); return; }
     setBusy(true);
     try {
       const r = await fill({
@@ -1482,11 +1484,10 @@ function GenerateTab() {
           employee_id: form.employee_id,
           year: y,
           month: m,
-          mode: form.mode,
-          hours_per_day: form.hours_per_day,
-          total_hours: form.total_hours,
+          mode: "HPP",
+          hours_per_day: hpd,
           start_time: form.start_time,
-          break_minutes: form.break_minutes,
+          break_minutes: brk,
           shift_id: form.shift_id || null,
           overwrite: form.overwrite,
         },
@@ -1508,24 +1509,6 @@ function GenerateTab() {
         a.remove();
         URL.revokeObjectURL(url);
       }
-      // Auto-download XLSX (DPP)
-      if ((r as any).xlsx_base64) {
-        const b64 = (r as any).xlsx_base64 as string;
-        const bin = atob(b64);
-        const u8 = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
-        const blob = new Blob([u8], {
-          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = (r as any).xlsx_filename ?? `dochazka_DPP_${form.month}.xlsx`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-      }
       qc.invalidateQueries({ queryKey: ["dochazka"] });
     } catch (e: any) {
       toast.error(e?.message ?? "Chyba");
@@ -1536,30 +1519,27 @@ function GenerateTab() {
 
   return (
     <Card className="mt-4 max-w-3xl space-y-3 p-5">
-      <h2 className="flex items-center gap-2 text-lg font-semibold">
-        <Sparkles className="h-5 w-5 text-sky-500" />
-        Automatické generování docházky
-      </h2>
+      <div className="flex items-center gap-2">
+        <Badge variant="outline" className="border-sky-300 bg-sky-50 text-sky-700">HPP</Badge>
+        <h2 className="flex items-center gap-2 text-lg font-semibold">
+          <Sparkles className="h-5 w-5 text-sky-500" />
+          Generování docházky pro HPP
+        </h2>
+      </div>
       <p className="text-sm text-muted-foreground">
-        Hromadné vygenerování docházky za měsíc pro vybraného zaměstnance.
+        Hromadné vygenerování docházky za měsíc pro zaměstnance s hlavním pracovním poměrem. Výstup je CSV výkaz.
       </p>
 
       <div className="grid gap-2">
-        <Label>Zaměstnanec</Label>
+        <Label>Zaměstnanec (HPP)</Label>
         <Select
           value={form.employee_id}
-          onValueChange={(v) => {
-            const e = emps.find((x: any) => x.id === v);
-            const types = (e?.employment_types as string[]) ?? ["HPP"];
-            setForm({ ...form, employee_id: v, mode: types[0] as "HPP" | "DPP" });
-          }}
+          onValueChange={(v) => setForm({ ...form, employee_id: v })}
         >
-          <SelectTrigger><SelectValue placeholder="Vyberte…" /></SelectTrigger>
+          <SelectTrigger><SelectValue placeholder={emps.length ? "Vyberte…" : "Žádný zaměstnanec s HPP"} /></SelectTrigger>
           <SelectContent>
             {emps.map((e: any) => (
-              <SelectItem key={e.id} value={e.id}>
-                {e.name} · {((e.employment_types as string[]) ?? ["HPP"]).join(" + ")}
-              </SelectItem>
+              <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -1571,59 +1551,14 @@ function GenerateTab() {
           <Input type="month" value={form.month} onChange={(e) => setForm({ ...form, month: e.target.value })} />
         </div>
         <div className="grid gap-2">
-          <Label>Režim</Label>
-          <div className="flex gap-1">
-            {(["HPP", "DPP"] as const).map((t) => {
-              const enabled = availableModes.includes(t);
-              return (
-                <button
-                  key={t}
-                  type="button"
-                  disabled={!enabled}
-                  onClick={() => setForm({ ...form, mode: t })}
-                  className={cn(
-                    "flex-1 rounded-md border-2 px-2 py-1.5 text-sm font-semibold transition",
-                    !enabled && "cursor-not-allowed opacity-40",
-                    form.mode === t
-                      ? t === "DPP"
-                        ? "border-violet-400 bg-violet-50 text-violet-800"
-                        : "border-sky-400 bg-sky-50 text-sky-800"
-                      : "border-slate-200 bg-white text-slate-600",
-                  )}
-                >
-                  {t}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {form.mode === "HPP" ? (
-        <div className="grid gap-2">
           <Label>Hodin na pracovní den</Label>
           <Input
-            type="number" step="0.25" min="0.25" max="24"
+            type="number" inputMode="decimal" step="0.25" min="0.25" max="24"
             value={form.hours_per_day}
-            onChange={(e) => setForm({ ...form, hours_per_day: Number(e.target.value) })}
+            onChange={(e) => setForm({ ...form, hours_per_day: e.target.value })}
           />
-          <p className="text-xs text-muted-foreground">
-            Vygeneruje záznam na každý pracovní den (po–pá) s {form.hours_per_day} h.
-          </p>
         </div>
-      ) : (
-        <div className="grid gap-2">
-          <Label>Celkový počet hodin za měsíc</Label>
-          <Input
-            type="number" step="0.25" min="0.25" max="744"
-            value={form.total_hours}
-            onChange={(e) => setForm({ ...form, total_hours: Number(e.target.value) })}
-          />
-          <p className="text-xs text-muted-foreground">
-            Hodiny se rovnoměrně rozprostřou mezi pracovní dny (krok 0,25 h).
-          </p>
-        </div>
-      )}
+      </div>
 
       <div className="grid grid-cols-3 gap-3">
         <div className="grid gap-2">
@@ -1636,8 +1571,8 @@ function GenerateTab() {
         </div>
         <div className="grid gap-2">
           <Label>Pauza (min)</Label>
-          <Input type="number" min="0" max="240" value={form.break_minutes}
-            onChange={(e) => setForm({ ...form, break_minutes: Number(e.target.value) })} />
+          <Input type="number" inputMode="numeric" min="0" max="240" value={form.break_minutes}
+            onChange={(e) => setForm({ ...form, break_minutes: e.target.value })} />
         </div>
         <div className="grid gap-2">
           <Label>Směna</Label>
