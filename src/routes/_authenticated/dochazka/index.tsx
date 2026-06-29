@@ -1500,6 +1500,24 @@ function GenerateTab() {
         a.remove();
         URL.revokeObjectURL(url);
       }
+      // Auto-download XLSX (DPP)
+      if ((r as any).xlsx_base64) {
+        const b64 = (r as any).xlsx_base64 as string;
+        const bin = atob(b64);
+        const u8 = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+        const blob = new Blob([u8], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = (r as any).xlsx_filename ?? `dochazka_DPP_${form.month}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
       qc.invalidateQueries({ queryKey: ["dochazka"] });
     } catch (e: any) {
       toast.error(e?.message ?? "Chyba");
