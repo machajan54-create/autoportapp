@@ -1022,7 +1022,16 @@ export const autoFillMonth = createServerFn({ method: "POST" })
     });
 
     const days = workdays.filter((d) => !blocked.has(d));
-    if (days.length === 0) throw new Error("Žádné volné pracovní dny v tomto měsíci");
+    if (days.length === 0) {
+      return {
+        ok: false as const,
+        created: 0,
+        total_hours: 0,
+        skipped: workdays.length,
+        message:
+          "Žádné volné pracovní dny v tomto měsíci – všechny dny už mají docházku nebo absenci.",
+      };
+    }
 
     // Hodiny na den
     let perDay: number[];
