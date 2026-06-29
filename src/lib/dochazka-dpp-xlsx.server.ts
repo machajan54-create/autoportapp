@@ -40,9 +40,29 @@ export async function buildDppXlsx(opts: {
   ws.getCell("Y3").value = opts.month;
   ws.getCell("AA3").value = opts.year;
 
-  // Pojmenuj list dle příjmení
-  const surname = opts.employeeName.trim().split(/\s+/)[0] ?? "DPP";
+  // Pojmenuj list dle příjmení (poslední slovo jména)
+  const parts = opts.employeeName.trim().split(/\s+/).filter(Boolean);
+  const surname = parts.length ? parts[parts.length - 1] : "DPP";
   ws.name = surname.slice(0, 28);
+
+  // Vyčisti případná stará data z šablony (řádky pro dny 1..31 = řádky 10..40)
+  for (let day = 1; day <= 31; day++) {
+    const row = 9 + day;
+    // Sloupce B..R (příchod, odchod, pauzy, ostatní důvody, přesčas/noční)
+    for (let col = 2; col <= 18; col++) {
+      const cell = ws.getCell(row, col);
+      // Zachovej případné formule – přepisujeme jen hodnoty (čísla/text)
+      if (typeof cell.value !== "object" || cell.value === null) {
+        cell.value = null;
+      }
+    }
+    // Souhrnné sloupce S/T (hodiny/minuty) přepíšeme formulí níže pro odpracované dny;
+    // pro neodpracované je necháme prázdné.
+    ws.getCell(`S${row}`).value = null;
+    ws.getCell(`T${row}`).value = null;
+    ws.getCell(`Y${row}`).value = null;
+    ws.getCell(`Z${row}`).value = null;
+  }
 
   // Mapuj řádky podle dne v měsíci. Den 1 = řádek 10, den 31 = řádek 40.
   const byDay = new Map<number, DppXlsxRow>();
