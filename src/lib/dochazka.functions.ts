@@ -954,6 +954,7 @@ export const autoFillMonth = createServerFn({ method: "POST" })
           .default("08:00"),
         break_minutes: z.number().int().min(0).max(240).default(30),
         shift_id: z.string().uuid().nullable().optional(),
+        overwrite: z.boolean().optional().default(false),
       })
       .parse(d),
   )
@@ -1012,7 +1013,27 @@ export const autoFillMonth = createServerFn({ method: "POST" })
     if (absences.error) throw new Error(absences.error.message);
 
     const blocked = new Set<string>();
-    (existing.data ?? []).forEach((r: any) => blocked.add(r.date));
+    if (data.overwrite) {
+      // Smaž stávající nezavšechválené (draft) záznamy v měsíci — schválené necháváme.
+      const { error: delErr } = await context.supabase
+        .from("attendance_records")
+        .delete()
+        .eq("employee_id", data.employee_id)
+        .gte("date", start)
+        .lt("date", next)
+        .eq("approval_status", "draft");
+      if (delErr) throw new Error(delErr.message);
+      // Po smazání přidej do blocked jen ty, co zůstaly (schválené/čekající)
+      const { data: kept } = await context.supabase
+        .from("attendance_records")
+        .select("date")
+        .eq("employee_id", data.employee_id)
+        .gte("date", start)
+        .lt("date", next);
+      (kept ?? []).forEach((r: any) => blocked.add(r.date));
+    } else {
+      (existing.data ?? []).forEach((r: any) => blocked.add(r.date));
+    }
     (absences.data ?? []).forEach((a: any) => {
       const s = new Date(a.start_date);
       const e = new Date(a.end_date);
