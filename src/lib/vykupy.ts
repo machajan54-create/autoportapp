@@ -27,6 +27,11 @@ export type Vykup = {
   stav_changed_at: string | null;
   follow_up_at: string | null;
   follow_up_notified_at: string | null;
+  owner_expectation_czk: number | null;
+  naklady_popis: string | null;
+  new_in_cz: boolean | null;
+  service_history: boolean | null;
+  barva: string | null;
 };
 
 export const ZNACKY = ["Citroen", "Peugeot", "Fiat", "DS", "Jiná"] as const;
