@@ -247,6 +247,29 @@ function VykupForm() {
             <Field label="Počet km">
               <Input type="number" value={form.pocet_km} onChange={(e) => set("pocet_km", e.target.value)} readOnly={ro} />
             </Field>
+            <Field label="Barva">
+              <Input value={form.barva} onChange={(e) => set("barva", e.target.value)} readOnly={ro} placeholder="např. černá metalíza" />
+            </Field>
+            <Field label="Nové v ČR">
+              <Select value={form.new_in_cz || "unknown"} onValueChange={(v) => set("new_in_cz", v === "unknown" ? "" : (v as "yes" | "no"))} disabled={ro}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unknown">— neuvedeno —</SelectItem>
+                  <SelectItem value="yes">Ano</SelectItem>
+                  <SelectItem value="no">Ne</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Servisní historie">
+              <Select value={form.service_history || "unknown"} onValueChange={(v) => set("service_history", v === "unknown" ? "" : (v as "yes" | "no"))} disabled={ro}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unknown">— neuvedeno —</SelectItem>
+                  <SelectItem value="yes">Ano</SelectItem>
+                  <SelectItem value="no">Ne</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
           </Section>
 
           <Section title="Klient">
@@ -268,6 +291,9 @@ function VykupForm() {
           </Section>
 
           {canFull && <Section title="Cenová kalkulace">
+            <Field label="Představa majitele (Kč)">
+              <Input type="number" value={form.owner_expectation_czk} onChange={(e) => set("owner_expectation_czk", e.target.value)} />
+            </Field>
             <Field label="Naceněno od (Kč)">
               <Input type="number" value={form.naceneno_od} onChange={(e) => set("naceneno_od", e.target.value)} />
             </Field>
@@ -280,6 +306,10 @@ function VykupForm() {
             <Field label="Náklady (Kč)">
               <Input type="number" value={form.naklady} onChange={(e) => set("naklady", e.target.value)} />
             </Field>
+            <div className="sm:col-span-2">
+              <Label className="mb-1.5 block text-sm">Náklady – popis (myčka, oprava, příprava…)</Label>
+              <Textarea rows={2} value={form.naklady_popis} onChange={(e) => set("naklady_popis", e.target.value)} placeholder="např. Myčka 500, oprava nárazníku 3 200, příprava 1 000" />
+            </div>
             <div className="sm:col-span-2">
               <div className={cn(
                 "rounded-lg border p-3 text-sm",
