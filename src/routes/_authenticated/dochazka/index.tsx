@@ -1460,6 +1460,7 @@ function GenerateTab() {
     start_time: "08:00",
     break_minutes: 30,
     shift_id: "",
+    overwrite: false,
   });
   const [busy, setBusy] = useState(false);
 
@@ -1485,6 +1486,7 @@ function GenerateTab() {
           start_time: form.start_time,
           break_minutes: form.break_minutes,
           shift_id: form.shift_id || null,
+          overwrite: form.overwrite,
         },
       });
       if ((r as any).ok === false) {
@@ -1652,6 +1654,19 @@ function GenerateTab() {
       <p className="rounded bg-amber-50 p-2 text-xs text-amber-800">
         Dny s již existujícím záznamem nebo schválenou/čekající absencí budou přeskočeny.
       </p>
+
+      <label className="flex items-start gap-2 rounded bg-rose-50 p-2 text-xs text-rose-900">
+        <input
+          type="checkbox"
+          className="mt-0.5"
+          checked={form.overwrite}
+          onChange={(e) => setForm({ ...form, overwrite: e.target.checked })}
+        />
+        <span>
+          <strong>Přepsat stávající koncepty</strong> — smaže rozpracované (neschválené)
+          záznamy v měsíci a vygeneruje znovu. Schválené záznamy zůstanou.
+        </span>
+      </label>
 
       <div className="flex justify-end pt-2">
         <Button onClick={submit} disabled={busy}>
