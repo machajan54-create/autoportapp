@@ -1629,9 +1629,9 @@ function GenerateDppTab() {
   const [form, setForm] = useState({
     employee_id: "",
     month: defaultMonth,
-    total_hours: 100,
+    total_hours: "100",
     start_time: "08:00",
-    break_minutes: 30,
+    break_minutes: "30",
     shift_id: "",
     overwrite: false,
   });
@@ -1645,6 +1645,10 @@ function GenerateDppTab() {
   async function submit() {
     if (!form.employee_id) { toast.error("Vyberte DPP zaměstnance"); return; }
     const [y, m] = form.month.split("-").map(Number);
+    const total = Number(form.total_hours);
+    const brk = Number(form.break_minutes);
+    if (!Number.isFinite(total) || total <= 0) { toast.error("Zadejte celkový počet hodin"); return; }
+    if (!Number.isFinite(brk) || brk < 0) { toast.error("Zadejte pauzu v minutách"); return; }
     setBusy(true);
     try {
       const r = await fill({
@@ -1654,9 +1658,9 @@ function GenerateDppTab() {
           month: m,
           mode: "DPP",
           hours_per_day: 8,
-          total_hours: form.total_hours,
+          total_hours: total,
           start_time: form.start_time,
-          break_minutes: form.break_minutes,
+          break_minutes: brk,
           shift_id: form.shift_id || null,
           overwrite: form.overwrite,
         },
@@ -1727,9 +1731,9 @@ function GenerateDppTab() {
         <div className="grid gap-2">
           <Label>Celkem hodin za měsíc</Label>
           <Input
-            type="number" step="0.25" min="0.25" max="744"
+            type="number" inputMode="decimal" step="0.25" min="0.25" max="744"
             value={form.total_hours}
-            onChange={(e) => setForm({ ...form, total_hours: Number(e.target.value) })}
+            onChange={(e) => setForm({ ...form, total_hours: e.target.value })}
           />
         </div>
       </div>
@@ -1745,8 +1749,8 @@ function GenerateDppTab() {
         </div>
         <div className="grid gap-2">
           <Label>Pauza (min)</Label>
-          <Input type="number" min="0" max="240" value={form.break_minutes}
-            onChange={(e) => setForm({ ...form, break_minutes: Number(e.target.value) })} />
+          <Input type="number" inputMode="numeric" min="0" max="240" value={form.break_minutes}
+            onChange={(e) => setForm({ ...form, break_minutes: e.target.value })} />
         </div>
         <div className="grid gap-2">
           <Label>Směna</Label>
