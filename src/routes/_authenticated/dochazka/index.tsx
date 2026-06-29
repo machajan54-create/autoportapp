@@ -96,7 +96,7 @@ function DochazkaPage() {
 
         {isAdmin ? (
           <Tabs defaultValue="stats" className="mt-6">
-            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 lg:grid-cols-10">
+            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 lg:grid-cols-11">
               <TabsTrigger value="stats"><BarChart3 className="mr-1 h-4 w-4" />Statistiky</TabsTrigger>
               <TabsTrigger value="calendar"><CalendarDays className="mr-1 h-4 w-4" />Kalendář</TabsTrigger>
               <TabsTrigger value="employees"><UsersIcon className="mr-1 h-4 w-4" />Zaměstnanci</TabsTrigger>
@@ -106,6 +106,7 @@ function DochazkaPage() {
               <TabsTrigger value="alerts"><Bell className="mr-1 h-4 w-4" />Upozornění</TabsTrigger>
               <TabsTrigger value="export"><Download className="mr-1 h-4 w-4" />Export</TabsTrigger>
               <TabsTrigger value="generate"><Sparkles className="mr-1 h-4 w-4" />Generování</TabsTrigger>
+              <TabsTrigger value="generate-dpp"><Sparkles className="mr-1 h-4 w-4" />DPP generování</TabsTrigger>
               <TabsTrigger value="files"><FileSpreadsheet className="mr-1 h-4 w-4" />Soubory</TabsTrigger>
             </TabsList>
 
@@ -118,6 +119,7 @@ function DochazkaPage() {
             <TabsContent value="alerts"><AlertsTab /></TabsContent>
             <TabsContent value="export"><ExportTab /></TabsContent>
             <TabsContent value="generate"><GenerateTab /></TabsContent>
+            <TabsContent value="generate-dpp"><GenerateDppTab /></TabsContent>
             <TabsContent value="files"><FilesTab /></TabsContent>
           </Tabs>
         ) : (
@@ -1672,6 +1674,179 @@ function GenerateTab() {
         <Button onClick={submit} disabled={busy}>
           <Sparkles className="mr-1 h-4 w-4" />
           {busy ? "Generuji…" : "Vygenerovat"}
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+// ============= Generate DPP only (admin) =============
+function GenerateDppTab() {
+  const qc = useQueryClient();
+  const fetchE = useServerFn(listEmployees);
+  const fetchS = useServerFn(listShifts);
+  const fill = useServerFn(autoFillMonth);
+  const { data: employees } = useQuery({ queryKey: ["dochazka", "employees"], queryFn: () => fetchE({}) });
+  const { data: shifts } = useQuery({ queryKey: ["dochazka", "shifts"], queryFn: () => fetchS({}) });
+
+  const today = new Date();
+  const defaultMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+  const [form, setForm] = useState({
+    employee_id: "",
+    month: defaultMonth,
+    total_hours: 100,
+    start_time: "08:00",
+    break_minutes: 30,
+    shift_id: "",
+    overwrite: false,
+  });
+  const [busy, setBusy] = useState(false);
+
+  const emps = (employees ?? []).filter((e: any) =>
+    ((e.employment_types as string[]) ?? []).includes("DPP"),
+  );
+  const shs = shifts ?? [];
+
+  async function submit() {
+    if (!form.employee_id) { toast.error("Vyberte DPP zaměstnance"); return; }
+    const [y, m] = form.month.split("-").map(Number);
+    setBusy(true);
+    try {
+      const r = await fill({
+        data: {
+          employee_id: form.employee_id,
+          year: y,
+          month: m,
+          mode: "DPP",
+          hours_per_day: 8,
+          total_hours: form.total_hours,
+          start_time: form.start_time,
+          break_minutes: form.break_minutes,
+          shift_id: form.shift_id || null,
+          overwrite: form.overwrite,
+        },
+      });
+      if ((r as any).ok === false) {
+        toast.warning((r as any).message ?? "Nic k vygenerování");
+        return;
+      }
+      toast.success(`Vygenerováno ${r.created} dní · celkem ${r.total_hours} h${r.skipped ? ` (přeskočeno ${r.skipped})` : ""}`);
+      if ((r as any).xlsx_base64) {
+        const b64 = (r as any).xlsx_base64 as string;
+        const bin = atob(b64);
+        const u8 = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+        const blob = new Blob([u8], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = (r as any).xlsx_filename ?? `dochazka_DPP_${form.month}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+      qc.invalidateQueries({ queryKey: ["dochazka"] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Chyba");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card className="mt-4 max-w-3xl space-y-3 p-5">
+      <div className="flex items-center gap-2">
+        <Badge variant="outline" className="border-violet-300 bg-violet-50 text-violet-700">DPP</Badge>
+        <h2 className="flex items-center gap-2 text-lg font-semibold">
+          <Sparkles className="h-5 w-5 text-violet-500" />
+          Generování docházky pro DPP
+        </h2>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        Samostatný generátor pro zaměstnance s dohodou o provedení práce. Výstupem je XLSX docházkový list dle šablony.
+      </p>
+
+      <div className="grid gap-2">
+        <Label>Zaměstnanec (DPP)</Label>
+        <Select
+          value={form.employee_id}
+          onValueChange={(v) => setForm({ ...form, employee_id: v })}
+        >
+          <SelectTrigger><SelectValue placeholder={emps.length ? "Vyberte…" : "Žádný zaměstnanec s DPP"} /></SelectTrigger>
+          <SelectContent>
+            {emps.map((e: any) => (
+              <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-2">
+          <Label>Měsíc</Label>
+          <Input type="month" value={form.month} onChange={(e) => setForm({ ...form, month: e.target.value })} />
+        </div>
+        <div className="grid gap-2">
+          <Label>Celkem hodin za měsíc</Label>
+          <Input
+            type="number" step="0.25" min="0.25" max="744"
+            value={form.total_hours}
+            onChange={(e) => setForm({ ...form, total_hours: Number(e.target.value) })}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-3">
+        <div className="grid gap-2">
+          <Label>Začátek</Label>
+          <Input
+            type="time"
+            value={form.start_time}
+            onChange={(e) => setForm({ ...form, start_time: e.target.value })}
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label>Pauza (min)</Label>
+          <Input type="number" min="0" max="240" value={form.break_minutes}
+            onChange={(e) => setForm({ ...form, break_minutes: Number(e.target.value) })} />
+        </div>
+        <div className="grid gap-2">
+          <Label>Směna</Label>
+          <Select value={form.shift_id || "__none"} onValueChange={(v) => setForm({ ...form, shift_id: v === "__none" ? "" : v })}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none">Bez směny</SelectItem>
+              {shs.map((s: any) => (
+                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <p className="rounded bg-amber-50 p-2 text-xs text-amber-800">
+        Hodiny se rovnoměrně rozprostřou mezi pracovní dny (krok 0,25 h). Dny s existujícím záznamem nebo absencí budou přeskočeny.
+      </p>
+
+      <label className="flex items-start gap-2 rounded bg-rose-50 p-2 text-xs text-rose-900">
+        <input
+          type="checkbox"
+          className="mt-0.5"
+          checked={form.overwrite}
+          onChange={(e) => setForm({ ...form, overwrite: e.target.checked })}
+        />
+        <span>
+          <strong>Přepsat stávající koncepty</strong> — smaže rozpracované (neschválené) DPP záznamy v měsíci a vygeneruje znovu.
+        </span>
+      </label>
+
+      <div className="flex justify-end pt-2">
+        <Button onClick={submit} disabled={busy}>
+          <Sparkles className="mr-1 h-4 w-4" />
+          {busy ? "Generuji…" : "Vygenerovat DPP výkaz"}
         </Button>
       </div>
     </Card>
