@@ -1487,6 +1487,10 @@ function GenerateTab() {
           shift_id: form.shift_id || null,
         },
       });
+      if ((r as any).ok === false) {
+        toast.warning((r as any).message ?? "Nic k vygenerování");
+        return;
+      }
       toast.success(`Vygenerováno ${r.created} dní · celkem ${r.total_hours} h${r.skipped ? ` (přeskočeno ${r.skipped})` : ""}`);
       // Auto-download CSV
       if (r.csv) {
