@@ -38,14 +38,19 @@ type FormState = {
   model: string;
   rok_vyroby: string;
   pocet_km: string;
+  barva: string;
+  new_in_cz: "" | "yes" | "no";
+  service_history: "" | "yes" | "no";
   klient: string;
   telefon: string;
   zdroj: string;
   zpracoval: string;
   naceneno_od: string;
+  owner_expectation_czk: string;
   vykoupeno_za: string;
   prodano_za: string;
   naklady: string;
+  naklady_popis: string;
   datum_vykupu: string;
   stav: string;
   poznamka: string;
@@ -60,8 +65,10 @@ type FormState = {
 
 const empty: FormState = {
   znacka: "Citroen", model: "", rok_vyroby: "", pocet_km: "",
+  barva: "", new_in_cz: "", service_history: "",
   klient: "", telefon: "", zdroj: "PRODEJ NOVÝCH VOZŮ", zpracoval: "",
-  naceneno_od: "", vykoupeno_za: "", prodano_za: "", naklady: "0",
+  naceneno_od: "", owner_expectation_czk: "",
+  vykoupeno_za: "", prodano_za: "", naklady: "0", naklady_popis: "",
   datum_vykupu: new Date().toISOString().slice(0, 10),
   stav: "Nacenění", poznamka: "",
   follow_up_at: "",
@@ -80,12 +87,17 @@ function fromVykup(v: Vykup): FormState {
     znacka: v.znacka, model: v.model,
     rok_vyroby: v.rok_vyroby?.toString() ?? "",
     pocet_km: v.pocet_km?.toString() ?? "",
+    barva: v.barva ?? "",
+    new_in_cz: v.new_in_cz === true ? "yes" : v.new_in_cz === false ? "no" : "",
+    service_history: v.service_history === true ? "yes" : v.service_history === false ? "no" : "",
     klient: v.klient, telefon: v.telefon ?? "",
     zdroj: v.zdroj ?? "Jiné", zpracoval: v.zpracoval ?? "",
     naceneno_od: v.naceneno_od?.toString() ?? "",
+    owner_expectation_czk: v.owner_expectation_czk?.toString() ?? "",
     vykoupeno_za: v.vykoupeno_za?.toString() ?? "",
     prodano_za: v.prodano_za?.toString() ?? "",
     naklady: (v.naklady ?? 0).toString(),
+    naklady_popis: v.naklady_popis ?? "",
     datum_vykupu: v.datum_vykupu ?? "",
     stav: v.stav, poznamka: v.poznamka ?? "",
     follow_up_at: v.follow_up_at ? v.follow_up_at.slice(0, 16) : "",
@@ -154,14 +166,19 @@ function VykupForm() {
         model: form.model.trim(),
         rok_vyroby: toNum(form.rok_vyroby) ?? null,
         pocet_km: toNum(form.pocet_km) ?? null,
+        barva: form.barva.trim() || null,
+        new_in_cz: form.new_in_cz === "" ? null : form.new_in_cz === "yes",
+        service_history: form.service_history === "" ? null : form.service_history === "yes",
         klient: form.klient.trim(),
         telefon: form.telefon.trim() || null,
         zdroj: form.zdroj,
         zpracoval: form.zpracoval.trim() || null,
         naceneno_od: toNum(form.naceneno_od) ?? null,
+        owner_expectation_czk: toNum(form.owner_expectation_czk) ?? null,
         vykoupeno_za: toNum(form.vykoupeno_za) ?? null,
         prodano_za: toNum(form.prodano_za) ?? null,
         naklady: toNum(form.naklady) ?? 0,
+        naklady_popis: form.naklady_popis.trim() || null,
         datum_vykupu: form.datum_vykupu || null,
         stav: form.stav,
         poznamka: form.poznamka.trim() || null,
@@ -230,6 +247,29 @@ function VykupForm() {
             <Field label="Počet km">
               <Input type="number" value={form.pocet_km} onChange={(e) => set("pocet_km", e.target.value)} readOnly={ro} />
             </Field>
+            <Field label="Barva">
+              <Input value={form.barva} onChange={(e) => set("barva", e.target.value)} readOnly={ro} placeholder="např. černá metalíza" />
+            </Field>
+            <Field label="Nové v ČR">
+              <Select value={form.new_in_cz || "unknown"} onValueChange={(v) => set("new_in_cz", v === "unknown" ? "" : (v as "yes" | "no"))} disabled={ro}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unknown">— neuvedeno —</SelectItem>
+                  <SelectItem value="yes">Ano</SelectItem>
+                  <SelectItem value="no">Ne</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Servisní historie">
+              <Select value={form.service_history || "unknown"} onValueChange={(v) => set("service_history", v === "unknown" ? "" : (v as "yes" | "no"))} disabled={ro}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unknown">— neuvedeno —</SelectItem>
+                  <SelectItem value="yes">Ano</SelectItem>
+                  <SelectItem value="no">Ne</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
           </Section>
 
           <Section title="Klient">
@@ -251,6 +291,9 @@ function VykupForm() {
           </Section>
 
           {canFull && <Section title="Cenová kalkulace">
+            <Field label="Představa majitele (Kč)">
+              <Input type="number" value={form.owner_expectation_czk} onChange={(e) => set("owner_expectation_czk", e.target.value)} />
+            </Field>
             <Field label="Naceněno od (Kč)">
               <Input type="number" value={form.naceneno_od} onChange={(e) => set("naceneno_od", e.target.value)} />
             </Field>
@@ -263,6 +306,10 @@ function VykupForm() {
             <Field label="Náklady (Kč)">
               <Input type="number" value={form.naklady} onChange={(e) => set("naklady", e.target.value)} />
             </Field>
+            <div className="sm:col-span-2">
+              <Label className="mb-1.5 block text-sm">Náklady – popis (myčka, oprava, příprava…)</Label>
+              <Textarea rows={2} value={form.naklady_popis} onChange={(e) => set("naklady_popis", e.target.value)} placeholder="např. Myčka 500, oprava nárazníku 3 200, příprava 1 000" />
+            </div>
             <div className="sm:col-span-2">
               <div className={cn(
                 "rounded-lg border p-3 text-sm",
