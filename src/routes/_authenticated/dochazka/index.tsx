@@ -96,7 +96,7 @@ function DochazkaPage() {
 
         {isAdmin ? (
           <Tabs defaultValue="stats" className="mt-6">
-            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 lg:grid-cols-10">
+            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 lg:grid-cols-11">
               <TabsTrigger value="stats"><BarChart3 className="mr-1 h-4 w-4" />Statistiky</TabsTrigger>
               <TabsTrigger value="calendar"><CalendarDays className="mr-1 h-4 w-4" />Kalendář</TabsTrigger>
               <TabsTrigger value="employees"><UsersIcon className="mr-1 h-4 w-4" />Zaměstnanci</TabsTrigger>
@@ -106,6 +106,7 @@ function DochazkaPage() {
               <TabsTrigger value="alerts"><Bell className="mr-1 h-4 w-4" />Upozornění</TabsTrigger>
               <TabsTrigger value="export"><Download className="mr-1 h-4 w-4" />Export</TabsTrigger>
               <TabsTrigger value="generate"><Sparkles className="mr-1 h-4 w-4" />Generování</TabsTrigger>
+              <TabsTrigger value="generate-dpp"><Sparkles className="mr-1 h-4 w-4" />DPP generování</TabsTrigger>
               <TabsTrigger value="files"><FileSpreadsheet className="mr-1 h-4 w-4" />Soubory</TabsTrigger>
             </TabsList>
 
@@ -118,6 +119,7 @@ function DochazkaPage() {
             <TabsContent value="alerts"><AlertsTab /></TabsContent>
             <TabsContent value="export"><ExportTab /></TabsContent>
             <TabsContent value="generate"><GenerateTab /></TabsContent>
+            <TabsContent value="generate-dpp"><GenerateDppTab /></TabsContent>
             <TabsContent value="files"><FilesTab /></TabsContent>
           </Tabs>
         ) : (
