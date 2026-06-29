@@ -1081,6 +1081,51 @@ export const autoFillMonth = createServerFn({ method: "POST" })
       console.error("[dochazka] failed to upload generated CSV", e);
     }
 
+    // Pro DPP navíc XLSX docházkový list dle šablony
+    let xlsxBase64: string | null = null;
+    let xlsxFilename: string | null = null;
+    let xlsxPath: string | null = null;
+    if (data.mode === "DPP") {
+      try {
+        const { buildDppXlsx, uint8ToBase64 } = await import("./dochazka-dpp-xlsx.server");
+        const xlsx = await buildDppXlsx({
+          employeeName: emp.name,
+          year: data.year,
+          month: data.month,
+          rows: rows.map((r) => ({
+            date: r.date,
+            check_in: r.check_in,
+            check_out: r.check_out,
+            break_duration: r.break_duration,
+            hours_worked: r.hours_worked,
+          })),
+        });
+        xlsxBase64 = uint8ToBase64(xlsx);
+        xlsxFilename = `dochazka_DPP_${emp.name.replace(/\s+/g, "_")}_${monthStr}.xlsx`;
+        xlsxPath = `${data.employee_id}/${monthStr}_DPP_${ts}.xlsx`;
+        try {
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          await supabaseAdmin.storage
+            .from("attendance-reports")
+            .upload(
+              xlsxPath,
+              new Blob([xlsx as BlobPart], {
+                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              }),
+              {
+                contentType:
+                  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                upsert: false,
+              },
+            );
+        } catch (e) {
+          console.error("[dochazka] failed to upload DPP XLSX", e);
+        }
+      } catch (e) {
+        console.error("[dochazka] failed to build DPP XLSX", e);
+      }
+    }
+
     return {
       ok: true,
       created: rows.length,
@@ -1089,6 +1134,9 @@ export const autoFillMonth = createServerFn({ method: "POST" })
       csv,
       filename: `dochazka_${emp.name.replace(/\s+/g, "_")}_${monthStr}.csv`,
       storage_path: path,
+      xlsx_base64: xlsxBase64,
+      xlsx_filename: xlsxFilename,
+      xlsx_storage_path: xlsxPath,
     };
   });
 
