@@ -111,8 +111,8 @@ const ENTITY_REGISTRY: Record<
   },
   attendance_absences: {
     table: "attendance_absences",
-    select: "kind, date_from",
-    label: (r) => `Absence ${r?.kind ?? ""} od ${r?.date_from ?? ""}`,
+    select: "type, start_date",
+    label: (r) => `Absence ${r?.type ?? ""} od ${r?.start_date ?? ""}`,
     typeLabel: "Absence",
   },
   attendance_employees: {
