@@ -59,11 +59,19 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
       setUserId(uid);
       const stored = readLastSeen(uid);
       setDismissed(readDismissed(uid));
-      // First visit: initialize to "now" so we don't dump the entire history.
-      if (uid && !stored.purchases && !stored.defects && !stored.absences) {
+      // First visit (per category): initialize to "now" so we don't dump the
+      // entire history when a category has never been seen before.
+      if (uid) {
         const now = new Date().toISOString();
-        const init: LastSeen = { purchases: now, defects: now, absences: now, tasks: now };
-        writeLastSeen(uid, init);
+        const init: LastSeen = { ...stored };
+        let changed = false;
+        for (const k of ["purchases", "defects", "absences", "tasks"] as const) {
+          if (!init[k]) {
+            init[k] = now;
+            changed = true;
+          }
+        }
+        if (changed) writeLastSeen(uid, init);
         setLastSeen(init);
       } else {
         setLastSeen(stored);
@@ -321,17 +329,7 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
   return (
     <Popover
       open={open}
-      onOpenChange={(v) => {
-        setOpen(v);
-        if (!v) {
-          // Mark personal notifications as seen AFTER the popover closes,
-          // so items remain visible (and clickable) while it's open.
-          const now = new Date().toISOString();
-          const next: LastSeen = { purchases: now, defects: now, absences: now, tasks: now };
-          writeLastSeen(userId, next);
-          setLastSeen(next);
-        }
-      }}
+      onOpenChange={setOpen}
     >
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" aria-label="Notifikace" className="relative">
