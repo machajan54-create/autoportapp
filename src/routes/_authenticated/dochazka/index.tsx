@@ -183,6 +183,40 @@ function StatsTab() {
         return { id: r.id, name: emp?.name ?? "Neznámý", check_in: r.check_in };
       })
       .sort((a, b) => new Date(a.check_in).getTime() - new Date(b.check_in).getTime());
+
+    // Per-employee breakdown: dnes / týden / měsíc / rok
+    const yearPrefix = today.slice(0, 4);
+    // Pondělí tohoto týdne (ISO: pondělí = 1)
+    const d = new Date(today + "T00:00:00");
+    const day = (d.getDay() + 6) % 7; // 0=Po ... 6=Ne
+    const monday = new Date(d);
+    monday.setDate(d.getDate() - day);
+    const weekStart = monday.toISOString().slice(0, 10);
+
+    const perEmployee = (employees ?? [])
+      .filter((e: any) => e.active)
+      .map((e: any) => {
+        const empRecs = recs.filter((r) => r.employee_id === e.id);
+        const sum = (arr: typeof empRecs) => arr.reduce((s, r) => s + Number(r.hours_worked ?? 0), 0);
+        const todayH = sum(empRecs.filter((r) => isToday(r.date)));
+        const weekH = sum(empRecs.filter((r) => r.date >= weekStart));
+        const monthH = sum(empRecs.filter((r) => r.date.startsWith(monthPrefix)));
+        const yearH = sum(empRecs.filter((r) => r.date.startsWith(yearPrefix)));
+        const shiftsMonth = empRecs.filter((r) => r.date.startsWith(monthPrefix) && r.check_out).length;
+        return {
+          id: e.id,
+          name: e.name,
+          avatar_color: e.avatar_color,
+          employment_types: e.employment_types ?? [],
+          todayH,
+          weekH,
+          monthH,
+          yearH,
+          shiftsMonth,
+        };
+      })
+      .sort((a, b) => b.monthH - a.monthH);
+
     return {
       totalHours,
       openToday: openToday.length,
@@ -190,6 +224,7 @@ function StatsTab() {
       pendingAbs,
       ranking,
       presentList,
+      perEmployee,
     };
   }, [records, employees, absences, monthPrefix, today]);
 
@@ -237,6 +272,60 @@ function StatsTab() {
                 <span className="w-20 text-right font-mono text-sm tabular-nums">{r.hours.toFixed(1)} h</span>
               </div>
             ))}
+          </div>
+        )}
+      </Card>
+      <Card className="p-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold">Odpracované hodiny podle zaměstnance</h3>
+          <span className="text-xs text-muted-foreground">Dnes · Týden · Měsíc ({monthPrefix}) · Rok</span>
+        </div>
+        {stats.perEmployee.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">Žádní aktivní zaměstnanci.</p>
+        ) : (
+          <div className="mt-3 overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Zaměstnanec</TableHead>
+                  <TableHead>Úvazek</TableHead>
+                  <TableHead className="text-right">Dnes</TableHead>
+                  <TableHead className="text-right">Týden</TableHead>
+                  <TableHead className="text-right">Měsíc</TableHead>
+                  <TableHead className="text-right">Směn (měs.)</TableHead>
+                  <TableHead className="text-right">Rok</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {stats.perEmployee.map((e) => (
+                  <TableRow key={e.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <span className={cn("inline-flex h-8 w-8 items-center justify-center rounded-full border text-xs font-semibold", avatarClasses(e.avatar_color))}>
+                          {initials(e.name)}
+                        </span>
+                        <span className="font-medium">{e.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {e.employment_types.includes("HPP") && (
+                          <Badge variant="outline" className="border-sky-300 bg-sky-50 text-sky-700">HPP</Badge>
+                        )}
+                        {e.employment_types.includes("DPP") && (
+                          <Badge variant="outline" className="border-violet-300 bg-violet-50 text-violet-700">DPP</Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right font-mono tabular-nums">{e.todayH.toFixed(1)} h</TableCell>
+                    <TableCell className="text-right font-mono tabular-nums">{e.weekH.toFixed(1)} h</TableCell>
+                    <TableCell className="text-right font-mono font-semibold tabular-nums">{e.monthH.toFixed(1)} h</TableCell>
+                    <TableCell className="text-right font-mono tabular-nums">{e.shiftsMonth}</TableCell>
+                    <TableCell className="text-right font-mono tabular-nums text-muted-foreground">{e.yearH.toFixed(1)} h</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         )}
       </Card>
