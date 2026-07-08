@@ -47,6 +47,7 @@ import {
   avatarClasses, shiftClasses, initials, formatTime, formatDate, formatHours, todayISODate,
 } from "@/lib/dochazka";
 import { cn } from "@/lib/utils";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/dochazka/")({
   component: DochazkaPage,
@@ -155,6 +156,8 @@ function StatsTab() {
 
   const today = todayISODate();
   const monthPrefix = today.slice(0, 7);
+  const [chartEmpId, setChartEmpId] = useState<string>("");
+  const [chartMonth, setChartMonth] = useState<string>(monthPrefix);
 
   const stats = useMemo(() => {
     const recs = records ?? [];
@@ -329,7 +332,104 @@ function StatsTab() {
           </div>
         )}
       </Card>
+      <DailyHoursChart
+        employees={employees ?? []}
+        records={records ?? []}
+        empId={chartEmpId}
+        setEmpId={setChartEmpId}
+        month={chartMonth}
+        setMonth={setChartMonth}
+      />
     </div>
+  );
+}
+
+function DailyHoursChart({
+  employees, records, empId, setEmpId, month, setMonth,
+}: {
+  employees: any[];
+  records: any[];
+  empId: string;
+  setEmpId: (v: string) => void;
+  month: string;
+  setMonth: (v: string) => void;
+}) {
+  const active = useMemo(() => (employees ?? []).filter((e: any) => e.active), [employees]);
+  const effectiveEmpId = empId || active[0]?.id || "";
+  const selected = active.find((e: any) => e.id === effectiveEmpId);
+
+  const { data, total, maxDay } = useMemo(() => {
+    const [y, m] = month.split("-").map(Number);
+    if (!y || !m) return { data: [], total: 0, maxDay: 0 };
+    const daysInMonth = new Date(y, m, 0).getDate();
+    const byDay = new Map<string, number>();
+    for (const r of records) {
+      if (r.employee_id !== effectiveEmpId) continue;
+      if (!r.date?.startsWith(month)) continue;
+      byDay.set(r.date, (byDay.get(r.date) ?? 0) + Number(r.hours_worked ?? 0));
+    }
+    const arr: { day: string; label: string; hodiny: number }[] = [];
+    let total = 0;
+    let maxDay = 0;
+    const weekdays = ["Ne", "Po", "Út", "St", "Čt", "Pá", "So"];
+    for (let d = 1; d <= daysInMonth; d++) {
+      const iso = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      const h = Math.round((byDay.get(iso) ?? 0) * 100) / 100;
+      total += h;
+      if (h > maxDay) maxDay = h;
+      const dow = new Date(iso + "T00:00:00").getDay();
+      arr.push({ day: String(d), label: `${d}. ${weekdays[dow]}`, hodiny: h });
+    }
+    return { data: arr, total, maxDay };
+  }, [records, effectiveEmpId, month]);
+
+  return (
+    <Card className="p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-sm font-semibold">Odpracované hodiny po dnech</h3>
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={effectiveEmpId} onValueChange={setEmpId}>
+            <SelectTrigger className="h-9 w-[220px]"><SelectValue placeholder="Vyberte zaměstnance" /></SelectTrigger>
+            <SelectContent>
+              {active.map((e: any) => (
+                <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input
+            type="month"
+            value={month}
+            onChange={(e) => setMonth(e.target.value)}
+            className="h-9 w-[160px]"
+          />
+        </div>
+      </div>
+      {!effectiveEmpId ? (
+        <p className="mt-3 text-sm text-muted-foreground">Vyberte zaměstnance.</p>
+      ) : (
+        <>
+          <div className="mt-2 flex flex-wrap gap-4 text-xs text-muted-foreground">
+            <span>Zaměstnanec: <span className="font-medium text-foreground">{selected?.name}</span></span>
+            <span>Celkem: <span className="font-mono font-semibold text-foreground">{total.toFixed(1)} h</span></span>
+            <span>Max/den: <span className="font-mono text-foreground">{maxDay.toFixed(1)} h</span></span>
+          </div>
+          <div className="mt-4 h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="day" tick={{ fontSize: 11 }} interval={0} />
+                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                <RTooltip
+                  formatter={(v: any) => [`${Number(v).toFixed(2)} h`, "Hodiny"]}
+                  labelFormatter={(l, payload) => (payload?.[0]?.payload as any)?.label ?? l}
+                />
+                <Bar dataKey="hodiny" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </>
+      )}
+    </Card>
   );
 }
 
