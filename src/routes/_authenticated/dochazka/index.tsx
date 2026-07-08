@@ -156,6 +156,8 @@ function StatsTab() {
 
   const today = todayISODate();
   const monthPrefix = today.slice(0, 7);
+  const [chartEmpId, setChartEmpId] = useState<string>("");
+  const [chartMonth, setChartMonth] = useState<string>(monthPrefix);
 
   const stats = useMemo(() => {
     const recs = records ?? [];
