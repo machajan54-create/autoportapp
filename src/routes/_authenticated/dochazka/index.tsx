@@ -96,19 +96,21 @@ function DochazkaPage() {
 
         {isAdmin ? (
           <Tabs defaultValue="stats" className="mt-6">
-            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 lg:grid-cols-11">
-              <TabsTrigger value="stats"><BarChart3 className="mr-1 h-4 w-4" />Statistiky</TabsTrigger>
-              <TabsTrigger value="calendar"><CalendarDays className="mr-1 h-4 w-4" />Kalendář</TabsTrigger>
-              <TabsTrigger value="employees"><UsersIcon className="mr-1 h-4 w-4" />Zaměstnanci</TabsTrigger>
-              <TabsTrigger value="shifts"><CalendarClock className="mr-1 h-4 w-4" />Směny</TabsTrigger>
-              <TabsTrigger value="records">Záznamy</TabsTrigger>
-              <TabsTrigger value="absences"><PalmtreeIcon className="mr-1 h-4 w-4" />Absence</TabsTrigger>
-              <TabsTrigger value="alerts"><Bell className="mr-1 h-4 w-4" />Upozornění</TabsTrigger>
-              <TabsTrigger value="export"><Download className="mr-1 h-4 w-4" />Export</TabsTrigger>
-              <TabsTrigger value="generate"><Sparkles className="mr-1 h-4 w-4" />Generování</TabsTrigger>
-              <TabsTrigger value="generate-dpp"><Sparkles className="mr-1 h-4 w-4" />DPP generování</TabsTrigger>
-              <TabsTrigger value="files"><FileSpreadsheet className="mr-1 h-4 w-4" />Soubory</TabsTrigger>
-            </TabsList>
+            <div className="-mx-4 overflow-x-auto px-4 lg:mx-0 lg:overflow-visible lg:px-0">
+              <TabsList className="inline-flex h-auto w-max flex-nowrap gap-1 lg:grid lg:w-full lg:grid-cols-11">
+                <TabsTrigger value="stats" className="whitespace-nowrap"><BarChart3 className="mr-1 h-4 w-4" />Statistiky</TabsTrigger>
+                <TabsTrigger value="calendar" className="whitespace-nowrap"><CalendarDays className="mr-1 h-4 w-4" />Kalendář</TabsTrigger>
+                <TabsTrigger value="employees" className="whitespace-nowrap"><UsersIcon className="mr-1 h-4 w-4" />Zaměstnanci</TabsTrigger>
+                <TabsTrigger value="shifts" className="whitespace-nowrap"><CalendarClock className="mr-1 h-4 w-4" />Směny</TabsTrigger>
+                <TabsTrigger value="records" className="whitespace-nowrap">Záznamy</TabsTrigger>
+                <TabsTrigger value="absences" className="whitespace-nowrap"><PalmtreeIcon className="mr-1 h-4 w-4" />Absence</TabsTrigger>
+                <TabsTrigger value="alerts" className="whitespace-nowrap"><Bell className="mr-1 h-4 w-4" />Upozornění</TabsTrigger>
+                <TabsTrigger value="export" className="whitespace-nowrap"><Download className="mr-1 h-4 w-4" />Export</TabsTrigger>
+                <TabsTrigger value="generate" className="whitespace-nowrap"><Sparkles className="mr-1 h-4 w-4" />Generování</TabsTrigger>
+                <TabsTrigger value="generate-dpp" className="whitespace-nowrap"><Sparkles className="mr-1 h-4 w-4" />DPP generování</TabsTrigger>
+                <TabsTrigger value="files" className="whitespace-nowrap"><FileSpreadsheet className="mr-1 h-4 w-4" />Soubory</TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value="stats"><StatsTab /></TabsContent>
             <TabsContent value="calendar"><CalendarTab /></TabsContent>
