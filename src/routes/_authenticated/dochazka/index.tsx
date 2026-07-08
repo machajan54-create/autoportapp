@@ -47,6 +47,7 @@ import {
   avatarClasses, shiftClasses, initials, formatTime, formatDate, formatHours, todayISODate,
 } from "@/lib/dochazka";
 import { cn } from "@/lib/utils";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/dochazka/")({
   component: DochazkaPage,
