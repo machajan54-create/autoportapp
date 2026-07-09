@@ -922,6 +922,20 @@ function RecordsTab() {
                     )}
                   </TableCell>
                   <TableCell>
+                    {hasPodcas ? (
+                      podcas > 0 ? (
+                        <Badge variant="outline" className="border-rose-300 bg-rose-50 text-rose-700 text-[10px]">
+                          −{formatHours(podcas)}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-emerald-600">0 h</span>
+                      )
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+
                     {status === "draft" && <Badge variant="outline">Koncept</Badge>}
                     {status === "submitted" && <Badge variant="secondary" className="bg-sky-100 text-sky-700">Ke schválení</Badge>}
                     {status === "approved" && <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">Schváleno</Badge>}
