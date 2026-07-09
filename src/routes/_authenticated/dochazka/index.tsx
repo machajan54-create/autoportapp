@@ -848,13 +848,14 @@ function RecordsTab() {
               <TableHead>Odchod</TableHead>
               <TableHead>Pauza</TableHead>
               <TableHead>Hodiny</TableHead>
+              <TableHead>Podčas</TableHead>
               <TableHead>Stav</TableHead>
               <TableHead className="w-24"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {visibleRecords.length === 0 ? (
-              <TableRow><TableCell colSpan={canApprove ? 10 : 9} className="text-center text-muted-foreground">Žádné záznamy.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={canApprove ? 11 : 10} className="text-center text-muted-foreground">Žádné záznamy.</TableCell></TableRow>
             ) : visibleRecords.map((r) => {
               const emp = empMap.get(r.employee_id);
               const sh = r.shift_id ? shiftMap.get(r.shift_id) : null;
