@@ -75,6 +75,23 @@ export function calculateHoursWorked(checkInIso: string, checkOutIso: string, br
   return Math.round((netMs / (1000 * 60 * 60)) * 100) / 100;
 }
 
+export function shiftDurationHours(startTime: string, endTime: string): number {
+  const [sh, sm] = String(startTime).split(":").map((x) => Number(x));
+  const [eh, em] = String(endTime).split(":").map((x) => Number(x));
+  if (!Number.isFinite(sh) || !Number.isFinite(sm) || !Number.isFinite(eh) || !Number.isFinite(em)) return 0;
+  let duration = (eh + em / 60) - (sh + sm / 60);
+  if (duration < 0) duration += 24; // noční směna
+  return duration;
+}
+
+export function expectedHoursWorked(shiftStart: string, shiftEnd: string, breakMinutes: number): number {
+  return Math.max(0, shiftDurationHours(shiftStart, shiftEnd) - breakMinutes / 60);
+}
+
+export function underTime(hoursWorked: number, shiftStart: string, shiftEnd: string, breakMinutes: number): number {
+  return Math.max(0, expectedHoursWorked(shiftStart, shiftEnd, breakMinutes) - hoursWorked);
+}
+
 export function todayISODate(): string {
   const d = new Date();
   const y = d.getFullYear();
