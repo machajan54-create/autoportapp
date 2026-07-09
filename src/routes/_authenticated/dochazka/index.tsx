@@ -44,8 +44,9 @@ import { getMyAccess } from "@/lib/claims.functions";
 import { RequestDeleteButton } from "@/components/RequestDeleteButton";
 import {
   ABSENCE_TYPES, ABSENCE_TYPE_LABEL, SHIFT_COLORS, AVATAR_COLORS,
-  avatarClasses, shiftClasses, initials, formatTime, formatDate, formatHours, todayISODate,
+  avatarClasses, shiftClasses, initials, formatTime, formatDate, formatHours, todayISODate, underTime,
 } from "@/lib/dochazka";
+
 import { cn } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer } from "recharts";
 
