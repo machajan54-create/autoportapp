@@ -44,8 +44,10 @@ import { getMyAccess } from "@/lib/claims.functions";
 import { RequestDeleteButton } from "@/components/RequestDeleteButton";
 import {
   ABSENCE_TYPES, ABSENCE_TYPE_LABEL, SHIFT_COLORS, AVATAR_COLORS,
-  avatarClasses, shiftClasses, initials, formatTime, formatDate, formatHours, todayISODate,
+  avatarClasses, shiftClasses, initials, formatTime, formatDate, formatHours, todayISODate, expectedHoursWorked,
 } from "@/lib/dochazka";
+
+
 import { cn } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer } from "recharts";
 
@@ -847,19 +849,32 @@ function RecordsTab() {
               <TableHead>Odchod</TableHead>
               <TableHead>Pauza</TableHead>
               <TableHead>Hodiny</TableHead>
+              <TableHead>Podčas</TableHead>
               <TableHead>Stav</TableHead>
               <TableHead className="w-24"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {visibleRecords.length === 0 ? (
-              <TableRow><TableCell colSpan={canApprove ? 10 : 9} className="text-center text-muted-foreground">Žádné záznamy.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={canApprove ? 11 : 10} className="text-center text-muted-foreground">Žádné záznamy.</TableCell></TableRow>
             ) : visibleRecords.map((r) => {
               const emp = empMap.get(r.employee_id);
               const sh = r.shift_id ? shiftMap.get(r.shift_id) : null;
               const h = Number(r.hours_worked ?? 0);
               const overtime = h > dailyThr ? h - dailyThr : 0;
               const status = (r as any).approval_status ?? "draft";
+              // Podčas = rozdíl oproti plánované délce směny (po odečtení pauzy)
+              // nebo oproti dennímu normálnímu úvazku, pokud směna není přiřazena.
+              let expectedHours = dailyThr;
+              if (sh?.start_time && sh?.end_time) {
+                expectedHours = expectedHoursWorked(sh.start_time, sh.end_time, Number(r.break_duration ?? 0));
+              }
+              let podcas = 0;
+              let hasPodcas = false;
+              if (r.check_out) {
+                podcas = Math.max(0, expectedHours - h);
+                hasPodcas = true;
+              }
               // Odešel dříve? Porovnání s koncem směny (HH:MM v lokálním čase).
               let leftEarlyMin = 0;
               if (r.check_out && sh?.end_time) {
@@ -872,6 +887,8 @@ function RecordsTab() {
                   if (diffMin > 5) leftEarlyMin = diffMin;
                 }
               }
+
+
               return (
                 <TableRow key={r.id}>
                   {canApprove && (
@@ -912,6 +929,20 @@ function RecordsTab() {
                     )}
                   </TableCell>
                   <TableCell>
+                    {hasPodcas ? (
+                      podcas > 0 ? (
+                        <Badge variant="outline" className="border-rose-300 bg-rose-50 text-rose-700 text-[10px]">
+                          −{formatHours(podcas)}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-emerald-600">0 h</span>
+                      )
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+
                     {status === "draft" && <Badge variant="outline">Koncept</Badge>}
                     {status === "submitted" && <Badge variant="secondary" className="bg-sky-100 text-sky-700">Ke schválení</Badge>}
                     {status === "approved" && <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">Schváleno</Badge>}
