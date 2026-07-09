@@ -862,6 +862,13 @@ function RecordsTab() {
               const h = Number(r.hours_worked ?? 0);
               const overtime = h > dailyThr ? h - dailyThr : 0;
               const status = (r as any).approval_status ?? "draft";
+              // Podčas = rozdíl oproti plánované délce směny (po odečtení pauzy).
+              let podcas = 0;
+              let hasPodcas = false;
+              if (r.check_out && sh?.start_time && sh?.end_time) {
+                podcas = underTime(h, sh.start_time, sh.end_time, Number(r.break_duration ?? 0));
+                hasPodcas = true;
+              }
               // Odešel dříve? Porovnání s koncem směny (HH:MM v lokálním čase).
               let leftEarlyMin = 0;
               if (r.check_out && sh?.end_time) {
@@ -874,6 +881,7 @@ function RecordsTab() {
                   if (diffMin > 5) leftEarlyMin = diffMin;
                 }
               }
+
               return (
                 <TableRow key={r.id}>
                   {canApprove && (
