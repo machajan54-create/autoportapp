@@ -34,7 +34,27 @@ export type Vykup = {
   barva: string | null;
 };
 
-export const ZNACKY = ["Citroen", "Peugeot", "Fiat", "DS", "Jiná"] as const;
+export const ZNACKY = [
+  "Škoda",
+  "Hyundai",
+  "Toyota",
+  "Volkswagen",
+  "Dacia",
+  "Kia",
+  "Mercedes-Benz",
+  "Ford",
+  "Renault",
+  "BMW",
+  "Peugeot",
+  "MG",
+  "Volvo",
+  "Audi",
+  "Cupra",
+  "Opel",
+  "Citroën",
+  "Suzuki",
+  "Jiná",
+] as const;
 export const ZDROJE = ["PRODEJ NOVÝCH VOZŮ", "SERVIS", "Poptávka z mailu", "Jiné"] as const;
 export const STAVY = ["Nacenění", "Vykoupeno", "Prodáno", "Zamítnuto"] as const;
 
