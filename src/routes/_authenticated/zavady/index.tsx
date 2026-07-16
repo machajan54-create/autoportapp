@@ -295,21 +295,23 @@ function CreateDefectDialog({
       if (!uid) throw new Error("Nejste přihlášen");
       const uploaded: Photo[] = [];
       for (const file of Array.from(files)) {
-        if (file.size > 10 * 1024 * 1024) {
-          toast.error(`Soubor ${file.name} je větší než 10 MB`);
+        const { resizeImage } = await import("@/lib/resize-image");
+        const resized = await resizeImage(file, { maxWidth: 1920, maxHeight: 1920 });
+        if (resized.size > 10 * 1024 * 1024) {
+          toast.error(`Soubor ${resized.name} je větší než 10 MB`);
           continue;
         }
-        const ext = file.name.split(".").pop() || "jpg";
+        const ext = resized.name.split(".").pop() || "jpg";
         const path = `${uid}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-        const { error } = await supabase.storage.from("defect-photos").upload(path, file, {
+        const { error } = await supabase.storage.from("defect-photos").upload(path, resized, {
           upsert: false,
-          contentType: file.type || undefined,
+          contentType: resized.type || undefined,
         });
         if (error) {
           toast.error(`Nahrání selhalo: ${error.message}`);
           continue;
         }
-        uploaded.push({ path, name: file.name });
+        uploaded.push({ path, name: resized.name });
       }
       setPhotos((prev) => [...prev, ...uploaded]);
     } finally {

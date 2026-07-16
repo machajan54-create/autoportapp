@@ -275,7 +275,9 @@ function LogbookPage() {
   const [receiptUploading, setReceiptUploading] = useState(false);
   async function uploadReceipt(file: File | undefined | null) {
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
+    const { resizeImage } = await import("@/lib/resize-image");
+    const resized = await resizeImage(file, { maxWidth: 1920, maxHeight: 1920 });
+    if (resized.size > 10 * 1024 * 1024) {
       toast.error("Soubor je větší než 10 MB");
       return;
     }
@@ -284,11 +286,11 @@ function LogbookPage() {
       const { data: userRes } = await supabase.auth.getUser();
       const uid = userRes.user?.id;
       if (!uid) throw new Error("Nejste přihlášen");
-      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const ext = (resized.name.split(".").pop() || "jpg").toLowerCase();
       const path = `${uid}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error } = await supabase.storage.from("logbook-receipts").upload(path, file, {
+      const { error } = await supabase.storage.from("logbook-receipts").upload(path, resized, {
         upsert: false,
-        contentType: file.type || undefined,
+        contentType: resized.type || undefined,
       });
       if (error) throw new Error(error.message);
       setEForm((f) => ({ ...f, receipt_path: path }));

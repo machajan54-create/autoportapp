@@ -477,8 +477,12 @@ function TaskDetailDialog({
   }
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+    let file = e.target.files?.[0];
     if (!file || !taskId) return;
+    if (file.type.startsWith("image/")) {
+      const { resizeImage } = await import("@/lib/resize-image");
+      file = await resizeImage(file, { maxWidth: 1920, maxHeight: 1920 });
+    }
     if (file.size > 50 * 1024 * 1024) {
       toast.error("Maximální velikost přílohy je 50 MB");
       return;
