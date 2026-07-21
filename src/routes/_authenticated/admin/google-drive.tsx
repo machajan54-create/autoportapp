@@ -806,6 +806,249 @@ function GoogleDrivePage() {
             )}
           </CardContent>
         </Card>
+
+        {/* GitHub snapshot */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Github className="h-5 w-5" />
+              Snapshot zdrojového kódu z GitHubu
+            </CardTitle>
+            <CardDescription>
+              Pravidelně stáhne aktuální stav repozitáře (tarball .tar.gz) a nahraje jej vedle
+              databázových záloh do stejné složky na Google Disku.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!ghStatus.data?.hasToken && (
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                  <div>
+                    <div className="font-medium">Chybí GitHub token</div>
+                    <p className="text-xs text-muted-foreground">
+                      Aby snapshot fungoval, musí být v projektu uložený tajný klíč
+                      <span className="font-mono"> GITHUB_TOKEN</span> (fine‑grained PAT s právem
+                      „Contents: Read" pro daný repozitář).
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Owner (uživatel / organizace)</Label>
+                <Input
+                  placeholder="např. autoport"
+                  defaultValue={ghStatus.data?.settings?.github_owner ?? ""}
+                  onBlur={(e) => {
+                    const v = e.target.value.trim();
+                    if (v !== (ghStatus.data?.settings?.github_owner ?? "")) {
+                      ghSaveM.mutate({ github_owner: v || null });
+                    }
+                  }}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Repozitář</Label>
+                <Input
+                  placeholder="např. autoport-app"
+                  defaultValue={ghStatus.data?.settings?.github_repo ?? ""}
+                  onBlur={(e) => {
+                    const v = e.target.value.trim();
+                    if (v !== (ghStatus.data?.settings?.github_repo ?? "")) {
+                      ghSaveM.mutate({ github_repo: v || null });
+                    }
+                  }}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Větev</Label>
+                <Input
+                  placeholder="main"
+                  defaultValue={ghStatus.data?.settings?.github_branch ?? "main"}
+                  onBlur={(e) => {
+                    const v = e.target.value.trim() || "main";
+                    if (v !== (ghStatus.data?.settings?.github_branch ?? "main")) {
+                      ghSaveM.mutate({ github_branch: v });
+                    }
+                  }}
+                />
+              </div>
+            </div>
+
+            {ghStatus.data?.repo && (
+              <div className="rounded-md border bg-muted/30 p-3 text-sm">
+                <div className="flex flex-wrap items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <span className="font-medium">{ghStatus.data.repo.full_name}</span>
+                  <Badge variant="outline" className="text-xs">
+                    {ghStatus.data.repo.private ? "privátní" : "veřejný"}
+                  </Badge>
+                  <Badge variant="outline" className="text-xs">
+                    default: {ghStatus.data.repo.default_branch}
+                  </Badge>
+                  {ghStatus.data.repo.size_kb != null && (
+                    <span className="text-xs text-muted-foreground">
+                      {formatBytes(ghStatus.data.repo.size_kb * 1024)}
+                    </span>
+                  )}
+                  {ghStatus.data.repo.pushed_at && (
+                    <span className="text-xs text-muted-foreground">
+                      last push: {new Date(ghStatus.data.repo.pushed_at).toLocaleString("cs-CZ")}
+                    </span>
+                  )}
+                  <a
+                    href={ghStatus.data.repo.html_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="ml-auto inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                  >
+                    otevřít <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {ghStatus.data?.error && (
+              <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+                {ghStatus.data.error}
+              </div>
+            )}
+
+            <Separator />
+
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div>
+                <div className="font-medium">Týdenní automatický snapshot</div>
+                <div className="text-sm text-muted-foreground">
+                  Poběží automaticky každou neděli ve 3:15 do vybrané složky na Google Disku.
+                </div>
+              </div>
+              <Switch
+                checked={!!ghStatus.data?.settings?.github_auto_enabled}
+                disabled={
+                  !ghStatus.data?.hasToken ||
+                  !ghStatus.data?.settings?.github_owner ||
+                  !ghStatus.data?.settings?.github_repo ||
+                  !ghStatus.data?.settings?.drive_folder_id ||
+                  ghSaveM.isPending
+                }
+                onCheckedChange={(v) => ghSaveM.mutate({ github_auto_enabled: v })}
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                onClick={() => ghRunM.mutate()}
+                disabled={
+                  !ghStatus.data?.hasToken ||
+                  !ghStatus.data?.settings?.github_owner ||
+                  !ghStatus.data?.settings?.github_repo ||
+                  !ghStatus.data?.settings?.drive_folder_id ||
+                  ghRunM.isPending
+                }
+              >
+                {ghRunM.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Play className="h-4 w-4" />
+                )}
+                {ghRunM.isPending ? "Stahuji zdroják…" : "Spustit snapshot teď"}
+              </Button>
+              {ghStatus.data?.settings?.last_github_snapshot_at && (
+                <span className="text-xs text-muted-foreground">
+                  Poslední snapshot:{" "}
+                  {new Date(ghStatus.data.settings.last_github_snapshot_at).toLocaleString("cs-CZ")}
+                </span>
+              )}
+            </div>
+
+            {ghRunM.isPending && (
+              <div className="space-y-2 rounded-md border border-primary/30 bg-primary/5 p-3 text-sm">
+                <div className="flex items-center gap-2 font-medium">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Stahuji tarball z GitHubu a nahrávám na Google Disk…
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded bg-primary/10">
+                  <div className="h-full w-1/2 animate-pulse rounded bg-primary" />
+                </div>
+              </div>
+            )}
+
+            <Separator />
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm">Historie snapshotů</Label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => ghRuns.refetch()}
+                  disabled={ghRuns.isFetching}
+                >
+                  <RefreshCw className={`h-4 w-4 ${ghRuns.isFetching ? "animate-spin" : ""}`} />
+                </Button>
+              </div>
+
+              {ghRuns.data?.runs?.length ? (
+                <ul className="divide-y rounded-md border">
+                  {ghRuns.data.runs.map((r: any) => (
+                    <li key={r.id} className="flex flex-wrap items-center gap-3 p-3 text-sm">
+                      {r.status === "success" ? (
+                        <Badge className="bg-green-600 hover:bg-green-600">
+                          <CheckCircle2 className="mr-1 h-3 w-3" /> Hotovo
+                        </Badge>
+                      ) : r.status === "running" ? (
+                        <Badge variant="secondary">
+                          <Loader2 className="mr-1 h-3 w-3 animate-spin" /> Běží
+                        </Badge>
+                      ) : (
+                        <Badge variant="destructive">
+                          <XCircle className="mr-1 h-3 w-3" /> Chyba
+                        </Badge>
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(r.started_at).toLocaleString("cs-CZ")}
+                      </span>
+                      <Badge variant="outline" className="text-xs">
+                        {r.trigger === "github_scheduled" ? "plán" : "ručně"}
+                      </Badge>
+                      {typeof r.duration_ms === "number" && (
+                        <span className="text-xs text-muted-foreground">
+                          {(r.duration_ms / 1000).toFixed(1)} s
+                        </span>
+                      )}
+                      {r.size_bytes != null && (
+                        <span className="text-xs text-muted-foreground">
+                          {formatBytes(r.size_bytes)}
+                        </span>
+                      )}
+                      {r.drive_web_view_link && (
+                        <a
+                          href={r.drive_web_view_link}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="ml-auto inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                        >
+                          {r.drive_file_name ?? "otevřít"} <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                      {r.status === "error" && r.error && (
+                        <span className="w-full text-xs text-destructive">{r.error}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
+                  Zatím žádný snapshot kódu.
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <AlertDialog
