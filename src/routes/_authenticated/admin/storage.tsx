@@ -155,6 +155,13 @@ function StorageStatsPage() {
             {/* KPI */}
             <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
               <Stat
+                label="Aplikace celkem"
+                value={formatBytes(data?.totals?.size ?? 0)}
+                sub={`${(data?.totals?.count ?? 0).toLocaleString("cs-CZ")} souborů ve všech bucketech`}
+                icon={<HardDrive className="h-5 w-5 text-slate-700" />}
+                tint="bg-slate-100"
+              />
+              <Stat
                 label="Fotografií celkem"
                 value={stats.totalImages.toLocaleString("cs-CZ")}
                 icon={<ImageIcon className="h-5 w-5 text-primary" />}
@@ -167,20 +174,46 @@ function StorageStatsPage() {
                 tint="bg-blue-100"
               />
               <Stat
-                label="Bez zmenšení by zabíraly"
-                value={formatBytes(stats.originalTotal)}
-                icon={<HardDrive className="h-5 w-5 text-amber-600" />}
-                tint="bg-amber-100"
-              />
-              <Stat
                 label="Ušetřeno"
                 value={formatBytes(stats.saved)}
-                sub={`${Math.round((1 - ratio) * 100)} %`}
+                sub={`${Math.round((1 - ratio) * 100)} % · bez zmenšení by fotky zabíraly ${formatBytes(stats.originalTotal)}`}
                 icon={<TrendingDown className="h-5 w-5 text-emerald-600" />}
                 tint="bg-emerald-100"
                 highlight
               />
             </div>
+
+            {data?.totals && data.totals.byBucket.length > 0 && (
+              <div className="mt-4 rounded-xl border bg-card p-5">
+                <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                  Celkové využití úložiště (všechny buckety)
+                </h3>
+                <div className="space-y-2">
+                  {data.totals.byBucket
+                    .slice()
+                    .sort((a, b) => b.size - a.size)
+                    .map((b) => {
+                      const max = Math.max(1, ...data.totals!.byBucket.map((x) => x.size));
+                      return (
+                        <div key={b.bucket}>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="font-medium">{BUCKET_LABELS[b.bucket] ?? b.bucket}</span>
+                            <span className="tabular-nums text-muted-foreground">
+                              {b.count.toLocaleString("cs-CZ")} ks · {formatBytes(b.size)}
+                            </span>
+                          </div>
+                          <div className="mt-1 h-2 overflow-hidden rounded-full bg-muted">
+                            <div
+                              className="h-full bg-slate-500"
+                              style={{ width: `${(b.size / max) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
 
             <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
               <Panel title="Úspora podle měsíce (posledních 12)">
