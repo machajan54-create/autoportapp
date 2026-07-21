@@ -70,134 +70,167 @@ function BuyoutSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
   const subtitle = slide.subtitle || "Rychle, férově a bez starostí";
   const body =
     slide.body ||
-    "Nabídneme Vám cenu do 24 hodin. Postaráme se o všechny papíry, odhlášení i převod. Peníze obdržíte ihned.";
+    "Nabídneme Vám férovou cenu ihned. Postaráme se o všechny papíry, odhlášení i převod – vy si jen převezmete peníze.";
 
-  const perks: { icon: string; title: string; desc: string; accent: string }[] = [
-    { icon: "⚡", title: "Cena do 24 hodin", desc: "Rychlé nezávazné ocenění", accent: "hsl(200 90% 60%)" },
-    { icon: "📄", title: "Papíry za Vás", desc: "Odhlášení i převod vyřídíme", accent: "hsl(150 65% 55%)" },
-    { icon: "💶", title: "Peníze ihned", desc: "Výplata na účet nebo v hotovosti", accent: "hsl(35 95% 60%)" },
+  const benefits: { icon: string; title: string; desc: string; accent: string }[] = [
+    { icon: "💰", title: "Cena ihned",        desc: "Ocenění na počkání, bez čekání",     accent: "hsl(35 95% 60%)" },
+    { icon: "🚗", title: "Všechny značky",    desc: "Osobní i užitkové, každé stáří",     accent: "hsl(200 85% 60%)" },
+    { icon: "📄", title: "Papíry za Vás",     desc: "Odhlášení i převod vyřídíme",        accent: "hsl(150 60% 55%)" },
+    { icon: "💶", title: "Platba na ruku",    desc: "Hotovost nebo okamžitý převod",      accent: "hsl(150 70% 55%)" },
+    { icon: "🔧", title: "I vozy s vadou",    desc: "Havarované, nepojízdné, s dluhem",   accent: "hsl(280 70% 65%)" },
+    { icon: "🤝", title: "Férové jednání",    desc: "Bez skrytých poplatků a triků",      accent: "hsl(24 95% 60%)" },
   ];
 
   return (
     <div className="tv-layer" data-active={active}>
+      {/* Cool trustworthy background */}
       <div
         className="tv-bg"
         style={{
           background:
-            "radial-gradient(ellipse at 20% 20%, hsl(200 70% 22%) 0%, transparent 55%), radial-gradient(ellipse at 85% 85%, hsl(220 80% 18%) 0%, transparent 55%), linear-gradient(135deg, hsl(220 60% 8%) 0%, hsl(220 75% 5%) 100%)",
+            "radial-gradient(ellipse at 20% 25%, hsl(200 70% 22%) 0%, transparent 55%), radial-gradient(ellipse at 85% 80%, hsl(220 80% 20%) 0%, transparent 55%), linear-gradient(135deg, hsl(220 60% 9%) 0%, hsl(220 75% 5%) 100%)",
         }}
       />
+      {/* Soft glow accents */}
       <div
         style={{
           position: "absolute",
           right: "6%",
-          top: "10%",
+          top: "18%",
           width: 520,
           height: 520,
-          background: "hsl(200 90% 55% / 0.18)",
+          background: "hsl(200 90% 55% / 0.20)",
           filter: "blur(120px)",
           borderRadius: "50%",
+          pointerEvents: "none",
         }}
       />
 
       <div
+        className="tv-content"
         style={{
-          position: "relative",
-          zIndex: 2,
-          height: "100%",
-          padding: "100px 120px 90px",
-          display: "flex",
-          flexDirection: "column",
-          gap: 60,
-          color: "white",
+          justifyContent: "center",
+          alignItems: "flex-start",
+          textAlign: "left",
+          gap: 0,
+          paddingTop: 40,
+          paddingBottom: 40,
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-          <div
-            className="slide-kicker"
+        {/* Kicker */}
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 14,
+            padding: "10px 22px",
+            borderRadius: 999,
+            background: "hsl(200 90% 55% / 0.15)",
+            border: "1px solid hsl(200 90% 55% / 0.35)",
+            marginBottom: 28,
+          }}
+        >
+          <span style={{ fontSize: 26, lineHeight: 1 }}>🚗</span>
+          <span
             style={{
-              color: "hsl(200 90% 70%)",
-              fontWeight: 600,
+              fontSize: 20,
+              fontWeight: 800,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: "hsl(200 90% 78%)",
             }}
           >
             Výkup vozidel
-          </div>
-          <h1
-            className="slide-title"
-            style={{
-              margin: 0,
-              fontWeight: 800,
-              background: "linear-gradient(120deg, #fff 0%, hsl(200 90% 75%) 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
-          >
-            {title}
-          </h1>
-          <div
-            className="slide-subtitle"
-            style={{ color: "hsl(210 30% 85%)", fontWeight: 500 }}
-          >
-            {subtitle}
-          </div>
-          <p
-            className="slide-body-lg"
-            style={{
-              margin: 0,
-              marginTop: 12,
-              maxWidth: 1200,
-              color: "hsl(210 25% 90%)",
-              fontWeight: 400,
-            }}
-          >
-            {body}
-          </p>
+          </span>
         </div>
 
+        {/* Title */}
+        <h1
+          className="tv-title"
+          style={{
+            fontSize: 108,
+            lineHeight: 1.02,
+            marginBottom: 20,
+            background: "linear-gradient(135deg, #ffffff 0%, hsl(200 90% 82%) 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+          }}
+        >
+          {title}
+        </h1>
+
+        {/* Subtitle */}
+        <div
+          className="tv-subtitle"
+          style={{ marginTop: 0, marginBottom: 18, opacity: 0.92, fontSize: 40 }}
+        >
+          {subtitle}
+        </div>
+
+        {/* Body */}
+        <div
+          className="tv-body"
+          style={{ marginTop: 0, marginBottom: 40, opacity: 0.78, fontSize: 26, maxWidth: 900 }}
+        >
+          {body}
+        </div>
+
+        {/* Benefits grid */}
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 32,
-            marginTop: "auto",
+            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+            gap: 18,
+            width: "100%",
+            maxWidth: 1400,
           }}
         >
-          {perks.map((p) => (
+          {benefits.map((b) => (
             <div
-              key={p.title}
+              key={b.title}
               style={{
-                background: "hsl(220 40% 12% / 0.7)",
-                border: "1px solid hsl(210 30% 30% / 0.4)",
-                borderRadius: 24,
-                padding: "36px 36px",
-                backdropFilter: "blur(10px)",
                 display: "flex",
-                flexDirection: "column",
-                gap: 14,
-                minHeight: 240,
+                alignItems: "center",
+                gap: 20,
+                padding: "20px 24px",
+                borderRadius: 20,
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
               }}
             >
               <div
                 style={{
-                  fontSize: 72,
-                  lineHeight: 1,
-                  filter: `drop-shadow(0 0 22px ${p.accent})`,
+                  width: 64,
+                  height: 64,
+                  borderRadius: 16,
+                  background: `${b.accent.replace(")", " / 0.18)")}`,
+                  border: `1px solid ${b.accent.replace(")", " / 0.4)")}`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 32,
+                  flexShrink: 0,
                 }}
               >
-                {p.icon}
+                {b.icon}
               </div>
-              <div
-                className="slide-body-lg"
-                style={{ fontWeight: 700, color: "white" }}
-              >
-                {p.title}
-              </div>
-              <div
-                className="slide-body"
-                style={{ color: "hsl(210 20% 78%)" }}
-              >
-                {p.desc}
+              <div style={{ minWidth: 0 }}>
+                <div
+                  style={{
+                    fontFamily: "'Space Grotesk', system-ui, sans-serif",
+                    fontSize: 24,
+                    fontWeight: 700,
+                    letterSpacing: "-0.01em",
+                    color: "white",
+                    marginBottom: 2,
+                  }}
+                >
+                  {b.title}
+                </div>
+                <div style={{ fontSize: 17, opacity: 0.7, lineHeight: 1.25 }}>{b.desc}</div>
               </div>
             </div>
           ))}
