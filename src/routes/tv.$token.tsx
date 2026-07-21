@@ -31,6 +31,8 @@ type DisplayConfig = {
   ticker_text: string | null;
   show_weather: boolean;
   show_clock: boolean;
+  show_feedback?: boolean;
+  show_lounge?: boolean;
 };
 
 const LS_SLIDES = "tv-display:slides-cache-v2";
