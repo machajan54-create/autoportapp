@@ -1290,7 +1290,9 @@ export type Database = {
       display_config: {
         Row: {
           created_at: string
+          feedback_duration_sec: number
           id: string
+          lounge_duration_sec: number
           name: string
           show_clock: boolean
           show_feedback: boolean
@@ -1302,7 +1304,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          feedback_duration_sec?: number
           id?: string
+          lounge_duration_sec?: number
           name: string
           show_clock?: boolean
           show_feedback?: boolean
@@ -1314,7 +1318,9 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          feedback_duration_sec?: number
           id?: string
+          lounge_duration_sec?: number
           name?: string
           show_clock?: boolean
           show_feedback?: boolean
