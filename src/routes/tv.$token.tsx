@@ -147,9 +147,9 @@ function TvDisplay() {
     let wl: any = null;
     async function acquire() {
       try {
-        // @ts-expect-error experimental API
-        if (navigator.wakeLock?.request) wl = await navigator.wakeLock.request("screen");
-      } catch {}
+        const nav = navigator as Navigator & { wakeLock?: { request: (t: string) => Promise<unknown> } };
+        if (nav.wakeLock?.request) wl = await nav.wakeLock.request("screen");
+      } catch { /* ignore */ }
     }
     acquire();
     const onVis = () => { if (document.visibilityState === "visible") acquire(); };
