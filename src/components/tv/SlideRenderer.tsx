@@ -10,7 +10,7 @@ export type TvSlide = {
   body: string | null;
   image_url: string | null;
   type: string;
-  kind: "image" | "video" | "youtube" | "rich_text" | "web_url" | "data_widget" | "feedback_qr";
+  kind: "image" | "video" | "youtube" | "rich_text" | "web_url" | "data_widget" | "feedback_qr" | "lounge";
   payload: Record<string, unknown>;
   duration_sec: number;
   transition: string;
@@ -54,10 +54,64 @@ export function SlideRenderer({ slide, token, active, onFinished }: {
       return <DataWidgetSlide slide={slide} token={token} active={active} />;
     case "feedback_qr":
       return <FeedbackQrSlide slide={slide} token={token} active={active} />;
+    case "lounge":
+      return <LoungeSlide slide={slide} active={active} />;
     case "image":
     default:
       return <ImageSlide slide={slide} active={active} />;
   }
+}
+
+/* ---------- Customer lounge ---------- */
+function LoungeSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
+  const title = slide.title || "Zákaznický koutek";
+  const subtitle = slide.subtitle || "Dejte si v klidu kávu a usaďte se";
+  const body = slide.body || "Za chvíli se Vám budeme věnovat. Užijte si šálek kávy nebo čaje na naši účet.";
+  return (
+    <div className="tv-layer" data-active={active}>
+      <div
+        className="tv-bg"
+        style={{
+          background:
+            "radial-gradient(ellipse at 80% 20%, hsl(30 70% 30%) 0%, hsl(220 55% 10%) 55%, hsl(220 70% 5%) 100%)",
+        }}
+      />
+      <div
+        className="tv-content"
+        style={{
+          justifyContent: "center",
+          alignItems: "center",
+          textAlign: "center",
+          padding: "6% 8%",
+        }}
+      >
+        <div style={{ fontSize: 260, lineHeight: 1, marginBottom: 30, filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.55))" }}>
+          ☕
+        </div>
+        <div
+          style={{
+            fontSize: 22,
+            fontWeight: 800,
+            letterSpacing: "0.2em",
+            textTransform: "uppercase",
+            color: "hsl(24 95% 65%)",
+            marginBottom: 18,
+          }}
+        >
+          Vítejte
+        </div>
+        <h1 className="tv-title" style={{ fontSize: 112, lineHeight: 1.02, marginBottom: 24 }}>
+          {title}
+        </h1>
+        <div className="tv-subtitle" style={{ marginBottom: 24, opacity: 0.9 }}>
+          {subtitle}
+        </div>
+        <div className="tv-body" style={{ maxWidth: 1100, opacity: 0.8, margin: "0 auto" }}>
+          {body}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /* ---------- Feedback QR ---------- */
