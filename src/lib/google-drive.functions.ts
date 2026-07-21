@@ -264,3 +264,190 @@ export const testGoogleDriveWrite = createServerFn({ method: "POST" })
     }
     return JSON.parse(text);
   });
+
+async function uploadJsonGzipToDrive(
+  folderId: string,
+  name: string,
+  content: Buffer,
+): Promise<{ id: string; name: string; webViewLink?: string; size?: number }> {
+  const { lovableKey, connKey } = requireEnv();
+  const boundary = `-------lovable${Date.now()}`;
+  const metadata = {
+    name,
+    parents: [folderId],
+    mimeType: "application/gzip",
+  };
+  const preamble =
+    `--${boundary}\r\n` +
+    `Content-Type: application/json; charset=UTF-8\r\n\r\n` +
+    `${JSON.stringify(metadata)}\r\n` +
+    `--${boundary}\r\n` +
+    `Content-Type: application/gzip\r\n` +
+    `Content-Transfer-Encoding: binary\r\n\r\n`;
+  const closing = `\r\n--${boundary}--`;
+  const body = Buffer.concat([Buffer.from(preamble, "utf8"), content, Buffer.from(closing, "utf8")]);
+
+  const res = await fetch(
+    `${GATEWAY_BASE}/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,size`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${lovableKey}`,
+        "X-Connection-Api-Key": connKey,
+        "Content-Type": `multipart/related; boundary=${boundary}`,
+      },
+      body,
+    },
+  );
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`Nahrání zálohy selhalo (${res.status}): ${text.slice(0, 300)}`);
+  }
+  const parsed = JSON.parse(text);
+  return { ...parsed, size: parsed.size ? Number(parsed.size) : undefined };
+}
+
+export const runBackupNow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await requireAdmin(context);
+
+    const { data: settings } = await context.supabase
+      .from("backup_settings")
+      .select("drive_folder_id, drive_folder_name")
+      .eq("singleton", true)
+      .maybeSingle();
+
+    if (!settings?.drive_folder_id) {
+      throw new Error("Nejprve zvolte cílovou složku pro zálohy.");
+    }
+
+    const startedAt = Date.now();
+    const { data: run, error: runErr } = await context.supabase
+      .from("backup_runs")
+      .insert({
+        status: "running",
+        trigger: "manual",
+        started_by: context.userId,
+      })
+      .select("id")
+      .single();
+    if (runErr) throw new Error(runErr.message);
+    const runId = run.id as string;
+
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+      const dump: Record<string, unknown> = {
+        __meta: {
+          generated_at: new Date().toISOString(),
+          app: "autoport",
+          version: 1,
+        },
+      };
+      let totalRows = 0;
+      let tablesCount = 0;
+
+      for (const table of BACKUP_TABLES) {
+        const rows: any[] = [];
+        const pageSize = 1000;
+        let from = 0;
+        // pagination loop
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const { data, error } = await supabaseAdmin
+            .from(table as any)
+            .select("*")
+            .range(from, from + pageSize - 1);
+          if (error) {
+            // Přeskočíme tabulky, které neexistují nebo nejdou přečíst
+            console.warn(`[backup] tabulka ${table} přeskočena:`, error.message);
+            break;
+          }
+          if (!data || data.length === 0) break;
+          rows.push(...data);
+          if (data.length < pageSize) break;
+          from += pageSize;
+        }
+        dump[table] = rows;
+        totalRows += rows.length;
+        tablesCount += 1;
+      }
+
+      const json = JSON.stringify(dump);
+      const { gzipSync } = await import("node:zlib");
+      const gz = gzipSync(Buffer.from(json, "utf8"), { level: 9 });
+
+      const stamp = new Date()
+        .toISOString()
+        .replace(/[:.]/g, "-")
+        .replace("T", "_")
+        .slice(0, 19);
+      const filename = `autoport-backup-${stamp}.json.gz`;
+
+      const uploaded = await uploadJsonGzipToDrive(
+        settings.drive_folder_id,
+        filename,
+        gz,
+      );
+
+      const duration = Date.now() - startedAt;
+      await context.supabase
+        .from("backup_runs")
+        .update({
+          status: "success",
+          finished_at: new Date().toISOString(),
+          duration_ms: duration,
+          size_bytes: uploaded.size ?? gz.byteLength,
+          tables_count: tablesCount,
+          rows_count: totalRows,
+          drive_file_id: uploaded.id,
+          drive_file_name: uploaded.name,
+          drive_web_view_link: uploaded.webViewLink ?? null,
+        })
+        .eq("id", runId);
+
+      await context.supabase
+        .from("backup_settings")
+        .update({ last_backup_at: new Date().toISOString() })
+        .eq("singleton", true);
+
+      return {
+        ok: true,
+        runId,
+        durationMs: duration,
+        tables: tablesCount,
+        rows: totalRows,
+        sizeBytes: uploaded.size ?? gz.byteLength,
+        driveFileName: uploaded.name,
+        driveWebViewLink: uploaded.webViewLink ?? null,
+      };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      await context.supabase
+        .from("backup_runs")
+        .update({
+          status: "error",
+          finished_at: new Date().toISOString(),
+          duration_ms: Date.now() - startedAt,
+          error: msg.slice(0, 2000),
+        })
+        .eq("id", runId);
+      throw new Error(msg);
+    }
+  });
+
+export const listBackupRuns = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await requireAdmin(context);
+    const { data, error } = await context.supabase
+      .from("backup_runs")
+      .select(
+        "id,status,trigger,started_at,finished_at,duration_ms,size_bytes,tables_count,rows_count,drive_file_name,drive_web_view_link,error",
+      )
+      .order("started_at", { ascending: false })
+      .limit(20);
+    if (error) throw new Error(error.message);
+    return { runs: data ?? [] };
+  });
