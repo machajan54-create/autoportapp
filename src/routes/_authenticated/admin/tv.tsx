@@ -357,6 +357,16 @@ function TvAdmin() {
                 />
                 <Label>Zobrazovat slide „Zákaznický koutek"</Label>
               </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={activeConfig.show_buyout ?? true}
+                  onCheckedChange={async (v) => {
+                    await supabase.from("display_config").update({ show_buyout: v }).eq("id", activeConfig.id);
+                    qc.invalidateQueries({ queryKey: ["tv-configs"] });
+                  }}
+                />
+                <Label>Zobrazovat slide „Výkup vozidel"</Label>
+              </div>
               <div>
                 <Label>Délka slide „Napište nám" (s)</Label>
                 <Input
@@ -386,6 +396,23 @@ function TvAdmin() {
                   onBlur={async (e) => {
                     const v = Math.max(3, Math.min(120, Number(e.target.value) || 12));
                     await supabase.from("display_config").update({ lounge_duration_sec: v }).eq("id", activeConfig.id);
+                    toast.success("Délka uložena");
+                    qc.invalidateQueries({ queryKey: ["tv-configs"] });
+                  }}
+                />
+              </div>
+              <div>
+                <Label>Délka slide „Výkup vozidel" (s)</Label>
+                <Input
+                  type="number"
+                  min={3}
+                  max={120}
+                  value={activeConfig.buyout_duration_sec ?? 14}
+                  onChange={(e) => qc.setQueryData<DisplayConfig[]>(["tv-configs"], (prev) =>
+                    (prev ?? []).map((c) => c.id === activeConfig.id ? { ...c, buyout_duration_sec: Number(e.target.value) } : c))}
+                  onBlur={async (e) => {
+                    const v = Math.max(3, Math.min(120, Number(e.target.value) || 14));
+                    await supabase.from("display_config").update({ buyout_duration_sec: v }).eq("id", activeConfig.id);
                     toast.success("Délka uložena");
                     qc.invalidateQueries({ queryKey: ["tv-configs"] });
                   }}
