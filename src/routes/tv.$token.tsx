@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import autoportLogo from "@/assets/autoport-logo.png.asset.json";
 import citroenLogo from "@/assets/citroen-logo.png.asset.json";
 import peugeotLogo from "@/assets/peugeot-logo.png.asset.json";
+import citroenAutoportLogo from "@/assets/citroen-autoport-logo-white.png.asset.json";
 import { SlideRenderer, type TvSlide } from "@/components/tv/SlideRenderer";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
@@ -217,21 +218,11 @@ function TvDisplay() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <div style={{
-            width: 60, height: 60, borderRadius: 14,
-            background: "linear-gradient(135deg, #ff6b35, #e84393)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontFamily: "'Space Grotesk', system-ui",
-            fontSize: 32, fontWeight: 700,
-            boxShadow: "0 8px 24px rgba(255,107,53,0.35)",
-          }}>A</div>
-          <div style={{
-            fontFamily: "'Space Grotesk', system-ui",
-            fontSize: 34, fontWeight: 700,
-            letterSpacing: "-0.03em", textTransform: "uppercase",
-          }}>
-            Autoport <span style={{ color: "#ff6b35" }}>Pro</span>
-          </div>
+          <img
+            src={citroenAutoportLogo.url}
+            alt="Citroën Autoport"
+            style={{ height: 110, width: "auto", objectFit: "contain", filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.4))" }}
+          />
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 40 }}>
