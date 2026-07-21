@@ -20,8 +20,10 @@ type DisplayConfig = {
   show_clock: boolean;
   show_feedback?: boolean;
   show_lounge?: boolean;
+  show_buyout?: boolean;
   feedback_duration_sec?: number;
   lounge_duration_sec?: number;
+  buyout_duration_sec?: number;
 };
 
 const LS_SLIDES = "tv-display:slides-cache-v2";
@@ -143,12 +145,14 @@ export function TvDisplay({ token }: { token: string }) {
       const cfgTyped = cfg as DisplayConfig | null;
       const showLounge = cfgTyped?.show_lounge !== false;
       const showFeedback = cfgTyped?.show_feedback !== false;
+      const showBuyout = cfgTyped?.show_buyout !== false;
       const loungeDur = Math.max(3, Number(cfgTyped?.lounge_duration_sec ?? 12));
       const feedbackDur = Math.max(3, Number(cfgTyped?.feedback_duration_sec ?? 15));
+      const buyoutDur = Math.max(3, Number(cfgTyped?.buyout_duration_sec ?? 14));
       const extras: Slide[] = [];
       if (showLounge) extras.push(buildLoungeSlide(loungeDur));
       if (showFeedback) extras.push(buildFeedbackSlide(feedbackDur));
-      extras.push(buildBuyoutSlide());
+      if (showBuyout) extras.push(buildBuyoutSlide(buyoutDur));
       const withExtras = [...filtered, ...extras];
       setSlides(withExtras);
       localStorage.setItem(LS_SLIDES, JSON.stringify(withExtras));
