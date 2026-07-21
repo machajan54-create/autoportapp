@@ -315,6 +315,114 @@ function GoogleDrivePage() {
               />
             </div>
 
+            <Separator />
+
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <CalendarClock className="h-4 w-4 text-muted-foreground" />
+                <div className="font-medium">Plán spouštění</div>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="space-y-1">
+                  <Label className="text-xs">Frekvence</Label>
+                  <Select
+                    value={settings?.schedule_frequency ?? "weekly"}
+                    onValueChange={(v) =>
+                      saveM.mutate({ schedule_frequency: v as any })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="interval">Podle intervalu (hodiny)</SelectItem>
+                      <SelectItem value="daily">Každý den v čase</SelectItem>
+                      <SelectItem value="weekly">Týdně v konkrétní den a čas</SelectItem>
+                      <SelectItem value="monthly">Měsíčně v konkrétní den a čas</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {settings?.schedule_frequency === "interval" ? (
+                  <div className="space-y-1">
+                    <Label className="text-xs">Interval (hodin)</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={168}
+                      defaultValue={settings?.schedule_interval_hours ?? 24}
+                      onBlur={(e) => {
+                        const n = Math.max(1, Math.min(168, Number(e.target.value) || 24));
+                        saveM.mutate({ schedule_interval_hours: n });
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <Label className="text-xs">Čas spuštění</Label>
+                    <Input
+                      type="time"
+                      defaultValue={settings?.schedule_time ?? "02:00"}
+                      onBlur={(e) => {
+                        const v = e.target.value;
+                        if (/^([01]\d|2[0-3]):[0-5]\d$/.test(v)) {
+                          saveM.mutate({ schedule_time: v });
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+
+                {settings?.schedule_frequency === "weekly" && (
+                  <div className="space-y-1">
+                    <Label className="text-xs">Den v týdnu</Label>
+                    <Select
+                      value={String(settings?.schedule_day_of_week ?? 1)}
+                      onValueChange={(v) =>
+                        saveM.mutate({ schedule_day_of_week: Number(v) })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">Pondělí</SelectItem>
+                        <SelectItem value="2">Úterý</SelectItem>
+                        <SelectItem value="3">Středa</SelectItem>
+                        <SelectItem value="4">Čtvrtek</SelectItem>
+                        <SelectItem value="5">Pátek</SelectItem>
+                        <SelectItem value="6">Sobota</SelectItem>
+                        <SelectItem value="0">Neděle</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {settings?.schedule_frequency === "monthly" && (
+                  <div className="space-y-1">
+                    <Label className="text-xs">Den v měsíci</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={31}
+                      defaultValue={settings?.schedule_day_of_month ?? 1}
+                      onBlur={(e) => {
+                        const n = Math.max(1, Math.min(31, Number(e.target.value) || 1));
+                        saveM.mutate({ schedule_day_of_month: n });
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                {describeSchedule(settings)}
+              </p>
+            </div>
+
+            <Separator />
+
             <Button
               variant="outline"
               onClick={() => testM.mutate()}
