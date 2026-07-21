@@ -10,8 +10,15 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, FolderPlus, RefreshCw, Cloud, HardDrive, Loader2, Upload } from "lucide-react";
+import { CheckCircle2, XCircle, FolderPlus, RefreshCw, Cloud, HardDrive, Loader2, Upload, CalendarClock } from "lucide-react";
 import {
   getGoogleDriveStatus,
   listGoogleDriveFolders,
