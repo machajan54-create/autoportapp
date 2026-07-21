@@ -4,6 +4,24 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const GATEWAY_BASE = "https://connector-gateway.lovable.dev/google_drive";
 
+// Uživatelské tabulky, které se zálohují (bez systémových auth/storage schémat).
+const BACKUP_TABLES = [
+  "profiles","user_roles","user_modules",
+  "attendance_absences","attendance_employees","attendance_employee_pins",
+  "attendance_notifications","attendance_pin_ip_allowlist","attendance_records",
+  "attendance_settings","attendance_shifts",
+  "audit_log","backup_settings","backup_runs",
+  "claim_attachments","claim_events","claim_tasks","claims",
+  "clients","deal_stage_history","deals","defects","deletion_requests",
+  "demo_order_documents","demo_order_events","demo_order_signatures","demo_orders",
+  "document_templates","email_send_log","email_send_state","email_unsubscribe_tokens",
+  "evidence_orders","evidence_wash_assignments",
+  "logbook_entries","logbook_vehicles",
+  "pin_attempt_log","purchases","suppliers","suppressed_emails",
+  "task_attachments","task_comments","tasks",
+  "vykup_photos","vykupy","washers",
+] as const;
+
 function requireEnv() {
   const lovableKey = process.env.LOVABLE_API_KEY;
   const connKey = process.env.GOOGLE_DRIVE_API_KEY;
