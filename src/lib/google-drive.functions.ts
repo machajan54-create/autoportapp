@@ -149,7 +149,7 @@ export const saveBackupSettings = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     await requireAdmin(context);
-    const patch: Record<string, unknown> = {
+    const patch: any = {
       updated_by: context.userId,
       last_connected_at: new Date().toISOString(),
     };
