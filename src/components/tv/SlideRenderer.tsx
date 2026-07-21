@@ -66,48 +66,170 @@ export function SlideRenderer({ slide, token, active, onFinished }: {
 function LoungeSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
   const title = slide.title || "Zákaznický koutek";
   const subtitle = slide.subtitle || "Dejte si v klidu kávu a usaďte se";
-  const body = slide.body || "Za chvíli se Vám budeme věnovat. Užijte si šálek kávy nebo čaje na naši účet.";
+  const body =
+    slide.body ||
+    "Za chvíli se Vám budeme věnovat. Užijte si zázemí, které máme pro naše zákazníky připravené.";
+
+  const benefits: { icon: string; title: string; desc: string; accent: string }[] = [
+    { icon: "☕", title: "Káva & čaj", desc: "Zdarma, jak dlouho chcete", accent: "hsl(24 95% 60%)" },
+    { icon: "📶", title: "Wi-Fi", desc: "Rychlé připojení bez hesla", accent: "hsl(200 85% 60%)" },
+    { icon: "🔌", title: "Nabíjení", desc: "USB-C i klasické zásuvky", accent: "hsl(280 70% 65%)" },
+    { icon: "📰", title: "Tisk & časopisy", desc: "Auto, business, lifestyle", accent: "hsl(150 60% 55%)" },
+  ];
+
   return (
     <div className="tv-layer" data-active={active}>
+      {/* Warm layered background */}
       <div
         className="tv-bg"
         style={{
           background:
-            "radial-gradient(ellipse at 80% 20%, hsl(30 70% 30%) 0%, hsl(220 55% 10%) 55%, hsl(220 70% 5%) 100%)",
+            "radial-gradient(ellipse at 15% 25%, hsl(24 70% 22%) 0%, transparent 55%), radial-gradient(ellipse at 85% 80%, hsl(280 60% 20%) 0%, transparent 55%), linear-gradient(135deg, hsl(220 55% 9%) 0%, hsl(220 70% 5%) 100%)",
         }}
       />
+      {/* Soft glow accents */}
+      <div
+        style={{
+          position: "absolute",
+          left: "6%",
+          top: "20%",
+          width: 520,
+          height: 520,
+          background: "hsl(24 95% 55% / 0.18)",
+          filter: "blur(120px)",
+          borderRadius: "50%",
+          pointerEvents: "none",
+        }}
+      />
+
       <div
         className="tv-content"
         style={{
           justifyContent: "center",
-          alignItems: "center",
-          textAlign: "center",
-          padding: "6% 8%",
+          alignItems: "flex-start",
+          textAlign: "left",
+          gap: 0,
+          paddingTop: 40,
+          paddingBottom: 40,
         }}
       >
-        <div style={{ fontSize: 260, lineHeight: 1, marginBottom: 30, filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.55))" }}>
-          ☕
-        </div>
+        {/* Kicker */}
         <div
           style={{
-            fontSize: 22,
-            fontWeight: 800,
-            letterSpacing: "0.2em",
-            textTransform: "uppercase",
-            color: "hsl(24 95% 65%)",
-            marginBottom: 18,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 14,
+            padding: "10px 22px",
+            borderRadius: 999,
+            background: "hsl(24 95% 55% / 0.15)",
+            border: "1px solid hsl(24 95% 55% / 0.35)",
+            marginBottom: 28,
           }}
         >
-          Vítejte
+          <span style={{ fontSize: 26, lineHeight: 1 }}>☕</span>
+          <span
+            style={{
+              fontSize: 20,
+              fontWeight: 800,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: "hsl(24 95% 72%)",
+            }}
+          >
+            Vítejte u nás
+          </span>
         </div>
-        <h1 className="tv-title" style={{ fontSize: 112, lineHeight: 1.02, marginBottom: 24 }}>
+
+        {/* Title */}
+        <h1
+          className="tv-title"
+          style={{
+            fontSize: 108,
+            lineHeight: 1.02,
+            marginBottom: 20,
+            background: "linear-gradient(135deg, #ffffff 0%, hsl(24 95% 80%) 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+          }}
+        >
           {title}
         </h1>
-        <div className="tv-subtitle" style={{ marginBottom: 24, opacity: 0.9 }}>
+
+        {/* Subtitle */}
+        <div
+          className="tv-subtitle"
+          style={{ marginTop: 0, marginBottom: 18, opacity: 0.92, fontSize: 40 }}
+        >
           {subtitle}
         </div>
-        <div className="tv-body" style={{ maxWidth: 1100, opacity: 0.8, margin: "0 auto" }}>
+
+        {/* Body */}
+        <div
+          className="tv-body"
+          style={{ marginTop: 0, marginBottom: 44, opacity: 0.78, fontSize: 26, maxWidth: 820 }}
+        >
           {body}
+        </div>
+
+        {/* Benefits grid */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+            gap: 18,
+            width: "100%",
+            maxWidth: 900,
+          }}
+        >
+          {benefits.map((b) => (
+            <div
+              key={b.title}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 20,
+                padding: "20px 24px",
+                borderRadius: 20,
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
+              }}
+            >
+              <div
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: 16,
+                  background: `${b.accent.replace(")", " / 0.18)")}`,
+                  border: `1px solid ${b.accent.replace(")", " / 0.4)")}`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 32,
+                  flexShrink: 0,
+                }}
+              >
+                {b.icon}
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div
+                  style={{
+                    fontFamily: "'Space Grotesk', system-ui, sans-serif",
+                    fontSize: 26,
+                    fontWeight: 700,
+                    letterSpacing: "-0.01em",
+                    color: "white",
+                    marginBottom: 2,
+                  }}
+                >
+                  {b.title}
+                </div>
+                <div style={{ fontSize: 18, opacity: 0.7, lineHeight: 1.25 }}>{b.desc}</div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
