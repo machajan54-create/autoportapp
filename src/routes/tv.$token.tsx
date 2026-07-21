@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import autoportLogo from "@/assets/autoport-logo.png.asset.json";
+import citroenLogo from "@/assets/citroen-logo.png.asset.json";
+import peugeotLogo from "@/assets/peugeot-logo.png.asset.json";
 import { SlideRenderer, type TvSlide } from "@/components/tv/SlideRenderer";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
