@@ -708,6 +708,7 @@ async function exportMyRecords(
   empMap: Map<string, any>,
   shiftMap: Map<string, any>,
   format: "csv" | "xlsx",
+  opts?: { monthLabel?: string },
 ) {
   const header = ["Datum", "Zaměstnanec", "Směna", "Příchod", "Odchod", "Pauza (min)", "Hodiny", "Stav", "Poznámka"];
   const rows = records.map((r) => {
@@ -727,7 +728,7 @@ async function exportMyRecords(
   });
   const empName = (empMap.get(records[0]?.employee_id) as any)?.name ?? "moje";
   const safeName = empName.replace(/\s+/g, "-").toLowerCase();
-  const stamp = new Date().toISOString().slice(0, 10);
+  const stamp = opts?.monthLabel ?? new Date().toISOString().slice(0, 10);
   if (format === "csv") {
     const csv = [header, ...rows]
       .map((r) => r.map((x) => `"${String(x ?? "").replace(/"/g, '""')}"`).join(";"))
@@ -746,6 +747,145 @@ async function exportMyRecords(
     XLSX.utils.book_append_sheet(wb, ws, "Docházka");
     XLSX.writeFile(wb, `dochazka-${safeName}-${stamp}.xlsx`);
   }
+}
+
+// ============= Moje statistiky (zaměstnanec) =============
+function MyStatsPanel({
+  visibleRecords,
+  empMap,
+  shiftMap,
+  dailyThr,
+}: {
+  visibleRecords: any[];
+  empMap: Map<string, any>;
+  shiftMap: Map<string, any>;
+  dailyThr: number;
+}) {
+  const fetchAbs = useServerFn(listAbsences);
+  const { data: absences } = useQuery({
+    queryKey: ["dochazka", "absences", "me"],
+    queryFn: () => fetchAbs({}),
+  });
+
+  const [month, setMonth] = useState(() => todayISODate().slice(0, 7));
+
+  const monthRecords = useMemo(
+    () => visibleRecords.filter((r) => r.date?.startsWith(month)),
+    [visibleRecords, month],
+  );
+
+  const stats = useMemo(() => {
+    const totalHours = monthRecords.reduce((s, r) => s + Number(r.hours_worked ?? 0), 0);
+    const days = new Set(monthRecords.filter((r) => r.check_out).map((r) => r.date)).size;
+    const avg = days > 0 ? totalHours / days : 0;
+    let over = 0;
+    let under = 0;
+    for (const r of monthRecords) {
+      if (!r.check_out) continue;
+      const sh = r.shift_id ? (shiftMap.get(r.shift_id) as any) : null;
+      const expected = sh?.start_time && sh?.end_time
+        ? expectedHoursWorked(sh.start_time, sh.end_time, Number(r.break_duration ?? 0))
+        : dailyThr;
+      const diff = Number(r.hours_worked ?? 0) - expected;
+      if (diff > 0) over += diff;
+      else if (diff < 0) under += -diff;
+    }
+    const absList = (absences ?? []).filter((a: any) => {
+      // překryv s vybraným měsícem
+      return a.start_date?.startsWith(month) || a.end_date?.startsWith(month);
+    });
+    const pendingAbs = absList.filter((a: any) => a.status === "pending").length;
+    const approvedAbs = absList.filter((a: any) => a.status === "approved").length;
+    // yearly totals
+    const yearPrefix = month.slice(0, 4);
+    const yearHours = visibleRecords
+      .filter((r) => r.date?.startsWith(yearPrefix))
+      .reduce((s, r) => s + Number(r.hours_worked ?? 0), 0);
+    return { totalHours, days, avg, over, under, pendingAbs, approvedAbs, yearHours };
+  }, [monthRecords, shiftMap, dailyThr, absences, visibleRecords, month]);
+
+  const chartData = useMemo(() => {
+    const [y, m] = month.split("-").map(Number);
+    if (!y || !m) return [] as { day: string; hodiny: number }[];
+    const daysInMonth = new Date(y, m, 0).getDate();
+    const byDay = new Map<string, number>();
+    for (const r of monthRecords) {
+      byDay.set(r.date, (byDay.get(r.date) ?? 0) + Number(r.hours_worked ?? 0));
+    }
+    const arr: { day: string; hodiny: number }[] = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+      const iso = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      arr.push({ day: String(d), hodiny: Math.round((byDay.get(iso) ?? 0) * 100) / 100 });
+    }
+    return arr;
+  }, [monthRecords, month]);
+
+  const hasData = monthRecords.length > 0;
+
+  return (
+    <div className="space-y-3">
+      <Card className="p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold">Moje statistiky docházky</h3>
+            <p className="text-xs text-muted-foreground">Přehled za vybraný měsíc, roční součet a export.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              type="month"
+              value={month}
+              onChange={(e) => setMonth(e.target.value)}
+              className="h-9 w-[160px]"
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => exportMyRecords(monthRecords, empMap, shiftMap, "csv", { monthLabel: month })}
+              disabled={!hasData}
+            >
+              <Download className="mr-1 h-4 w-4" /> CSV {month}
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => exportMyRecords(monthRecords, empMap, shiftMap, "xlsx", { monthLabel: month })}
+              disabled={!hasData}
+            >
+              <FileSpreadsheet className="mr-1 h-4 w-4" /> XLSX {month}
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <StatCard label="Hodiny (měsíc)" value={`${stats.totalHours.toFixed(1)} h`} accent="text-sky-600" />
+          <StatCard label="Odpracované dny" value={stats.days} accent="text-emerald-600" />
+          <StatCard label="Průměr / den" value={`${stats.avg.toFixed(1)} h`} accent="text-purple-600" />
+          <StatCard label="Hodiny (rok)" value={`${stats.yearHours.toFixed(1)} h`} accent="text-slate-700" />
+          <StatCard label="Přesčas" value={`+${stats.over.toFixed(1)} h`} accent="text-amber-600" />
+          <StatCard label="Podčas" value={`−${stats.under.toFixed(1)} h`} accent="text-rose-600" />
+          <StatCard label="Absence – čeká" value={stats.pendingAbs} accent="text-amber-600" />
+          <StatCard label="Absence – schváleno" value={stats.approvedAbs} accent="text-emerald-600" />
+        </div>
+
+        <div className="mt-4 h-56 w-full">
+          {hasData ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="day" tick={{ fontSize: 11 }} interval={0} />
+                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                <RTooltip formatter={(v: any) => [`${Number(v).toFixed(2)} h`, "Hodiny"]} />
+                <Bar dataKey="hodiny" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+              Žádné záznamy v tomto měsíci.
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
 }
 
 function RecordsTab() {
