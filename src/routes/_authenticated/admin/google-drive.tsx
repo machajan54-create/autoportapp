@@ -27,7 +27,20 @@ import {
   testGoogleDriveWrite,
   runBackupNow,
   listBackupRuns,
+  listBackupFiles,
+  restoreBackupFromDrive,
 } from "@/lib/google-drive.functions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { RotateCcw, Download, ShieldAlert } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/google-drive")({
   component: GoogleDrivePage,
@@ -136,6 +149,43 @@ function GoogleDrivePage() {
     queryKey: ["gdrive-runs"],
     queryFn: () => fetchRuns({}),
     refetchInterval: runM.isPending ? 2000 : false,
+  });
+
+  const listFiles = useServerFn(listBackupFiles);
+  const restoreFn = useServerFn(restoreBackupFromDrive);
+
+  const files = useQuery({
+    queryKey: ["gdrive-backup-files"],
+    queryFn: () => listFiles({}),
+    enabled: !!status.data?.connected && !!status.data?.settings?.drive_folder_id,
+  });
+
+  const [selectedFile, setSelectedFile] = useState<null | {
+    id: string;
+    name: string;
+    size?: string;
+    modifiedTime?: string;
+  }>(null);
+  const [confirmText, setConfirmText] = useState("");
+
+  const restoreM = useMutation({
+    mutationFn: (input: { fileId: string; fileName?: string; confirm: string }) =>
+      restoreFn({ data: input }),
+    onSuccess: (data: any) => {
+      if (data.ok) {
+        toast.success(
+          `Obnova hotová – ${data.tables} tabulek, ${data.rowsRestored} řádků.`,
+        );
+      } else {
+        toast.error(
+          `Obnova dokončena s chybami (${data.errors?.length ?? 0}). Viz historie běhů.`,
+        );
+      }
+      setSelectedFile(null);
+      setConfirmText("");
+      qc.invalidateQueries({ queryKey: ["gdrive-runs"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Obnova selhala"),
   });
 
   const s = status.data;
