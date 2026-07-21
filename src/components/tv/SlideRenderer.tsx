@@ -95,7 +95,7 @@ function BuyoutSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
       <div
         style={{
           position: "absolute",
-          right: "6%",
+          left: "8%",
           top: "18%",
           width: 520,
           height: 520,
@@ -113,8 +113,8 @@ function BuyoutSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
           alignItems: "flex-start",
           textAlign: "left",
           gap: 0,
-          paddingTop: 40,
-          paddingBottom: 40,
+          paddingTop: 24,
+          paddingBottom: 24,
         }}
       >
         {/* Kicker */}
@@ -122,18 +122,18 @@ function BuyoutSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
           style={{
             display: "inline-flex",
             alignItems: "center",
-            gap: 14,
-            padding: "10px 22px",
+            gap: 12,
+            padding: "8px 18px",
             borderRadius: 999,
             background: "hsl(200 90% 55% / 0.15)",
             border: "1px solid hsl(200 90% 55% / 0.35)",
-            marginBottom: 28,
+            marginBottom: 20,
           }}
         >
-          <span style={{ fontSize: 26, lineHeight: 1 }}>🚗</span>
+          <span style={{ fontSize: 22, lineHeight: 1 }}>🚗</span>
           <span
             style={{
-              fontSize: 20,
+              fontSize: 17,
               fontWeight: 800,
               letterSpacing: "0.18em",
               textTransform: "uppercase",
@@ -148,9 +148,9 @@ function BuyoutSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
         <h1
           className="tv-title"
           style={{
-            fontSize: 108,
+            fontSize: 76,
             lineHeight: 1.02,
-            marginBottom: 20,
+            marginBottom: 14,
             background: "linear-gradient(135deg, #ffffff 0%, hsl(200 90% 82%) 100%)",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
@@ -163,7 +163,7 @@ function BuyoutSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
         {/* Subtitle */}
         <div
           className="tv-subtitle"
-          style={{ marginTop: 0, marginBottom: 18, opacity: 0.92, fontSize: 40 }}
+          style={{ marginTop: 0, marginBottom: 12, opacity: 0.92, fontSize: 30 }}
         >
           {subtitle}
         </div>
@@ -171,7 +171,7 @@ function BuyoutSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
         {/* Body */}
         <div
           className="tv-body"
-          style={{ marginTop: 0, marginBottom: 44, opacity: 0.78, fontSize: 28, maxWidth: 900 }}
+          style={{ marginTop: 0, marginBottom: 28, opacity: 0.78, fontSize: 22, maxWidth: 780 }}
         >
           {body}
         </div>
@@ -180,10 +180,10 @@ function BuyoutSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-            gap: 22,
+            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+            gap: 14,
             width: "100%",
-            maxWidth: 1480,
+            maxWidth: 900,
           }}
         >
           {benefits.map((b) => (
@@ -192,9 +192,9 @@ function BuyoutSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 22,
-                padding: "22px 26px",
-                borderRadius: 22,
+                gap: 16,
+                padding: "14px 18px",
+                borderRadius: 18,
                 background: "rgba(255,255,255,0.05)",
                 border: "1px solid rgba(255,255,255,0.1)",
                 backdropFilter: "blur(10px)",
@@ -203,15 +203,15 @@ function BuyoutSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
             >
               <div
                 style={{
-                  width: 72,
-                  height: 72,
-                  borderRadius: 18,
+                  width: 56,
+                  height: 56,
+                  borderRadius: 14,
                   background: `${b.accent.replace(")", " / 0.18)")}`,
                   border: `1px solid ${b.accent.replace(")", " / 0.4)")}`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: 36,
+                  fontSize: 28,
                   flexShrink: 0,
                 }}
               >
@@ -221,16 +221,16 @@ function BuyoutSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
                 <div
                   style={{
                     fontFamily: "'Space Grotesk', system-ui, sans-serif",
-                    fontSize: 27,
+                    fontSize: 22,
                     fontWeight: 700,
                     letterSpacing: "-0.01em",
                     color: "white",
-                    marginBottom: 3,
+                    marginBottom: 2,
                   }}
                 >
                   {b.title}
                 </div>
-                <div style={{ fontSize: 19, opacity: 0.7, lineHeight: 1.25 }}>{b.desc}</div>
+                <div style={{ fontSize: 16, opacity: 0.7, lineHeight: 1.25 }}>{b.desc}</div>
               </div>
             </div>
           ))}

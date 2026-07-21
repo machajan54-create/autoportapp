@@ -1289,11 +1289,13 @@ export type Database = {
       }
       display_config: {
         Row: {
+          buyout_duration_sec: number
           created_at: string
           feedback_duration_sec: number
           id: string
           lounge_duration_sec: number
           name: string
+          show_buyout: boolean
           show_clock: boolean
           show_feedback: boolean
           show_lounge: boolean
@@ -1303,11 +1305,13 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          buyout_duration_sec?: number
           created_at?: string
           feedback_duration_sec?: number
           id?: string
           lounge_duration_sec?: number
           name: string
+          show_buyout?: boolean
           show_clock?: boolean
           show_feedback?: boolean
           show_lounge?: boolean
@@ -1317,11 +1321,13 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          buyout_duration_sec?: number
           created_at?: string
           feedback_duration_sec?: number
           id?: string
           lounge_duration_sec?: number
           name?: string
+          show_buyout?: boolean
           show_clock?: boolean
           show_feedback?: boolean
           show_lounge?: boolean
