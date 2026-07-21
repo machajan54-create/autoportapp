@@ -432,7 +432,14 @@ export type Database = {
           drive_folder_id: string | null
           drive_folder_name: string | null
           id: string
+          last_backup_at: string | null
           last_connected_at: string | null
+          next_backup_at: string | null
+          schedule_day_of_month: number
+          schedule_day_of_week: number
+          schedule_frequency: string
+          schedule_interval_hours: number
+          schedule_time: string
           singleton: boolean
           updated_at: string
           updated_by: string | null
@@ -444,7 +451,14 @@ export type Database = {
           drive_folder_id?: string | null
           drive_folder_name?: string | null
           id?: string
+          last_backup_at?: string | null
           last_connected_at?: string | null
+          next_backup_at?: string | null
+          schedule_day_of_month?: number
+          schedule_day_of_week?: number
+          schedule_frequency?: string
+          schedule_interval_hours?: number
+          schedule_time?: string
           singleton?: boolean
           updated_at?: string
           updated_by?: string | null
@@ -456,7 +470,14 @@ export type Database = {
           drive_folder_id?: string | null
           drive_folder_name?: string | null
           id?: string
+          last_backup_at?: string | null
           last_connected_at?: string | null
+          next_backup_at?: string | null
+          schedule_day_of_month?: number
+          schedule_day_of_week?: number
+          schedule_frequency?: string
+          schedule_interval_hours?: number
+          schedule_time?: string
           singleton?: boolean
           updated_at?: string
           updated_by?: string | null
