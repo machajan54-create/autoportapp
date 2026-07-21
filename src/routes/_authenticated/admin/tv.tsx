@@ -27,6 +27,7 @@ import {
   Copy,
   ImagePlus,
   Tv,
+  Newspaper,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/tv")({
@@ -40,6 +41,10 @@ type Slide = {
   body: string | null;
   image_url: string | null;
   type: "news" | "promo" | "vehicle" | "video";
+  kind: "image" | "video" | "youtube" | "rich_text" | "web_url" | "data_widget";
+  payload: Record<string, any>;
+  transition: string;
+  weight: number;
   duration_sec: number;
   sort_order: number;
   active: boolean;
@@ -62,6 +67,23 @@ const TYPE_LABELS: Record<Slide["type"], string> = {
   promo: "Akce",
   vehicle: "Vozidlo",
   video: "Video",
+};
+
+const KIND_LABELS: Record<Slide["kind"], string> = {
+  image: "Obrázek",
+  video: "Video",
+  youtube: "YouTube",
+  rich_text: "Formátovaný text",
+  web_url: "Webová stránka",
+  data_widget: "Živý widget",
+};
+
+const WIDGET_LABELS: Record<string, string> = {
+  stats: "Statistiky (výkupy, prodeje, úkoly)",
+  at_work: "Kdo je právě v práci",
+  vehicles: "Nabídka ojetých vozů",
+  news: "Novinky / aktuality",
+  weather: "Počasí",
 };
 
 function toDatetimeLocal(v: string | null) {
