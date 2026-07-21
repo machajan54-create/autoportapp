@@ -221,7 +221,7 @@ function TvDisplay() {
           <img
             src={citroenAutoportLogo.url}
             alt="Citroën Autoport"
-            style={{ height: 110, width: "auto", objectFit: "contain", filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.4))" }}
+            style={{ height: 78, width: "auto", objectFit: "contain", filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.4))" }}
           />
         </div>
 
@@ -270,7 +270,9 @@ function TvDisplay() {
           boxShadow: "0 12px 40px rgba(0,0,0,0.45)",
           backdropFilter: "blur(8px)",
         }}>
-          <img src={citroenLogo.url} alt="Citroën" style={{ height: 46, width: "auto", objectFit: "contain" }} />
+          <div style={{ width: 54, height: 54, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <img src={citroenLogo.url} alt="Citroën" style={{ maxHeight: 54, maxWidth: 54, width: "auto", height: "auto", objectFit: "contain" }} />
+          </div>
           <div style={{ lineHeight: 1.15, color: "#0b0f1a" }}>
             <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.55 }}>
               Autorizovaný
@@ -289,7 +291,9 @@ function TvDisplay() {
           boxShadow: "0 12px 40px rgba(0,0,0,0.45)",
           backdropFilter: "blur(8px)",
         }}>
-          <img src={peugeotLogo.url} alt="Peugeot" style={{ height: 46, width: "auto", objectFit: "contain" }} />
+          <div style={{ width: 54, height: 54, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <img src={peugeotLogo.url} alt="Peugeot" style={{ maxHeight: 54, maxWidth: 54, width: "auto", height: "auto", objectFit: "contain" }} />
+          </div>
           <div style={{ lineHeight: 1.15, color: "#0b0f1a" }}>
             <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.55 }}>
               Autorizovaný servis
