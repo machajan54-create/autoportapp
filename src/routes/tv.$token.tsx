@@ -33,6 +33,8 @@ type DisplayConfig = {
   show_clock: boolean;
   show_feedback?: boolean;
   show_lounge?: boolean;
+  feedback_duration_sec?: number;
+  lounge_duration_sec?: number;
 };
 
 const LS_SLIDES = "tv-display:slides-cache-v2";
@@ -45,7 +47,7 @@ function isSlideValidNow(s: Slide, now = Date.now()) {
   return true;
 }
 
-function buildFeedbackSlide(): Slide {
+function buildFeedbackSlide(duration = 15): Slide {
   return {
     id: "__feedback_qr__",
     title: "Napište nám",
@@ -55,7 +57,7 @@ function buildFeedbackSlide(): Slide {
     type: "feedback",
     kind: "feedback_qr",
     payload: {},
-    duration_sec: 15,
+    duration_sec: duration,
     transition: "fade",
     weight: 1,
     sort_order: 9999,
@@ -65,7 +67,7 @@ function buildFeedbackSlide(): Slide {
   };
 }
 
-function buildLoungeSlide(): Slide {
+function buildLoungeSlide(duration = 12): Slide {
   return {
     id: "__lounge__",
     title: "Zákaznický koutek",
@@ -75,7 +77,7 @@ function buildLoungeSlide(): Slide {
     type: "lounge",
     kind: "lounge",
     payload: {},
-    duration_sec: 12,
+    duration_sec: duration,
     transition: "fade",
     weight: 1,
     sort_order: 9998,
@@ -132,11 +134,14 @@ function TvDisplay() {
           valid_to: r.valid_to,
         }))
         .filter((s) => isSlideValidNow(s));
-      const showLounge = (cfg as DisplayConfig | null)?.show_lounge !== false;
-      const showFeedback = (cfg as DisplayConfig | null)?.show_feedback !== false;
+      const cfgTyped = cfg as DisplayConfig | null;
+      const showLounge = cfgTyped?.show_lounge !== false;
+      const showFeedback = cfgTyped?.show_feedback !== false;
+      const loungeDur = Math.max(3, Number(cfgTyped?.lounge_duration_sec ?? 12));
+      const feedbackDur = Math.max(3, Number(cfgTyped?.feedback_duration_sec ?? 15));
       const extras: Slide[] = [];
-      if (showLounge) extras.push(buildLoungeSlide());
-      if (showFeedback) extras.push(buildFeedbackSlide());
+      if (showLounge) extras.push(buildLoungeSlide(loungeDur));
+      if (showFeedback) extras.push(buildFeedbackSlide(feedbackDur));
       const withExtras = [...filtered, ...extras];
       setSlides(withExtras);
       localStorage.setItem(LS_SLIDES, JSON.stringify(withExtras));
