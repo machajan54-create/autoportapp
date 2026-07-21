@@ -74,6 +74,27 @@ function buildLoungeSlide(duration = 12): Slide {
   };
 }
 
+function buildBuyoutSlide(duration = 14): Slide {
+  return {
+    id: "__buyout__",
+    title: "Vykupujeme vozy všech značek",
+    subtitle: "Rychle, férově a bez starostí",
+    body:
+      "Nabídneme Vám cenu do 24 hodin. Postaráme se o všechny papíry, odhlášení i převod. Peníze obdržíte ihned.",
+    image_url: null,
+    type: "buyout",
+    kind: "buyout",
+    payload: {},
+    duration_sec: duration,
+    transition: "fade",
+    weight: 1,
+    sort_order: 9997,
+    active: true,
+    valid_from: null,
+    valid_to: null,
+  };
+}
+
 export function TvDisplay({ token }: { token: string }) {
   const [config, setConfig] = useState<DisplayConfig | null>(null);
   const [slides, setSlides] = useState<Slide[]>([]);
@@ -128,6 +149,7 @@ export function TvDisplay({ token }: { token: string }) {
       const extras: Slide[] = [];
       if (showLounge) extras.push(buildLoungeSlide(loungeDur));
       if (showFeedback) extras.push(buildFeedbackSlide(feedbackDur));
+      extras.push(buildBuyoutSlide());
       const withExtras = [...filtered, ...extras];
       setSlides(withExtras);
       localStorage.setItem(LS_SLIDES, JSON.stringify(withExtras));
