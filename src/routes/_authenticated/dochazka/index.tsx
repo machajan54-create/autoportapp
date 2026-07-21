@@ -1357,6 +1357,7 @@ function ExportTab() {
   const { data: shifts } = useQuery({ queryKey: ["dochazka", "shifts"], queryFn: () => fetchS({}) });
   const { data: settings } = useQuery({ queryKey: ["dochazka", "settings"], queryFn: () => fetchSettings({}) });
   const [month, setMonth] = useState(() => todayISODate().slice(0, 7));
+  const [selectedEmpId, setSelectedEmpId] = useState<string>("");
 
   const empMap = useMemo(() => new Map((employees ?? []).map((e) => [e.id, e])), [employees]);
   const filtered = useMemo(() => (records ?? []).filter((r) => r.date.startsWith(month)), [records, month]);
@@ -1460,6 +1461,24 @@ function ExportTab() {
     ]);
   }
 
+  const filteredEmp = useMemo(
+    () => (selectedEmpId ? filtered.filter((r) => r.employee_id === selectedEmpId) : []),
+    [filtered, selectedEmpId],
+  );
+  const selectedEmp = selectedEmpId ? (empMap.get(selectedEmpId) as any) : null;
+  const empSafeName = (selectedEmp?.name ?? "zamestnanec").replace(/[^a-zA-Z0-9-_]+/g, "_");
+  const empTotalHours = filteredEmp.reduce((s, r) => s + Number(r.hours_worked ?? 0), 0);
+
+  function exportEmpCsv() {
+    downloadCsv(`dochazka-${empSafeName}-${month}.csv`, buildRows(filteredEmp, false));
+  }
+  function exportEmpXlsx() {
+    downloadXlsx(`dochazka-${empSafeName}-${month}.xlsx`, [
+      { name: "Souhrn", rows: buildPayrollRows(filteredEmp) },
+      { name: "Detail", rows: buildRows(filteredEmp, false) },
+    ]);
+  }
+
   const totalHours = filtered.reduce((s, r) => s + Number(r.hours_worked ?? 0), 0);
   const totalHppHours = filteredHpp.reduce((s, r) => s + Number(r.hours_worked ?? 0), 0);
   const totalDppHours = filteredDpp.reduce((s, r) => s + Number(r.hours_worked ?? 0), 0);
@@ -1528,6 +1547,39 @@ function ExportTab() {
           <Button onClick={exportXlsx} disabled={filtered.length === 0}>
             <FileSpreadsheet className="mr-2 h-4 w-4" /> Stáhnout XLSX
           </Button>
+        </div>
+      </Card>
+
+      <Card className="p-4">
+        <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-700">Zaměstnanec</Badge>
+        <h3 className="mt-2 text-sm font-semibold">Měsíční export pro konkrétního zaměstnance</h3>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Vyberte zaměstnance a stáhněte jeho docházku za zvolený měsíc ({month}).
+        </p>
+        <div className="mt-3 flex flex-wrap items-end gap-3">
+          <div className="grid gap-2">
+            <Label>Zaměstnanec</Label>
+            <Select value={selectedEmpId} onValueChange={setSelectedEmpId}>
+              <SelectTrigger className="h-9 w-[260px]"><SelectValue placeholder="Vyberte zaměstnance" /></SelectTrigger>
+              <SelectContent>
+                {(employees ?? []).map((e) => (
+                  <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Záznamů: <span className="font-semibold text-foreground">{filteredEmp.length}</span> · Hodin:{" "}
+            <span className="font-semibold text-foreground">{empTotalHours.toFixed(1)}</span>
+          </div>
+          <div className="ml-auto flex gap-2">
+            <Button variant="outline" onClick={exportEmpCsv} disabled={!selectedEmpId || filteredEmp.length === 0}>
+              <Download className="mr-2 h-4 w-4" /> CSV
+            </Button>
+            <Button onClick={exportEmpXlsx} disabled={!selectedEmpId || filteredEmp.length === 0}>
+              <FileSpreadsheet className="mr-2 h-4 w-4" /> XLSX
+            </Button>
+          </div>
         </div>
       </Card>
 
