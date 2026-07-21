@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import QRCode from "qrcode";
 import { supabase } from "@/integrations/supabase/client";
 import { getTvWidgetData, type TvWidgetResult } from "@/lib/tv-widgets.functions";
 
@@ -9,7 +10,7 @@ export type TvSlide = {
   body: string | null;
   image_url: string | null;
   type: string;
-  kind: "image" | "video" | "youtube" | "rich_text" | "web_url" | "data_widget";
+  kind: "image" | "video" | "youtube" | "rich_text" | "web_url" | "data_widget" | "feedback_qr";
   payload: Record<string, unknown>;
   duration_sec: number;
   transition: string;
@@ -51,10 +52,117 @@ export function SlideRenderer({ slide, token, active, onFinished }: {
       return <WebUrlSlide slide={slide} active={active} />;
     case "data_widget":
       return <DataWidgetSlide slide={slide} token={token} active={active} />;
+    case "feedback_qr":
+      return <FeedbackQrSlide slide={slide} token={token} active={active} />;
     case "image":
     default:
       return <ImageSlide slide={slide} active={active} />;
   }
+}
+
+/* ---------- Feedback QR ---------- */
+function FeedbackQrSlide({ slide, token, active }: { slide: TvSlide; token: string; active: boolean }) {
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  useEffect(() => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const url = `${origin}/feedback/${encodeURIComponent(token)}`;
+    QRCode.toDataURL(url, {
+      errorCorrectionLevel: "M",
+      margin: 1,
+      width: 640,
+      color: { dark: "#0b0f1a", light: "#ffffff" },
+    })
+      .then(setQrDataUrl)
+      .catch(() => setQrDataUrl(null));
+  }, [token]);
+
+  const title = slide.title || "Napište nám";
+  const subtitle = slide.subtitle || "Vaše zpětná vazba nás posouvá dál";
+  const body = slide.body || "Naskenujte QR kód mobilem a otevře se krátký formulář.";
+
+  return (
+    <div className="tv-layer" data-active={active}>
+      <div
+        className="tv-bg"
+        style={{
+          background:
+            "radial-gradient(ellipse at 20% 20%, hsl(24 95% 22%) 0%, hsl(220 60% 8%) 55%, hsl(220 70% 5%) 100%)",
+        }}
+      />
+      <div
+        className="tv-content"
+        style={{
+          justifyContent: "center",
+          alignItems: "center",
+          textAlign: "center",
+          padding: "6% 6%",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 90,
+            maxWidth: 1600,
+          }}
+        >
+          <div
+            style={{
+              width: 520,
+              height: 520,
+              background: "white",
+              borderRadius: 40,
+              padding: 32,
+              boxShadow: "0 30px 80px rgba(0,0,0,0.55)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            {qrDataUrl ? (
+              <img
+                src={qrDataUrl}
+                alt="QR kód pro zpětnou vazbu"
+                style={{ width: "100%", height: "100%", display: "block" }}
+              />
+            ) : (
+              <div style={{ color: "#0b0f1a", opacity: 0.4, fontSize: 24 }}>QR…</div>
+            )}
+          </div>
+          <div style={{ textAlign: "left", color: "white" }}>
+            <div
+              style={{
+                fontSize: 22,
+                fontWeight: 800,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: "hsl(24 95% 65%)",
+                marginBottom: 20,
+              }}
+            >
+              Zpětná vazba
+            </div>
+            <h1
+              className="tv-title"
+              style={{ marginBottom: 20, fontSize: 96, lineHeight: 1.05 }}
+            >
+              {title}
+            </h1>
+            <div
+              className="tv-subtitle"
+              style={{ marginBottom: 28, opacity: 0.9 }}
+            >
+              {subtitle}
+            </div>
+            <div className="tv-body" style={{ maxWidth: 720, opacity: 0.8 }}>
+              {body}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /* ---------- Image (legacy) ---------- */

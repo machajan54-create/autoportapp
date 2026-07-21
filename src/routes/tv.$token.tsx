@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
-import QRCode from "qrcode";
 import { supabase } from "@/integrations/supabase/client";
 import autoportLogo from "@/assets/autoport-logo.png.asset.json";
 import citroenLogo from "@/assets/citroen-logo.png.asset.json";
@@ -42,6 +41,26 @@ function isSlideValidNow(s: Slide, now = Date.now()) {
   if (s.valid_from && Date.parse(s.valid_from) > now) return false;
   if (s.valid_to && Date.parse(s.valid_to) < now) return false;
   return true;
+}
+
+function buildFeedbackSlide(): Slide {
+  return {
+    id: "__feedback_qr__",
+    title: "Napište nám",
+    subtitle: "Vaše zpětná vazba nás posouvá dál",
+    body: "Naskenujte QR kód mobilem a otevře se krátký formulář.",
+    image_url: null,
+    type: "feedback",
+    kind: "feedback_qr",
+    payload: {},
+    duration_sec: 15,
+    transition: "fade",
+    weight: 1,
+    sort_order: 9999,
+    active: true,
+    valid_from: null,
+    valid_to: null,
+  };
 }
 
 function TvDisplay() {
@@ -91,8 +110,9 @@ function TvDisplay() {
           valid_to: r.valid_to,
         }))
         .filter((s) => isSlideValidNow(s));
-      setSlides(filtered);
-      localStorage.setItem(LS_SLIDES, JSON.stringify(filtered));
+      const withFeedback = [...filtered, buildFeedbackSlide()];
+      setSlides(withFeedback);
+      localStorage.setItem(LS_SLIDES, JSON.stringify(withFeedback));
       setError(null);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -345,9 +365,6 @@ function TvDisplay() {
           <span>Zde je zákaznický koutek – dejte si v klidu kávu a usadte se.</span>
         </div>
       </div>
-
-      {/* Feedback button + modal */}
-      <FeedbackWidget token={token} tickerActive={!!config?.ticker_text} />
 
       {/* Ticker */}
       {config?.ticker_text && (
@@ -632,68 +649,3 @@ function TvSidebar({ token }: { token: string }) {
   );
 }
 
-function FeedbackWidget({ token, tickerActive }: { token: string; tickerActive: boolean }) {
-  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const url = `${origin}/feedback/${encodeURIComponent(token)}`;
-    QRCode.toDataURL(url, {
-      errorCorrectionLevel: "M",
-      margin: 1,
-      width: 320,
-      color: { dark: "#0b0f1a", light: "#ffffff" },
-    })
-      .then(setQrDataUrl)
-      .catch(() => setQrDataUrl(null));
-  }, [token]);
-
-  return (
-    <div
-      style={{
-        position: "absolute",
-        right: "2vw",
-        bottom: tickerActive ? 100 : 20,
-        zIndex: 13,
-        display: "flex",
-        alignItems: "center",
-        gap: 18,
-        padding: "16px 22px",
-        background: "rgba(255,255,255,0.96)",
-        borderRadius: 20,
-        boxShadow: "0 16px 44px rgba(0,0,0,0.45)",
-        color: "#0b0f1a",
-        pointerEvents: "none",
-      }}
-    >
-      <div style={{
-        width: 128, height: 128,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        background: "white", borderRadius: 12, overflow: "hidden",
-      }}>
-        {qrDataUrl ? (
-          <img src={qrDataUrl} alt="QR kód pro zpětnou vazbu" style={{ width: "100%", height: "100%", display: "block" }} />
-        ) : (
-          <div style={{ fontSize: 12, opacity: 0.5 }}>QR…</div>
-        )}
-      </div>
-      <div style={{ lineHeight: 1.2, maxWidth: 240 }}>
-        <div style={{
-          fontSize: 11, fontWeight: 800, letterSpacing: "0.16em",
-          textTransform: "uppercase", opacity: 0.55, marginBottom: 6,
-        }}>
-          Napište nám
-        </div>
-        <div style={{
-          fontFamily: "'Space Grotesk', system-ui, sans-serif",
-          fontSize: 22, fontWeight: 700, letterSpacing: "-0.01em",
-        }}>
-          Naskenujte QR kód
-        </div>
-        <div style={{ fontSize: 13, opacity: 0.7, marginTop: 4 }}>
-          Otevře se formulář pro zpětnou vazbu ve vašem mobilu.
-        </div>
-      </div>
-    </div>
-  );
-}
