@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import autoportLogo from "@/assets/autoport-logo.png.asset.json";
+import citroenLogo from "@/assets/citroen-logo.png.asset.json";
+import peugeotLogo from "@/assets/peugeot-logo.png.asset.json";
 import { SlideRenderer, type TvSlide } from "@/components/tv/SlideRenderer";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
@@ -256,6 +258,57 @@ function TvDisplay() {
 
       {/* Right sidebar with live widgets */}
       <TvSidebar token={token} />
+
+      {/* Brand authorizations */}
+      <div
+        style={{
+          position: "absolute",
+          left: "4%",
+          bottom: config?.ticker_text ? 100 : 20,
+          display: "flex",
+          gap: 14,
+          zIndex: 12,
+          pointerEvents: "none",
+        }}
+      >
+        <div style={{
+          display: "flex", alignItems: "center", gap: 14,
+          padding: "12px 20px",
+          background: "rgba(255,255,255,0.94)",
+          borderRadius: 16,
+          boxShadow: "0 12px 40px rgba(0,0,0,0.45)",
+          backdropFilter: "blur(8px)",
+        }}>
+          <img src={citroenLogo.url} alt="Citroën" style={{ height: 46, width: "auto", objectFit: "contain" }} />
+          <div style={{ lineHeight: 1.15, color: "#0b0f1a" }}>
+            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.55 }}>
+              Autorizovaný
+            </div>
+            <div style={{ fontFamily: "'Space Grotesk', system-ui", fontSize: 15, fontWeight: 700, letterSpacing: "-0.01em" }}>
+              Prodejce & Servis
+            </div>
+          </div>
+        </div>
+
+        <div style={{
+          display: "flex", alignItems: "center", gap: 14,
+          padding: "12px 20px",
+          background: "rgba(255,255,255,0.94)",
+          borderRadius: 16,
+          boxShadow: "0 12px 40px rgba(0,0,0,0.45)",
+          backdropFilter: "blur(8px)",
+        }}>
+          <img src={peugeotLogo.url} alt="Peugeot" style={{ height: 46, width: "auto", objectFit: "contain" }} />
+          <div style={{ lineHeight: 1.15, color: "#0b0f1a" }}>
+            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.55 }}>
+              Autorizovaný servis
+            </div>
+            <div style={{ fontFamily: "'Space Grotesk', system-ui", fontSize: 15, fontWeight: 700, letterSpacing: "-0.01em" }}>
+              Nově od září 2026
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Ticker */}
       {config?.ticker_text && (
