@@ -171,7 +171,7 @@ function BuyoutSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
         {/* Body */}
         <div
           className="tv-body"
-          style={{ marginTop: 0, marginBottom: 40, opacity: 0.78, fontSize: 26, maxWidth: 900 }}
+          style={{ marginTop: 0, marginBottom: 44, opacity: 0.78, fontSize: 28, maxWidth: 900 }}
         >
           {body}
         </div>
@@ -181,9 +181,9 @@ function BuyoutSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-            gap: 18,
+            gap: 22,
             width: "100%",
-            maxWidth: 1400,
+            maxWidth: 1480,
           }}
         >
           {benefits.map((b) => (
@@ -192,9 +192,9 @@ function BuyoutSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 20,
-                padding: "20px 24px",
-                borderRadius: 20,
+                gap: 22,
+                padding: "22px 26px",
+                borderRadius: 22,
                 background: "rgba(255,255,255,0.05)",
                 border: "1px solid rgba(255,255,255,0.1)",
                 backdropFilter: "blur(10px)",
@@ -203,15 +203,15 @@ function BuyoutSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
             >
               <div
                 style={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: 16,
+                  width: 72,
+                  height: 72,
+                  borderRadius: 18,
                   background: `${b.accent.replace(")", " / 0.18)")}`,
                   border: `1px solid ${b.accent.replace(")", " / 0.4)")}`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: 32,
+                  fontSize: 36,
                   flexShrink: 0,
                 }}
               >
@@ -221,16 +221,16 @@ function BuyoutSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
                 <div
                   style={{
                     fontFamily: "'Space Grotesk', system-ui, sans-serif",
-                    fontSize: 24,
+                    fontSize: 27,
                     fontWeight: 700,
                     letterSpacing: "-0.01em",
                     color: "white",
-                    marginBottom: 2,
+                    marginBottom: 3,
                   }}
                 >
                   {b.title}
                 </div>
-                <div style={{ fontSize: 17, opacity: 0.7, lineHeight: 1.25 }}>{b.desc}</div>
+                <div style={{ fontSize: 19, opacity: 0.7, lineHeight: 1.25 }}>{b.desc}</div>
               </div>
             </div>
           ))}
