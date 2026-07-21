@@ -14,6 +14,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as NahlasitRouteImport } from './routes/nahlasit'
 import { Route as ManifestDotwebmanifestRouteImport } from './routes/manifest[.]webmanifest'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as TVdisplayRouteImport } from './routes/TVdisplay'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UploadTokenRouteImport } from './routes/upload.$token'
@@ -79,6 +80,11 @@ const ManifestDotwebmanifestRoute = ManifestDotwebmanifestRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TVdisplayRoute = TVdisplayRouteImport.update({
+  id: '/TVdisplay',
+  path: '/TVdisplay',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -308,6 +314,7 @@ const ApiPublicCronFollowupRemindersRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/TVdisplay': typeof TVdisplayRoute
   '/auth': typeof AuthRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/nahlasit': typeof NahlasitRoute
@@ -355,6 +362,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/TVdisplay': typeof TVdisplayRoute
   '/auth': typeof AuthRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/nahlasit': typeof NahlasitRoute
@@ -404,6 +412,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/TVdisplay': typeof TVdisplayRoute
   '/auth': typeof AuthRoute
   '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/nahlasit': typeof NahlasitRoute
@@ -453,6 +462,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/TVdisplay'
     | '/auth'
     | '/manifest.webmanifest'
     | '/nahlasit'
@@ -500,6 +510,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/TVdisplay'
     | '/auth'
     | '/manifest.webmanifest'
     | '/nahlasit'
@@ -548,6 +559,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/TVdisplay'
     | '/auth'
     | '/manifest.webmanifest'
     | '/nahlasit'
@@ -597,6 +609,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  TVdisplayRoute: typeof TVdisplayRoute
   AuthRoute: typeof AuthRoute
   ManifestDotwebmanifestRoute: typeof ManifestDotwebmanifestRoute
   NahlasitRoute: typeof NahlasitRoute
@@ -657,6 +670,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/TVdisplay': {
+      id: '/TVdisplay'
+      path: '/TVdisplay'
+      fullPath: '/TVdisplay'
+      preLoaderRoute: typeof TVdisplayRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -1004,6 +1024,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  TVdisplayRoute: TVdisplayRoute,
   AuthRoute: AuthRoute,
   ManifestDotwebmanifestRoute: ManifestDotwebmanifestRoute,
   NahlasitRoute: NahlasitRoute,
