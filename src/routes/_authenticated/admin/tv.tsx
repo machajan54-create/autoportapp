@@ -62,6 +62,8 @@ type DisplayConfig = {
   show_clock: boolean;
   show_feedback: boolean;
   show_lounge: boolean;
+  feedback_duration_sec?: number | null;
+  lounge_duration_sec?: number | null;
 };
 
 const TYPE_LABELS: Record<Slide["type"], string> = {
