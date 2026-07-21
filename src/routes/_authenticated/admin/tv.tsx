@@ -413,6 +413,18 @@ function TvAdmin() {
                       <Label>Text</Label>
                       <Textarea rows={4} value={draft.body ?? ""} onChange={(e) => setDraft({ ...draft, body: e.target.value })} />
                     </div>
+                    <div>
+                      <Label>Druh obsahu</Label>
+                      <Select value={draft.kind ?? "image"} onValueChange={(v) => setDraft({ ...draft, kind: v as Slide["kind"], payload: {} })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(KIND_LABELS).map(([k, v]) => (
+                            <SelectItem key={k} value={k}>{v}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <KindPayloadEditor draft={draft} setDraft={setDraft} />
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <Label>Typ</Label>
