@@ -258,29 +258,30 @@ function TvDisplay() {
           zIndex: 12,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <img
             src={citroenAutoportLogo.url}
             alt="Citroën Autoport"
             style={{ height: 78, width: "auto", objectFit: "contain", filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.4))" }}
           />
-          <div style={{ width: 1, height: 52, background: "linear-gradient(180deg, transparent, rgba(255,255,255,0.25), transparent)", animation: "fade-in 0.6s ease-out both", animationDelay: "0.1s" }} />
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 1, height: 50, background: "linear-gradient(180deg, transparent, rgba(255,255,255,0.25), transparent)", animation: "fade-in 0.6s ease-out both", animationDelay: "0.1s" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div className="animate-fade-in" style={{
               animationDelay: "0.2s", animationFillMode: "both",
               display: "flex", alignItems: "center", gap: 10,
-              padding: "8px 14px",
+              height: 50,
+              padding: "0 14px",
               background: "rgba(255,255,255,0.94)",
               borderRadius: 12,
               boxShadow: "0 6px 20px rgba(0,0,0,0.35)",
               backdropFilter: "blur(8px)",
             }}>
-              <img src={citroenLogo.url} alt="Citroën" style={{ height: 34, width: 34, objectFit: "contain" }} />
-              <div style={{ lineHeight: 1.1, color: "#0b0f1a" }}>
-                <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.55 }}>
+              <img src={citroenLogo.url} alt="Citroën" style={{ height: 32, width: 32, objectFit: "contain", flexShrink: 0 }} />
+              <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", lineHeight: 1.15, color: "#0b0f1a" }}>
+                <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.55 }}>
                   Autorizovaný
                 </div>
-                <div style={{ fontFamily: "'Space Grotesk', system-ui", fontSize: 12, fontWeight: 700, letterSpacing: "-0.01em" }}>
+                <div style={{ fontFamily: "'Space Grotesk', system-ui", fontSize: 13, fontWeight: 700, letterSpacing: "-0.01em" }}>
                   Prodejce & Servis
                 </div>
               </div>
@@ -288,18 +289,19 @@ function TvDisplay() {
             <div className="animate-fade-in" style={{
               animationDelay: "0.35s", animationFillMode: "both",
               display: "flex", alignItems: "center", gap: 10,
-              padding: "8px 14px",
+              height: 50,
+              padding: "0 14px",
               background: "rgba(255,255,255,0.94)",
               borderRadius: 12,
               boxShadow: "0 6px 20px rgba(0,0,0,0.35)",
               backdropFilter: "blur(8px)",
             }}>
-              <img src={peugeotLogo.url} alt="Peugeot" style={{ height: 34, width: 34, objectFit: "contain" }} />
-              <div style={{ lineHeight: 1.1, color: "#0b0f1a" }}>
-                <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.55 }}>
+              <img src={peugeotLogo.url} alt="Peugeot" style={{ height: 32, width: 32, objectFit: "contain", flexShrink: 0 }} />
+              <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", lineHeight: 1.15, color: "#0b0f1a" }}>
+                <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.55 }}>
                   Autorizovaný servis
                 </div>
-                <div style={{ fontFamily: "'Space Grotesk', system-ui", fontSize: 12, fontWeight: 700, letterSpacing: "-0.01em" }}>
+                <div style={{ fontFamily: "'Space Grotesk', system-ui", fontSize: 13, fontWeight: 700, letterSpacing: "-0.01em" }}>
                   Nově od září 2026
                 </div>
               </div>
