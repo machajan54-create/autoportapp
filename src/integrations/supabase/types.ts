@@ -424,6 +424,54 @@ export type Database = {
         }
         Relationships: []
       }
+      backups: {
+        Row: {
+          created_at: string
+          db_files_count: number
+          drive_folder_id: string | null
+          drive_folder_name: string | null
+          error: string | null
+          files_count: number
+          finished_at: string | null
+          id: string
+          scope: string | null
+          started_at: string
+          status: string
+          storage_files_count: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          db_files_count?: number
+          drive_folder_id?: string | null
+          drive_folder_name?: string | null
+          error?: string | null
+          files_count?: number
+          finished_at?: string | null
+          id?: string
+          scope?: string | null
+          started_at?: string
+          status?: string
+          storage_files_count?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          db_files_count?: number
+          drive_folder_id?: string | null
+          drive_folder_name?: string | null
+          error?: string | null
+          files_count?: number
+          finished_at?: string | null
+          id?: string
+          scope?: string | null
+          started_at?: string
+          status?: string
+          storage_files_count?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       claim_attachments: {
         Row: {
           category: string
