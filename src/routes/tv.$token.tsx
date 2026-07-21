@@ -3,6 +3,9 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import autoportLogo from "@/assets/autoport-logo.png.asset.json";
 import { SlideRenderer, type TvSlide } from "@/components/tv/SlideRenderer";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
+import { getTvWidgetData } from "@/lib/tv-widgets.functions";
 
 export const Route = createFileRoute("/tv/$token")({
   ssr: false,
@@ -160,12 +163,24 @@ function TvDisplay() {
         inset: 0,
         width: "100vw",
         height: "100vh",
-        background: "#0b0f1a",
+        background: "hsl(220 60% 6%)",
         color: "white",
         overflow: "hidden",
-        fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+        fontFamily: "'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif",
       }}
     >
+      {/* Ambient background glow */}
+      <div style={{
+        position: "absolute", top: "-10%", right: "-10%", width: 800, height: 800,
+        background: "rgba(108, 92, 231, 0.10)", filter: "blur(150px)", borderRadius: "50%",
+        pointerEvents: "none", zIndex: 0,
+      }} />
+      <div style={{
+        position: "absolute", bottom: "-5%", left: "10%", width: 600, height: 600,
+        background: "rgba(255, 107, 53, 0.06)", filter: "blur(120px)", borderRadius: "50%",
+        pointerEvents: "none", zIndex: 0,
+      }} />
+
       {/* Slide layers (crossfade) */}
       {slides.length === 0 ? (
         <BrandingSlide />
@@ -189,27 +204,58 @@ function TvDisplay() {
         style={{
           position: "absolute",
           top: 0, left: 0, right: 0,
-          height: 96,
-          padding: "0 5vw",
+          height: 128,
+          padding: "0 4vw",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          background: "linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,0,0,0))",
-          zIndex: 10,
+          background: "linear-gradient(180deg, rgba(5,10,20,0.85), rgba(5,10,20,0))",
+          borderBottom: "1px solid rgba(255,255,255,0.05)",
+          zIndex: 12,
         }}
       >
-        <img src={autoportLogo.url} alt="Autoport" style={{ height: 56, filter: "brightness(0) invert(1)" }} />
-        {config?.show_clock !== false && (
-          <div style={{ textAlign: "right", lineHeight: 1.05 }}>
-            <div style={{ fontSize: 44, fontWeight: 700, letterSpacing: "-0.02em" }}>
-              {now.toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" })}
-            </div>
-            <div style={{ fontSize: 20, opacity: 0.85 }}>
-              {now.toLocaleDateString("cs-CZ", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
-            </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <div style={{
+            width: 60, height: 60, borderRadius: 14,
+            background: "linear-gradient(135deg, #ff6b35, #e84393)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontFamily: "'Space Grotesk', system-ui",
+            fontSize: 32, fontWeight: 700,
+            boxShadow: "0 8px 24px rgba(255,107,53,0.35)",
+          }}>A</div>
+          <div style={{
+            fontFamily: "'Space Grotesk', system-ui",
+            fontSize: 34, fontWeight: 700,
+            letterSpacing: "-0.03em", textTransform: "uppercase",
+          }}>
+            Autoport <span style={{ color: "#ff6b35" }}>Pro</span>
           </div>
-        )}
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 40 }}>
+          {config?.show_clock !== false && (
+            <div style={{ textAlign: "right", lineHeight: 1.05 }}>
+              <div style={{ fontSize: 11, opacity: 0.4, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 4 }}>
+                Právě je
+              </div>
+              <div style={{
+                fontFamily: "'Space Grotesk', system-ui",
+                fontSize: 46, fontWeight: 700, letterSpacing: "-0.02em",
+                fontVariantNumeric: "tabular-nums",
+              }}>
+                {now.toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" })}
+              </div>
+              <div style={{ fontSize: 14, opacity: 0.55 }}>
+                {now.toLocaleDateString("cs-CZ", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+              </div>
+            </div>
+          )}
+          <WeatherPill token={token} enabled={config?.show_weather !== false} />
+        </div>
       </div>
+
+      {/* Right sidebar with live widgets */}
+      <TvSidebar token={token} />
 
       {/* Ticker */}
       {config?.ticker_text && (
@@ -217,15 +263,28 @@ function TvDisplay() {
           style={{
             position: "absolute",
             left: 0, right: 0, bottom: 0,
-            height: 64,
-            background: "rgba(0,0,0,0.75)",
+            height: 80,
+            background: "rgba(0,0,0,0.55)",
+            borderTop: "1px solid rgba(255,255,255,0.08)",
+            backdropFilter: "blur(12px)",
             color: "white",
             display: "flex",
             alignItems: "center",
             overflow: "hidden",
-            zIndex: 10,
+            zIndex: 12,
           }}
         >
+          <div style={{
+            height: "100%", padding: "0 40px",
+            background: "linear-gradient(90deg, #ff6b35, #f7931e)",
+            color: "#0b0f1a",
+            display: "flex", alignItems: "center",
+            fontFamily: "'Space Grotesk', system-ui",
+            fontWeight: 800, fontStyle: "italic",
+            letterSpacing: "-0.02em", fontSize: 26, textTransform: "uppercase",
+            boxShadow: "10px 0 30px rgba(0,0,0,0.5)",
+            zIndex: 2, flexShrink: 0,
+          }}>NEWSFLASH</div>
           <div className="tv-ticker" style={{ whiteSpace: "nowrap", fontSize: 26, fontWeight: 500, paddingLeft: "100vw" }}>
             {Array.from({ length: 3 }).map((_, i) => (
               <span key={i} style={{ marginRight: 120 }}>{config.ticker_text}</span>
@@ -239,8 +298,8 @@ function TvDisplay() {
         <div style={{
           position: "absolute",
           left: 0, right: 0,
-          bottom: config?.ticker_text ? 64 : 0,
-          height: 4,
+          bottom: config?.ticker_text ? 80 : 0,
+          height: 3,
           background: "rgba(255,255,255,0.15)",
           zIndex: 11,
         }}>
@@ -248,7 +307,7 @@ function TvDisplay() {
             key={current.id + "-" + index}
             style={{
               height: "100%",
-              background: "#f97316",
+              background: "linear-gradient(90deg, #ff6b35, #e84393)",
               width: "100%",
               transformOrigin: "left center",
               animation: `tv-progress ${durationMs}ms linear forwards`,
@@ -271,6 +330,7 @@ function TvDisplay() {
         @keyframes tv-fadein { from { opacity: 0; } to { opacity: 1; } }
         @keyframes tv-fadeout { from { opacity: 1; } to { opacity: 0; } }
         @keyframes tv-kenburns { from { transform: scale(1); } to { transform: scale(1.08); } }
+        @keyframes tv-pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
         @keyframes tv-ticker-scroll {
           from { transform: translateX(0); }
           to { transform: translateX(-100%); }
@@ -281,15 +341,59 @@ function TvDisplay() {
         .tv-layer[data-active="true"] { opacity: 1; }
         .tv-bg { position: absolute; inset: 0; background-size: cover; background-position: center; }
         .tv-vignette { position: absolute; inset: 0; }
-        .tv-content { position: absolute; left: 5%; right: 5%; top: 5%; bottom: 5%; display: flex; flex-direction: column; gap: 4px; }
-        .tv-badge { display: inline-block; align-self: flex-start; padding: 8px 20px; color: white; font-size: 22px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; border-radius: 8px; margin-bottom: 32px; }
-        .tv-title { font-size: 88px; font-weight: 800; line-height: 1.02; letter-spacing: -0.035em; margin: 0; text-shadow: 0 4px 24px rgba(0,0,0,0.55); }
-        .tv-subtitle { font-size: 44px; font-weight: 500; margin-top: 18px; opacity: 0.95; text-shadow: 0 2px 16px rgba(0,0,0,0.55); }
-        .tv-body { font-size: 32px; font-weight: 400; margin-top: 22px; line-height: 1.32; opacity: 0.9; text-shadow: 0 2px 12px rgba(0,0,0,0.55); }
+        /* Content area: left 4%, top 160px, right 37% (sidebar 33% + gap), bottom 100px */
+        .tv-content { position: absolute; left: 4%; right: 37%; top: 160px; bottom: 100px; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; }
+        .tv-badge {
+          display: inline-flex; align-items: center; gap: 12px;
+          align-self: flex-start; padding: 10px 24px;
+          background: #ff6b35; color: #0b0f1a;
+          font-family: 'Space Grotesk', system-ui;
+          font-size: 20px; font-weight: 800; letter-spacing: 0.14em;
+          text-transform: uppercase; border-radius: 999px;
+          margin-bottom: 28px;
+          box-shadow: 0 8px 32px rgba(255,107,53,0.35);
+        }
+        .tv-badge::before {
+          content: ""; width: 10px; height: 10px; border-radius: 50%;
+          background: #0b0f1a; animation: tv-pulse-dot 1.4s ease-in-out infinite;
+        }
+        .tv-title {
+          font-family: 'Space Grotesk', system-ui;
+          font-size: 112px; font-weight: 700; line-height: 0.92;
+          letter-spacing: -0.04em; margin: 0;
+          text-shadow: 0 4px 32px rgba(0,0,0,0.6);
+        }
+        .tv-title-accent {
+          background: linear-gradient(90deg, #ff6b35, #e84393, #6c5ce7);
+          -webkit-background-clip: text; background-clip: text;
+          -webkit-text-fill-color: transparent; color: transparent;
+        }
+        .tv-subtitle { font-size: 44px; font-weight: 500; margin-top: 20px; opacity: 0.85; text-shadow: 0 2px 16px rgba(0,0,0,0.55); }
+        .tv-body { font-size: 30px; font-weight: 400; margin-top: 24px; line-height: 1.35; opacity: 0.75; max-width: 900px; text-shadow: 0 2px 12px rgba(0,0,0,0.55); }
         .tv-bullets { list-style: none; margin: 32px 0 0; padding: 0; display: flex; flex-direction: column; gap: 22px; }
-        .tv-bullets li { display: flex; align-items: center; gap: 24px; font-size: 40px; }
-        .tv-bullet-dot { display: inline-block; width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; }
+        .tv-bullets li { display: flex; align-items: center; gap: 24px; font-size: 36px; }
+        .tv-bullet-dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; background: linear-gradient(135deg, #ff6b35, #e84393); }
+
+        /* Sidebar */
+        .tv-sidebar {
+          position: absolute; right: 0; top: 160px; bottom: 100px; width: 33%;
+          background: rgba(255,255,255,0.03);
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          border-left: 1px solid rgba(255,255,255,0.08);
+          padding: 32px 36px 32px 32px;
+          display: flex; flex-direction: column; gap: 24px;
+          z-index: 11; overflow: hidden;
+        }
+        .tv-side-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 22px 24px; }
+        .tv-side-label { color: rgba(255,255,255,0.4); font-size: 12px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 14px; }
+        .tv-stat-val { font-family: 'Space Grotesk', system-ui; font-size: 40px; font-weight: 700; line-height: 1; }
+        .tv-stat-lbl { font-size: 12px; opacity: 0.5; margin-top: 6px; }
+        .tv-person-row { display: flex; align-items: center; gap: 14px; padding: 12px 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 14px; }
+        .tv-avatar { width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0; }
+        .tv-live-dot { margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 12px #22c55e; }
       `}</style>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=DM+Sans:wght@400;500;700&display=swap" />
     </div>
   );
 }
@@ -311,5 +415,127 @@ function BrandingSlide() {
         Vítejte v Autoportu
       </div>
     </div>
+  );
+}
+
+function WeatherPill({ token, enabled }: { token: string; enabled: boolean }) {
+  const fn = useServerFn(getTvWidgetData);
+  const q = useQuery({
+    queryKey: ["tv-weather", token],
+    queryFn: () => fn({ data: { token, widget: "weather" } }),
+    enabled,
+    refetchInterval: 15 * 60 * 1000,
+  });
+  if (!enabled) return null;
+  const w = q.data && q.data.widget === "weather" ? q.data : null;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 12, paddingLeft: 32, borderLeft: "1px solid rgba(255,255,255,0.1)" }}>
+      <div style={{ textAlign: "right", lineHeight: 1.05 }}>
+        <div style={{ fontSize: 11, opacity: 0.4, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 4 }}>
+          Počasí
+        </div>
+        <div style={{ fontFamily: "'Space Grotesk', system-ui", fontSize: 46, fontWeight: 700, letterSpacing: "-0.02em" }}>
+          {w?.temp_c != null ? `${Math.round(w.temp_c)}°C` : "—"}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TvSidebar({ token }: { token: string }) {
+  const fn = useServerFn(getTvWidgetData);
+  const statsQ = useQuery({
+    queryKey: ["tv-widget", token, "stats"],
+    queryFn: () => fn({ data: { token, widget: "stats" } }),
+    refetchInterval: 60 * 1000,
+  });
+  const atWorkQ = useQuery({
+    queryKey: ["tv-widget", token, "at_work"],
+    queryFn: () => fn({ data: { token, widget: "at_work" } }),
+    refetchInterval: 30 * 1000,
+  });
+  const newsQ = useQuery({
+    queryKey: ["tv-widget", token, "news"],
+    queryFn: () => fn({ data: { token, widget: "news" } }),
+    refetchInterval: 5 * 60 * 1000,
+  });
+
+  const stats = statsQ.data && statsQ.data.widget === "stats" ? statsQ.data : null;
+  const people = atWorkQ.data && atWorkQ.data.widget === "at_work" ? atWorkQ.data.people : [];
+  const news = newsQ.data && newsQ.data.widget === "news" ? newsQ.data.items : [];
+
+  const gradients = [
+    "linear-gradient(135deg, #6c5ce7, #e84393)",
+    "linear-gradient(135deg, #f7931e, #ff6b35)",
+    "linear-gradient(135deg, #ff6b35, #6c5ce7)",
+    "linear-gradient(135deg, #e84393, #f7931e)",
+  ];
+
+  return (
+    <aside className="tv-sidebar">
+      <div>
+        <div className="tv-side-label">V showroomu dnes</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div className="tv-side-card">
+            <div className="tv-stat-val" style={{ color: "#f7931e" }}>{stats?.day.vykupy ?? 0}</div>
+            <div className="tv-stat-lbl">Nové výkupy dnes</div>
+          </div>
+          <div className="tv-side-card">
+            <div className="tv-stat-val">{stats?.day.ukoly_done ?? 0}</div>
+            <div className="tv-stat-lbl">Hotové úkoly</div>
+          </div>
+          <div className="tv-side-card">
+            <div className="tv-stat-val" style={{ color: "#e84393" }}>{stats?.week.vykupy ?? 0}</div>
+            <div className="tv-stat-lbl">Výkupy / týden</div>
+          </div>
+          <div className="tv-side-card">
+            <div className="tv-stat-val" style={{ color: "#6c5ce7" }}>{stats?.week.prodano ?? 0}</div>
+            <div className="tv-stat-lbl">Prodáno / týden</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ minHeight: 0, display: "flex", flexDirection: "column" }}>
+        <div className="tv-side-label">Kdo je právě v práci</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, overflow: "hidden" }}>
+          {people.length ? people.slice(0, 4).map((p, i) => (
+            <div key={i} className="tv-person-row">
+              <div className="tv-avatar" style={{ background: gradients[i % gradients.length] }} />
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 700, fontSize: 16, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
+                <div style={{ fontSize: 12, opacity: 0.5 }}>Online</div>
+              </div>
+              <div className="tv-live-dot" />
+            </div>
+          )) : (
+            <div style={{ fontSize: 14, opacity: 0.5, padding: "8px 0" }}>Nikdo aktuálně nepracuje</div>
+          )}
+        </div>
+      </div>
+
+      <div style={{
+        marginTop: "auto",
+        padding: 24,
+        background: "linear-gradient(135deg, rgba(255,107,53,0.2), rgba(232,67,147,0.15))",
+        border: "1px solid rgba(255,255,255,0.1)",
+        borderRadius: 24,
+      }}>
+        <div style={{ color: "rgba(255,255,255,0.6)", fontWeight: 700, fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 8 }}>
+          Aktuality
+        </div>
+        {news[0] ? (
+          <>
+            <div style={{ fontFamily: "'Space Grotesk', system-ui", fontSize: 22, fontWeight: 700, lineHeight: 1.2 }}>
+              {news[0].title}
+            </div>
+            {news[0].body && (
+              <div style={{ fontSize: 14, opacity: 0.7, marginTop: 6 }}>{news[0].body}</div>
+            )}
+          </>
+        ) : (
+          <div style={{ fontSize: 14, opacity: 0.6 }}>Zatím žádné novinky</div>
+        )}
+      </div>
+    </aside>
   );
 }
