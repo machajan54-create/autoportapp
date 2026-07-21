@@ -825,6 +825,24 @@ function RecordsTab() {
         {canApprove && (
           <Button onClick={openNew}><Plus className="mr-1 h-4 w-4" /> Nový záznam</Button>
         )}
+        {!canApprove && visibleRecords.length > 0 && (
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => exportMyRecords(visibleRecords, empMap, shiftMap, "csv")}
+            >
+              <Download className="mr-1 h-4 w-4" /> Export CSV
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => exportMyRecords(visibleRecords, empMap, shiftMap, "xlsx")}
+            >
+              <FileSpreadsheet className="mr-1 h-4 w-4" /> Export XLSX
+            </Button>
+          </div>
+        )}
       </div>
       <Card>
         <Table>
