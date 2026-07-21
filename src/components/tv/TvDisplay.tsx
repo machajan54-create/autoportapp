@@ -74,8 +74,7 @@ function buildLoungeSlide(duration = 12): Slide {
   };
 }
 
-function TvDisplay() {
-  const { token } = Route.useParams();
+export function TvDisplay({ token }: { token: string }) {
   const [config, setConfig] = useState<DisplayConfig | null>(null);
   const [slides, setSlides] = useState<Slide[]>([]);
   const [index, setIndex] = useState(0);
