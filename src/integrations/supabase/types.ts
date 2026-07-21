@@ -434,6 +434,7 @@ export type Database = {
           error: string | null
           finished_at: string | null
           id: string
+          kind: string
           rows_count: number | null
           size_bytes: number | null
           started_at: string
@@ -451,6 +452,7 @@ export type Database = {
           error?: string | null
           finished_at?: string | null
           id?: string
+          kind?: string
           rows_count?: number | null
           size_bytes?: number | null
           started_at?: string
@@ -468,6 +470,7 @@ export type Database = {
           error?: string | null
           finished_at?: string | null
           id?: string
+          kind?: string
           rows_count?: number | null
           size_bytes?: number | null
           started_at?: string
@@ -485,9 +488,14 @@ export type Database = {
           drive_account_email: string | null
           drive_folder_id: string | null
           drive_folder_name: string | null
+          github_auto_enabled: boolean
+          github_branch: string | null
+          github_owner: string | null
+          github_repo: string | null
           id: string
           last_backup_at: string | null
           last_connected_at: string | null
+          last_github_snapshot_at: string | null
           next_backup_at: string | null
           schedule_day_of_month: number
           schedule_day_of_week: number
@@ -504,9 +512,14 @@ export type Database = {
           drive_account_email?: string | null
           drive_folder_id?: string | null
           drive_folder_name?: string | null
+          github_auto_enabled?: boolean
+          github_branch?: string | null
+          github_owner?: string | null
+          github_repo?: string | null
           id?: string
           last_backup_at?: string | null
           last_connected_at?: string | null
+          last_github_snapshot_at?: string | null
           next_backup_at?: string | null
           schedule_day_of_month?: number
           schedule_day_of_week?: number
@@ -523,9 +536,14 @@ export type Database = {
           drive_account_email?: string | null
           drive_folder_id?: string | null
           drive_folder_name?: string | null
+          github_auto_enabled?: boolean
+          github_branch?: string | null
+          github_owner?: string | null
+          github_repo?: string | null
           id?: string
           last_backup_at?: string | null
           last_connected_at?: string | null
+          last_github_snapshot_at?: string | null
           next_backup_at?: string | null
           schedule_day_of_month?: number
           schedule_day_of_week?: number
