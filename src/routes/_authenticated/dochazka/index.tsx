@@ -993,6 +993,14 @@ function RecordsTab() {
 
   return (
     <div className="mt-4 space-y-3">
+      {!canApprove && (
+        <MyStatsPanel
+          visibleRecords={visibleRecords}
+          empMap={empMap}
+          shiftMap={shiftMap}
+          dailyThr={dailyThr}
+        />
+      )}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           {canApprove && selected.size > 0 && (
@@ -1009,24 +1017,6 @@ function RecordsTab() {
         </div>
         {canApprove && (
           <Button onClick={openNew}><Plus className="mr-1 h-4 w-4" /> Nový záznam</Button>
-        )}
-        {!canApprove && visibleRecords.length > 0 && (
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => exportMyRecords(visibleRecords, empMap, shiftMap, "csv")}
-            >
-              <Download className="mr-1 h-4 w-4" /> Export CSV
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => exportMyRecords(visibleRecords, empMap, shiftMap, "xlsx")}
-            >
-              <FileSpreadsheet className="mr-1 h-4 w-4" /> Export XLSX
-            </Button>
-          </div>
         )}
       </div>
       <Card>
