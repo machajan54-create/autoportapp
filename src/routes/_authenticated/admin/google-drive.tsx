@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, FolderPlus, RefreshCw, Cloud, HardDrive, Loader2, Upload, CalendarClock, Play, ExternalLink, AlertTriangle } from "lucide-react";
+import { CheckCircle2, XCircle, FolderPlus, RefreshCw, Cloud, HardDrive, Loader2, Upload, CalendarClock, Play, ExternalLink, AlertTriangle, Github } from "lucide-react";
 import {
   getGoogleDriveStatus,
   listGoogleDriveFolders,
@@ -30,6 +30,12 @@ import {
   listBackupFiles,
   restoreBackupFromDrive,
 } from "@/lib/google-drive.functions";
+import {
+  getGithubSnapshotStatus,
+  saveGithubSnapshotSettings,
+  runGithubSnapshotNow,
+  listGithubSnapshotRuns,
+} from "@/lib/github-snapshot.functions";
 import {
   AlertDialog,
   AlertDialogAction,
