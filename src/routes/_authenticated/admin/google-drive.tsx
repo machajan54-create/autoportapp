@@ -75,6 +75,8 @@ function GoogleDrivePage() {
   const createFolder = useServerFn(createGoogleDriveFolder);
   const saveSettings = useServerFn(saveBackupSettings);
   const testWrite = useServerFn(testGoogleDriveWrite);
+  const runBackup = useServerFn(runBackupNow);
+  const fetchRuns = useServerFn(listBackupRuns);
 
   const [folderQuery, setFolderQuery] = useState("");
   const [newFolderName, setNewFolderName] = useState("");
@@ -116,6 +118,24 @@ function GoogleDrivePage() {
       toast.success(`Testovací soubor „${data?.name}" nahrán na Google Disk`);
     },
     onError: (e: any) => toast.error(e?.message ?? "Test selhal"),
+  });
+
+  const runM = useMutation({
+    mutationFn: () => runBackup({}),
+    onSuccess: (data: any) => {
+      toast.success(
+        `Záloha dokončena – ${data.tables} tabulek, ${data.rows} řádků (${formatBytes(data.sizeBytes)})`,
+      );
+      qc.invalidateQueries({ queryKey: ["gdrive-runs"] });
+      qc.invalidateQueries({ queryKey: ["gdrive-status"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Záloha selhala"),
+  });
+
+  const runs = useQuery({
+    queryKey: ["gdrive-runs"],
+    queryFn: () => fetchRuns({}),
+    refetchInterval: runM.isPending ? 2000 : false,
   });
 
   const s = status.data;
