@@ -157,6 +157,44 @@ function GoogleDrivePage() {
     refetchInterval: runM.isPending ? 2000 : false,
   });
 
+  // ---- GitHub snapshot ----
+  const fetchGhStatus = useServerFn(getGithubSnapshotStatus);
+  const saveGh = useServerFn(saveGithubSnapshotSettings);
+  const runGh = useServerFn(runGithubSnapshotNow);
+  const fetchGhRuns = useServerFn(listGithubSnapshotRuns);
+
+  const ghStatus = useQuery({
+    queryKey: ["gh-snapshot-status"],
+    queryFn: () => fetchGhStatus({}),
+  });
+
+  const ghSaveM = useMutation({
+    mutationFn: (input: Parameters<typeof saveGh>[0]["data"]) => saveGh({ data: input }),
+    onSuccess: () => {
+      toast.success("Nastavení GitHubu uloženo");
+      qc.invalidateQueries({ queryKey: ["gh-snapshot-status"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Uložení selhalo"),
+  });
+
+  const ghRunM = useMutation({
+    mutationFn: () => runGh({}),
+    onSuccess: (data: any) => {
+      toast.success(
+        `Snapshot kódu hotový – ${formatBytes(data.sizeBytes)} (${data.driveFileName})`,
+      );
+      qc.invalidateQueries({ queryKey: ["gh-snapshot-runs"] });
+      qc.invalidateQueries({ queryKey: ["gh-snapshot-status"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Snapshot kódu selhal"),
+  });
+
+  const ghRuns = useQuery({
+    queryKey: ["gh-snapshot-runs"],
+    queryFn: () => fetchGhRuns({}),
+    refetchInterval: ghRunM.isPending ? 2000 : false,
+  });
+
   const listFiles = useServerFn(listBackupFiles);
   const restoreFn = useServerFn(restoreBackupFromDrive);
 
