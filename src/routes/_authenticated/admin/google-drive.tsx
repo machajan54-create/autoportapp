@@ -48,6 +48,24 @@ function formatBytes(bytes?: number | string | null) {
   return `${v.toFixed(v >= 10 || i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
+const DOW_CS = ["neděli", "pondělí", "úterý", "středu", "čtvrtek", "pátek", "sobotu"];
+
+function describeSchedule(s: any): string {
+  if (!s) return "Plán zatím není nastavený.";
+  const t = s.schedule_time ?? "02:00";
+  switch (s.schedule_frequency) {
+    case "interval":
+      return `Záloha poběží každých ${s.schedule_interval_hours ?? 24} h.`;
+    case "daily":
+      return `Záloha poběží každý den v ${t}.`;
+    case "monthly":
+      return `Záloha poběží každý měsíc ${s.schedule_day_of_month ?? 1}. dne v ${t}.`;
+    case "weekly":
+    default:
+      return `Záloha poběží každý týden v ${DOW_CS[s.schedule_day_of_week ?? 1]} v ${t}.`;
+  }
+}
+
 function GoogleDrivePage() {
   const qc = useQueryClient();
   const fetchStatus = useServerFn(getGoogleDriveStatus);
