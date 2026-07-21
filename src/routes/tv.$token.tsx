@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, type CSSProperties } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import autoportLogo from "@/assets/autoport-logo.png.asset.json";
 import citroenLogo from "@/assets/citroen-logo.png.asset.json";
@@ -819,7 +819,7 @@ function FeedbackWidget({ token, tickerActive }: { token: string; tickerActive: 
   );
 }
 
-const inputStyle: React.CSSProperties = {
+const inputStyle: CSSProperties = {
   padding: "12px 14px",
   borderRadius: 12,
   border: "1px solid rgba(255,255,255,0.15)",
