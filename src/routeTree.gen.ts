@@ -17,6 +17,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UploadTokenRouteImport } from './routes/upload.$token'
+import { Route as TvTokenRouteImport } from './routes/tv.$token'
 import { Route as SignTokenRouteImport } from './routes/sign.$token'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -36,6 +37,7 @@ import { Route as AuthenticatedVykupyDashboardRouteImport } from './routes/_auth
 import { Route as AuthenticatedVykupyIdRouteImport } from './routes/_authenticated/vykupy/$id'
 import { Route as AuthenticatedDemoOrdersIdRouteImport } from './routes/_authenticated/demo-orders/$id'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
+import { Route as AuthenticatedAdminTvRouteImport } from './routes/_authenticated/admin/tv'
 import { Route as AuthenticatedAdminTemplatesRouteImport } from './routes/_authenticated/admin/templates'
 import { Route as AuthenticatedAdminStorageRouteImport } from './routes/_authenticated/admin/storage'
 import { Route as AuthenticatedAdminGoogleDriveRouteImport } from './routes/_authenticated/admin/google-drive'
@@ -90,6 +92,11 @@ const IndexRoute = IndexRouteImport.update({
 const UploadTokenRoute = UploadTokenRouteImport.update({
   id: '/upload/$token',
   path: '/upload/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TvTokenRoute = TvTokenRouteImport.update({
+  id: '/tv/$token',
+  path: '/tv/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignTokenRoute = SignTokenRouteImport.update({
@@ -193,6 +200,11 @@ const AuthenticatedDemoOrdersIdRoute =
 const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminTvRoute = AuthenticatedAdminTvRouteImport.update({
+  id: '/admin/tv',
+  path: '/admin/tv',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAdminTemplatesRoute =
@@ -299,12 +311,14 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/sign/$token': typeof SignTokenRoute
+  '/tv/$token': typeof TvTokenRoute
   '/upload/$token': typeof UploadTokenRoute
   '/admin/$id': typeof AuthenticatedAdminIdRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/google-drive': typeof AuthenticatedAdminGoogleDriveRoute
   '/admin/storage': typeof AuthenticatedAdminStorageRoute
   '/admin/templates': typeof AuthenticatedAdminTemplatesRoute
+  '/admin/tv': typeof AuthenticatedAdminTvRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/demo-orders/$id': typeof AuthenticatedDemoOrdersIdRoute
   '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
@@ -343,12 +357,14 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/sign/$token': typeof SignTokenRoute
+  '/tv/$token': typeof TvTokenRoute
   '/upload/$token': typeof UploadTokenRoute
   '/admin/$id': typeof AuthenticatedAdminIdRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/google-drive': typeof AuthenticatedAdminGoogleDriveRoute
   '/admin/storage': typeof AuthenticatedAdminStorageRoute
   '/admin/templates': typeof AuthenticatedAdminTemplatesRoute
+  '/admin/tv': typeof AuthenticatedAdminTvRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/demo-orders/$id': typeof AuthenticatedDemoOrdersIdRoute
   '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
@@ -389,12 +405,14 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/sign/$token': typeof SignTokenRoute
+  '/tv/$token': typeof TvTokenRoute
   '/upload/$token': typeof UploadTokenRoute
   '/_authenticated/admin/$id': typeof AuthenticatedAdminIdRoute
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/_authenticated/admin/google-drive': typeof AuthenticatedAdminGoogleDriveRoute
   '/_authenticated/admin/storage': typeof AuthenticatedAdminStorageRoute
   '/_authenticated/admin/templates': typeof AuthenticatedAdminTemplatesRoute
+  '/_authenticated/admin/tv': typeof AuthenticatedAdminTvRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/demo-orders/$id': typeof AuthenticatedDemoOrdersIdRoute
   '/_authenticated/vykupy/$id': typeof AuthenticatedVykupyIdRoute
@@ -435,12 +453,14 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/email/unsubscribe'
     | '/sign/$token'
+    | '/tv/$token'
     | '/upload/$token'
     | '/admin/$id'
     | '/admin/audit'
     | '/admin/google-drive'
     | '/admin/storage'
     | '/admin/templates'
+    | '/admin/tv'
     | '/admin/users'
     | '/demo-orders/$id'
     | '/vykupy/$id'
@@ -479,12 +499,14 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/email/unsubscribe'
     | '/sign/$token'
+    | '/tv/$token'
     | '/upload/$token'
     | '/admin/$id'
     | '/admin/audit'
     | '/admin/google-drive'
     | '/admin/storage'
     | '/admin/templates'
+    | '/admin/tv'
     | '/admin/users'
     | '/demo-orders/$id'
     | '/vykupy/$id'
@@ -524,12 +546,14 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/email/unsubscribe'
     | '/sign/$token'
+    | '/tv/$token'
     | '/upload/$token'
     | '/_authenticated/admin/$id'
     | '/_authenticated/admin/audit'
     | '/_authenticated/admin/google-drive'
     | '/_authenticated/admin/storage'
     | '/_authenticated/admin/templates'
+    | '/_authenticated/admin/tv'
     | '/_authenticated/admin/users'
     | '/_authenticated/demo-orders/$id'
     | '/_authenticated/vykupy/$id'
@@ -568,6 +592,7 @@ export interface RootRouteChildren {
   TerminalRoute: typeof TerminalRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   SignTokenRoute: typeof SignTokenRoute
+  TvTokenRoute: typeof TvTokenRoute
   UploadTokenRoute: typeof UploadTokenRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   WashRespondActionTokenRoute: typeof WashRespondActionTokenRoute
@@ -640,6 +665,13 @@ declare module '@tanstack/react-router' {
       path: '/upload/$token'
       fullPath: '/upload/$token'
       preLoaderRoute: typeof UploadTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tv/$token': {
+      id: '/tv/$token'
+      path: '/tv/$token'
+      fullPath: '/tv/$token'
+      preLoaderRoute: typeof TvTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sign/$token': {
@@ -775,6 +807,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/tv': {
+      id: '/_authenticated/admin/tv'
+      path: '/admin/tv'
+      fullPath: '/admin/tv'
+      preLoaderRoute: typeof AuthenticatedAdminTvRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/templates': {
       id: '/_authenticated/admin/templates'
       path: '/admin/templates'
@@ -898,6 +937,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminGoogleDriveRoute: typeof AuthenticatedAdminGoogleDriveRoute
   AuthenticatedAdminStorageRoute: typeof AuthenticatedAdminStorageRoute
   AuthenticatedAdminTemplatesRoute: typeof AuthenticatedAdminTemplatesRoute
+  AuthenticatedAdminTvRoute: typeof AuthenticatedAdminTvRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedDemoOrdersIdRoute: typeof AuthenticatedDemoOrdersIdRoute
   AuthenticatedVykupyIdRoute: typeof AuthenticatedVykupyIdRoute
@@ -921,6 +961,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminGoogleDriveRoute: AuthenticatedAdminGoogleDriveRoute,
   AuthenticatedAdminStorageRoute: AuthenticatedAdminStorageRoute,
   AuthenticatedAdminTemplatesRoute: AuthenticatedAdminTemplatesRoute,
+  AuthenticatedAdminTvRoute: AuthenticatedAdminTvRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedDemoOrdersIdRoute: AuthenticatedDemoOrdersIdRoute,
   AuthenticatedVykupyIdRoute: AuthenticatedVykupyIdRoute,
@@ -950,6 +991,7 @@ const rootRouteChildren: RootRouteChildren = {
   TerminalRoute: TerminalRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   SignTokenRoute: SignTokenRoute,
+  TvTokenRoute: TvTokenRoute,
   UploadTokenRoute: UploadTokenRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   WashRespondActionTokenRoute: WashRespondActionTokenRoute,
