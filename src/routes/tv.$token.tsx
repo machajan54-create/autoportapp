@@ -132,7 +132,12 @@ function TvDisplay() {
           valid_to: r.valid_to,
         }))
         .filter((s) => isSlideValidNow(s));
-      const withExtras = [...filtered, buildLoungeSlide(), buildFeedbackSlide()];
+      const showLounge = (cfg as DisplayConfig | null)?.show_lounge !== false;
+      const showFeedback = (cfg as DisplayConfig | null)?.show_feedback !== false;
+      const extras: Slide[] = [];
+      if (showLounge) extras.push(buildLoungeSlide());
+      if (showFeedback) extras.push(buildFeedbackSlide());
+      const withExtras = [...filtered, ...extras];
       setSlides(withExtras);
       localStorage.setItem(LS_SLIDES, JSON.stringify(withExtras));
       setError(null);
