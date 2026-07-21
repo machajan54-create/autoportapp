@@ -80,7 +80,7 @@ function buildBuyoutSlide(duration = 14): Slide {
     title: "Vykupujeme vozy všech značek",
     subtitle: "Rychle, férově a bez starostí",
     body:
-      "Nabídneme Vám cenu do 24 hodin. Postaráme se o všechny papíry, odhlášení i převod. Peníze obdržíte ihned.",
+      "Nabídneme Vám férovou cenu ihned. Postaráme se o všechny papíry, odhlášení i převod – vy si jen převezmete peníze.",
     image_url: null,
     type: "buyout",
     kind: "buyout",
