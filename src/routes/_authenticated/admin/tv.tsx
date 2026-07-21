@@ -62,6 +62,8 @@ type DisplayConfig = {
   show_clock: boolean;
   show_feedback: boolean;
   show_lounge: boolean;
+  feedback_duration_sec?: number | null;
+  lounge_duration_sec?: number | null;
 };
 
 const TYPE_LABELS: Record<Slide["type"], string> = {
@@ -352,6 +354,40 @@ function TvAdmin() {
                   }}
                 />
                 <Label>Zobrazovat slide „Zákaznický koutek"</Label>
+              </div>
+              <div>
+                <Label>Délka slide „Napište nám" (s)</Label>
+                <Input
+                  type="number"
+                  min={3}
+                  max={120}
+                  value={activeConfig.feedback_duration_sec ?? 15}
+                  onChange={(e) => qc.setQueryData<DisplayConfig[]>(["tv-configs"], (prev) =>
+                    (prev ?? []).map((c) => c.id === activeConfig.id ? { ...c, feedback_duration_sec: Number(e.target.value) } : c))}
+                  onBlur={async (e) => {
+                    const v = Math.max(3, Math.min(120, Number(e.target.value) || 15));
+                    await supabase.from("display_config").update({ feedback_duration_sec: v }).eq("id", activeConfig.id);
+                    toast.success("Délka uložena");
+                    qc.invalidateQueries({ queryKey: ["tv-configs"] });
+                  }}
+                />
+              </div>
+              <div>
+                <Label>Délka slide „Zákaznický koutek" (s)</Label>
+                <Input
+                  type="number"
+                  min={3}
+                  max={120}
+                  value={activeConfig.lounge_duration_sec ?? 12}
+                  onChange={(e) => qc.setQueryData<DisplayConfig[]>(["tv-configs"], (prev) =>
+                    (prev ?? []).map((c) => c.id === activeConfig.id ? { ...c, lounge_duration_sec: Number(e.target.value) } : c))}
+                  onBlur={async (e) => {
+                    const v = Math.max(3, Math.min(120, Number(e.target.value) || 12));
+                    await supabase.from("display_config").update({ lounge_duration_sec: v }).eq("id", activeConfig.id);
+                    toast.success("Délka uložena");
+                    qc.invalidateQueries({ queryKey: ["tv-configs"] });
+                  }}
+                />
               </div>
             </div>
           </Card>
