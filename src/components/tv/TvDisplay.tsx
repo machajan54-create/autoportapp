@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import autoportLogo from "@/assets/autoport-logo.png.asset.json";
@@ -9,18 +8,6 @@ import { SlideRenderer, type TvSlide } from "@/components/tv/SlideRenderer";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { getTvWidgetData } from "@/lib/tv-widgets.functions";
-
-export const Route = createFileRoute("/tv/$token")({
-  ssr: false,
-  head: () => ({
-    meta: [
-      { title: "Autoport TV Display" },
-      { name: "robots", content: "noindex, nofollow" },
-      { name: "viewport", content: "width=1920, initial-scale=1" },
-    ],
-  }),
-  component: TvDisplay,
-});
 
 type Slide = TvSlide;
 
