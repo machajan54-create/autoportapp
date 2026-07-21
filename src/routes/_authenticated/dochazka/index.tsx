@@ -703,6 +703,51 @@ function ShiftsTab() {
 // ============= Records =============
 // AutoFillButton byl přesunut do super admin sekce: /admin/dochazka
 
+async function exportMyRecords(
+  records: any[],
+  empMap: Map<string, any>,
+  shiftMap: Map<string, any>,
+  format: "csv" | "xlsx",
+) {
+  const header = ["Datum", "Zaměstnanec", "Směna", "Příchod", "Odchod", "Pauza (min)", "Hodiny", "Stav", "Poznámka"];
+  const rows = records.map((r) => {
+    const emp = empMap.get(r.employee_id) as any;
+    const sh = r.shift_id ? (shiftMap.get(r.shift_id) as any) : null;
+    return [
+      r.date,
+      emp?.name ?? "",
+      sh?.name ?? "",
+      r.check_in ? new Date(r.check_in).toLocaleString("cs-CZ") : "",
+      r.check_out ? new Date(r.check_out).toLocaleString("cs-CZ") : "",
+      String(r.break_duration ?? 0),
+      String(r.hours_worked ?? 0),
+      String(r.approval_status ?? "draft"),
+      String(r.note ?? "").replace(/[\r\n;]/g, " "),
+    ];
+  });
+  const empName = (empMap.get(records[0]?.employee_id) as any)?.name ?? "moje";
+  const safeName = empName.replace(/\s+/g, "-").toLowerCase();
+  const stamp = new Date().toISOString().slice(0, 10);
+  if (format === "csv") {
+    const csv = [header, ...rows]
+      .map((r) => r.map((x) => `"${String(x ?? "").replace(/"/g, '""')}"`).join(";"))
+      .join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `dochazka-${safeName}-${stamp}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } else {
+    const XLSX = await import("xlsx");
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+    XLSX.utils.book_append_sheet(wb, ws, "Docházka");
+    XLSX.writeFile(wb, `dochazka-${safeName}-${stamp}.xlsx`);
+  }
+}
+
 function RecordsTab() {
   const qc = useQueryClient();
   const fetchR = useServerFn(listRecords);
