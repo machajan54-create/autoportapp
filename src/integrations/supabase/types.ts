@@ -1293,6 +1293,8 @@ export type Database = {
           id: string
           name: string
           show_clock: boolean
+          show_feedback: boolean
+          show_lounge: boolean
           show_weather: boolean
           ticker_text: string | null
           token: string
@@ -1303,6 +1305,8 @@ export type Database = {
           id?: string
           name: string
           show_clock?: boolean
+          show_feedback?: boolean
+          show_lounge?: boolean
           show_weather?: boolean
           ticker_text?: string | null
           token: string
@@ -1313,6 +1317,8 @@ export type Database = {
           id?: string
           name?: string
           show_clock?: boolean
+          show_feedback?: boolean
+          show_lounge?: boolean
           show_weather?: boolean
           ticker_text?: string | null
           token?: string

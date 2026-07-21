@@ -60,6 +60,8 @@ type DisplayConfig = {
   ticker_text: string | null;
   show_weather: boolean;
   show_clock: boolean;
+  show_feedback: boolean;
+  show_lounge: boolean;
 };
 
 const TYPE_LABELS: Record<Slide["type"], string> = {
@@ -330,6 +332,26 @@ function TvAdmin() {
                   }}
                 />
                 <Label>Zobrazovat počasí</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={activeConfig.show_feedback}
+                  onCheckedChange={async (v) => {
+                    await supabase.from("display_config").update({ show_feedback: v }).eq("id", activeConfig.id);
+                    qc.invalidateQueries({ queryKey: ["tv-configs"] });
+                  }}
+                />
+                <Label>Zobrazovat slide „Napište nám" (QR)</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={activeConfig.show_lounge}
+                  onCheckedChange={async (v) => {
+                    await supabase.from("display_config").update({ show_lounge: v }).eq("id", activeConfig.id);
+                    qc.invalidateQueries({ queryKey: ["tv-configs"] });
+                  }}
+                />
+                <Label>Zobrazovat slide „Zákaznický koutek"</Label>
               </div>
             </div>
           </Card>
