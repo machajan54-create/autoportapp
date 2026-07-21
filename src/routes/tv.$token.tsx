@@ -345,6 +345,9 @@ function TvDisplay() {
         </div>
       </div>
 
+      {/* Feedback button + modal */}
+      <FeedbackWidget token={token} tickerActive={!!config?.ticker_text} />
+
       {/* Ticker */}
       {config?.ticker_text && (
         <div
