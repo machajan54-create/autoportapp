@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import autoportLogo from "@/assets/autoport-logo.png.asset.json";
+import { SlideRenderer, type TvSlide } from "@/components/tv/SlideRenderer";
 
 export const Route = createFileRoute("/tv/$token")({
   ssr: false,
@@ -15,19 +16,7 @@ export const Route = createFileRoute("/tv/$token")({
   component: TvDisplay,
 });
 
-type Slide = {
-  id: string;
-  title: string | null;
-  subtitle: string | null;
-  body: string | null;
-  image_url: string | null;
-  type: "news" | "promo" | "vehicle" | "video";
-  duration_sec: number;
-  sort_order: number;
-  active: boolean;
-  valid_from: string | null;
-  valid_to: string | null;
-};
+type Slide = TvSlide;
 
 type DisplayConfig = {
   id: string;
@@ -38,7 +27,7 @@ type DisplayConfig = {
   show_clock: boolean;
 };
 
-const LS_SLIDES = "tv-display:slides-cache";
+const LS_SLIDES = "tv-display:slides-cache-v2";
 const LS_CONFIG = "tv-display:config-cache";
 
 function isSlideValidNow(s: Slide, now = Date.now()) {
@@ -48,19 +37,10 @@ function isSlideValidNow(s: Slide, now = Date.now()) {
   return true;
 }
 
-async function resolveImageUrl(raw: string | null): Promise<string | null> {
-  if (!raw) return null;
-  if (/^https?:\/\//i.test(raw) || raw.startsWith("data:")) return raw;
-  // Storage path in `slides` bucket → signed URL
-  const { data } = await supabase.storage.from("slides").createSignedUrl(raw, 60 * 60 * 6);
-  return data?.signedUrl ?? null;
-}
-
 function TvDisplay() {
   const { token } = Route.useParams();
   const [config, setConfig] = useState<DisplayConfig | null>(null);
   const [slides, setSlides] = useState<Slide[]>([]);
-  const [resolvedImages, setResolvedImages] = useState<Record<string, string | null>>({});
   const [index, setIndex] = useState(0);
   const [now, setNow] = useState(() => new Date());
   const [error, setError] = useState<string | null>(null);
@@ -85,7 +65,25 @@ function TvDisplay() {
         .eq("active", true)
         .order("sort_order", { ascending: true });
       if (sErr) throw sErr;
-      const filtered = (rows ?? []).filter((s: any) => isSlideValidNow(s as Slide)) as Slide[];
+      const filtered = (rows ?? [])
+        .map((r: any): Slide => ({
+          id: r.id,
+          title: r.title,
+          subtitle: r.subtitle,
+          body: r.body,
+          image_url: r.image_url,
+          type: r.type ?? "news",
+          kind: r.kind ?? "image",
+          payload: r.payload ?? {},
+          duration_sec: r.duration_sec ?? 12,
+          transition: r.transition ?? "fade",
+          weight: r.weight ?? 1,
+          sort_order: r.sort_order ?? 0,
+          active: !!r.active,
+          valid_from: r.valid_from,
+          valid_to: r.valid_to,
+        }))
+        .filter((s) => isSlideValidNow(s));
       setSlides(filtered);
       localStorage.setItem(LS_SLIDES, JSON.stringify(filtered));
       setError(null);
@@ -102,25 +100,13 @@ function TvDisplay() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Resolve image URLs whenever slides change
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const next: Record<string, string | null> = {};
-      for (const s of slides) {
-        next[s.id] = await resolveImageUrl(s.image_url);
-      }
-      if (!cancelled) setResolvedImages(next);
-    })();
-    return () => { cancelled = true; };
-  }, [slides]);
-
   // Realtime updates
   useEffect(() => {
     const ch = supabase
       .channel("tv-display-" + token)
       .on("postgres_changes", { event: "*", schema: "public", table: "slides" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "display_config" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "display_news" }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [token, load]);
@@ -164,15 +150,6 @@ function TvDisplay() {
   }, []);
 
   const current = slides.length ? slides[index % slides.length] : null;
-  const nextSlide = slides.length ? slides[(index + 1) % slides.length] : null;
-
-  // Preload next image
-  useEffect(() => {
-    if (!nextSlide) return;
-    const url = resolvedImages[nextSlide.id];
-    if (url) { const img = new Image(); img.src = url; }
-  }, [nextSlide, resolvedImages]);
-
   const durationMs = Math.max(3, current?.duration_sec ?? 12) * 1000;
 
   return (
@@ -195,9 +172,14 @@ function TvDisplay() {
       ) : (
         slides.map((s, i) => {
           const active = i === index % slides.length;
-          const img = resolvedImages[s.id] ?? null;
           return (
-            <SlideLayer key={s.id} slide={s} imageUrl={img} active={active} />
+            <SlideRenderer
+              key={s.id}
+              slide={s}
+              token={token}
+              active={active}
+              onFinished={() => setIndex((i) => (i + 1) % slides.length)}
+            />
           );
         })
       )}
