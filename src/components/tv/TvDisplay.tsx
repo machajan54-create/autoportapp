@@ -433,8 +433,8 @@ export function TvDisplay({ token }: { token: string }) {
         }
         .tv-ticker { animation: tv-ticker-scroll 45s linear infinite; }
         ::-webkit-scrollbar { display: none; }
-        .tv-layer { position: absolute; inset: 0; opacity: 0; transition: opacity 800ms ease-in-out; pointer-events: none; }
-        .tv-layer[data-active="true"] { opacity: 1; }
+        .tv-layer { position: absolute; inset: 0; opacity: 0; transition: opacity 1200ms cubic-bezier(0.4, 0, 0.2, 1); pointer-events: none; z-index: 1; will-change: opacity; }
+        .tv-layer[data-active="true"] { opacity: 1; z-index: 2; }
         .tv-bg { position: absolute; inset: 0; background-size: cover; background-position: center; }
         .tv-vignette { position: absolute; inset: 0; }
         /* Content area: left 4%, top 160px, right 37% (sidebar 33% + gap), bottom 100px */
