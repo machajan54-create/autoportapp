@@ -1287,6 +1287,39 @@ export type Database = {
           },
         ]
       }
+      display_config: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          show_clock: boolean
+          show_weather: boolean
+          ticker_text: string | null
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          show_clock?: boolean
+          show_weather?: boolean
+          ticker_text?: string | null
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          show_clock?: boolean
+          show_weather?: boolean
+          ticker_text?: string | null
+          token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       document_templates: {
         Row: {
           body: string
@@ -1728,6 +1761,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      slides: {
+        Row: {
+          active: boolean
+          body: string | null
+          created_at: string
+          duration_sec: number
+          id: string
+          image_url: string | null
+          sort_order: number
+          subtitle: string | null
+          title: string | null
+          type: string
+          updated_at: string
+          valid_from: string | null
+          valid_to: string | null
+        }
+        Insert: {
+          active?: boolean
+          body?: string | null
+          created_at?: string
+          duration_sec?: number
+          id?: string
+          image_url?: string | null
+          sort_order?: number
+          subtitle?: string | null
+          title?: string | null
+          type?: string
+          updated_at?: string
+          valid_from?: string | null
+          valid_to?: string | null
+        }
+        Update: {
+          active?: boolean
+          body?: string | null
+          created_at?: string
+          duration_sec?: number
+          id?: string
+          image_url?: string | null
+          sort_order?: number
+          subtitle?: string | null
+          title?: string | null
+          type?: string
+          updated_at?: string
+          valid_from?: string | null
+          valid_to?: string | null
+        }
+        Relationships: []
       }
       suppliers: {
         Row: {
