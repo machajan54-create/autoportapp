@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState, useCallback, type CSSProperties } from "react";
+import { useEffect, useState, useCallback } from "react";
+import QRCode from "qrcode";
 import { supabase } from "@/integrations/supabase/client";
 import autoportLogo from "@/assets/autoport-logo.png.asset.json";
 import citroenLogo from "@/assets/citroen-logo.png.asset.json";

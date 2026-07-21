@@ -19,6 +19,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as UploadTokenRouteImport } from './routes/upload.$token'
 import { Route as TvTokenRouteImport } from './routes/tv.$token'
 import { Route as SignTokenRouteImport } from './routes/sign.$token'
+import { Route as FeedbackTokenRouteImport } from './routes/feedback.$token'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
@@ -102,6 +103,11 @@ const TvTokenRoute = TvTokenRouteImport.update({
 const SignTokenRoute = SignTokenRouteImport.update({
   id: '/sign/$token',
   path: '/sign/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedbackTokenRoute = FeedbackTokenRouteImport.update({
+  id: '/feedback/$token',
+  path: '/feedback/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
@@ -310,6 +316,7 @@ export interface FileRoutesByFullPath {
   '/approvals': typeof AuthenticatedApprovalsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/feedback/$token': typeof FeedbackTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/tv/$token': typeof TvTokenRoute
   '/upload/$token': typeof UploadTokenRoute
@@ -356,6 +363,7 @@ export interface FileRoutesByTo {
   '/approvals': typeof AuthenticatedApprovalsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/feedback/$token': typeof FeedbackTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/tv/$token': typeof TvTokenRoute
   '/upload/$token': typeof UploadTokenRoute
@@ -404,6 +412,7 @@ export interface FileRoutesById {
   '/_authenticated/approvals': typeof AuthenticatedApprovalsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/feedback/$token': typeof FeedbackTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/tv/$token': typeof TvTokenRoute
   '/upload/$token': typeof UploadTokenRoute
@@ -452,6 +461,7 @@ export interface FileRouteTypes {
     | '/approvals'
     | '/dashboard'
     | '/email/unsubscribe'
+    | '/feedback/$token'
     | '/sign/$token'
     | '/tv/$token'
     | '/upload/$token'
@@ -498,6 +508,7 @@ export interface FileRouteTypes {
     | '/approvals'
     | '/dashboard'
     | '/email/unsubscribe'
+    | '/feedback/$token'
     | '/sign/$token'
     | '/tv/$token'
     | '/upload/$token'
@@ -545,6 +556,7 @@ export interface FileRouteTypes {
     | '/_authenticated/approvals'
     | '/_authenticated/dashboard'
     | '/email/unsubscribe'
+    | '/feedback/$token'
     | '/sign/$token'
     | '/tv/$token'
     | '/upload/$token'
@@ -591,6 +603,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   TerminalRoute: typeof TerminalRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
+  FeedbackTokenRoute: typeof FeedbackTokenRoute
   SignTokenRoute: typeof SignTokenRoute
   TvTokenRoute: typeof TvTokenRoute
   UploadTokenRoute: typeof UploadTokenRoute
@@ -679,6 +692,13 @@ declare module '@tanstack/react-router' {
       path: '/sign/$token'
       fullPath: '/sign/$token'
       preLoaderRoute: typeof SignTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feedback/$token': {
+      id: '/feedback/$token'
+      path: '/feedback/$token'
+      fullPath: '/feedback/$token'
+      preLoaderRoute: typeof FeedbackTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/email/unsubscribe': {
@@ -990,6 +1010,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   TerminalRoute: TerminalRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
+  FeedbackTokenRoute: FeedbackTokenRoute,
   SignTokenRoute: SignTokenRoute,
   TvTokenRoute: TvTokenRoute,
   UploadTokenRoute: UploadTokenRoute,
@@ -1010,13 +1031,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
