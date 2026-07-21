@@ -728,24 +728,13 @@ function RecordsTab() {
   const shiftMap = useMemo(() => new Map((shifts ?? []).map((s) => [s.id, s])), [shifts]);
   const dailyThr = Number((settings as any)?.daily_overtime_threshold_hours ?? 8);
 
-  // Pro běžné uživatele zobrazujeme jen reálná píchnutí z terminálu —
-  // skryjeme autogenerované záznamy (Auto-vyplněno…) i ručně doplněné admin záznamy.
+  // Všem uživatelům zobrazujeme jejich reálné záznamy (píchnutí z terminálu
+  // i ručně doplněné adminem). Skryjeme pouze autogenerované záznamy
+  // (Auto-vyplněno…), které vznikly hromadným generováním měsíce.
   const visibleRecords = useMemo(() => {
     const all = records ?? [];
     if (canApprove) return all;
-    return all.filter((r: any) => {
-      const note: string = String(r.note ?? "");
-      if (note.startsWith("Auto-vyplněno")) return false;
-      // Heuristika: terminál ukládá break_duration = 30 a hours_worked = 0 při příchodu;
-      // ručně vložené záznamy admina nemají zaokrouhlené sekundy. Tady raději vezmeme
-      // pravidlo: záznam je reálné píchnutí, pokud check_in má nenulové sekundy nebo
-      // milisekundy (terminál ukládá přesný čas), nebo pokud je dosud otevřený.
-      if (!r.check_out) return true;
-      const ci = new Date(r.check_in);
-      const co = new Date(r.check_out);
-      const hasPreciseTime = ci.getUTCSeconds() !== 0 || co.getUTCSeconds() !== 0;
-      return hasPreciseTime;
-    });
+    return all.filter((r: any) => !String(r.note ?? "").startsWith("Auto-vyplněno"));
   }, [records, canApprove]);
 
   function openNew() {
@@ -849,7 +838,7 @@ function RecordsTab() {
               <TableHead>Odchod</TableHead>
               <TableHead>Pauza</TableHead>
               <TableHead>Hodiny</TableHead>
-              <TableHead>Podčas</TableHead>
+              <TableHead>Přesčas / Podčas</TableHead>
               <TableHead>Stav</TableHead>
               <TableHead className="w-24"></TableHead>
             </TableRow>
@@ -861,20 +850,18 @@ function RecordsTab() {
               const emp = empMap.get(r.employee_id);
               const sh = r.shift_id ? shiftMap.get(r.shift_id) : null;
               const h = Number(r.hours_worked ?? 0);
-              const overtime = h > dailyThr ? h - dailyThr : 0;
               const status = (r as any).approval_status ?? "draft";
-              // Podčas = rozdíl oproti plánované délce směny (po odečtení pauzy)
-              // nebo oproti dennímu normálnímu úvazku, pokud směna není přiřazena.
+              // Přesčas/Podčas = rozdíl oproti plánované délce směny
+              // (po odečtení pauzy) nebo oproti dennímu normálnímu úvazku,
+              // pokud směna není přiřazena. Kladná hodnota = přesčas,
+              // záporná = podčas. Formát je sjednocený, po minutách.
               let expectedHours = dailyThr;
               if (sh?.start_time && sh?.end_time) {
                 expectedHours = expectedHoursWorked(sh.start_time, sh.end_time, Number(r.break_duration ?? 0));
               }
-              let podcas = 0;
-              let hasPodcas = false;
-              if (r.check_out) {
-                podcas = Math.max(0, expectedHours - h);
-                hasPodcas = true;
-              }
+              const hasDiff = !!r.check_out;
+              const diff = hasDiff ? h - expectedHours : 0;
+              const diffMinutes = Math.round(diff * 60);
               // Odešel dříve? Porovnání s koncem směny (HH:MM v lokálním čase).
               let leftEarlyMin = 0;
               if (r.check_out && sh?.end_time) {
@@ -920,22 +907,19 @@ function RecordsTab() {
                     )}
                   </TableCell>
                   <TableCell className="text-xs">{r.break_duration} min</TableCell>
-                  <TableCell className="font-mono font-semibold">
-                    {formatHours(h)}
-                    {overtime > 0 && (
-                      <Badge variant="outline" className="ml-1 border-amber-300 bg-amber-50 text-amber-700 text-[10px]">
-                        +{overtime.toFixed(1)}h přesčas
-                      </Badge>
-                    )}
-                  </TableCell>
+                  <TableCell className="font-mono font-semibold">{formatHours(h)}</TableCell>
                   <TableCell>
-                    {hasPodcas ? (
-                      podcas > 0 ? (
+                    {hasDiff ? (
+                      diffMinutes > 0 ? (
+                        <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-700 text-[10px]">
+                          +{formatHours(diffMinutes / 60)}
+                        </Badge>
+                      ) : diffMinutes < 0 ? (
                         <Badge variant="outline" className="border-rose-300 bg-rose-50 text-rose-700 text-[10px]">
-                          −{formatHours(podcas)}
+                          −{formatHours(Math.abs(diffMinutes) / 60)}
                         </Badge>
                       ) : (
-                        <span className="text-xs text-emerald-600">0 h</span>
+                        <span className="text-xs text-emerald-600">0h 0m</span>
                       )
                     ) : (
                       <span className="text-muted-foreground">—</span>
