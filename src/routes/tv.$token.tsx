@@ -277,99 +277,19 @@ function TvDisplay() {
         }
         .tv-ticker { animation: tv-ticker-scroll 45s linear infinite; }
         ::-webkit-scrollbar { display: none; }
+        .tv-layer { position: absolute; inset: 0; opacity: 0; transition: opacity 800ms ease-in-out; pointer-events: none; }
+        .tv-layer[data-active="true"] { opacity: 1; }
+        .tv-bg { position: absolute; inset: 0; background-size: cover; background-position: center; }
+        .tv-vignette { position: absolute; inset: 0; }
+        .tv-content { position: absolute; left: 5%; right: 5%; top: 5%; bottom: 5%; display: flex; flex-direction: column; gap: 4px; }
+        .tv-badge { display: inline-block; align-self: flex-start; padding: 8px 20px; color: white; font-size: 22px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; border-radius: 8px; margin-bottom: 32px; }
+        .tv-title { font-size: 88px; font-weight: 800; line-height: 1.02; letter-spacing: -0.035em; margin: 0; text-shadow: 0 4px 24px rgba(0,0,0,0.55); }
+        .tv-subtitle { font-size: 44px; font-weight: 500; margin-top: 18px; opacity: 0.95; text-shadow: 0 2px 16px rgba(0,0,0,0.55); }
+        .tv-body { font-size: 32px; font-weight: 400; margin-top: 22px; line-height: 1.32; opacity: 0.9; text-shadow: 0 2px 12px rgba(0,0,0,0.55); }
+        .tv-bullets { list-style: none; margin: 32px 0 0; padding: 0; display: flex; flex-direction: column; gap: 22px; }
+        .tv-bullets li { display: flex; align-items: center; gap: 24px; font-size: 40px; }
+        .tv-bullet-dot { display: inline-block; width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; }
       `}</style>
-    </div>
-  );
-}
-
-function SlideLayer({ slide, imageUrl, active }: { slide: Slide; imageUrl: string | null; active: boolean }) {
-  return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        opacity: active ? 1 : 0,
-        transition: "opacity 800ms ease-in-out",
-        pointerEvents: "none",
-      }}
-    >
-      {imageUrl && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            backgroundImage: `url(${imageUrl})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            animation: active ? `tv-kenburns ${(slide.duration_sec + 4) * 1000}ms ease-out forwards` : "none",
-          }}
-        />
-      )}
-      {/* Overlay for readability */}
-      <div style={{
-        position: "absolute",
-        inset: 0,
-        background: imageUrl
-          ? "linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.75) 100%)"
-          : "radial-gradient(ellipse at center, #1f2b47 0%, #0b0f1a 100%)",
-      }} />
-
-      {/* Content — safe area 5% */}
-      <div style={{
-        position: "absolute",
-        left: "5%", right: "5%",
-        top: "5%", bottom: "5%",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "flex-end",
-        paddingBottom: 120,
-      }}>
-        {slide.type && (
-          <div style={{
-            display: "inline-block",
-            alignSelf: "flex-start",
-            padding: "8px 20px",
-            background: badgeColor(slide.type),
-            color: "white",
-            fontSize: 22,
-            fontWeight: 700,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            borderRadius: 8,
-            marginBottom: 32,
-          }}>{badgeLabel(slide.type)}</div>
-        )}
-        {slide.title && (
-          <h1 style={{
-            fontSize: 72,
-            fontWeight: 800,
-            lineHeight: 1.05,
-            letterSpacing: "-0.03em",
-            margin: 0,
-            textShadow: "0 4px 24px rgba(0,0,0,0.6)",
-          }}>{slide.title}</h1>
-        )}
-        {slide.subtitle && (
-          <div style={{
-            fontSize: 40,
-            fontWeight: 500,
-            marginTop: 20,
-            opacity: 0.95,
-            textShadow: "0 2px 16px rgba(0,0,0,0.6)",
-          }}>{slide.subtitle}</div>
-        )}
-        {slide.body && (
-          <div style={{
-            fontSize: 32,
-            fontWeight: 400,
-            marginTop: 24,
-            maxWidth: "70%",
-            lineHeight: 1.35,
-            opacity: 0.9,
-            textShadow: "0 2px 12px rgba(0,0,0,0.6)",
-          }}>{slide.body}</div>
-        )}
-      </div>
     </div>
   );
 }
@@ -392,16 +312,4 @@ function BrandingSlide() {
       </div>
     </div>
   );
-}
-
-function badgeLabel(t: Slide["type"]) {
-  return { news: "Novinka", promo: "Akce", vehicle: "Vozidlo", video: "Video" }[t] ?? t;
-}
-function badgeColor(t: Slide["type"]) {
-  return {
-    news: "#2563eb",
-    promo: "#f97316",
-    vehicle: "#059669",
-    video: "#7c3aed",
-  }[t] ?? "#334155";
 }
