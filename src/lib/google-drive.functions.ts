@@ -137,6 +137,11 @@ export const saveBackupSettings = createServerFn({ method: "POST" })
     drive_folder_name?: string | null;
     drive_account_email?: string | null;
     auto_backup_enabled?: boolean;
+    schedule_frequency?: "interval" | "daily" | "weekly" | "monthly";
+    schedule_time?: string;
+    schedule_day_of_week?: number;
+    schedule_day_of_month?: number;
+    schedule_interval_hours?: number;
   }) =>
     z
       .object({
@@ -144,6 +149,14 @@ export const saveBackupSettings = createServerFn({ method: "POST" })
         drive_folder_name: z.string().nullable().optional(),
         drive_account_email: z.string().nullable().optional(),
         auto_backup_enabled: z.boolean().optional(),
+        schedule_frequency: z.enum(["interval", "daily", "weekly", "monthly"]).optional(),
+        schedule_time: z
+          .string()
+          .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Čas musí být ve formátu HH:MM")
+          .optional(),
+        schedule_day_of_week: z.number().int().min(0).max(6).optional(),
+        schedule_day_of_month: z.number().int().min(1).max(31).optional(),
+        schedule_interval_hours: z.number().int().min(1).max(168).optional(),
       })
       .parse(data),
   )
@@ -157,6 +170,12 @@ export const saveBackupSettings = createServerFn({ method: "POST" })
     if (data.drive_folder_name !== undefined) patch.drive_folder_name = data.drive_folder_name;
     if (data.drive_account_email !== undefined) patch.drive_account_email = data.drive_account_email;
     if (data.auto_backup_enabled !== undefined) patch.auto_backup_enabled = data.auto_backup_enabled;
+    if (data.schedule_frequency !== undefined) patch.schedule_frequency = data.schedule_frequency;
+    if (data.schedule_time !== undefined) patch.schedule_time = data.schedule_time;
+    if (data.schedule_day_of_week !== undefined) patch.schedule_day_of_week = data.schedule_day_of_week;
+    if (data.schedule_day_of_month !== undefined) patch.schedule_day_of_month = data.schedule_day_of_month;
+    if (data.schedule_interval_hours !== undefined)
+      patch.schedule_interval_hours = data.schedule_interval_hours;
 
     const { data: existing } = await context.supabase
       .from("backup_settings")
