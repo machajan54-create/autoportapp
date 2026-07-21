@@ -2095,6 +2095,33 @@ export type Database = {
           },
         ]
       }
+      tv_feedback: {
+        Row: {
+          contact: string | null
+          created_at: string
+          id: string
+          message: string
+          name: string | null
+          token: string | null
+        }
+        Insert: {
+          contact?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          name?: string | null
+          token?: string | null
+        }
+        Update: {
+          contact?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          name?: string | null
+          token?: string | null
+        }
+        Relationships: []
+      }
       user_modules: {
         Row: {
           created_at: string
