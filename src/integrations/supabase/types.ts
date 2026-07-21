@@ -424,6 +424,60 @@ export type Database = {
         }
         Relationships: []
       }
+      backup_runs: {
+        Row: {
+          created_at: string
+          drive_file_id: string | null
+          drive_file_name: string | null
+          drive_web_view_link: string | null
+          duration_ms: number | null
+          error: string | null
+          finished_at: string | null
+          id: string
+          rows_count: number | null
+          size_bytes: number | null
+          started_at: string
+          started_by: string | null
+          status: string
+          tables_count: number | null
+          trigger: string
+        }
+        Insert: {
+          created_at?: string
+          drive_file_id?: string | null
+          drive_file_name?: string | null
+          drive_web_view_link?: string | null
+          duration_ms?: number | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          rows_count?: number | null
+          size_bytes?: number | null
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          tables_count?: number | null
+          trigger?: string
+        }
+        Update: {
+          created_at?: string
+          drive_file_id?: string | null
+          drive_file_name?: string | null
+          drive_web_view_link?: string | null
+          duration_ms?: number | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          rows_count?: number | null
+          size_bytes?: number | null
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          tables_count?: number | null
+          trigger?: string
+        }
+        Relationships: []
+      }
       backup_settings: {
         Row: {
           auto_backup_enabled: boolean

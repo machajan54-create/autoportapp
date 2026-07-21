@@ -18,13 +18,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, FolderPlus, RefreshCw, Cloud, HardDrive, Loader2, Upload, CalendarClock } from "lucide-react";
+import { CheckCircle2, XCircle, FolderPlus, RefreshCw, Cloud, HardDrive, Loader2, Upload, CalendarClock, Play, ExternalLink, AlertTriangle } from "lucide-react";
 import {
   getGoogleDriveStatus,
   listGoogleDriveFolders,
   createGoogleDriveFolder,
   saveBackupSettings,
   testGoogleDriveWrite,
+  runBackupNow,
+  listBackupRuns,
 } from "@/lib/google-drive.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/google-drive")({
@@ -73,6 +75,8 @@ function GoogleDrivePage() {
   const createFolder = useServerFn(createGoogleDriveFolder);
   const saveSettings = useServerFn(saveBackupSettings);
   const testWrite = useServerFn(testGoogleDriveWrite);
+  const runBackup = useServerFn(runBackupNow);
+  const fetchRuns = useServerFn(listBackupRuns);
 
   const [folderQuery, setFolderQuery] = useState("");
   const [newFolderName, setNewFolderName] = useState("");
@@ -114,6 +118,24 @@ function GoogleDrivePage() {
       toast.success(`Testovací soubor „${data?.name}" nahrán na Google Disk`);
     },
     onError: (e: any) => toast.error(e?.message ?? "Test selhal"),
+  });
+
+  const runM = useMutation({
+    mutationFn: () => runBackup({}),
+    onSuccess: (data: any) => {
+      toast.success(
+        `Záloha dokončena – ${data.tables} tabulek, ${data.rows} řádků (${formatBytes(data.sizeBytes)})`,
+      );
+      qc.invalidateQueries({ queryKey: ["gdrive-runs"] });
+      qc.invalidateQueries({ queryKey: ["gdrive-status"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Záloha selhala"),
+  });
+
+  const runs = useQuery({
+    queryKey: ["gdrive-runs"],
+    queryFn: () => fetchRuns({}),
+    refetchInterval: runM.isPending ? 2000 : false,
   });
 
   const s = status.data;
@@ -459,6 +481,142 @@ function GoogleDrivePage() {
                 Naposledy aktualizováno: {new Date(settings.last_connected_at).toLocaleString("cs-CZ")}
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Ruční spuštění zálohy */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Play className="h-5 w-5" />
+              Spustit zálohu teď
+            </CardTitle>
+            <CardDescription>
+              Ihned vytvoří kompletní JSON zálohu databáze (gzip) a nahraje ji do vybrané složky na Google Disku.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                onClick={() => runM.mutate()}
+                disabled={!connected || !settings?.drive_folder_id || runM.isPending}
+              >
+                {runM.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Play className="h-4 w-4" />
+                )}
+                {runM.isPending ? "Zálohuje se…" : "Spustit zálohu teď"}
+              </Button>
+              {settings?.last_backup_at && (
+                <span className="text-xs text-muted-foreground">
+                  Poslední záloha: {new Date(settings.last_backup_at).toLocaleString("cs-CZ")}
+                </span>
+              )}
+            </div>
+
+            {runM.isPending && (
+              <div className="space-y-2 rounded-md border border-primary/30 bg-primary/5 p-3 text-sm">
+                <div className="flex items-center gap-2 font-medium">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Probíhá záloha – exportujeme tabulky a nahráváme na Google Disk…
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded bg-primary/10">
+                  <div className="h-full w-1/2 animate-pulse rounded bg-primary" />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Neopouštějte tuto stránku, dokud běh neskončí. Podle množství dat to může trvat i několik minut.
+                </p>
+              </div>
+            )}
+
+            {runM.isError && (
+              <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div>
+                  <div className="font-medium">Záloha se nezdařila</div>
+                  <div className="text-xs opacity-90">{(runM.error as any)?.message ?? "Neznámá chyba"}</div>
+                </div>
+              </div>
+            )}
+
+            <Separator />
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm">Historie posledních běhů</Label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => runs.refetch()}
+                  disabled={runs.isFetching}
+                >
+                  <RefreshCw className={`h-4 w-4 ${runs.isFetching ? "animate-spin" : ""}`} />
+                </Button>
+              </div>
+
+              {runs.data?.runs?.length ? (
+                <ul className="divide-y rounded-md border">
+                  {runs.data.runs.map((r: any) => (
+                    <li key={r.id} className="flex flex-wrap items-center gap-3 p-3 text-sm">
+                      {r.status === "success" ? (
+                        <Badge className="bg-green-600 hover:bg-green-600">
+                          <CheckCircle2 className="mr-1 h-3 w-3" /> Hotovo
+                        </Badge>
+                      ) : r.status === "running" ? (
+                        <Badge variant="secondary">
+                          <Loader2 className="mr-1 h-3 w-3 animate-spin" /> Běží
+                        </Badge>
+                      ) : (
+                        <Badge variant="destructive">
+                          <XCircle className="mr-1 h-3 w-3" /> Chyba
+                        </Badge>
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(r.started_at).toLocaleString("cs-CZ")}
+                      </span>
+                      {r.trigger === "scheduled" ? (
+                        <Badge variant="outline" className="text-xs">plán</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-xs">ručně</Badge>
+                      )}
+                      {typeof r.duration_ms === "number" && (
+                        <span className="text-xs text-muted-foreground">
+                          {(r.duration_ms / 1000).toFixed(1)} s
+                        </span>
+                      )}
+                      {typeof r.tables_count === "number" && (
+                        <span className="text-xs text-muted-foreground">
+                          {r.tables_count} tab. / {r.rows_count ?? 0} řádků
+                        </span>
+                      )}
+                      {r.size_bytes != null && (
+                        <span className="text-xs text-muted-foreground">
+                          {formatBytes(r.size_bytes)}
+                        </span>
+                      )}
+                      {r.drive_web_view_link && (
+                        <a
+                          href={r.drive_web_view_link}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="ml-auto inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                        >
+                          {r.drive_file_name ?? "otevřít"} <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                      {r.status === "error" && r.error && (
+                        <span className="w-full text-xs text-destructive">{r.error}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
+                  Zatím žádný běh zálohování.
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
