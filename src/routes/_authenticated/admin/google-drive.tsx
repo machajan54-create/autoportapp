@@ -27,7 +27,20 @@ import {
   testGoogleDriveWrite,
   runBackupNow,
   listBackupRuns,
+  listBackupFiles,
+  restoreBackupFromDrive,
 } from "@/lib/google-drive.functions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { RotateCcw, Download, ShieldAlert } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/google-drive")({
   component: GoogleDrivePage,
@@ -136,6 +149,43 @@ function GoogleDrivePage() {
     queryKey: ["gdrive-runs"],
     queryFn: () => fetchRuns({}),
     refetchInterval: runM.isPending ? 2000 : false,
+  });
+
+  const listFiles = useServerFn(listBackupFiles);
+  const restoreFn = useServerFn(restoreBackupFromDrive);
+
+  const files = useQuery({
+    queryKey: ["gdrive-backup-files"],
+    queryFn: () => listFiles({}),
+    enabled: !!status.data?.connected && !!status.data?.settings?.drive_folder_id,
+  });
+
+  const [selectedFile, setSelectedFile] = useState<null | {
+    id: string;
+    name: string;
+    size?: string;
+    modifiedTime?: string;
+  }>(null);
+  const [confirmText, setConfirmText] = useState("");
+
+  const restoreM = useMutation({
+    mutationFn: (input: { fileId: string; fileName?: string; confirm: string }) =>
+      restoreFn({ data: input }),
+    onSuccess: (data: any) => {
+      if (data.ok) {
+        toast.success(
+          `Obnova hotová – ${data.tables} tabulek, ${data.rowsRestored} řádků.`,
+        );
+      } else {
+        toast.error(
+          `Obnova dokončena s chybami (${data.errors?.length ?? 0}). Viz historie běhů.`,
+        );
+      }
+      setSelectedFile(null);
+      setConfirmText("");
+      qc.invalidateQueries({ queryKey: ["gdrive-runs"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Obnova selhala"),
   });
 
   const s = status.data;
@@ -619,7 +669,180 @@ function GoogleDrivePage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Obnova ze zálohy */}
+        <Card className="border-destructive/40">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <RotateCcw className="h-5 w-5" />
+              Obnova ze zálohy
+            </CardTitle>
+            <CardDescription>
+              Vyberte zálohu z Google Disku a přepište jí aktuální data. Tato akce je
+              nevratná – doporučujeme nejprve spustit novou zálohu.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm">
+                Zálohy ve složce {status.data?.settings?.drive_folder_name ?? "—"}
+              </Label>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => files.refetch()}
+                disabled={files.isFetching}
+              >
+                <RefreshCw className={`h-4 w-4 ${files.isFetching ? "animate-spin" : ""}`} />
+              </Button>
+            </div>
+
+            {!status.data?.settings?.drive_folder_id ? (
+              <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
+                Nejprve zvolte složku pro zálohy výše.
+              </div>
+            ) : files.isLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Načítám seznam záloh…
+              </div>
+            ) : files.data?.files?.length ? (
+              <ul className="divide-y rounded-md border">
+                {files.data.files.map((f) => (
+                  <li
+                    key={f.id}
+                    className="flex flex-wrap items-center gap-3 p-3 text-sm"
+                  >
+                    <HardDrive className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">{f.name}</span>
+                    {f.modifiedTime && (
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(f.modifiedTime).toLocaleString("cs-CZ")}
+                      </span>
+                    )}
+                    {f.size && (
+                      <span className="text-xs text-muted-foreground">
+                        {formatBytes(f.size)}
+                      </span>
+                    )}
+                    <div className="ml-auto flex items-center gap-2">
+                      {f.webViewLink && (
+                        <a
+                          href={f.webViewLink}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                        >
+                          <ExternalLink className="h-3 w-3" /> otevřít
+                        </a>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => {
+                          setSelectedFile({
+                            id: f.id,
+                            name: f.name,
+                            size: f.size,
+                            modifiedTime: f.modifiedTime,
+                          });
+                          setConfirmText("");
+                        }}
+                        disabled={restoreM.isPending}
+                      >
+                        <Download className="h-4 w-4" /> Obnovit
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
+                Ve vybrané složce nejsou žádné zálohy Autoportu.
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
+
+      <AlertDialog
+        open={!!selectedFile}
+        onOpenChange={(open) => {
+          if (!open && !restoreM.isPending) {
+            setSelectedFile(null);
+            setConfirmText("");
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <ShieldAlert className="h-5 w-5" /> Opravdu obnovit data ze zálohy?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm">
+                <p>
+                  Chystáte se přepsat aktuální data v aplikaci obsahem souboru{" "}
+                  <span className="font-medium">{selectedFile?.name}</span>
+                  {selectedFile?.modifiedTime && (
+                    <>
+                      {" "}
+                      ze dne{" "}
+                      <span className="font-medium">
+                        {new Date(selectedFile.modifiedTime).toLocaleString("cs-CZ")}
+                      </span>
+                    </>
+                  )}
+                  . Existující záznamy v zálohovaných tabulkách budou smazány
+                  a nahrazeny obsahem zálohy. Tato akce je nevratná.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Přeskočí se: PIN kódy zaměstnanců, audit log, e-mailová fronta,
+                  historie záloh a nastavení záloh.
+                </p>
+                <div className="space-y-1">
+                  <Label htmlFor="confirm-restore" className="text-xs">
+                    Pro potvrzení napište slovo{" "}
+                    <span className="font-mono font-bold">OBNOVIT</span>
+                  </Label>
+                  <Input
+                    id="confirm-restore"
+                    value={confirmText}
+                    onChange={(e) => setConfirmText(e.target.value)}
+                    placeholder="OBNOVIT"
+                    autoComplete="off"
+                  />
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={restoreM.isPending}>Zrušit</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={confirmText !== "OBNOVIT" || restoreM.isPending || !selectedFile}
+              onClick={(e) => {
+                e.preventDefault();
+                if (!selectedFile) return;
+                restoreM.mutate({
+                  fileId: selectedFile.id,
+                  fileName: selectedFile.name,
+                  confirm: confirmText,
+                });
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {restoreM.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Obnovuji…
+                </>
+              ) : (
+                <>
+                  <RotateCcw className="h-4 w-4" /> Obnovit data
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminShell>
   );
 }

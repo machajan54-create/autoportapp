@@ -451,3 +451,189 @@ export const listBackupRuns = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return { runs: data ?? [] };
   });
+
+// ---------------- OBNOVA ZE ZÁLOHY ----------------
+
+export const listBackupFiles = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await requireAdmin(context);
+
+    const { data: settings } = await context.supabase
+      .from("backup_settings")
+      .select("drive_folder_id, drive_folder_name")
+      .eq("singleton", true)
+      .maybeSingle();
+
+    if (!settings?.drive_folder_id) {
+      throw new Error("Není zvolena složka pro zálohy.");
+    }
+
+    const q = encodeURIComponent(
+      `'${settings.drive_folder_id}' in parents and trashed = false and name contains 'autoport-backup'`,
+    );
+    const res = await driveFetch(
+      `/drive/v3/files?q=${q}&orderBy=modifiedTime desc&pageSize=50&fields=files(id,name,size,modifiedTime,webViewLink)`,
+    );
+    return {
+      folder: settings.drive_folder_name ?? null,
+      files: (res?.files ?? []) as Array<{
+        id: string;
+        name: string;
+        size?: string;
+        modifiedTime?: string;
+        webViewLink?: string;
+      }>,
+    };
+  });
+
+async function downloadDriveFile(fileId: string): Promise<Buffer> {
+  const { lovableKey, connKey } = requireEnv();
+  const res = await fetch(
+    `${GATEWAY_BASE}/drive/v3/files/${encodeURIComponent(fileId)}?alt=media`,
+    {
+      headers: {
+        Authorization: `Bearer ${lovableKey}`,
+        "X-Connection-Api-Key": connKey,
+      },
+    },
+  );
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Stažení zálohy selhalo (${res.status}): ${text.slice(0, 300)}`);
+  }
+  const ab = await res.arrayBuffer();
+  return Buffer.from(ab);
+}
+
+export const restoreBackupFromDrive = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { fileId: string; fileName?: string; confirm: string }) =>
+    z
+      .object({
+        fileId: z.string().min(1),
+        fileName: z.string().optional(),
+        confirm: z.string(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    await requireAdmin(context);
+
+    if (data.confirm !== "OBNOVIT") {
+      throw new Error("Pro obnovu je nutné potvrdit napsáním slova OBNOVIT.");
+    }
+
+    const startedAt = Date.now();
+    const { data: run, error: runErr } = await context.supabase
+      .from("backup_runs")
+      .insert({
+        status: "running",
+        trigger: "restore",
+        started_by: context.userId,
+        drive_file_id: data.fileId,
+        drive_file_name: data.fileName ?? null,
+      })
+      .select("id")
+      .single();
+    if (runErr) throw new Error(runErr.message);
+    const runId = run.id as string;
+
+    try {
+      const gz = await downloadDriveFile(data.fileId);
+      const { gunzipSync } = await import("node:zlib");
+      const json = gunzipSync(gz).toString("utf8");
+      const dump = JSON.parse(json) as Record<string, unknown>;
+
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+      // Tabulky, které NIKDY nechceme přepsat (obsahují systémové/aktuální stavy)
+      const SKIP_ON_RESTORE = new Set<string>([
+        "attendance_employee_pins", // hashe PINů, ať nezablokujeme aktivní zaměstnance
+        "pin_attempt_log",
+        "audit_log",
+        "email_send_log",
+        "email_send_state",
+        "backup_runs",
+        "backup_settings",
+      ]);
+
+      const tablesInDump = BACKUP_TABLES.filter(
+        (t) => Array.isArray((dump as any)[t]) && !SKIP_ON_RESTORE.has(t),
+      );
+
+      let totalRestored = 0;
+      const errors: Array<{ table: string; error: string }> = [];
+
+      // 1) Smaž existující řádky (v opačném pořadí kvůli FK)
+      for (const t of [...tablesInDump].reverse()) {
+        const { error } = await supabaseAdmin
+          .from(t as any)
+          .delete()
+          .not("id", "is", null);
+        if (error) {
+          errors.push({ table: t, error: `delete: ${error.message}` });
+        }
+      }
+
+      // 2) Vlož řádky ze zálohy (po dávkách)
+      for (const t of tablesInDump) {
+        const rows = (dump as any)[t] as any[];
+        if (!rows?.length) continue;
+        const chunkSize = 500;
+        for (let i = 0; i < rows.length; i += chunkSize) {
+          const chunk = rows.slice(i, i + chunkSize);
+          const { error } = await supabaseAdmin.from(t as any).insert(chunk);
+          if (error) {
+            errors.push({ table: t, error: `insert: ${error.message}` });
+            break;
+          }
+          totalRestored += chunk.length;
+        }
+      }
+
+      const duration = Date.now() - startedAt;
+      const finalStatus = errors.length === 0 ? "success" : "error";
+
+      await context.supabase
+        .from("backup_runs")
+        .update({
+          status: finalStatus,
+          finished_at: new Date().toISOString(),
+          duration_ms: duration,
+          tables_count: tablesInDump.length,
+          rows_count: totalRestored,
+          error:
+            errors.length === 0
+              ? null
+              : errors
+                  .slice(0, 20)
+                  .map((e) => `${e.table}: ${e.error}`)
+                  .join("\n")
+                  .slice(0, 2000),
+        })
+        .eq("id", runId);
+
+      return {
+        ok: errors.length === 0,
+        runId,
+        durationMs: duration,
+        tables: tablesInDump.length,
+        rowsRestored: totalRestored,
+        errors: errors.slice(0, 20),
+        skipped: [...SKIP_ON_RESTORE],
+      };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      await context.supabase
+        .from("backup_runs")
+        .update({
+          status: "error",
+          finished_at: new Date().toISOString(),
+          duration_ms: Date.now() - startedAt,
+          error: msg.slice(0, 2000),
+        })
+        .eq("id", runId);
+      throw new Error(msg);
+    }
+  });
