@@ -60,6 +60,8 @@ type DisplayConfig = {
   ticker_text: string | null;
   show_weather: boolean;
   show_clock: boolean;
+  show_feedback: boolean;
+  show_lounge: boolean;
 };
 
 const TYPE_LABELS: Record<Slide["type"], string> = {
