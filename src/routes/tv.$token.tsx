@@ -264,9 +264,10 @@ function TvDisplay() {
             alt="Citroën Autoport"
             style={{ height: 78, width: "auto", objectFit: "contain", filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.4))" }}
           />
-          <div style={{ width: 1, height: 52, background: "linear-gradient(180deg, transparent, rgba(255,255,255,0.25), transparent)" }} />
+          <div style={{ width: 1, height: 52, background: "linear-gradient(180deg, transparent, rgba(255,255,255,0.25), transparent)", animation: "fade-in 0.6s ease-out both", animationDelay: "0.1s" }} />
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{
+            <div className="animate-fade-in" style={{
+              animationDelay: "0.2s", animationFillMode: "both",
               display: "flex", alignItems: "center", gap: 10,
               padding: "8px 14px",
               background: "rgba(255,255,255,0.94)",
@@ -284,7 +285,8 @@ function TvDisplay() {
                 </div>
               </div>
             </div>
-            <div style={{
+            <div className="animate-fade-in" style={{
+              animationDelay: "0.35s", animationFillMode: "both",
               display: "flex", alignItems: "center", gap: 10,
               padding: "8px 14px",
               background: "rgba(255,255,255,0.94)",
