@@ -1320,6 +1320,42 @@ export type Database = {
         }
         Relationships: []
       }
+      display_news: {
+        Row: {
+          active: boolean
+          body: string | null
+          created_at: string
+          id: string
+          sort_order: number
+          title: string
+          updated_at: string
+          valid_from: string | null
+          valid_to: string | null
+        }
+        Insert: {
+          active?: boolean
+          body?: string | null
+          created_at?: string
+          id?: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+          valid_from?: string | null
+          valid_to?: string | null
+        }
+        Update: {
+          active?: boolean
+          body?: string | null
+          created_at?: string
+          id?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          valid_from?: string | null
+          valid_to?: string | null
+        }
+        Relationships: []
+      }
       document_templates: {
         Row: {
           body: string
@@ -1770,13 +1806,17 @@ export type Database = {
           duration_sec: number
           id: string
           image_url: string | null
+          kind: string
+          payload: Json
           sort_order: number
           subtitle: string | null
           title: string | null
+          transition: string
           type: string
           updated_at: string
           valid_from: string | null
           valid_to: string | null
+          weight: number
         }
         Insert: {
           active?: boolean
@@ -1785,13 +1825,17 @@ export type Database = {
           duration_sec?: number
           id?: string
           image_url?: string | null
+          kind?: string
+          payload?: Json
           sort_order?: number
           subtitle?: string | null
           title?: string | null
+          transition?: string
           type?: string
           updated_at?: string
           valid_from?: string | null
           valid_to?: string | null
+          weight?: number
         }
         Update: {
           active?: boolean
@@ -1800,13 +1844,17 @@ export type Database = {
           duration_sec?: number
           id?: string
           image_url?: string | null
+          kind?: string
+          payload?: Json
           sort_order?: number
           subtitle?: string | null
           title?: string | null
+          transition?: string
           type?: string
           updated_at?: string
           valid_from?: string | null
           valid_to?: string | null
+          weight?: number
         }
         Relationships: []
       }

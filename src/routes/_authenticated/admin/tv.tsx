@@ -27,6 +27,7 @@ import {
   Copy,
   ImagePlus,
   Tv,
+  Newspaper,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/tv")({
@@ -40,6 +41,10 @@ type Slide = {
   body: string | null;
   image_url: string | null;
   type: "news" | "promo" | "vehicle" | "video";
+  kind: "image" | "video" | "youtube" | "rich_text" | "web_url" | "data_widget";
+  payload: Record<string, any>;
+  transition: string;
+  weight: number;
   duration_sec: number;
   sort_order: number;
   active: boolean;
@@ -62,6 +67,23 @@ const TYPE_LABELS: Record<Slide["type"], string> = {
   promo: "Akce",
   vehicle: "Vozidlo",
   video: "Video",
+};
+
+const KIND_LABELS: Record<Slide["kind"], string> = {
+  image: "Obrázek",
+  video: "Video",
+  youtube: "YouTube",
+  rich_text: "Formátovaný text",
+  web_url: "Webová stránka",
+  data_widget: "Živý widget",
+};
+
+const WIDGET_LABELS: Record<string, string> = {
+  stats: "Statistiky (výkupy, prodeje, úkoly)",
+  at_work: "Kdo je právě v práci",
+  vehicles: "Nabídka ojetých vozů",
+  news: "Novinky / aktuality",
+  weather: "Počasí",
 };
 
 function toDatetimeLocal(v: string | null) {
@@ -126,6 +148,8 @@ function TvAdmin() {
       .insert({
         title: "Nový slide",
         type: "news",
+        kind: "image",
+        payload: {},
         duration_sec: 12,
         sort_order: max + 10,
         active: true,
@@ -147,6 +171,10 @@ function TvAdmin() {
       body: draft.body ?? null,
       image_url: draft.image_url ?? null,
       type: draft.type ?? "news",
+      kind: draft.kind ?? "image",
+      payload: draft.payload ?? {},
+      transition: draft.transition ?? "fade",
+      weight: draft.weight ?? 1,
       duration_sec: Number(draft.duration_sec) || 12,
       active: !!draft.active,
       valid_from: draft.valid_from || null,
@@ -385,6 +413,18 @@ function TvAdmin() {
                       <Label>Text</Label>
                       <Textarea rows={4} value={draft.body ?? ""} onChange={(e) => setDraft({ ...draft, body: e.target.value })} />
                     </div>
+                    <div>
+                      <Label>Druh obsahu</Label>
+                      <Select value={draft.kind ?? "image"} onValueChange={(v) => setDraft({ ...draft, kind: v as Slide["kind"], payload: {} })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(KIND_LABELS).map(([k, v]) => (
+                            <SelectItem key={k} value={k}>{v}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <KindPayloadEditor draft={draft} setDraft={setDraft} />
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <Label>Typ</Label>
@@ -463,8 +503,192 @@ function TvAdmin() {
             )}
           </div>
         </div>
+
+        <NewsManager />
       </div>
     </AdminShell>
+  );
+}
+
+function KindPayloadEditor({ draft, setDraft }: { draft: Partial<Slide>; setDraft: (d: Partial<Slide>) => void }) {
+  const kind = draft.kind ?? "image";
+  const payload = (draft.payload ?? {}) as Record<string, any>;
+  const patch = (p: Record<string, any>) => setDraft({ ...draft, payload: { ...payload, ...p } });
+
+  if (kind === "image") {
+    return null; // image uses image_url uploader below
+  }
+
+  if (kind === "video") {
+    return (
+      <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+        <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Video</Label>
+        <Input
+          type="file"
+          accept="video/mp4,video/webm"
+          onChange={async (e) => {
+            const f = e.target.files?.[0]; if (!f || !draft.id) return;
+            const path = `${draft.id}/${Date.now()}.${(f.name.split(".").pop() || "mp4")}`;
+            const { error } = await supabase.storage.from("slides").upload(path, f, { contentType: f.type, upsert: false });
+            if (error) { toast.error(error.message); return; }
+            patch({ storage_path: path });
+            toast.success("Video nahráno");
+          }}
+        />
+        {payload.storage_path && <p className="truncate text-xs text-muted-foreground">{payload.storage_path}</p>}
+        <div>
+          <Label>… nebo URL videa</Label>
+          <Input value={payload.url ?? ""} placeholder="https://…mp4" onChange={(e) => patch({ url: e.target.value })} />
+        </div>
+        <div className="flex items-center gap-2">
+          <Switch checked={!!payload.loop} onCheckedChange={(v) => patch({ loop: v })} />
+          <Label>Přehrávat ve smyčce</Label>
+        </div>
+      </div>
+    );
+  }
+
+  if (kind === "youtube") {
+    return (
+      <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+        <Label>YouTube video ID nebo odkaz</Label>
+        <Input
+          value={payload.video_id ?? ""}
+          placeholder="např. dQw4w9WgXcQ"
+          onChange={(e) => {
+            const v = e.target.value.trim();
+            const m = v.match(/(?:v=|youtu\.be\/|embed\/)([\w-]{6,})/);
+            patch({ video_id: m ? m[1] : v });
+          }}
+        />
+        <p className="text-xs text-muted-foreground">Přehrává se ztlumené, ve smyčce.</p>
+      </div>
+    );
+  }
+
+  if (kind === "rich_text") {
+    const bullets: string[] = Array.isArray(payload.bullets) ? payload.bullets : [];
+    return (
+      <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+        <div>
+          <Label>Odrážky (jedna na řádek)</Label>
+          <Textarea
+            rows={4}
+            value={bullets.join("\n")}
+            onChange={(e) => patch({ bullets: e.target.value.split("\n").map(s => s.trim()).filter(Boolean) })}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>Zarovnání</Label>
+            <Select value={payload.align ?? "left"} onValueChange={(v) => patch({ align: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="left">Vlevo</SelectItem>
+                <SelectItem value="center">Na střed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Pozadí (CSS)</Label>
+            <Input value={payload.bg ?? ""} placeholder="linear-gradient(…) nebo #123" onChange={(e) => patch({ bg: e.target.value })} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (kind === "web_url") {
+    return (
+      <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+        <Label>URL stránky</Label>
+        <Input value={payload.url ?? ""} placeholder="https://…" onChange={(e) => patch({ url: e.target.value })} />
+        <p className="text-xs text-muted-foreground">Pozor: stránka musí povolit embed do iframe.</p>
+      </div>
+    );
+  }
+
+  if (kind === "data_widget") {
+    return (
+      <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+        <Label>Widget</Label>
+        <Select value={payload.widget ?? "stats"} onValueChange={(v) => patch({ widget: v })}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {Object.entries(WIDGET_LABELS).map(([k, v]) => (
+              <SelectItem key={k} value={k}>{v}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">
+          Widget načítá data z aplikace každých 30 s.
+        </p>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+function NewsManager() {
+  const qc = useQueryClient();
+  const newsQ = useQuery({
+    queryKey: ["display-news"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("display_news").select("*").order("sort_order", { ascending: true }).order("created_at", { ascending: false });
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+  });
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+
+  async function add() {
+    if (!title.trim()) return;
+    const { error } = await supabase.from("display_news").insert({ title: title.trim(), body: body.trim() || null });
+    if (error) { toast.error(error.message); return; }
+    setTitle(""); setBody("");
+    qc.invalidateQueries({ queryKey: ["display-news"] });
+  }
+  async function del(id: string) {
+    if (!confirm("Smazat novinku?")) return;
+    const { error } = await supabase.from("display_news").delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    qc.invalidateQueries({ queryKey: ["display-news"] });
+  }
+  async function toggle(id: string, active: boolean) {
+    await supabase.from("display_news").update({ active: !active }).eq("id", id);
+    qc.invalidateQueries({ queryKey: ["display-news"] });
+  }
+
+  return (
+    <Card className="mt-8 p-4">
+      <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold">
+        <Newspaper className="h-4 w-4" /> Novinky / aktuality pro widget
+      </h2>
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_2fr_auto]">
+        <Input placeholder="Titulek" value={title} onChange={(e) => setTitle(e.target.value)} />
+        <Input placeholder="Krátký text (volitelné)" value={body} onChange={(e) => setBody(e.target.value)} />
+        <Button onClick={add}><Plus className="mr-1 h-4 w-4" /> Přidat</Button>
+      </div>
+      <div className="mt-4 space-y-2">
+        {(newsQ.data ?? []).map((n: any) => (
+          <div key={n.id} className="flex items-center gap-3 rounded-md border bg-card p-3">
+            <div className="flex-1">
+              <div className="font-medium">{n.title}</div>
+              {n.body && <div className="text-xs text-muted-foreground">{n.body}</div>}
+            </div>
+            <Switch checked={n.active} onCheckedChange={() => toggle(n.id, n.active)} />
+            <button onClick={() => del(n.id)} className="rounded p-1 text-muted-foreground hover:bg-rose-50 hover:text-rose-600">
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        ))}
+        {!(newsQ.data ?? []).length && (
+          <div className="rounded-md border bg-card p-4 text-center text-xs text-muted-foreground">Zatím žádné novinky.</div>
+        )}
+      </div>
+    </Card>
   );
 }
 
