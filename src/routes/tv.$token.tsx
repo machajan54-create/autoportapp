@@ -43,6 +43,26 @@ function isSlideValidNow(s: Slide, now = Date.now()) {
   return true;
 }
 
+function buildFeedbackSlide(): Slide {
+  return {
+    id: "__feedback_qr__",
+    title: "Napište nám",
+    subtitle: "Vaše zpětná vazba nás posouvá dál",
+    body: "Naskenujte QR kód mobilem a otevře se krátký formulář.",
+    image_url: null,
+    type: "feedback",
+    kind: "feedback_qr",
+    payload: {},
+    duration_sec: 15,
+    transition: "fade",
+    weight: 1,
+    sort_order: 9999,
+    active: true,
+    valid_from: null,
+    valid_to: null,
+  };
+}
+
 function TvDisplay() {
   const { token } = Route.useParams();
   const [config, setConfig] = useState<DisplayConfig | null>(null);
@@ -345,9 +365,6 @@ function TvDisplay() {
           <span>Zde je zákaznický koutek – dejte si v klidu kávu a usadte se.</span>
         </div>
       </div>
-
-      {/* Feedback button + modal */}
-      <FeedbackWidget token={token} tickerActive={!!config?.ticker_text} />
 
       {/* Ticker */}
       {config?.ticker_text && (
