@@ -424,6 +424,45 @@ export type Database = {
         }
         Relationships: []
       }
+      backup_settings: {
+        Row: {
+          auto_backup_enabled: boolean
+          created_at: string
+          drive_account_email: string | null
+          drive_folder_id: string | null
+          drive_folder_name: string | null
+          id: string
+          last_connected_at: string | null
+          singleton: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          auto_backup_enabled?: boolean
+          created_at?: string
+          drive_account_email?: string | null
+          drive_folder_id?: string | null
+          drive_folder_name?: string | null
+          id?: string
+          last_connected_at?: string | null
+          singleton?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          auto_backup_enabled?: boolean
+          created_at?: string
+          drive_account_email?: string | null
+          drive_folder_id?: string | null
+          drive_folder_name?: string | null
+          id?: string
+          last_connected_at?: string | null
+          singleton?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       backups: {
         Row: {
           created_at: string
