@@ -221,7 +221,7 @@ function TvDisplay() {
           <img
             src={citroenAutoportLogo.url}
             alt="Citroën Autoport"
-            style={{ height: 110, width: "auto", objectFit: "contain", filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.4))" }}
+            style={{ height: 78, width: "auto", objectFit: "contain", filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.4))" }}
           />
         </div>
 
