@@ -1,64 +1,52 @@
-## Princip (platí napříč aplikací)
+# Týdenní záloha na Google Disk
 
-- **Admin / super admin**: vidí a edituje vše.
-- **Ostatní přihlášení**: vidí záznam jen pokud jsou jeho **autor** nebo **přiřazený řešitel**.
-- **Mazání**: i nadále jen přes žádost (super admin).
-- **Stará data** bez autora → viditelná pouze adminovi (admin je doplní/přiřadí). Žádné automatické „vidí to všichni z modulu" pro historii — jinak to obchází princip.
+Cíl: nastavit automatickou týdenní zálohu celé aplikace na firemní Google Disk. Záloha bude obsahovat export všech dat z databáze i všech nahraných souborů/fotografií ze Storage.
 
-## Moduly a mapování polí
+## Co se postaví
 
-| Modul | Autor | Řešitel | Poznámka |
-|---|---|---|---|
-| Úkoly (tasks) | created_by | assignee_id | hotovo |
-| Komentáře/přílohy úkolů | dědí z úkolu | — | join na tasks |
-| Výkupy (vykupy) | **přidat** created_by | **přidat** assignee_id (+ assignee_name) | dnes je `zpracoval` jen text |
-| Reklamace (claims) | **přidat** created_by (NULL = z webu) | **přidat** assignee_id | nepřiřazené reklamace z webu uvidí jen admin, dokud je nepřidělí |
-| Závady (defects) | reported_by | resolved_by | zatím prázdné `resolved_by` ⇒ vidí jen autor + admin |
-| Demo objednávky | created_by | **přidat** assignee_id | |
-| Evidence zakázek | created_by | **přidat** assignee_id | |
-| Kniha jízd – záznamy | created_by | (bez řešitele) | jízdu vidí jen řidič + admin |
-| Kniha jízd – vozidla | created_by | **přidat** responsible_user_id | dnes `responsible_person` jen text |
-| Obchodní případy (deals) | owner_id | owner_id | jeden vlastník |
-| Nákupy (purchases) | requested_by | decided_by | |
-| Dodavatelé (suppliers) | requested_by | decided_by | |
-| Docházka – záznamy | employee_id → user_id | — | zaměstnanec vidí jen své; admin vše |
-| Docházka – absence | employee_id → user_id | — | dtto |
+1. **Připojení Google Drive connectoru**
+   - Prostřednictvím workspace připojení `Google Drive` (connector_id `google_drive`).
+   - Po připojení budou v projektu dostupné proměnné `GOOGLE_DRIVE_API_KEY` a `LOVABLE_API_KEY` pro volání Lovable gateway.
 
-## Co se změní v UI
+2. **Evidence záloh v databázi**
+   - Nová tabulka `backups` (začátek, konec, stav, počet souborů, ID Google Drive složky, případná chyba).
+   - RLS: vidí jen admini, zapisuje pouze service role.
 
-- Všude, kde přibyl `assignee_id`, přidám výběr řešitele do formuláře (Výkupy, Reklamace, Demo objednávky, Evidence zakázek, Vozidla v knize jízd).
-- Listy/dashboards budou nově zobrazovat jen relevantní záznamy (díky RLS automaticky).
-- Notifikace (zvoneček + e-mail) budou rozšířeny po vzoru úkolů — při změně / přidělení dostane upozornění druhý zúčastněný.
+3. **Zálohovací engine** (`src/lib/backup.server.ts`)
+   - Vytvoří na Google Drive složku pojmenovanou `Autoport záloha – YYYY-MM-DD HH:mm`.
+   - Exportuje každou veřejnou tabulku do JSON a CSV a uloží do podsložky `Databáze`.
+   - Projde všechny Storage buckety (`claim-files`, `defect-photos`, `logbook-receipts`, `task-attachments`, `vykup-photos`, `client-documents`, `attendance-reports`) a nahraje soubory do podsložek `Soubory/<bucket>`.
+   - Soubory > 5 MB nahraje přes resumable upload, aby se vešel do limitů Google Drive API.
+   - Po dokončení zapíše výsledek do tabulky `backups`.
+   - Automaticky smaže zálohy starší než 4 týdny (Drive složky i záznamy v tabulce).
 
-## Co se NEMĚNÍ
+4. **Veřejný cron endpoint** (`src/routes/api/public/backup/weekly.ts`)
+   - POST handler ověří `x-cron-secret` pomocí existujícího `requireCronAuth` / `get_cron_auth_secret`.
+   - Spustí zálohovací engine a vrátí přehled uložených souborů.
+   - Endpoint bude pod `/api/public/backup/weekly`, takže ho může volat `pg_cron` bez přihlášeného uživatele.
 
-- `clients` (klientela) – sdílený číselník, zůstává viditelná všem schváleným uživatelům.
-- `attendance_employees`, `attendance_settings`, `attendance_shifts` – konfigurace docházky, admin/HR.
-- `washers`, `document_templates`, `suppliers` číselník – číselníky.
-- Veřejné formuláře (claims z webu, upload tokeny, sign tokeny) – fungují dál (service role).
+5. **Naplánování týdenního běhu**
+   - `pg_cron` úloha `weekly-google-drive-backup` volá endpoint každou neděli v 2:00 s hlavičkou `x-cron-secret` načtenou z `vault`.
 
-## Technicky
+6. **Admin UI**
+   - Nová stránka `Nastavení → Zálohy` (`/admin/backups`).
+   - Zobrazí historii záloh, stav poslední zálohy, počet souborů a odkaz na Google Drive složku.
+   - Tlačítko **Zálohovat teď** pro ruční spuštění (pouze pro adminy).
+   - Přidá se odkaz do `AdminShell`.
 
-1. **Migrace 1** – přidá chybějící sloupce (`created_by`, `assignee_id`, `assignee_name`, `responsible_user_id`) jako nullable. Default `auth.uid()` přes trigger pro `created_by`.
-2. **Migrace 2** – nahradí stávající široké RLS politiky novými ve formátu:
-   ```sql
-   USING ( has_role(auth.uid(),'admin')
-           OR created_by = auth.uid()
-           OR assignee_id = auth.uid() )
-   ```
-   (přizpůsobeno názvům polí v každé tabulce)
-3. **Server functions** – `createXxx` doplní `created_by = userId`; `updateXxx` při změně přiřazení pošle notifikaci.
-4. **UI** – formuláře dostanou pole „Řešitel" (select uživatelů s daným modulem).
-5. **Notifikace** – stejný vzor jako u úkolů (e-mail + zvoneček) i pro Výkupy, Reklamace, Defekty, Demo objednávky, Evidence, Deals, Purchases.
+## Technické detaily
 
-## Rizika / na co upozornit
+- **Autorizace Google Drive**: volání půjdou přes `https://connector-gateway.lovable.dev/google_drive/…` s hlavičkami `Authorization: Bearer <LOVABLE_API_KEY>` a `X-Connection-Api-Key: <GOOGLE_DRIVE_API_KEY>`.
+- **Vytvoření složky**: `POST /drive/v3/files` s `mimeType: application/vnd.google-apps.folder`.
+- **Upload souborů**: `POST /upload/drive/v3/files?uploadType=multipart` s `multipart/related` tělem (metadata + binární obsah). Pro soubory > 5 MB se použije resumable upload.
+- **Čtení dat**: `supabaseAdmin` (service role) pro export všech tabulek a Storage; vše se děje server-side, klient nikdy nevidí tajné klíče.
+- **Cron autentizace**: využije se stávající `CRON_SECRET` uložený ve Vaultu a `requireCronAuth` helper, takže zálohovací endpoint nebude veřejně zneužitelný jen pomocí anon klíče.
+- **Retence**: výchozí nastavení je ponechat poslední 4 zálohy. Lze později změnit.
 
-- **Historická data**: cokoli bez vyplněného `created_by` (téměř všechny stávající záznamy) uvidí po nasazení **pouze admin**. Admin pak postupně přiřadí. Pokud nechceš tohle chování, jediná alternativa je dočasně udržet „kdo má modul, vidí staré záznamy" — řekni a přidám výjimku.
-- **Reklamace z webu** mají `created_by = NULL` napořád (zakládá je externí klient). Logika: dokud admin nepřidělí řešitele, vidí ji jen admin.
-- Velký zásah, doporučuji nasadit najednou (jedna migrace + jedna várka kódu) ať aplikace není v půli cesty.
+## Poznámky a omezení
 
-## Otázky před spuštěním
+- První úplná záloha může být objemná a časově náročná (záleží na počtu fotografií). Engine bude zpracovávat soubory po dávkách, aby se vešel do limitů serverless běhu.
+- Pokud by objem fotografií překročil časový limit jednoho cron běhu, lze zálohu souborů rozdělit na menší dávky – to řešíme až v případě potřeby.
+- Nastavení zálohování bude viditelné a spustitelné pouze pro uživatele s rolí admin.
 
-1. **Historická data** – nechat „viditelné jen pro admina dokud nepřiřadí" (čisté), nebo dočasná výjimka „vidí to všichni s daným modulem"? *(doporučuji čisté)*
-2. **Deals** – stačí jeden `owner_id`, nebo chceš i `created_by` zvlášť? *(dnes je tam jen owner_id)*
-3. **Kniha jízd** – jízdu vidí jen řidič + admin. Stačí? *(žádný „přidělující")*
+Schválíš plán?
