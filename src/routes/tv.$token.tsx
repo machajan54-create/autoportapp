@@ -63,6 +63,26 @@ function buildFeedbackSlide(): Slide {
   };
 }
 
+function buildLoungeSlide(): Slide {
+  return {
+    id: "__lounge__",
+    title: "Zákaznický koutek",
+    subtitle: "Dejte si v klidu kávu a usaďte se",
+    body: "Za chvíli se Vám budeme věnovat. Užijte si šálek kávy nebo čaje na naši účet.",
+    image_url: null,
+    type: "lounge",
+    kind: "lounge",
+    payload: {},
+    duration_sec: 12,
+    transition: "fade",
+    weight: 1,
+    sort_order: 9998,
+    active: true,
+    valid_from: null,
+    valid_to: null,
+  };
+}
+
 function TvDisplay() {
   const { token } = Route.useParams();
   const [config, setConfig] = useState<DisplayConfig | null>(null);
@@ -110,9 +130,9 @@ function TvDisplay() {
           valid_to: r.valid_to,
         }))
         .filter((s) => isSlideValidNow(s));
-      const withFeedback = [...filtered, buildFeedbackSlide()];
-      setSlides(withFeedback);
-      localStorage.setItem(LS_SLIDES, JSON.stringify(withFeedback));
+      const withExtras = [...filtered, buildLoungeSlide(), buildFeedbackSlide()];
+      setSlides(withExtras);
+      localStorage.setItem(LS_SLIDES, JSON.stringify(withExtras));
       setError(null);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -323,46 +343,6 @@ function TvDisplay() {
               Nově od září 2026
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Welcome / customer lounge info */}
-      <div
-        style={{
-          position: "absolute",
-          left: "50%",
-          bottom: config?.ticker_text ? 100 : 20,
-          transform: "translateX(-50%)",
-          zIndex: 12,
-          pointerEvents: "none",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 14,
-            padding: "14px 30px",
-            background: "rgba(15, 23, 42, 0.72)",
-            borderRadius: 999,
-            border: "1px solid rgba(255,255,255,0.12)",
-            boxShadow: "0 12px 40px rgba(0,0,0,0.35)",
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
-            color: "white",
-            textAlign: "center",
-            fontFamily: "'Space Grotesk', system-ui, sans-serif",
-            fontSize: 28,
-            fontWeight: 500,
-            letterSpacing: "-0.01em",
-            lineHeight: 1.25,
-            whiteSpace: "nowrap",
-          }}
-        >
-          <span role="img" aria-label="káva" style={{ fontSize: 30, lineHeight: 1 }}>
-            ☕
-          </span>
-          <span>Zde je zákaznický koutek – dejte si v klidu kávu a usadte se.</span>
         </div>
       </div>
 
