@@ -79,8 +79,7 @@ function buildBuyoutSlide(duration = 14): Slide {
     id: "__buyout__",
     title: "Vykupujeme vozy všech značek",
     subtitle: "Rychle, férově a bez starostí",
-    body:
-      "Nabídneme Vám férovou cenu ihned. Postaráme se o všechny papíry, odhlášení i převod – vy si jen převezmete peníze.",
+    body: "Férová cena na počkání. Vyřídíme papíry, odhlášení i převod.",
     image_url: null,
     type: "buyout",
     kind: "buyout",

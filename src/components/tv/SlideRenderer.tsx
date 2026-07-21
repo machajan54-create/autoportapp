@@ -70,15 +70,15 @@ function BuyoutSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
   const subtitle = slide.subtitle || "Rychle, férově a bez starostí";
   const body =
     slide.body ||
-    "Nabídneme Vám férovou cenu ihned. Postaráme se o všechny papíry, odhlášení i převod – vy si jen převezmete peníze.";
+    "Férová cena na počkání. Vyřídíme papíry, odhlášení i převod.";
 
   const benefits: { icon: string; title: string; desc: string; accent: string }[] = [
-    { icon: "💰", title: "Cena ihned",        desc: "Ocenění na počkání, bez čekání",     accent: "hsl(35 95% 60%)" },
-    { icon: "🚗", title: "Všechny značky",    desc: "Osobní i užitkové, každé stáří",     accent: "hsl(200 85% 60%)" },
-    { icon: "📄", title: "Papíry za Vás",     desc: "Odhlášení i převod vyřídíme",        accent: "hsl(150 60% 55%)" },
-    { icon: "💶", title: "Platba na ruku",    desc: "Hotovost nebo okamžitý převod",      accent: "hsl(150 70% 55%)" },
-    { icon: "🔧", title: "I vozy s vadou",    desc: "Havarované, nepojízdné, s dluhem",   accent: "hsl(280 70% 65%)" },
-    { icon: "🤝", title: "Férové jednání",    desc: "Bez skrytých poplatků a triků",      accent: "hsl(24 95% 60%)" },
+    { icon: "💰", title: "Cena ihned",      desc: "Ocenění na počkání",        accent: "hsl(35 95% 60%)" },
+    { icon: "🚗", title: "Všechny značky",  desc: "Osobní i užitkové",         accent: "hsl(200 85% 60%)" },
+    { icon: "📄", title: "Papíry za Vás",   desc: "Vyřídíme za Vás",           accent: "hsl(150 60% 55%)" },
+    { icon: "💶", title: "Platba na ruku",  desc: "Hotovost ihned",            accent: "hsl(150 70% 55%)" },
+    { icon: "🔧", title: "I vozy s vadou",  desc: "Havarované i nepojízdné",   accent: "hsl(280 70% 65%)" },
+    { icon: "🤝", title: "Férové jednání",  desc: "Bez skrytých poplatků",     accent: "hsl(24 95% 60%)" },
   ];
 
   return (
