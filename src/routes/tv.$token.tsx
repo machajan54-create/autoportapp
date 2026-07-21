@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState, useCallback, type CSSProperties } from "react";
+import { useEffect, useState, useCallback } from "react";
+import QRCode from "qrcode";
 import { supabase } from "@/integrations/supabase/client";
 import autoportLogo from "@/assets/autoport-logo.png.asset.json";
 import citroenLogo from "@/assets/citroen-logo.png.asset.json";
@@ -632,200 +633,67 @@ function TvSidebar({ token }: { token: string }) {
 }
 
 function FeedbackWidget({ token, tickerActive }: { token: string; tickerActive: boolean }) {
-  const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [contact, setContact] = useState("");
-  const [message, setMessage] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "ok" | "err">("idle");
-  const [errMsg, setErrMsg] = useState<string | null>(null);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
-  const reset = () => {
-    setName(""); setContact(""); setMessage("");
-    setStatus("idle"); setErrMsg(null);
-  };
-  const close = () => { setOpen(false); setTimeout(reset, 200); };
-
-  const submit = async () => {
-    const trimmed = message.trim();
-    if (trimmed.length < 1) {
-      setErrMsg("Prosím napište zprávu."); return;
-    }
-    if (trimmed.length > 2000) {
-      setErrMsg("Zpráva je příliš dlouhá (max 2000 znaků)."); return;
-    }
-    setStatus("sending"); setErrMsg(null);
-    const { error } = await supabase.from("tv_feedback").insert({
-      token,
-      name: name.trim().slice(0, 100) || null,
-      contact: contact.trim().slice(0, 200) || null,
-      message: trimmed,
-    });
-    if (error) {
-      setStatus("err");
-      setErrMsg("Zprávu se nepodařilo odeslat. Zkuste to prosím znovu.");
-      return;
-    }
-    setStatus("ok");
-    setTimeout(() => close(), 2200);
-  };
+  useEffect(() => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const url = `${origin}/feedback/${encodeURIComponent(token)}`;
+    QRCode.toDataURL(url, {
+      errorCorrectionLevel: "M",
+      margin: 1,
+      width: 320,
+      color: { dark: "#0b0f1a", light: "#ffffff" },
+    })
+      .then(setQrDataUrl)
+      .catch(() => setQrDataUrl(null));
+  }, [token]);
 
   return (
-    <>
-      <button
-        onClick={() => setOpen(true)}
-        style={{
-          position: "absolute",
-          right: "2vw",
-          bottom: tickerActive ? 100 : 20,
-          zIndex: 13,
-          cursor: "pointer",
-          display: "flex", alignItems: "center", gap: 12,
-          padding: "14px 24px",
-          background: "linear-gradient(135deg, #ff6b35, #e84393)",
-          color: "white",
-          border: "none",
-          borderRadius: 999,
-          fontFamily: "'Space Grotesk', system-ui, sans-serif",
-          fontSize: 20, fontWeight: 700, letterSpacing: "-0.01em",
-          boxShadow: "0 12px 40px rgba(232,67,147,0.45)",
-          pointerEvents: "auto",
-        }}
-        aria-label="Napište nám"
-      >
-        <span role="img" aria-hidden style={{ fontSize: 22 }}>✉️</span>
-        <span>Napište nám</span>
-      </button>
-
-      {open && (
-        <div
-          onClick={close}
-          style={{
-            position: "fixed", inset: 0, zIndex: 100,
-            background: "rgba(3, 7, 18, 0.72)",
-            backdropFilter: "blur(6px)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "auto",
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              width: "min(560px, 92vw)",
-              background: "rgba(15, 23, 42, 0.96)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              borderRadius: 24,
-              padding: 32,
-              color: "white",
-              fontFamily: "'DM Sans', system-ui, sans-serif",
-              boxShadow: "0 30px 80px rgba(0,0,0,0.6)",
-              cursor: "auto",
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-              <div>
-                <div style={{ fontFamily: "'Space Grotesk', system-ui", fontSize: 28, fontWeight: 700, letterSpacing: "-0.02em" }}>
-                  Napište nám
-                </div>
-                <div style={{ fontSize: 14, opacity: 0.65, marginTop: 4 }}>
-                  Máte dotaz nebo zpětnou vazbu? Rádi si ji přečteme.
-                </div>
-              </div>
-              <button
-                onClick={close}
-                aria-label="Zavřít"
-                style={{
-                  background: "rgba(255,255,255,0.08)", color: "white",
-                  border: "none", borderRadius: 999, width: 36, height: 36,
-                  cursor: "pointer", fontSize: 18,
-                }}
-              >×</button>
-            </div>
-
-            {status === "ok" ? (
-              <div style={{
-                marginTop: 24, padding: 24, borderRadius: 16,
-                background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.35)",
-                textAlign: "center",
-              }}>
-                <div style={{ fontSize: 40, marginBottom: 6 }}>✅</div>
-                <div style={{ fontSize: 18, fontWeight: 600 }}>Děkujeme! Zprávu jsme obdrželi.</div>
-              </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 20 }}>
-                <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <span style={{ fontSize: 12, opacity: 0.65, textTransform: "uppercase", letterSpacing: "0.1em" }}>Jméno (nepovinné)</span>
-                  <input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    maxLength={100}
-                    style={inputStyle}
-                    placeholder="Vaše jméno"
-                  />
-                </label>
-                <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <span style={{ fontSize: 12, opacity: 0.65, textTransform: "uppercase", letterSpacing: "0.1em" }}>Kontakt – e-mail nebo telefon (nepovinné)</span>
-                  <input
-                    value={contact}
-                    onChange={(e) => setContact(e.target.value)}
-                    maxLength={200}
-                    style={inputStyle}
-                    placeholder="např. jan@example.cz"
-                  />
-                </label>
-                <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <span style={{ fontSize: 12, opacity: 0.65, textTransform: "uppercase", letterSpacing: "0.1em" }}>Zpráva</span>
-                  <textarea
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    maxLength={2000}
-                    rows={5}
-                    style={{ ...inputStyle, resize: "vertical", minHeight: 120, fontFamily: "inherit" }}
-                    placeholder="Napište nám cokoli…"
-                  />
-                  <span style={{ fontSize: 11, opacity: 0.5, alignSelf: "flex-end" }}>{message.length}/2000</span>
-                </label>
-
-                {errMsg && (
-                  <div style={{ fontSize: 14, color: "#fca5a5" }}>{errMsg}</div>
-                )}
-
-                <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 6 }}>
-                  <button
-                    onClick={close}
-                    style={{
-                      padding: "12px 20px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.15)",
-                      background: "transparent", color: "white", cursor: "pointer",
-                      fontFamily: "inherit", fontSize: 15, fontWeight: 500,
-                    }}
-                  >Zrušit</button>
-                  <button
-                    onClick={submit}
-                    disabled={status === "sending"}
-                    style={{
-                      padding: "12px 22px", borderRadius: 12, border: "none",
-                      background: "linear-gradient(135deg, #ff6b35, #e84393)",
-                      color: "white", cursor: status === "sending" ? "wait" : "pointer",
-                      fontFamily: "inherit", fontSize: 15, fontWeight: 700,
-                      opacity: status === "sending" ? 0.7 : 1,
-                    }}
-                  >{status === "sending" ? "Odesílám…" : "Odeslat"}</button>
-                </div>
-              </div>
-            )}
-          </div>
+    <div
+      style={{
+        position: "absolute",
+        right: "2vw",
+        bottom: tickerActive ? 100 : 20,
+        zIndex: 13,
+        display: "flex",
+        alignItems: "center",
+        gap: 18,
+        padding: "16px 22px",
+        background: "rgba(255,255,255,0.96)",
+        borderRadius: 20,
+        boxShadow: "0 16px 44px rgba(0,0,0,0.45)",
+        color: "#0b0f1a",
+        pointerEvents: "none",
+      }}
+    >
+      <div style={{
+        width: 128, height: 128,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        background: "white", borderRadius: 12, overflow: "hidden",
+      }}>
+        {qrDataUrl ? (
+          <img src={qrDataUrl} alt="QR kód pro zpětnou vazbu" style={{ width: "100%", height: "100%", display: "block" }} />
+        ) : (
+          <div style={{ fontSize: 12, opacity: 0.5 }}>QR…</div>
+        )}
+      </div>
+      <div style={{ lineHeight: 1.2, maxWidth: 240 }}>
+        <div style={{
+          fontSize: 11, fontWeight: 800, letterSpacing: "0.16em",
+          textTransform: "uppercase", opacity: 0.55, marginBottom: 6,
+        }}>
+          Napište nám
         </div>
-      )}
-    </>
+        <div style={{
+          fontFamily: "'Space Grotesk', system-ui, sans-serif",
+          fontSize: 22, fontWeight: 700, letterSpacing: "-0.01em",
+        }}>
+          Naskenujte QR kód
+        </div>
+        <div style={{ fontSize: 13, opacity: 0.7, marginTop: 4 }}>
+          Otevře se formulář pro zpětnou vazbu ve vašem mobilu.
+        </div>
+      </div>
+    </div>
   );
 }
-
-const inputStyle: CSSProperties = {
-  padding: "12px 14px",
-  borderRadius: 12,
-  border: "1px solid rgba(255,255,255,0.15)",
-  background: "rgba(255,255,255,0.06)",
-  color: "white",
-  fontSize: 16,
-  outline: "none",
-  fontFamily: "inherit",
-};
