@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { APP_VERSION, LAST_UPDATE_DATE } from "@/lib/version";
-import { ShieldCheck, FolderKanban, LogOut, Users, Car, Menu, LayoutDashboard, FileText, CheckSquare, Clock, Wrench, Search, History, Briefcase, BookOpen, Settings, ChevronDown, ClipboardSignature, Sparkles, HardDrive, Cloud } from "lucide-react";
+import { ShieldCheck, FolderKanban, LogOut, Users, Car, Menu, LayoutDashboard, FileText, CheckSquare, Clock, Wrench, Search, History, Briefcase, BookOpen, Settings, ChevronDown, ClipboardSignature, Sparkles, HardDrive, Cloud, Tv } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
@@ -136,6 +136,7 @@ export function AdminShell({
             {navItem("/admin/users", "Uživatelé", Users, pendingCount)}
             {navItem("/admin/storage", "Úspora úložiště", HardDrive)}
             {navItem("/admin/google-drive", "Google Disk", Cloud)}
+            {navItem("/admin/tv", "TV Display", Tv)}
           </CollapsibleContent>
         </Collapsible>
       )}

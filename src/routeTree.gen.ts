@@ -37,6 +37,7 @@ import { Route as AuthenticatedVykupyDashboardRouteImport } from './routes/_auth
 import { Route as AuthenticatedVykupyIdRouteImport } from './routes/_authenticated/vykupy/$id'
 import { Route as AuthenticatedDemoOrdersIdRouteImport } from './routes/_authenticated/demo-orders/$id'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
+import { Route as AuthenticatedAdminTvRouteImport } from './routes/_authenticated/admin/tv'
 import { Route as AuthenticatedAdminTemplatesRouteImport } from './routes/_authenticated/admin/templates'
 import { Route as AuthenticatedAdminStorageRouteImport } from './routes/_authenticated/admin/storage'
 import { Route as AuthenticatedAdminGoogleDriveRouteImport } from './routes/_authenticated/admin/google-drive'
@@ -201,6 +202,11 @@ const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   path: '/admin/users',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminTvRoute = AuthenticatedAdminTvRouteImport.update({
+  id: '/admin/tv',
+  path: '/admin/tv',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdminTemplatesRoute =
   AuthenticatedAdminTemplatesRouteImport.update({
     id: '/admin/templates',
@@ -312,6 +318,7 @@ export interface FileRoutesByFullPath {
   '/admin/google-drive': typeof AuthenticatedAdminGoogleDriveRoute
   '/admin/storage': typeof AuthenticatedAdminStorageRoute
   '/admin/templates': typeof AuthenticatedAdminTemplatesRoute
+  '/admin/tv': typeof AuthenticatedAdminTvRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/demo-orders/$id': typeof AuthenticatedDemoOrdersIdRoute
   '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
@@ -357,6 +364,7 @@ export interface FileRoutesByTo {
   '/admin/google-drive': typeof AuthenticatedAdminGoogleDriveRoute
   '/admin/storage': typeof AuthenticatedAdminStorageRoute
   '/admin/templates': typeof AuthenticatedAdminTemplatesRoute
+  '/admin/tv': typeof AuthenticatedAdminTvRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/demo-orders/$id': typeof AuthenticatedDemoOrdersIdRoute
   '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
@@ -404,6 +412,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/google-drive': typeof AuthenticatedAdminGoogleDriveRoute
   '/_authenticated/admin/storage': typeof AuthenticatedAdminStorageRoute
   '/_authenticated/admin/templates': typeof AuthenticatedAdminTemplatesRoute
+  '/_authenticated/admin/tv': typeof AuthenticatedAdminTvRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/demo-orders/$id': typeof AuthenticatedDemoOrdersIdRoute
   '/_authenticated/vykupy/$id': typeof AuthenticatedVykupyIdRoute
@@ -451,6 +460,7 @@ export interface FileRouteTypes {
     | '/admin/google-drive'
     | '/admin/storage'
     | '/admin/templates'
+    | '/admin/tv'
     | '/admin/users'
     | '/demo-orders/$id'
     | '/vykupy/$id'
@@ -496,6 +506,7 @@ export interface FileRouteTypes {
     | '/admin/google-drive'
     | '/admin/storage'
     | '/admin/templates'
+    | '/admin/tv'
     | '/admin/users'
     | '/demo-orders/$id'
     | '/vykupy/$id'
@@ -542,6 +553,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/google-drive'
     | '/_authenticated/admin/storage'
     | '/_authenticated/admin/templates'
+    | '/_authenticated/admin/tv'
     | '/_authenticated/admin/users'
     | '/_authenticated/demo-orders/$id'
     | '/_authenticated/vykupy/$id'
@@ -795,6 +807,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/tv': {
+      id: '/_authenticated/admin/tv'
+      path: '/admin/tv'
+      fullPath: '/admin/tv'
+      preLoaderRoute: typeof AuthenticatedAdminTvRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/templates': {
       id: '/_authenticated/admin/templates'
       path: '/admin/templates'
@@ -918,6 +937,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminGoogleDriveRoute: typeof AuthenticatedAdminGoogleDriveRoute
   AuthenticatedAdminStorageRoute: typeof AuthenticatedAdminStorageRoute
   AuthenticatedAdminTemplatesRoute: typeof AuthenticatedAdminTemplatesRoute
+  AuthenticatedAdminTvRoute: typeof AuthenticatedAdminTvRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedDemoOrdersIdRoute: typeof AuthenticatedDemoOrdersIdRoute
   AuthenticatedVykupyIdRoute: typeof AuthenticatedVykupyIdRoute
@@ -941,6 +961,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminGoogleDriveRoute: AuthenticatedAdminGoogleDriveRoute,
   AuthenticatedAdminStorageRoute: AuthenticatedAdminStorageRoute,
   AuthenticatedAdminTemplatesRoute: AuthenticatedAdminTemplatesRoute,
+  AuthenticatedAdminTvRoute: AuthenticatedAdminTvRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedDemoOrdersIdRoute: AuthenticatedDemoOrdersIdRoute,
   AuthenticatedVykupyIdRoute: AuthenticatedVykupyIdRoute,
