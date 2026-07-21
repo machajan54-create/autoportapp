@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TvdisplayRouteImport } from './routes/tvdisplay'
 import { Route as TerminalRouteImport } from './routes/terminal'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as NahlasitRouteImport } from './routes/nahlasit'
@@ -57,6 +58,11 @@ import { Route as ApiPublicCronTaskDailyDigestRouteImport } from './routes/api/p
 import { Route as ApiPublicCronGithubSnapshotRouteImport } from './routes/api/public/cron/github-snapshot'
 import { Route as ApiPublicCronFollowupRemindersRouteImport } from './routes/api/public/cron/followup-reminders'
 
+const TvdisplayRoute = TvdisplayRouteImport.update({
+  id: '/tvdisplay',
+  path: '/tvdisplay',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TerminalRoute = TerminalRouteImport.update({
   id: '/terminal',
   path: '/terminal',
@@ -320,6 +326,7 @@ export interface FileRoutesByFullPath {
   '/nahlasit': typeof NahlasitRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terminal': typeof TerminalRoute
+  '/tvdisplay': typeof TvdisplayRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -368,6 +375,7 @@ export interface FileRoutesByTo {
   '/nahlasit': typeof NahlasitRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terminal': typeof TerminalRoute
+  '/tvdisplay': typeof TvdisplayRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -418,6 +426,7 @@ export interface FileRoutesById {
   '/nahlasit': typeof NahlasitRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terminal': typeof TerminalRoute
+  '/tvdisplay': typeof TvdisplayRoute
   '/_authenticated/approvals': typeof AuthenticatedApprovalsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -468,6 +477,7 @@ export interface FileRouteTypes {
     | '/nahlasit'
     | '/reset-password'
     | '/terminal'
+    | '/tvdisplay'
     | '/approvals'
     | '/dashboard'
     | '/email/unsubscribe'
@@ -516,6 +526,7 @@ export interface FileRouteTypes {
     | '/nahlasit'
     | '/reset-password'
     | '/terminal'
+    | '/tvdisplay'
     | '/approvals'
     | '/dashboard'
     | '/email/unsubscribe'
@@ -565,6 +576,7 @@ export interface FileRouteTypes {
     | '/nahlasit'
     | '/reset-password'
     | '/terminal'
+    | '/tvdisplay'
     | '/_authenticated/approvals'
     | '/_authenticated/dashboard'
     | '/email/unsubscribe'
@@ -615,6 +627,7 @@ export interface RootRouteChildren {
   NahlasitRoute: typeof NahlasitRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TerminalRoute: typeof TerminalRoute
+  TvdisplayRoute: typeof TvdisplayRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   FeedbackTokenRoute: typeof FeedbackTokenRoute
   SignTokenRoute: typeof SignTokenRoute
@@ -637,6 +650,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tvdisplay': {
+      id: '/tvdisplay'
+      path: '/tvdisplay'
+      fullPath: '/tvdisplay'
+      preLoaderRoute: typeof TvdisplayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terminal': {
       id: '/terminal'
       path: '/terminal'
@@ -1030,6 +1050,7 @@ const rootRouteChildren: RootRouteChildren = {
   NahlasitRoute: NahlasitRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TerminalRoute: TerminalRoute,
+  TvdisplayRoute: TvdisplayRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   FeedbackTokenRoute: FeedbackTokenRoute,
   SignTokenRoute: SignTokenRoute,
