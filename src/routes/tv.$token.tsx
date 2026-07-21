@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
-import QRCode from "qrcode";
 import { supabase } from "@/integrations/supabase/client";
 import autoportLogo from "@/assets/autoport-logo.png.asset.json";
 import citroenLogo from "@/assets/citroen-logo.png.asset.json";
@@ -91,8 +90,9 @@ function TvDisplay() {
           valid_to: r.valid_to,
         }))
         .filter((s) => isSlideValidNow(s));
-      setSlides(filtered);
-      localStorage.setItem(LS_SLIDES, JSON.stringify(filtered));
+      const withFeedback = [...filtered, buildFeedbackSlide()];
+      setSlides(withFeedback);
+      localStorage.setItem(LS_SLIDES, JSON.stringify(withFeedback));
       setError(null);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
