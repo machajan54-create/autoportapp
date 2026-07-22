@@ -21,6 +21,7 @@ import {
   ZNACKY, ZDROJE, STAVY, type Vykup,
 } from "@/lib/vykupy";
 import { listEmployees, getMyAccess } from "@/lib/claims.functions";
+import { listClients } from "@/lib/clients.functions";
 import {
   listVykupPhotos, recordVykupPhoto, updateVykupPhotoDefect,
   deleteVykupPhoto, getVykupPhotoUrl,
@@ -64,12 +65,12 @@ type FormState = {
 };
 
 const empty: FormState = {
-  znacka: "Citroen", model: "", rok_vyroby: "", pocet_km: "",
+  znacka: "Citroën", model: "", rok_vyroby: "", pocet_km: "",
   barva: "", new_in_cz: "", service_history: "",
-  klient: "", telefon: "", zdroj: "PRODEJ NOVÝCH VOZŮ", zpracoval: "",
+  klient: "", telefon: "", zdroj: "", zpracoval: "",
   naceneno_od: "", owner_expectation_czk: "",
   vykoupeno_za: "", prodano_za: "", naklady: "0", naklady_popis: "",
-  datum_vykupu: new Date().toISOString().slice(0, 10),
+  datum_vykupu: "",
   stav: "Nacenění", poznamka: "",
   follow_up_at: "",
   internal_priced_by_user_id: "", internal_priced_amount: "", internal_priced_at: "",
