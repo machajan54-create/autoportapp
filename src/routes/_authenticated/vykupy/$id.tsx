@@ -533,11 +533,17 @@ function VykupForm() {
               </Select>
             </Field>
             <Field label="Follow-up (připomínka e-mailem)">
-              <Input
-                type="datetime-local"
-                value={form.follow_up_at}
-                onChange={(e) => set("follow_up_at", e.target.value)}
-              />
+              <>
+                <Input
+                  type="datetime-local"
+                  value={form.follow_up_at}
+                  min={new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 16)}
+                  onChange={(e) => set("follow_up_at", e.target.value)}
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Připomínku pošleme e-mailem přihlášenému uživateli v tento čas.
+                </p>
+              </>
             </Field>
             {existing?.stav_changed_at && (
               <Field label="Ve stavu od">
@@ -553,7 +559,7 @@ function VykupForm() {
             </div>
           </Section>}
 
-          <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2">
             {!isNew && (
               <div className="mr-auto flex items-center text-xs text-muted-foreground">
                 {autoSaving
@@ -563,13 +569,20 @@ function VykupForm() {
                     : "Změny se ukládají automaticky"}
               </div>
             )}
+            {isNew && canFull && (
+              <div className="mr-auto flex items-center text-xs text-muted-foreground">
+                {autoSaving ? "Zakládám koncept…" : "Koncept se uloží automaticky po vyplnění klienta a modelu"}
+              </div>
+            )}
             <Button type="button" variant="ghost" onClick={() => navigate({ to: "/vykupy" })}>
               Zrušit
             </Button>
             {!isNew && canFull && <ContractPdfButton vykupId={id} />}
-            <Button type="submit" disabled={saving} className="bg-orange-500 text-white hover:bg-orange-600">
-              {saving ? "Ukládám…" : "Uložit"}
-            </Button>
+            {(canFull || (!isNew && canExternalOnly)) && (
+              <Button type="submit" disabled={saving} className="bg-orange-500 text-white hover:bg-orange-600">
+                {saving ? "Ukládám…" : "Uložit"}
+              </Button>
+            )}
           </div>
         </form>
 
