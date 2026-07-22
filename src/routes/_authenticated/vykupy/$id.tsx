@@ -59,6 +59,7 @@ type FormState = {
   internal_priced_by_user_id: string;
   internal_priced_amount: string;
   internal_priced_at: string;
+  internal_priced_by_name: string;
   external_priced_by: string;
   external_priced_amount: string;
   external_priced_at: string;
@@ -74,6 +75,7 @@ const empty: FormState = {
   stav: "Nacenění", poznamka: "",
   follow_up_at: "",
   internal_priced_by_user_id: "", internal_priced_amount: "", internal_priced_at: "",
+  internal_priced_by_name: "",
   external_priced_by: "", external_priced_amount: "", external_priced_at: "",
 };
 
@@ -105,6 +107,7 @@ function fromVykup(v: Vykup): FormState {
     internal_priced_by_user_id: v.internal_priced_by_user_id ?? "",
     internal_priced_amount: v.internal_priced_amount?.toString() ?? "",
     internal_priced_at: v.internal_priced_at ? v.internal_priced_at.slice(0, 10) : "",
+    internal_priced_by_name: v.internal_priced_by_name ?? "",
     external_priced_by: v.external_priced_by ?? "",
     external_priced_amount: v.external_priced_amount?.toString() ?? "",
     external_priced_at: v.external_priced_at ? v.external_priced_at.slice(0, 10) : "",
@@ -219,6 +222,7 @@ function VykupForm() {
       internal_priced_by_user_id: form.internal_priced_by_user_id || null,
       internal_priced_amount: toNum(form.internal_priced_amount) ?? null,
       internal_priced_at: form.internal_priced_at || null,
+      internal_priced_by_name: form.internal_priced_by_user_id === "__other__" ? (form.internal_priced_by_name.trim() || null) : null,
       external_priced_by: form.external_priced_by.trim() || null,
       external_priced_amount: toNum(form.external_priced_amount) ?? null,
       external_priced_at: form.external_priced_at || null,
