@@ -104,7 +104,8 @@ function fromVykup(v: Vykup): FormState {
     datum_vykupu: v.datum_vykupu ?? "",
     stav: v.stav, poznamka: v.poznamka ?? "",
     follow_up_at: v.follow_up_at ? v.follow_up_at.slice(0, 16) : "",
-    internal_priced_by_user_id: v.internal_priced_by_user_id ?? "",
+    internal_priced_by_user_id: v.internal_priced_by_user_id
+      ?? (v.internal_priced_by_name ? "__other__" : ""),
     internal_priced_amount: v.internal_priced_amount?.toString() ?? "",
     internal_priced_at: v.internal_priced_at ? v.internal_priced_at.slice(0, 10) : "",
     internal_priced_by_name: v.internal_priced_by_name ?? "",
