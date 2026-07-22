@@ -219,10 +219,16 @@ function VykupForm() {
       stav: form.stav,
       poznamka: form.poznamka.trim() || null,
       follow_up_at: form.follow_up_at ? new Date(form.follow_up_at).toISOString() : null,
-      internal_priced_by_user_id: form.internal_priced_by_user_id || null,
+      internal_priced_by_user_id:
+        form.internal_priced_by_user_id && form.internal_priced_by_user_id !== "__other__"
+          ? form.internal_priced_by_user_id
+          : null,
       internal_priced_amount: toNum(form.internal_priced_amount) ?? null,
       internal_priced_at: form.internal_priced_at || null,
-      internal_priced_by_name: form.internal_priced_by_user_id === "__other__" ? (form.internal_priced_by_name.trim() || null) : null,
+      internal_priced_by_name:
+        form.internal_priced_by_user_id === "__other__"
+          ? (form.internal_priced_by_name.trim() || null)
+          : null,
       external_priced_by: form.external_priced_by.trim() || null,
       external_priced_amount: toNum(form.external_priced_amount) ?? null,
       external_priced_at: form.external_priced_at || null,
@@ -503,9 +509,19 @@ function VykupForm() {
                   {(employees ?? []).map((u) => (
                     <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
                   ))}
+                  <SelectItem value="__other__">Jiný…</SelectItem>
                 </SelectContent>
               </Select>
             </Field>
+            {form.internal_priced_by_user_id === "__other__" && (
+              <Field label="Jméno (jiný)">
+                <Input
+                  value={form.internal_priced_by_name}
+                  onChange={(e) => set("internal_priced_by_name", e.target.value)}
+                  placeholder="Jméno osoby, která nacenila"
+                />
+              </Field>
+            )}
             <Field label="Interní nacenění (Kč)">
               <Input type="number" value={form.internal_priced_amount} onChange={(e) => set("internal_priced_amount", e.target.value)} />
             </Field>
