@@ -443,14 +443,17 @@ export const getMyAccess = createServerFn({ method: "GET" })
     const isAdmin = (roles ?? []).some((r) => r.role === "admin");
     const { data: profile } = await context.supabase
       .from("profiles")
-      .select("approved")
+      .select("approved, full_name, email")
       .eq("id", context.userId)
       .maybeSingle();
     const approved = isAdmin || !!profile?.approved;
+    const userName = (profile?.full_name || profile?.email || "").trim();
     if (isAdmin) {
       return {
         isAdmin: true,
         approved: true,
+        userId: context.userId,
+        userName,
         modules: ["claims", "vykupy", "vykupy_external", "users", "approvals", "dashboard", "dochazka", "defects", "deals", "logbook", "tasks", "demo_orders", "evidence_zakazek"] as const,
       };
     }
@@ -458,7 +461,13 @@ export const getMyAccess = createServerFn({ method: "GET" })
       .from("user_modules")
       .select("module")
       .eq("user_id", context.userId);
-    return { isAdmin: false, approved, modules: (mods ?? []).map((m) => m.module) };
+    return {
+      isAdmin: false,
+      approved,
+      userId: context.userId,
+      userName,
+      modules: (mods ?? []).map((m) => m.module),
+    };
   });
 
 export const setUserApproved = createServerFn({ method: "POST" })
