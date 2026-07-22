@@ -21,6 +21,7 @@ import {
   ZNACKY, ZDROJE, STAVY, type Vykup,
 } from "@/lib/vykupy";
 import { listEmployees, getMyAccess } from "@/lib/claims.functions";
+import { listClients } from "@/lib/clients.functions";
 import {
   listVykupPhotos, recordVykupPhoto, updateVykupPhotoDefect,
   deleteVykupPhoto, getVykupPhotoUrl,
@@ -64,12 +65,12 @@ type FormState = {
 };
 
 const empty: FormState = {
-  znacka: "Citroen", model: "", rok_vyroby: "", pocet_km: "",
+  znacka: "Citroën", model: "", rok_vyroby: "", pocet_km: "",
   barva: "", new_in_cz: "", service_history: "",
-  klient: "", telefon: "", zdroj: "PRODEJ NOVÝCH VOZŮ", zpracoval: "",
+  klient: "", telefon: "", zdroj: "", zpracoval: "",
   naceneno_od: "", owner_expectation_czk: "",
   vykoupeno_za: "", prodano_za: "", naklady: "0", naklady_popis: "",
-  datum_vykupu: new Date().toISOString().slice(0, 10),
+  datum_vykupu: "",
   stav: "Nacenění", poznamka: "",
   follow_up_at: "",
   internal_priced_by_user_id: "", internal_priced_amount: "", internal_priced_at: "",
@@ -121,11 +122,19 @@ function VykupForm() {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const skipAutoSaveRef = useRef(true);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const followUpBaselineRef = useRef<string>("");
+  const creatingRef = useRef(false);
   const fetchEmployees = useServerFn(listEmployees);
   const { data: employees } = useQuery({
     queryKey: ["employees"],
     queryFn: () => fetchEmployees({}),
   });
+  const fetchClients = useServerFn(listClients);
+  const { data: clientsData } = useQuery({
+    queryKey: ["clients"],
+    queryFn: () => fetchClients({}),
+  });
+  const clientList = (clientsData?.rows ?? []) as Array<{ id: string; full_name: string; phone: string | null }>;
   const fetchAccess = useServerFn(getMyAccess);
   const { data: access } = useQuery({
     queryKey: ["my-access"],
@@ -136,6 +145,25 @@ function VykupForm() {
   const canFull = isAdmin || modules.includes("vykupy");
   const canExternalOnly = !canFull && modules.includes("vykupy_external");
   const ro = canExternalOnly; // read-only mode for everything except externí nacenění
+  const currentUserId = (access as any)?.userId as string | undefined;
+  const currentUserName = ((access as any)?.userName as string | undefined) ?? "";
+
+  // Externí přístup nesmí zakládat nový výkup – rovnou pryč.
+  useEffect(() => {
+    if (isNew && access && canExternalOnly) {
+      toast.error("Nemáte oprávnění zakládat nový výkup.");
+      navigate({ to: "/vykupy" });
+    }
+  }, [isNew, access, canExternalOnly, navigate]);
+
+  // Předvyplnění „Zpracoval" jménem přihlášeného uživatele u nového výkupu.
+  useEffect(() => {
+    if (isNew && currentUserName && !form.zpracoval) {
+      skipAutoSaveRef.current = true;
+      setForm((f) => (f.zpracoval ? f : { ...f, zpracoval: currentUserName }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNew, currentUserName]);
 
   const { data: existing } = useQuery({
     queryKey: ["vykup", id],
@@ -146,7 +174,9 @@ function VykupForm() {
   useEffect(() => {
     if (existing) {
       skipAutoSaveRef.current = true;
-      setForm(fromVykup(existing));
+      const next = fromVykup(existing);
+      followUpBaselineRef.current = next.follow_up_at;
+      setForm(next);
     }
   }, [existing]);
 
@@ -161,6 +191,9 @@ function VykupForm() {
   }
 
   function buildPayload(): Partial<Vykup> {
+    // Auto-doplnění: datum výkupu při přechodu do stavu „Vykoupeno".
+    const autoDatumVykupu = form.datum_vykupu ||
+      (form.stav === "Vykoupeno" ? new Date().toISOString().slice(0, 10) : null);
     const fullPayload: Partial<Vykup> = {
       znacka: form.znacka,
       model: form.model.trim(),
@@ -171,7 +204,7 @@ function VykupForm() {
       service_history: form.service_history === "" ? null : form.service_history === "yes",
       klient: form.klient.trim(),
       telefon: form.telefon.trim() || null,
-      zdroj: form.zdroj,
+      zdroj: form.zdroj || null,
       zpracoval: form.zpracoval.trim() || null,
       naceneno_od: toNum(form.naceneno_od) ?? null,
       owner_expectation_czk: toNum(form.owner_expectation_czk) ?? null,
@@ -179,11 +212,10 @@ function VykupForm() {
       prodano_za: toNum(form.prodano_za) ?? null,
       naklady: toNum(form.naklady) ?? 0,
       naklady_popis: form.naklady_popis.trim() || null,
-      datum_vykupu: form.datum_vykupu || null,
+      datum_vykupu: autoDatumVykupu,
       stav: form.stav,
       poznamka: form.poznamka.trim() || null,
       follow_up_at: form.follow_up_at ? new Date(form.follow_up_at).toISOString() : null,
-      follow_up_notified_at: null,
       internal_priced_by_user_id: form.internal_priced_by_user_id || null,
       internal_priced_amount: toNum(form.internal_priced_amount) ?? null,
       internal_priced_at: form.internal_priced_at || null,
@@ -191,6 +223,10 @@ function VykupForm() {
       external_priced_amount: toNum(form.external_priced_amount) ?? null,
       external_priced_at: form.external_priced_at || null,
     };
+    // Reset notifikace pouze pokud se follow_up_at reálně změnilo.
+    if (form.follow_up_at !== followUpBaselineRef.current) {
+      (fullPayload as any).follow_up_notified_at = null;
+    }
     const extOnlyPayload: Partial<Vykup> = {
       external_priced_by: form.external_priced_by.trim() || null,
       external_priced_amount: toNum(form.external_priced_amount) ?? null,
@@ -199,24 +235,66 @@ function VykupForm() {
     return canFull ? fullPayload : extOnlyPayload;
   }
 
-  // Automatické ukládání (debounce 1,5 s) – jen pro existující záznamy.
+  // Validace stavových přechodů.
+  function validateStav(): string | null {
+    if (form.stav === "Vykoupeno" && toNum(form.vykoupeno_za) == null) {
+      return 'Pro stav „Vykoupeno" vyplňte cenu Vykoupeno za.';
+    }
+    if (form.stav === "Prodáno") {
+      if (toNum(form.vykoupeno_za) == null) return 'Pro stav „Prodáno" vyplňte i cenu Vykoupeno za.';
+      if (toNum(form.prodano_za) == null) return 'Pro stav „Prodáno" vyplňte cenu Prodáno za.';
+    }
+    return null;
+  }
+
+  // Automatické doplnění dat u nacenění při vyplnění částky.
   useEffect(() => {
-    if (isNew) return;
+    if (!canFull) return;
+    setForm((f) => {
+      const patch: Partial<FormState> = {};
+      if (toNum(f.internal_priced_amount) != null && !f.internal_priced_at) {
+        patch.internal_priced_at = new Date().toISOString().slice(0, 10);
+      }
+      if (toNum(f.internal_priced_amount) != null && !f.internal_priced_by_user_id && currentUserId) {
+        patch.internal_priced_by_user_id = currentUserId;
+      }
+      if (toNum(f.external_priced_amount) != null && !f.external_priced_at) {
+        patch.external_priced_at = new Date().toISOString().slice(0, 10);
+      }
+      return Object.keys(patch).length ? { ...f, ...patch } : f;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.internal_priced_amount, form.external_priced_amount, canFull, currentUserId]);
+
+  // Automatické ukládání (debounce 1,5 s) – pro existující i nové (koncept).
+  useEffect(() => {
     if (skipAutoSaveRef.current) {
       skipAutoSaveRef.current = false;
       return;
     }
-    if (saving) return;
+    if (saving || creatingRef.current) return;
     if (canFull && (!form.klient.trim() || !form.model.trim())) return;
+    if (!canFull && !canExternalOnly) return;
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = setTimeout(async () => {
       setAutoSaving(true);
       try {
         const payload = buildPayload();
-        payload.id = id;
-        await upsertVykup(payload);
-        setLastSavedAt(new Date());
-        qc.invalidateQueries({ queryKey: ["vykupy"] });
+        if (isNew) {
+          if (!canFull) return;
+          creatingRef.current = true;
+          const newId = await upsertVykup(payload);
+          setLastSavedAt(new Date());
+          qc.invalidateQueries({ queryKey: ["vykupy"] });
+          // Přesměrujeme na ostrou URL – zpřístupní fotky a PDF smlouvu.
+          navigate({ to: "/vykupy/$id", params: { id: newId }, replace: true });
+        } else {
+          payload.id = id;
+          await upsertVykup(payload);
+          setLastSavedAt(new Date());
+          followUpBaselineRef.current = form.follow_up_at;
+          qc.invalidateQueries({ queryKey: ["vykupy"] });
+        }
       } catch {
         toast.error("Automatické uložení selhalo");
       } finally {
@@ -227,13 +305,20 @@ function VykupForm() {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, isNew, canFull, id]);
+  }, [form, isNew, canFull, canExternalOnly, id]);
 
   async function onSave(e: React.FormEvent) {
     e.preventDefault();
     if (canFull && (!form.klient.trim() || !form.model.trim())) {
       toast.error("Vyplňte alespoň klienta a model.");
       return;
+    }
+    if (canFull) {
+      const stavErr = validateStav();
+      if (stavErr) {
+        toast.error(stavErr);
+        return;
+      }
     }
     setSaving(true);
     try {
@@ -244,12 +329,15 @@ function VykupForm() {
         setSaving(false);
         return;
       }
-      await upsertVykup(payload);
+      const savedId = await upsertVykup(payload);
       toast.success(isNew ? "Výkup vytvořen" : "Uloženo");
       setLastSavedAt(new Date());
+      followUpBaselineRef.current = form.follow_up_at;
       qc.invalidateQueries({ queryKey: ["vykupy"] });
       qc.invalidateQueries({ queryKey: ["vykup", id] });
-      navigate({ to: "/vykupy" });
+      if (isNew) {
+        navigate({ to: "/vykupy/$id", params: { id: savedId }, replace: true });
+      }
     } catch (err) {
       toast.error("Chyba při ukládání");
     } finally {
@@ -316,19 +404,53 @@ function VykupForm() {
 
           <Section title="Klient">
             <Field label="Klient">
-              <Input value={form.klient} onChange={(e) => set("klient", e.target.value)} required={!ro} readOnly={ro} />
+              <>
+                <Input
+                  value={form.klient}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    set("klient", v);
+                    const match = clientList.find((c) => c.full_name === v);
+                    if (match && match.phone && !form.telefon) set("telefon", match.phone);
+                  }}
+                  required={!ro}
+                  readOnly={ro}
+                  list="vykup-clients"
+                  placeholder="Začněte psát – najde v evidenci klientů"
+                />
+                <datalist id="vykup-clients">
+                  {clientList.map((c) => (
+                    <option key={c.id} value={c.full_name} />
+                  ))}
+                </datalist>
+              </>
             </Field>
             <Field label="Telefon">
               <Input value={form.telefon} onChange={(e) => set("telefon", e.target.value)} readOnly={ro} />
             </Field>
             <Field label="Zdroj">
-              <Select value={form.zdroj} onValueChange={(v) => set("zdroj", v)} disabled={ro}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{ZDROJE.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}</SelectContent>
+              <Select value={form.zdroj || "none"} onValueChange={(v) => set("zdroj", v === "none" ? "" : v)} disabled={ro}>
+                <SelectTrigger><SelectValue placeholder="— vyberte —" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— vyberte —</SelectItem>
+                  {ZDROJE.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
+                </SelectContent>
               </Select>
             </Field>
             <Field label="Zpracoval">
-              <Input value={form.zpracoval} onChange={(e) => set("zpracoval", e.target.value)} readOnly={ro} />
+              <Select
+                value={form.zpracoval || "none"}
+                onValueChange={(v) => set("zpracoval", v === "none" ? "" : v)}
+                disabled={ro}
+              >
+                <SelectTrigger><SelectValue placeholder="Vyberte…" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— nezadáno —</SelectItem>
+                  {(employees ?? []).map((u) => (
+                    <SelectItem key={u.id} value={u.name}>{u.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </Field>
           </Section>
 
@@ -360,7 +482,7 @@ function VykupForm() {
                 liveMarze != null && liveMarze < 0 && "border-rose-200 bg-rose-50 text-rose-900",
               )}>
                 <span className="font-medium">Marže: </span>
-                <span className="tabular-nums font-bold">{liveMarze == null ? "vyplňte prodáno a vykoupeno" : formatKc(liveMarze)}</span>
+                <span className="tabular-nums font-bold">{liveMarze == null ? "vyplňte prodáno, vykoupeno; náklady se odečtou" : formatKc(liveMarze)}</span>
               </div>
             </div>
           </Section>}
@@ -411,11 +533,17 @@ function VykupForm() {
               </Select>
             </Field>
             <Field label="Follow-up (připomínka e-mailem)">
-              <Input
-                type="datetime-local"
-                value={form.follow_up_at}
-                onChange={(e) => set("follow_up_at", e.target.value)}
-              />
+              <>
+                <Input
+                  type="datetime-local"
+                  value={form.follow_up_at}
+                  min={new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 16)}
+                  onChange={(e) => set("follow_up_at", e.target.value)}
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Připomínku pošleme e-mailem přihlášenému uživateli v tento čas.
+                </p>
+              </>
             </Field>
             {existing?.stav_changed_at && (
               <Field label="Ve stavu od">
@@ -431,7 +559,7 @@ function VykupForm() {
             </div>
           </Section>}
 
-          <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2">
             {!isNew && (
               <div className="mr-auto flex items-center text-xs text-muted-foreground">
                 {autoSaving
@@ -441,13 +569,20 @@ function VykupForm() {
                     : "Změny se ukládají automaticky"}
               </div>
             )}
+            {isNew && canFull && (
+              <div className="mr-auto flex items-center text-xs text-muted-foreground">
+                {autoSaving ? "Zakládám koncept…" : "Koncept se uloží automaticky po vyplnění klienta a modelu"}
+              </div>
+            )}
             <Button type="button" variant="ghost" onClick={() => navigate({ to: "/vykupy" })}>
               Zrušit
             </Button>
             {!isNew && canFull && <ContractPdfButton vykupId={id} />}
-            <Button type="submit" disabled={saving} className="bg-orange-500 text-white hover:bg-orange-600">
-              {saving ? "Ukládám…" : "Uložit"}
-            </Button>
+            {(canFull || (!isNew && canExternalOnly)) && (
+              <Button type="submit" disabled={saving} className="bg-orange-500 text-white hover:bg-orange-600">
+                {saving ? "Ukládám…" : "Uložit"}
+              </Button>
+            )}
           </div>
         </form>
 
