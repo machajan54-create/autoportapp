@@ -1,0 +1,1 @@
+ALTER TABLE public.vykupy ADD COLUMN IF NOT EXISTS internal_priced_by_name text;

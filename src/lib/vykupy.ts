@@ -21,6 +21,7 @@ export type Vykup = {
   internal_priced_by_user_id: string | null;
   internal_priced_amount: number | null;
   internal_priced_at: string | null;
+  internal_priced_by_name: string | null;
   external_priced_by: string | null;
   external_priced_amount: number | null;
   external_priced_at: string | null;

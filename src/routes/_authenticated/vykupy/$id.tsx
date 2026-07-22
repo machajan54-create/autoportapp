@@ -59,6 +59,7 @@ type FormState = {
   internal_priced_by_user_id: string;
   internal_priced_amount: string;
   internal_priced_at: string;
+  internal_priced_by_name: string;
   external_priced_by: string;
   external_priced_amount: string;
   external_priced_at: string;
@@ -74,6 +75,7 @@ const empty: FormState = {
   stav: "Nacenění", poznamka: "",
   follow_up_at: "",
   internal_priced_by_user_id: "", internal_priced_amount: "", internal_priced_at: "",
+  internal_priced_by_name: "",
   external_priced_by: "", external_priced_amount: "", external_priced_at: "",
 };
 
@@ -102,9 +104,11 @@ function fromVykup(v: Vykup): FormState {
     datum_vykupu: v.datum_vykupu ?? "",
     stav: v.stav, poznamka: v.poznamka ?? "",
     follow_up_at: v.follow_up_at ? v.follow_up_at.slice(0, 16) : "",
-    internal_priced_by_user_id: v.internal_priced_by_user_id ?? "",
+    internal_priced_by_user_id: v.internal_priced_by_user_id
+      ?? (v.internal_priced_by_name ? "__other__" : ""),
     internal_priced_amount: v.internal_priced_amount?.toString() ?? "",
     internal_priced_at: v.internal_priced_at ? v.internal_priced_at.slice(0, 10) : "",
+    internal_priced_by_name: v.internal_priced_by_name ?? "",
     external_priced_by: v.external_priced_by ?? "",
     external_priced_amount: v.external_priced_amount?.toString() ?? "",
     external_priced_at: v.external_priced_at ? v.external_priced_at.slice(0, 10) : "",
@@ -216,9 +220,16 @@ function VykupForm() {
       stav: form.stav,
       poznamka: form.poznamka.trim() || null,
       follow_up_at: form.follow_up_at ? new Date(form.follow_up_at).toISOString() : null,
-      internal_priced_by_user_id: form.internal_priced_by_user_id || null,
+      internal_priced_by_user_id:
+        form.internal_priced_by_user_id && form.internal_priced_by_user_id !== "__other__"
+          ? form.internal_priced_by_user_id
+          : null,
       internal_priced_amount: toNum(form.internal_priced_amount) ?? null,
       internal_priced_at: form.internal_priced_at || null,
+      internal_priced_by_name:
+        form.internal_priced_by_user_id === "__other__"
+          ? (form.internal_priced_by_name.trim() || null)
+          : null,
       external_priced_by: form.external_priced_by.trim() || null,
       external_priced_amount: toNum(form.external_priced_amount) ?? null,
       external_priced_at: form.external_priced_at || null,
@@ -499,9 +510,19 @@ function VykupForm() {
                   {(employees ?? []).map((u) => (
                     <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
                   ))}
+                  <SelectItem value="__other__">Jiný…</SelectItem>
                 </SelectContent>
               </Select>
             </Field>
+            {form.internal_priced_by_user_id === "__other__" && (
+              <Field label="Jméno (jiný)">
+                <Input
+                  value={form.internal_priced_by_name}
+                  onChange={(e) => set("internal_priced_by_name", e.target.value)}
+                  placeholder="Jméno osoby, která nacenila"
+                />
+              </Field>
+            )}
             <Field label="Interní nacenění (Kč)">
               <Input type="number" value={form.internal_priced_amount} onChange={(e) => set("internal_priced_amount", e.target.value)} />
             </Field>
