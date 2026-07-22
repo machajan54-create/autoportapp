@@ -2251,6 +2251,7 @@ export type Database = {
           id: string
           internal_priced_amount: number | null
           internal_priced_at: string | null
+          internal_priced_by_name: string | null
           internal_priced_by_user_id: string | null
           klient: string
           model: string
@@ -2287,6 +2288,7 @@ export type Database = {
           id?: string
           internal_priced_amount?: number | null
           internal_priced_at?: string | null
+          internal_priced_by_name?: string | null
           internal_priced_by_user_id?: string | null
           klient: string
           model: string
@@ -2323,6 +2325,7 @@ export type Database = {
           id?: string
           internal_priced_amount?: number | null
           internal_priced_at?: string | null
+          internal_priced_by_name?: string | null
           internal_priced_by_user_id?: string | null
           klient?: string
           model?: string
