@@ -117,6 +117,10 @@ function VykupForm() {
   const qc = useQueryClient();
   const [form, setForm] = useState<FormState>(empty);
   const [saving, setSaving] = useState(false);
+  const [autoSaving, setAutoSaving] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const skipAutoSaveRef = useRef(true);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fetchEmployees = useServerFn(listEmployees);
   const { data: employees } = useQuery({
     queryKey: ["employees"],
@@ -140,7 +144,10 @@ function VykupForm() {
   });
 
   useEffect(() => {
-    if (existing) setForm(fromVykup(existing));
+    if (existing) {
+      skipAutoSaveRef.current = true;
+      setForm(fromVykup(existing));
+    }
   }, [existing]);
 
   const liveMarze = marze({
@@ -153,6 +160,75 @@ function VykupForm() {
     setForm((f) => ({ ...f, [k]: v }));
   }
 
+  function buildPayload(): Partial<Vykup> {
+    const fullPayload: Partial<Vykup> = {
+      znacka: form.znacka,
+      model: form.model.trim(),
+      rok_vyroby: toNum(form.rok_vyroby) ?? null,
+      pocet_km: toNum(form.pocet_km) ?? null,
+      barva: form.barva.trim() || null,
+      new_in_cz: form.new_in_cz === "" ? null : form.new_in_cz === "yes",
+      service_history: form.service_history === "" ? null : form.service_history === "yes",
+      klient: form.klient.trim(),
+      telefon: form.telefon.trim() || null,
+      zdroj: form.zdroj,
+      zpracoval: form.zpracoval.trim() || null,
+      naceneno_od: toNum(form.naceneno_od) ?? null,
+      owner_expectation_czk: toNum(form.owner_expectation_czk) ?? null,
+      vykoupeno_za: toNum(form.vykoupeno_za) ?? null,
+      prodano_za: toNum(form.prodano_za) ?? null,
+      naklady: toNum(form.naklady) ?? 0,
+      naklady_popis: form.naklady_popis.trim() || null,
+      datum_vykupu: form.datum_vykupu || null,
+      stav: form.stav,
+      poznamka: form.poznamka.trim() || null,
+      follow_up_at: form.follow_up_at ? new Date(form.follow_up_at).toISOString() : null,
+      follow_up_notified_at: null,
+      internal_priced_by_user_id: form.internal_priced_by_user_id || null,
+      internal_priced_amount: toNum(form.internal_priced_amount) ?? null,
+      internal_priced_at: form.internal_priced_at || null,
+      external_priced_by: form.external_priced_by.trim() || null,
+      external_priced_amount: toNum(form.external_priced_amount) ?? null,
+      external_priced_at: form.external_priced_at || null,
+    };
+    const extOnlyPayload: Partial<Vykup> = {
+      external_priced_by: form.external_priced_by.trim() || null,
+      external_priced_amount: toNum(form.external_priced_amount) ?? null,
+      external_priced_at: form.external_priced_at || null,
+    };
+    return canFull ? fullPayload : extOnlyPayload;
+  }
+
+  // Automatické ukládání (debounce 1,5 s) – jen pro existující záznamy.
+  useEffect(() => {
+    if (isNew) return;
+    if (skipAutoSaveRef.current) {
+      skipAutoSaveRef.current = false;
+      return;
+    }
+    if (saving) return;
+    if (canFull && (!form.klient.trim() || !form.model.trim())) return;
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(async () => {
+      setAutoSaving(true);
+      try {
+        const payload = buildPayload();
+        payload.id = id;
+        await upsertVykup(payload);
+        setLastSavedAt(new Date());
+        qc.invalidateQueries({ queryKey: ["vykupy"] });
+      } catch {
+        toast.error("Automatické uložení selhalo");
+      } finally {
+        setAutoSaving(false);
+      }
+    }, 1500);
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, isNew, canFull, id]);
+
   async function onSave(e: React.FormEvent) {
     e.preventDefault();
     if (canFull && (!form.klient.trim() || !form.model.trim())) {
@@ -161,42 +237,7 @@ function VykupForm() {
     }
     setSaving(true);
     try {
-      const fullPayload: Partial<Vykup> = {
-        znacka: form.znacka,
-        model: form.model.trim(),
-        rok_vyroby: toNum(form.rok_vyroby) ?? null,
-        pocet_km: toNum(form.pocet_km) ?? null,
-        barva: form.barva.trim() || null,
-        new_in_cz: form.new_in_cz === "" ? null : form.new_in_cz === "yes",
-        service_history: form.service_history === "" ? null : form.service_history === "yes",
-        klient: form.klient.trim(),
-        telefon: form.telefon.trim() || null,
-        zdroj: form.zdroj,
-        zpracoval: form.zpracoval.trim() || null,
-        naceneno_od: toNum(form.naceneno_od) ?? null,
-        owner_expectation_czk: toNum(form.owner_expectation_czk) ?? null,
-        vykoupeno_za: toNum(form.vykoupeno_za) ?? null,
-        prodano_za: toNum(form.prodano_za) ?? null,
-        naklady: toNum(form.naklady) ?? 0,
-        naklady_popis: form.naklady_popis.trim() || null,
-        datum_vykupu: form.datum_vykupu || null,
-        stav: form.stav,
-        poznamka: form.poznamka.trim() || null,
-        follow_up_at: form.follow_up_at ? new Date(form.follow_up_at).toISOString() : null,
-        follow_up_notified_at: null,
-        internal_priced_by_user_id: form.internal_priced_by_user_id || null,
-        internal_priced_amount: toNum(form.internal_priced_amount) ?? null,
-        internal_priced_at: form.internal_priced_at || null,
-        external_priced_by: form.external_priced_by.trim() || null,
-        external_priced_amount: toNum(form.external_priced_amount) ?? null,
-        external_priced_at: form.external_priced_at || null,
-      };
-      const extOnlyPayload: Partial<Vykup> = {
-        external_priced_by: form.external_priced_by.trim() || null,
-        external_priced_amount: toNum(form.external_priced_amount) ?? null,
-        external_priced_at: form.external_priced_at || null,
-      };
-      const payload: Partial<Vykup> = canFull ? fullPayload : extOnlyPayload;
+      const payload = buildPayload();
       if (!isNew) payload.id = id;
       if (isNew && !canFull) {
         toast.error("Nemáte oprávnění vytvořit nový výkup.");
@@ -205,6 +246,7 @@ function VykupForm() {
       }
       await upsertVykup(payload);
       toast.success(isNew ? "Výkup vytvořen" : "Uloženo");
+      setLastSavedAt(new Date());
       qc.invalidateQueries({ queryKey: ["vykupy"] });
       qc.invalidateQueries({ queryKey: ["vykup", id] });
       navigate({ to: "/vykupy" });
@@ -390,6 +432,15 @@ function VykupForm() {
           </Section>}
 
           <div className="flex justify-end gap-2">
+            {!isNew && (
+              <div className="mr-auto flex items-center text-xs text-muted-foreground">
+                {autoSaving
+                  ? "Automaticky ukládám…"
+                  : lastSavedAt
+                    ? `Automaticky uloženo v ${lastSavedAt.toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" })}`
+                    : "Změny se ukládají automaticky"}
+              </div>
+            )}
             <Button type="button" variant="ghost" onClick={() => navigate({ to: "/vykupy" })}>
               Zrušit
             </Button>
