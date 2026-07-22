@@ -404,19 +404,53 @@ function VykupForm() {
 
           <Section title="Klient">
             <Field label="Klient">
-              <Input value={form.klient} onChange={(e) => set("klient", e.target.value)} required={!ro} readOnly={ro} />
+              <>
+                <Input
+                  value={form.klient}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    set("klient", v);
+                    const match = clientList.find((c) => c.full_name === v);
+                    if (match && match.phone && !form.telefon) set("telefon", match.phone);
+                  }}
+                  required={!ro}
+                  readOnly={ro}
+                  list="vykup-clients"
+                  placeholder="Začněte psát – najde v evidenci klientů"
+                />
+                <datalist id="vykup-clients">
+                  {clientList.map((c) => (
+                    <option key={c.id} value={c.full_name} />
+                  ))}
+                </datalist>
+              </>
             </Field>
             <Field label="Telefon">
               <Input value={form.telefon} onChange={(e) => set("telefon", e.target.value)} readOnly={ro} />
             </Field>
             <Field label="Zdroj">
-              <Select value={form.zdroj} onValueChange={(v) => set("zdroj", v)} disabled={ro}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{ZDROJE.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}</SelectContent>
+              <Select value={form.zdroj || "none"} onValueChange={(v) => set("zdroj", v === "none" ? "" : v)} disabled={ro}>
+                <SelectTrigger><SelectValue placeholder="— vyberte —" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— vyberte —</SelectItem>
+                  {ZDROJE.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
+                </SelectContent>
               </Select>
             </Field>
             <Field label="Zpracoval">
-              <Input value={form.zpracoval} onChange={(e) => set("zpracoval", e.target.value)} readOnly={ro} />
+              <Select
+                value={form.zpracoval || "none"}
+                onValueChange={(v) => set("zpracoval", v === "none" ? "" : v)}
+                disabled={ro}
+              >
+                <SelectTrigger><SelectValue placeholder="Vyberte…" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— nezadáno —</SelectItem>
+                  {(employees ?? []).map((u) => (
+                    <SelectItem key={u.id} value={u.name}>{u.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </Field>
           </Section>
 
@@ -448,7 +482,7 @@ function VykupForm() {
                 liveMarze != null && liveMarze < 0 && "border-rose-200 bg-rose-50 text-rose-900",
               )}>
                 <span className="font-medium">Marže: </span>
-                <span className="tabular-nums font-bold">{liveMarze == null ? "vyplňte prodáno a vykoupeno" : formatKc(liveMarze)}</span>
+                <span className="tabular-nums font-bold">{liveMarze == null ? "vyplňte prodáno, vykoupeno; náklady se odečtou" : formatKc(liveMarze)}</span>
               </div>
             </div>
           </Section>}
