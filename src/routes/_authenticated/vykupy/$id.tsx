@@ -238,11 +238,11 @@ function VykupForm() {
   // Validace stavových přechodů.
   function validateStav(): string | null {
     if (form.stav === "Vykoupeno" && toNum(form.vykoupeno_za) == null) {
-      return "Pro stav „Vykoupeno" vyplňte cenu Vykoupeno za.";
+      return 'Pro stav „Vykoupeno" vyplňte cenu Vykoupeno za.';
     }
     if (form.stav === "Prodáno") {
-      if (toNum(form.vykoupeno_za) == null) return "Pro stav „Prodáno" vyplňte i cenu Vykoupeno za.";
-      if (toNum(form.prodano_za) == null) return "Pro stav „Prodáno" vyplňte cenu Prodáno za.";
+      if (toNum(form.vykoupeno_za) == null) return 'Pro stav „Prodáno" vyplňte i cenu Vykoupeno za.';
+      if (toNum(form.prodano_za) == null) return 'Pro stav „Prodáno" vyplňte cenu Prodáno za.';
     }
     return null;
   }
