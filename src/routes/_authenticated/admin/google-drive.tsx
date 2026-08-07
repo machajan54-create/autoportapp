@@ -866,6 +866,7 @@ function GoogleDrivePage() {
         </Card>
 
         {/* GitHub snapshot */}
+        {null}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
