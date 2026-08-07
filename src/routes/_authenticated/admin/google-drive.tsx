@@ -156,8 +156,12 @@ function GoogleDrivePage() {
   const runM = useMutation({
     mutationFn: () => runBackup({}),
     onSuccess: (data: any) => {
+      const storageInfo =
+        data.storageBuckets > 0
+          ? `, ${data.storageBuckets} bucketů / ${data.storageFiles} souborů`
+          : "";
       toast.success(
-        `Záloha dokončena – ${data.tables} tabulek, ${data.rows} řádků (${formatBytes(data.sizeBytes)})`,
+        `Záloha dokončena – ${data.tables} tabulek, ${data.rows} řádků${storageInfo} (${formatBytes(data.sizeBytes)})`,
       );
       qc.invalidateQueries({ queryKey: ["gdrive-runs"] });
       qc.invalidateQueries({ queryKey: ["gdrive-status"] });
