@@ -300,7 +300,12 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
 
     // DPP limit (300 h/rok)
     if (isAdmin && emps && recs) {
-      const dpp = emps.filter((e: any) => e.employment_type === "dpp" && e.active);
+      const dpp = emps.filter(
+        (e: any) =>
+          ((e.employment_types as string[]) ?? []).some(
+            (t) => String(t).toUpperCase() === "DPP",
+          ) && e.active,
+      );
       const hoursById = new Map<string, number>();
       for (const r of recs as any[]) {
         hoursById.set(
