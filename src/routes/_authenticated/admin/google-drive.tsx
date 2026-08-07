@@ -43,6 +43,8 @@ import {
   listBackupRuns,
   listBackupFiles,
   restoreBackupFromDrive,
+  listStorageBackupFiles,
+  restoreStorageFromDrive,
 } from "@/lib/google-drive.functions";
 import {
   getGithubSnapshotStatus,
