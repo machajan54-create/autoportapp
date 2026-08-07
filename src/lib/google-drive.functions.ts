@@ -559,11 +559,55 @@ export const restoreStorageFromDrive = createServerFn({ method: "POST" })
     if (data.confirm !== "OBNOVIT") {
       throw new Error("Pro obnovu je nutné potvrdit napsáním slova OBNOVIT.");
     }
-    const { restoreStorageArchive } = await import("@/lib/backup-core.server");
-    const result = await restoreStorageArchive({
-      fileId: data.fileId,
-      fileName: data.fileName,
-      overwrite: data.overwrite ?? false,
-    });
-    return { ok: result.errors.length === 0, ...result };
+    const startedAt = Date.now();
+    const { data: run } = await context.supabase
+      .from("backup_runs")
+      .insert({
+        status: "running",
+        trigger: "restore",
+        kind: "storage_restore",
+        started_by: context.userId,
+        drive_file_id: data.fileId,
+        drive_file_name: data.fileName,
+      })
+      .select("id")
+      .single();
+    const runId = run?.id as string | undefined;
+
+    try {
+      const { restoreStorageArchive } = await import("@/lib/backup-core.server");
+      const result = await restoreStorageArchive({
+        fileId: data.fileId,
+        fileName: data.fileName,
+        overwrite: data.overwrite ?? false,
+      });
+      if (runId) {
+        await context.supabase
+          .from("backup_runs")
+          .update({
+            status: result.errors.length === 0 ? "success" : "error",
+            finished_at: new Date().toISOString(),
+            duration_ms: Date.now() - startedAt,
+            rows_count: result.restored,
+            tables_count: 1,
+            error: result.errors.length ? result.errors.join("\n").slice(0, 2000) : null,
+          })
+          .eq("id", runId);
+      }
+      return { ok: result.errors.length === 0, ...result };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (runId) {
+        await context.supabase
+          .from("backup_runs")
+          .update({
+            status: "error",
+            finished_at: new Date().toISOString(),
+            duration_ms: Date.now() - startedAt,
+            error: msg.slice(0, 2000),
+          })
+          .eq("id", runId);
+      }
+      throw new Error(msg);
+    }
   });
