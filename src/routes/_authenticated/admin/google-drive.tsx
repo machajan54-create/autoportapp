@@ -1367,8 +1367,53 @@ function GoogleDrivePage() {
   );
 }
 
+function ValidationReport({ result }: { result: any }) {
+  if (!result) return null;
+  const ok = !!result.ok;
+  return (
+    <div
+      className={`mt-2 space-y-1 rounded-md border p-3 text-xs ${
+        ok ? "border-emerald-500/40 bg-emerald-500/5" : "border-destructive/50 bg-destructive/5"
+      }`}
+    >
+      <p className="font-medium">
+        {ok ? "Archiv je v pořádku (dry-run, nic se nezapsalo)" : "Archiv neprošel kontrolou"}
+        {" · "}
+        {result.type === "storage"
+          ? `soubory${result.bucket ? ` – bucket ${result.bucket}` : ""}`
+          : result.type === "database"
+            ? "databáze"
+            : "neznámý typ"}
+      </p>
+      {result.type === "storage" ? (
+        <p className="text-muted-foreground">
+          Souborů v archivu: {result.filesCount} · velikost {formatBytes(result.totalBytes)}
+        </p>
+      ) : (
+        <p className="text-muted-foreground">
+          Tabulek: {result.tables?.length ?? 0} · řádků{" "}
+          {(result.tables ?? []).reduce((s: number, t: any) => s + t.rows, 0)}
+        </p>
+      )}
+      {result.errors?.length > 0 && (
+        <ul className="list-disc space-y-0.5 pl-4 text-destructive">
+          {result.errors.map((e: string, i: number) => (
+            <li key={i}>{e}</li>
+          ))}
+        </ul>
+      )}
+      {result.warnings?.length > 0 && (
+        <ul className="list-disc space-y-0.5 pl-4 text-amber-600">
+          {result.warnings.map((w: string, i: number) => (
+            <li key={i}>{w}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 type HistoryRun = {
-*** MARKER ***
   id: string;
   kind: string | null;
   status: string;
