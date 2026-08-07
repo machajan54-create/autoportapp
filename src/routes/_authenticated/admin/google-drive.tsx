@@ -948,6 +948,18 @@ function GoogleDrivePage() {
                     <div className="ml-auto">
                       <Button
                         size="sm"
+                        variant="outline"
+                        className="mr-2"
+                        onClick={() => validateM.mutate({ fileId: f.id, fileName: f.name })}
+                        disabled={validateM.isPending}
+                      >
+                        {validateM.isPending && validateM.variables?.fileId === f.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : null}
+                        Zkontrolovat (dry-run)
+                      </Button>
+                      <Button
+                        size="sm"
                         variant="destructive"
                         onClick={() => {
                           setSelectedStorageFile({ id: f.id, name: f.name });
@@ -958,6 +970,11 @@ function GoogleDrivePage() {
                         <Download className="h-4 w-4" /> Obnovit soubory
                       </Button>
                     </div>
+                    {validation?.fileId === f.id && (
+                      <div className="w-full">
+                        <ValidationReport result={validation.result} />
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
