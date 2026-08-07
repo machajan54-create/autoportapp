@@ -2,7 +2,7 @@
  * Jádro záloh a obnovy na Google Disk (server-only).
  * Používá se ze server funkcí i z cron endpointu.
  */
-import { BACKUP_TABLES, BACKUP_BUCKETS } from "@/lib/backup-tables";
+import { BACKUP_TABLES, BACKUP_BUCKETS, MIRRORED_BUCKETS } from "@/lib/backup-tables";
 
 const GATEWAY_BASE = "https://connector-gateway.lovable.dev/google_drive";
 
@@ -32,15 +32,24 @@ export async function uploadGzipToDrive(
   name: string,
   content: Buffer,
 ): Promise<{ id: string; name: string; webViewLink?: string; size?: number }> {
+  return uploadBinaryToDrive(folderId, name, content, "application/gzip");
+}
+
+export async function uploadBinaryToDrive(
+  folderId: string,
+  name: string,
+  content: Buffer,
+  mimeType = "application/octet-stream",
+): Promise<{ id: string; name: string; webViewLink?: string; size?: number }> {
   const { lovableKey, connKey } = requireDriveEnv();
   const boundary = `-------lovable${Date.now()}`;
-  const metadata = { name, parents: [folderId], mimeType: "application/gzip" };
+  const metadata = { name, parents: [folderId], mimeType };
   const preamble =
     `--${boundary}\r\n` +
     `Content-Type: application/json; charset=UTF-8\r\n\r\n` +
     `${JSON.stringify(metadata)}\r\n` +
     `--${boundary}\r\n` +
-    `Content-Type: application/gzip\r\n` +
+    `Content-Type: ${mimeType}\r\n` +
     `Content-Transfer-Encoding: binary\r\n\r\n`;
   const closing = `\r\n--${boundary}--`;
   const body = Buffer.concat([Buffer.from(preamble, "utf8"), content, Buffer.from(closing, "utf8")]);
@@ -61,6 +70,72 @@ export async function uploadGzipToDrive(
   if (!res.ok) throw new Error(`Nahrání zálohy selhalo (${res.status}): ${text.slice(0, 300)}`);
   const parsed = JSON.parse(text);
   return { ...parsed, size: parsed.size ? Number(parsed.size) : undefined };
+}
+
+// ---------------- SLOŽKY NA DISKU ----------------
+
+/** Najde nebo vytvoří podsložku daného jména. Výsledky se cachují v rámci jednoho běhu. */
+export async function ensureFolder(
+  parentId: string,
+  name: string,
+  cache?: Map<string, string>,
+): Promise<string> {
+  const key = `${parentId}/${name}`;
+  const cached = cache?.get(key);
+  if (cached) return cached;
+
+  const safe = name.replace(/'/g, "\\'");
+  const q = encodeURIComponent(
+    `'${parentId}' in parents and trashed = false and mimeType = 'application/vnd.google-apps.folder' and name = '${safe}'`,
+  );
+  const found = await driveFetchCore(`/drive/v3/files?q=${q}&pageSize=1&fields=files(id,name)`);
+  let id: string | undefined = found?.files?.[0]?.id;
+  if (!id) {
+    const created = await driveFetchCore(`/drive/v3/files?fields=id,name`, {
+      method: "POST",
+      body: JSON.stringify({
+        name,
+        parents: [parentId],
+        mimeType: "application/vnd.google-apps.folder",
+      }),
+    });
+    id = created.id as string;
+  }
+  cache?.set(key, id!);
+  return id!;
+}
+
+/** Vytvoří (nebo najde) celou cestu složek, např. "vykup-photos/2026/03". */
+export async function ensureFolderPath(
+  rootId: string,
+  segments: string[],
+  cache?: Map<string, string>,
+): Promise<string> {
+  let current = rootId;
+  for (const seg of segments) {
+    if (!seg) continue;
+    current = await ensureFolder(current, seg, cache);
+  }
+  return current;
+}
+
+function guessMime(path: string): string {
+  const ext = path.toLowerCase().split(".").pop() ?? "";
+  const map: Record<string, string> = {
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    webp: "image/webp",
+    gif: "image/gif",
+    heic: "image/heic",
+    pdf: "application/pdf",
+    csv: "text/csv",
+    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    json: "application/json",
+    txt: "text/plain",
+    mp4: "video/mp4",
+  };
+  return map[ext] ?? "application/octet-stream";
 }
 
 export async function downloadDriveFileCore(fileId: string): Promise<Buffer> {
@@ -177,38 +252,73 @@ async function downloadStorageFile(
 
 export async function backupStorageBuckets(
   supabaseAdmin: any,
-  folderId: string,
-): Promise<{ bucketsCount: number; filesCount: number; sizeBytes: number }> {
+  runFolderId: string,
+): Promise<{ bucketsCount: number; filesCount: number; sizeBytes: number; mirrored: number }> {
   const { gzipSync } = await import("node:zlib");
   const stamp = new Date().toISOString().replace(/[:.]/g, "-").replace("T", "_").slice(0, 19);
+  const cache = new Map<string, string>();
   let bucketsCount = 0;
   let filesCount = 0;
   let sizeBytes = 0;
+  let mirrored = 0;
 
   for (const bucket of BACKUP_BUCKETS) {
     try {
       const objects = await listAllObjects(supabaseAdmin, bucket);
       if (objects.length === 0) continue;
-      const entries: { name: string; data: Buffer }[] = [];
-      for (const obj of objects) {
-        const b = await downloadStorageFile(supabaseAdmin, bucket, obj.path);
-        if (b) entries.push({ name: obj.path, data: b });
+      const isMirrored = (MIRRORED_BUCKETS as readonly string[]).includes(bucket);
+
+      if (isMirrored) {
+        // Zrcadlení 1:1 – každý soubor zvlášť do složky podle původní cesty.
+        const bucketRoot = await ensureFolderPath(runFolderId, ["fotky", bucket], cache);
+        let uploadedInBucket = 0;
+        for (const obj of objects) {
+          const data = await downloadStorageFile(supabaseAdmin, bucket, obj.path);
+          if (!data) continue;
+          const parts = obj.path.split("/").filter(Boolean);
+          const fileName = parts.pop()!;
+          const target = parts.length
+            ? await ensureFolderPath(bucketRoot, parts, cache)
+            : bucketRoot;
+          try {
+            await uploadBinaryToDrive(target, fileName, data, guessMime(fileName));
+            uploadedInBucket += 1;
+            sizeBytes += data.byteLength;
+          } catch (e) {
+            console.warn(
+              `[backup] soubor ${bucket}/${obj.path} se nepodařilo nahrát:`,
+              e instanceof Error ? e.message : e,
+            );
+          }
+        }
+        if (uploadedInBucket === 0) continue;
+        bucketsCount += 1;
+        filesCount += uploadedInBucket;
+        mirrored += uploadedInBucket;
+      } else {
+        // Ostatní buckety jako komprimovaný archiv (obnovitelný z aplikace).
+        const entries: { name: string; data: Buffer }[] = [];
+        for (const obj of objects) {
+          const b = await downloadStorageFile(supabaseAdmin, bucket, obj.path);
+          if (b) entries.push({ name: obj.path, data: b });
+        }
+        if (entries.length === 0) continue;
+        const archiveFolder = await ensureFolderPath(runFolderId, ["soubory-archiv"], cache);
+        const gz = gzipSync(buildTar(entries), { level: 9 });
+        const uploaded = await uploadGzipToDrive(
+          archiveFolder,
+          `autoport-storage-${bucket}-${stamp}.tar.gz`,
+          gz,
+        );
+        bucketsCount += 1;
+        filesCount += entries.length;
+        sizeBytes += uploaded.size ?? gz.byteLength;
       }
-      if (entries.length === 0) continue;
-      const gz = gzipSync(buildTar(entries), { level: 9 });
-      const uploaded = await uploadGzipToDrive(
-        folderId,
-        `autoport-storage-${bucket}-${stamp}.tar.gz`,
-        gz,
-      );
-      bucketsCount += 1;
-      filesCount += entries.length;
-      sizeBytes += uploaded.size ?? gz.byteLength;
     } catch (e) {
       console.warn(`[backup] bucket ${bucket} selhal:`, e instanceof Error ? e.message : e);
     }
   }
-  return { bucketsCount, filesCount, sizeBytes };
+  return { bucketsCount, filesCount, sizeBytes, mirrored };
 }
 
 export type ArchiveValidation = {
@@ -393,6 +503,7 @@ export async function performBackup(params: {
   webViewLink?: string | null;
   buckets: number;
   files: number;
+  folder: string;
 }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -413,6 +524,18 @@ export async function performBackup(params: {
   const runId = run.id as string;
 
   try {
+    const cache = new Map<string, string>();
+    const runStamp = new Date()
+      .toISOString()
+      .replace(/[:.]/g, "-")
+      .replace("T", "_")
+      .slice(0, 16);
+    const runFolderId = await ensureFolderPath(
+      settings.drive_folder_id,
+      ["AutoPort zálohy", runStamp],
+      cache,
+    );
+
     const dump: Record<string, unknown> = {
       __meta: { generated_at: new Date().toISOString(), app: "autoport", version: 1 },
     };
@@ -445,13 +568,14 @@ export async function performBackup(params: {
     const { gzipSync } = await import("node:zlib");
     const gz = gzipSync(Buffer.from(JSON.stringify(dump), "utf8"), { level: 9 });
     const stamp = new Date().toISOString().replace(/[:.]/g, "-").replace("T", "_").slice(0, 19);
+    const dbFolderId = await ensureFolderPath(runFolderId, ["databaze"], cache);
     const uploaded = await uploadGzipToDrive(
-      settings.drive_folder_id,
+      dbFolderId,
       `autoport-backup-${stamp}.json.gz`,
       gz,
     );
 
-    const storage = await backupStorageBuckets(supabaseAdmin, settings.drive_folder_id);
+    const storage = await backupStorageBuckets(supabaseAdmin, runFolderId);
     const totalSize = (uploaded.size ?? gz.byteLength) + storage.sizeBytes;
     const duration = Date.now() - startedAt;
 
@@ -486,6 +610,7 @@ export async function performBackup(params: {
       webViewLink: uploaded.webViewLink ?? null,
       buckets: storage.bucketsCount,
       files: storage.filesCount,
+      folder: runStamp,
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
