@@ -252,38 +252,73 @@ async function downloadStorageFile(
 
 export async function backupStorageBuckets(
   supabaseAdmin: any,
-  folderId: string,
-): Promise<{ bucketsCount: number; filesCount: number; sizeBytes: number }> {
+  runFolderId: string,
+): Promise<{ bucketsCount: number; filesCount: number; sizeBytes: number; mirrored: number }> {
   const { gzipSync } = await import("node:zlib");
   const stamp = new Date().toISOString().replace(/[:.]/g, "-").replace("T", "_").slice(0, 19);
+  const cache = new Map<string, string>();
   let bucketsCount = 0;
   let filesCount = 0;
   let sizeBytes = 0;
+  let mirrored = 0;
 
   for (const bucket of BACKUP_BUCKETS) {
     try {
       const objects = await listAllObjects(supabaseAdmin, bucket);
       if (objects.length === 0) continue;
-      const entries: { name: string; data: Buffer }[] = [];
-      for (const obj of objects) {
-        const b = await downloadStorageFile(supabaseAdmin, bucket, obj.path);
-        if (b) entries.push({ name: obj.path, data: b });
+      const isMirrored = (MIRRORED_BUCKETS as readonly string[]).includes(bucket);
+
+      if (isMirrored) {
+        // Zrcadlení 1:1 – každý soubor zvlášť do složky podle původní cesty.
+        const bucketRoot = await ensureFolderPath(runFolderId, ["fotky", bucket], cache);
+        let uploadedInBucket = 0;
+        for (const obj of objects) {
+          const data = await downloadStorageFile(supabaseAdmin, bucket, obj.path);
+          if (!data) continue;
+          const parts = obj.path.split("/").filter(Boolean);
+          const fileName = parts.pop()!;
+          const target = parts.length
+            ? await ensureFolderPath(bucketRoot, parts, cache)
+            : bucketRoot;
+          try {
+            await uploadBinaryToDrive(target, fileName, data, guessMime(fileName));
+            uploadedInBucket += 1;
+            sizeBytes += data.byteLength;
+          } catch (e) {
+            console.warn(
+              `[backup] soubor ${bucket}/${obj.path} se nepodařilo nahrát:`,
+              e instanceof Error ? e.message : e,
+            );
+          }
+        }
+        if (uploadedInBucket === 0) continue;
+        bucketsCount += 1;
+        filesCount += uploadedInBucket;
+        mirrored += uploadedInBucket;
+      } else {
+        // Ostatní buckety jako komprimovaný archiv (obnovitelný z aplikace).
+        const entries: { name: string; data: Buffer }[] = [];
+        for (const obj of objects) {
+          const b = await downloadStorageFile(supabaseAdmin, bucket, obj.path);
+          if (b) entries.push({ name: obj.path, data: b });
+        }
+        if (entries.length === 0) continue;
+        const archiveFolder = await ensureFolderPath(runFolderId, ["soubory-archiv"], cache);
+        const gz = gzipSync(buildTar(entries), { level: 9 });
+        const uploaded = await uploadGzipToDrive(
+          archiveFolder,
+          `autoport-storage-${bucket}-${stamp}.tar.gz`,
+          gz,
+        );
+        bucketsCount += 1;
+        filesCount += entries.length;
+        sizeBytes += uploaded.size ?? gz.byteLength;
       }
-      if (entries.length === 0) continue;
-      const gz = gzipSync(buildTar(entries), { level: 9 });
-      const uploaded = await uploadGzipToDrive(
-        folderId,
-        `autoport-storage-${bucket}-${stamp}.tar.gz`,
-        gz,
-      );
-      bucketsCount += 1;
-      filesCount += entries.length;
-      sizeBytes += uploaded.size ?? gz.byteLength;
     } catch (e) {
       console.warn(`[backup] bucket ${bucket} selhal:`, e instanceof Error ? e.message : e);
     }
   }
-  return { bucketsCount, filesCount, sizeBytes };
+  return { bucketsCount, filesCount, sizeBytes, mirrored };
 }
 
 export type ArchiveValidation = {
