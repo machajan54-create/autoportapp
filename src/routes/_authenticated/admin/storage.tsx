@@ -106,18 +106,24 @@ function StorageStatsPage() {
               Úspora úložiště
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Kolik místa jsi ušetřil díky automatickému zmenšování fotografií (max 1920 px, JPEG ~85 %).
+              Kolik místa jsi ušetřil díky automatickému zmenšování fotografií (max 1920 px, JPEG
+              ~85 %).
             </p>
           </div>
           <Button asChild variant="outline" size="sm">
-            <Link to="/admin"><ArrowLeft className="mr-1 h-4 w-4" />Zpět</Link>
+            <Link to="/admin">
+              <ArrowLeft className="mr-1 h-4 w-4" />
+              Zpět
+            </Link>
           </Button>
         </div>
 
         {isLoading ? (
           <p className="mt-10 text-sm text-muted-foreground">Načítám statistiky úložiště…</p>
         ) : error ? (
-          <p className="mt-10 text-sm text-rose-600">Nepodařilo se načíst statistiky: {(error as Error).message}</p>
+          <p className="mt-10 text-sm text-rose-600">
+            Nepodařilo se načíst statistiky: {(error as Error).message}
+          </p>
         ) : (
           <>
             {/* Ratio slider */}
@@ -126,7 +132,8 @@ function StorageStatsPage() {
                 <div>
                   <p className="text-sm font-semibold">Odhadovaný poměr komprese</p>
                   <p className="text-xs text-muted-foreground">
-                    Poměr velikosti po zmenšení vůči originálu. Výchozí 20 % (ušetřeno ~80 %) odpovídá běžným fotkám z mobilu.
+                    Poměr velikosti po zmenšení vůči originálu. Výchozí 20 % (ušetřeno ~80 %)
+                    odpovídá běžným fotkám z mobilu.
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -197,7 +204,9 @@ function StorageStatsPage() {
                       return (
                         <div key={b.bucket}>
                           <div className="flex items-center justify-between text-sm">
-                            <span className="font-medium">{BUCKET_LABELS[b.bucket] ?? b.bucket}</span>
+                            <span className="font-medium">
+                              {BUCKET_LABELS[b.bucket] ?? b.bucket}
+                            </span>
                             <span className="tabular-nums text-muted-foreground">
                               {b.count.toLocaleString("cs-CZ")} ks · {formatBytes(b.size)}
                             </span>
@@ -267,10 +276,12 @@ function StorageStatsPage() {
                   })}
                   <div className="flex items-center gap-4 pt-2 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1.5">
-                      <span className="inline-block h-2.5 w-2.5 rounded-sm bg-primary" /> Aktuálně zabírá
+                      <span className="inline-block h-2.5 w-2.5 rounded-sm bg-primary" /> Aktuálně
+                      zabírá
                     </span>
                     <span className="flex items-center gap-1.5">
-                      <span className="inline-block h-2.5 w-2.5 rounded-sm bg-emerald-500/70" /> Ušetřeno
+                      <span className="inline-block h-2.5 w-2.5 rounded-sm bg-emerald-500/70" />{" "}
+                      Ušetřeno
                     </span>
                   </div>
                 </div>
@@ -306,7 +317,9 @@ function Stat({
       )}
     >
       <div className="min-w-0">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </p>
         <p
           className={cn(
             "mt-1 truncate text-xl font-bold md:text-2xl",
@@ -349,7 +362,9 @@ function MonthlyChart({
   });
   const max = Math.max(1, ...bars.map((b) => b.original));
   if (bars.every((b) => b.size === 0)) {
-    return <p className="text-sm text-muted-foreground">Žádné fotografie v posledních 12 měsících.</p>;
+    return (
+      <p className="text-sm text-muted-foreground">Žádné fotografie v posledních 12 měsících.</p>
+    );
   }
   return (
     <div>
@@ -406,10 +421,16 @@ function CumulativeChart({
   const step = points.length > 1 ? w / (points.length - 1) : w;
 
   const pathOriginal = points
-    .map((p, i) => `${i === 0 ? "M" : "L"} ${(i * step).toFixed(2)} ${(h - (p.original / max) * h).toFixed(2)}`)
+    .map(
+      (p, i) =>
+        `${i === 0 ? "M" : "L"} ${(i * step).toFixed(2)} ${(h - (p.original / max) * h).toFixed(2)}`,
+    )
     .join(" ");
   const pathCurrent = points
-    .map((p, i) => `${i === 0 ? "M" : "L"} ${(i * step).toFixed(2)} ${(h - (p.current / max) * h).toFixed(2)}`)
+    .map(
+      (p, i) =>
+        `${i === 0 ? "M" : "L"} ${(i * step).toFixed(2)} ${(h - (p.current / max) * h).toFixed(2)}`,
+    )
     .join(" ");
   const areaSaved =
     pathOriginal +
@@ -434,8 +455,20 @@ function CumulativeChart({
     <div>
       <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="h-40 w-full">
         <path d={areaSaved} fill="rgb(16 185 129 / 0.25)" />
-        <path d={pathOriginal} fill="none" stroke="rgb(245 158 11)" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
-        <path d={pathCurrent} fill="none" stroke="rgb(59 130 246)" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
+        <path
+          d={pathOriginal}
+          fill="none"
+          stroke="rgb(245 158 11)"
+          strokeWidth={1.5}
+          vectorEffect="non-scaling-stroke"
+        />
+        <path
+          d={pathCurrent}
+          fill="none"
+          stroke="rgb(59 130 246)"
+          strokeWidth={1.5}
+          vectorEffect="non-scaling-stroke"
+        />
       </svg>
       <div className="mt-2 flex flex-wrap justify-between gap-2 text-xs">
         <div className="text-muted-foreground">

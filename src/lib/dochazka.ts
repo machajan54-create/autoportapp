@@ -15,8 +15,16 @@ export const ABSENCE_TYPE_LABEL: Record<string, string> = Object.fromEntries(
 export const SHIFT_COLORS = [
   { value: "amber", label: "Žlutá", className: "bg-amber-100 text-amber-800 border-amber-300" },
   { value: "sky", label: "Modrá", className: "bg-sky-100 text-sky-800 border-sky-300" },
-  { value: "purple", label: "Fialová", className: "bg-purple-100 text-purple-800 border-purple-300" },
-  { value: "emerald", label: "Zelená", className: "bg-emerald-100 text-emerald-800 border-emerald-300" },
+  {
+    value: "purple",
+    label: "Fialová",
+    className: "bg-purple-100 text-purple-800 border-purple-300",
+  },
+  {
+    value: "emerald",
+    label: "Zelená",
+    className: "bg-emerald-100 text-emerald-800 border-emerald-300",
+  },
   { value: "rose", label: "Růžová", className: "bg-rose-100 text-rose-800 border-rose-300" },
 ] as const;
 
@@ -25,12 +33,18 @@ export type AvatarColor = (typeof AVATAR_COLORS)[number];
 
 export function avatarClasses(color: string | null | undefined): string {
   switch (color) {
-    case "blue": return "bg-blue-100 text-blue-700 border-blue-300";
-    case "purple": return "bg-purple-100 text-purple-700 border-purple-300";
-    case "emerald": return "bg-emerald-100 text-emerald-700 border-emerald-300";
-    case "amber": return "bg-amber-100 text-amber-700 border-amber-300";
-    case "rose": return "bg-rose-100 text-rose-700 border-rose-300";
-    default: return "bg-slate-100 text-slate-800 border-slate-300";
+    case "blue":
+      return "bg-blue-100 text-blue-700 border-blue-300";
+    case "purple":
+      return "bg-purple-100 text-purple-700 border-purple-300";
+    case "emerald":
+      return "bg-emerald-100 text-emerald-700 border-emerald-300";
+    case "amber":
+      return "bg-amber-100 text-amber-700 border-amber-300";
+    case "rose":
+      return "bg-rose-100 text-rose-700 border-rose-300";
+    default:
+      return "bg-slate-100 text-slate-800 border-slate-300";
   }
 }
 
@@ -65,7 +79,11 @@ export function formatHours(h: number | null | undefined): string {
   return `${whole}h ${minutes}m`;
 }
 
-export function calculateHoursWorked(checkInIso: string, checkOutIso: string, breakMinutes: number): number {
+export function calculateHoursWorked(
+  checkInIso: string,
+  checkOutIso: string,
+  breakMinutes: number,
+): number {
   const start = new Date(checkInIso).getTime();
   const end = new Date(checkOutIso).getTime();
   if (end <= start) return 0;
@@ -76,19 +94,33 @@ export function calculateHoursWorked(checkInIso: string, checkOutIso: string, br
 }
 
 export function shiftDurationHours(startTime: string, endTime: string): number {
-  const [sh, sm] = String(startTime).split(":").map((x) => Number(x));
-  const [eh, em] = String(endTime).split(":").map((x) => Number(x));
-  if (!Number.isFinite(sh) || !Number.isFinite(sm) || !Number.isFinite(eh) || !Number.isFinite(em)) return 0;
-  let duration = (eh + em / 60) - (sh + sm / 60);
+  const [sh, sm] = String(startTime)
+    .split(":")
+    .map((x) => Number(x));
+  const [eh, em] = String(endTime)
+    .split(":")
+    .map((x) => Number(x));
+  if (!Number.isFinite(sh) || !Number.isFinite(sm) || !Number.isFinite(eh) || !Number.isFinite(em))
+    return 0;
+  let duration = eh + em / 60 - (sh + sm / 60);
   if (duration < 0) duration += 24; // noční směna
   return duration;
 }
 
-export function expectedHoursWorked(shiftStart: string, shiftEnd: string, breakMinutes: number): number {
+export function expectedHoursWorked(
+  shiftStart: string,
+  shiftEnd: string,
+  breakMinutes: number,
+): number {
   return Math.max(0, shiftDurationHours(shiftStart, shiftEnd) - breakMinutes / 60);
 }
 
-export function underTime(hoursWorked: number, shiftStart: string, shiftEnd: string, breakMinutes: number): number {
+export function underTime(
+  hoursWorked: number,
+  shiftStart: string,
+  shiftEnd: string,
+  breakMinutes: number,
+): number {
   return Math.max(0, expectedHoursWorked(shiftStart, shiftEnd, breakMinutes) - hoursWorked);
 }
 

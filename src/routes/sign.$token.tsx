@@ -40,17 +40,27 @@ function SignPage() {
   }, [data?.pdfBase64]);
 
   async function onSubmit() {
-    if (!signerName.trim() || !sig) { toast.error("Doplňte jméno a podpis"); return; }
+    if (!signerName.trim() || !sig) {
+      toast.error("Doplňte jméno a podpis");
+      return;
+    }
     setSubmitting(true);
     try {
       await signFn({ data: { token, signatureDataUrl: sig, signerName: signerName.trim() } });
       setDone(true);
-    } catch (e) { toast.error((e as Error).message); }
-    finally { setSubmitting(false); }
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (isLoading) {
-    return <div className="flex min-h-screen items-center justify-center text-muted-foreground"><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Načítám…</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center text-muted-foreground">
+        <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Načítám…
+      </div>
+    );
   }
   if (error) {
     return (
@@ -65,7 +75,9 @@ function SignPage() {
       <div className="mx-auto max-w-md p-10 text-center">
         <CheckCircle2 className="mx-auto h-14 w-14 text-emerald-500" />
         <h1 className="mt-4 text-2xl font-semibold">Podepsáno</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Děkujeme. Podepsanou objednávku obdržíte e-mailem.</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Děkujeme. Podepsanou objednávku obdržíte e-mailem.
+        </p>
       </div>
     );
   }

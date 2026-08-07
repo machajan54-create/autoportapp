@@ -48,7 +48,11 @@ export const Route = createFileRoute("/_authenticated/admin/$id")({
 const statusOptions: { value: string; label: string; cls: string }[] = [
   { value: "new", label: "Nová", cls: "bg-primary/10 text-primary border-primary/20" },
   { value: "in_repair", label: "V opravě", cls: "bg-amber-100 text-amber-900 border-amber-200" },
-  { value: "waiting_vat", label: "Čeká na DPH", cls: "bg-violet-100 text-violet-900 border-violet-200" },
+  {
+    value: "waiting_vat",
+    label: "Čeká na DPH",
+    cls: "bg-violet-100 text-violet-900 border-violet-200",
+  },
   { value: "done", label: "Dokončeno", cls: "bg-emerald-100 text-emerald-900 border-emerald-200" },
 ];
 
@@ -111,7 +115,9 @@ function ClaimDetail() {
 
   useEffect(() => {
     if (!uploadUrl) return;
-    QRCode.toDataURL(uploadUrl, { width: 320, margin: 1 }).then(setQrUrl).catch(() => {});
+    QRCode.toDataURL(uploadUrl, { width: 320, margin: 1 })
+      .then(setQrUrl)
+      .catch(() => {});
   }, [uploadUrl]);
 
   async function copyUploadUrl() {
@@ -135,9 +141,7 @@ function ClaimDetail() {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
     const zak = esc(data.claim.pu_number ?? "");
-    const klient = esc(
-      [data.claim.first_name, data.claim.last_name].filter(Boolean).join(" "),
-    );
+    const klient = esc([data.claim.first_name, data.claim.last_name].filter(Boolean).join(" "));
     const vozidlo = esc(data.claim.insurer ?? "");
     const qrSrc = esc(qrUrl);
     const dnes = esc(new Date().toLocaleDateString("cs-CZ"));
@@ -257,7 +261,9 @@ function ClaimDetail() {
             <div className="font-mono text-xs uppercase text-muted-foreground">
               {c.pu_number ?? "—"}
             </div>
-            <h1 className="text-2xl font-bold">{c.first_name} {c.last_name}</h1>
+            <h1 className="text-2xl font-bold">
+              {c.first_name} {c.last_name}
+            </h1>
           </div>
           <div className="flex items-center gap-2">
             <span className={cn("rounded-md border px-2 py-1 text-xs font-medium", meta.cls)}>
@@ -298,7 +304,10 @@ function ClaimDetail() {
           <Row label="Adresa" v={c.address} />
           <Row label="Pojišťovna" v={c.insurer} />
           <Row label="Číslo škody" v={c.claim_number} />
-          <Row label="Datum události" v={c.event_at ? new Date(c.event_at).toLocaleString("cs-CZ") : null} />
+          <Row
+            label="Datum události"
+            v={c.event_at ? new Date(c.event_at).toLocaleString("cs-CZ") : null}
+          />
           <Row label="Místo události" v={c.location} />
           <Row label="Způsob likvidace" v={c.liquidation_type} />
           <Row label="Plátce DPH" v={c.vat_payer} />
@@ -342,7 +351,10 @@ function ClaimDetail() {
                 <span className="font-mono text-xs text-muted-foreground">[power_of_attorney]</span>{" "}
                 plna-moc-jednani.pdf
               </span>
-              <button onClick={() => downloadPoa("jednani")} className="text-primary hover:underline">
+              <button
+                onClick={() => downloadPoa("jednani")}
+                className="text-primary hover:underline"
+              >
                 Stáhnout
               </button>
             </li>
@@ -351,20 +363,31 @@ function ClaimDetail() {
                 <span className="font-mono text-xs text-muted-foreground">[power_of_attorney]</span>{" "}
                 plna-moc-prevzeti.pdf
               </span>
-              <button onClick={() => downloadPoa("plneni")} className="text-primary hover:underline">
+              <button
+                onClick={() => downloadPoa("plneni")}
+                className="text-primary hover:underline"
+              >
                 Stáhnout
               </button>
             </li>
             {data.attachments
               .filter((a) => !(a.mime_type ?? "").startsWith("image"))
               .map((a) => (
-                <li key={a.id} className="flex items-center justify-between rounded-md border bg-background px-3 py-2">
+                <li
+                  key={a.id}
+                  className="flex items-center justify-between rounded-md border bg-background px-3 py-2"
+                >
                   <span>
                     <span className="font-mono text-xs text-muted-foreground">[{a.category}]</span>{" "}
                     {a.file_name}
                   </span>
                   {a.url && (
-                    <a href={a.url} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                    <a
+                      href={a.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-primary hover:underline"
+                    >
                       Otevřít
                     </a>
                   )}
@@ -376,9 +399,7 @@ function ClaimDetail() {
         <Card>
           <CardTitle>Časová osa</CardTitle>
           <ol className="space-y-2 text-sm">
-            {data.events.length === 0 && (
-              <li className="text-muted-foreground">Žádné události.</li>
-            )}
+            {data.events.length === 0 && <li className="text-muted-foreground">Žádné události.</li>}
             {data.events.map((e) => (
               <li key={e.id} className="flex gap-3">
                 <span className="w-36 shrink-0 font-mono text-xs text-muted-foreground">
@@ -478,7 +499,10 @@ function ClaimDetail() {
           </form>
           <ul className="space-y-1 text-sm">
             {data.tasks.map((t) => (
-              <li key={t.id} className="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-muted/50">
+              <li
+                key={t.id}
+                className="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-muted/50"
+              >
                 <Checkbox
                   checked={t.done}
                   onCheckedChange={async (v) => {

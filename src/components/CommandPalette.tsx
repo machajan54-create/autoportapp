@@ -12,14 +12,35 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import {
-  LayoutDashboard, FolderKanban, Car, Clock, Wrench, CheckSquare, Users, FileText, BookOpen,
+  LayoutDashboard,
+  FolderKanban,
+  Car,
+  Clock,
+  Wrench,
+  CheckSquare,
+  Users,
+  FileText,
+  BookOpen,
 } from "lucide-react";
 import { listClaims } from "@/lib/claims.functions";
 import { listVykupy } from "@/lib/vykupy";
 import { listDefects } from "@/lib/defects.functions";
 import { listEmployees as listDochEmployees } from "@/lib/dochazka.functions";
 
-type ModuleKey = "claims" | "vykupy" | "vykupy_external" | "users" | "approvals" | "dashboard" | "dochazka" | "defects" | "deals" | "logbook" | "tasks" | "demo_orders" | "evidence_zakazek";
+type ModuleKey =
+  | "claims"
+  | "vykupy"
+  | "vykupy_external"
+  | "users"
+  | "approvals"
+  | "dashboard"
+  | "dochazka"
+  | "defects"
+  | "deals"
+  | "logbook"
+  | "tasks"
+  | "demo_orders"
+  | "evidence_zakazek";
 
 export function CommandPalette({
   isAdmin,
@@ -79,12 +100,15 @@ export function CommandPalette({
 
   const navItems = useMemo(() => {
     const list: { label: string; to: string; icon: any }[] = [];
-    if (isAdmin || can("dashboard")) list.push({ label: "Dashboard", to: "/dashboard", icon: LayoutDashboard });
+    if (isAdmin || can("dashboard"))
+      list.push({ label: "Dashboard", to: "/dashboard", icon: LayoutDashboard });
     if (can("claims")) list.push({ label: "Zakázky", to: "/admin", icon: FolderKanban });
-    if (can("vykupy") || can("vykupy_external")) list.push({ label: "Ojeté vozy", to: "/vykupy", icon: Car });
+    if (can("vykupy") || can("vykupy_external"))
+      list.push({ label: "Ojeté vozy", to: "/vykupy", icon: Car });
     if (can("dochazka")) list.push({ label: "Docházka", to: "/dochazka", icon: Clock });
     list.push({ label: "Závady", to: "/zavady", icon: Wrench });
-    if (isAdmin || can("approvals")) list.push({ label: "Schvalování", to: "/approvals", icon: CheckSquare });
+    if (isAdmin || can("approvals"))
+      list.push({ label: "Schvalování", to: "/approvals", icon: CheckSquare });
     if (can("logbook")) list.push({ label: "Kniha jízd", to: "/logbook", icon: BookOpen });
     if (isAdmin) list.push({ label: "Uživatelé", to: "/admin/users", icon: Users });
     if (isAdmin) list.push({ label: "Šablony dokumentů", to: "/admin/templates", icon: FileText });
@@ -117,7 +141,8 @@ export function CommandPalette({
                 >
                   <FolderKanban className="mr-2 h-4 w-4 text-muted-foreground" />
                   <span className="truncate">
-                    <span className="font-mono text-xs">{c.pu_number ?? "—"}</span>{" · "}
+                    <span className="font-mono text-xs">{c.pu_number ?? "—"}</span>
+                    {" · "}
                     {c.client_name ?? "—"}
                     {c.spz && <span className="text-muted-foreground"> · {c.spz}</span>}
                   </span>
@@ -181,7 +206,10 @@ export function CommandPalette({
                   <span className="truncate">
                     {e.name}
                     {e.employment_type && (
-                      <span className="text-muted-foreground"> · {String(e.employment_type).toUpperCase()}</span>
+                      <span className="text-muted-foreground">
+                        {" "}
+                        · {String(e.employment_type).toUpperCase()}
+                      </span>
                     )}
                   </span>
                 </CommandItem>

@@ -63,7 +63,11 @@ async function uploadTarballToDrive(
     `Content-Type: ${mimeType}\r\n` +
     `Content-Transfer-Encoding: binary\r\n\r\n`;
   const closing = `\r\n--${boundary}--`;
-  const body = Buffer.concat([Buffer.from(preamble, "utf8"), content, Buffer.from(closing, "utf8")]);
+  const body = Buffer.concat([
+    Buffer.from(preamble, "utf8"),
+    content,
+    Buffer.from(closing, "utf8"),
+  ]);
 
   const res = await fetch(
     `${DRIVE_GATEWAY}/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,size`,
@@ -79,7 +83,9 @@ async function uploadTarballToDrive(
   );
   const text = await res.text();
   if (!res.ok) {
-    throw new Error(`Nahrání snapshotu na Google Disk selhalo (${res.status}): ${text.slice(0, 300)}`);
+    throw new Error(
+      `Nahrání snapshotu na Google Disk selhalo (${res.status}): ${text.slice(0, 300)}`,
+    );
   }
   const parsed = JSON.parse(text);
   return { ...parsed, size: parsed.size ? Number(parsed.size) : undefined };
@@ -134,28 +140,31 @@ export const getGithubSnapshotStatus = createServerFn({ method: "GET" })
 
 export const saveGithubSnapshotSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: {
-    github_owner?: string | null;
-    github_repo?: string | null;
-    github_branch?: string | null;
-    github_auto_enabled?: boolean;
-  }) =>
-    z
-      .object({
-        github_owner: z.string().max(120).nullable().optional(),
-        github_repo: z.string().max(120).nullable().optional(),
-        github_branch: z.string().max(120).nullable().optional(),
-        github_auto_enabled: z.boolean().optional(),
-      })
-      .parse(data),
+  .inputValidator(
+    (data: {
+      github_owner?: string | null;
+      github_repo?: string | null;
+      github_branch?: string | null;
+      github_auto_enabled?: boolean;
+    }) =>
+      z
+        .object({
+          github_owner: z.string().max(120).nullable().optional(),
+          github_repo: z.string().max(120).nullable().optional(),
+          github_branch: z.string().max(120).nullable().optional(),
+          github_auto_enabled: z.boolean().optional(),
+        })
+        .parse(data),
   )
   .handler(async ({ context, data }) => {
     await requireAdmin(context);
     const patch: any = { updated_by: context.userId };
     if (data.github_owner !== undefined) patch.github_owner = data.github_owner?.trim() || null;
     if (data.github_repo !== undefined) patch.github_repo = data.github_repo?.trim() || null;
-    if (data.github_branch !== undefined) patch.github_branch = data.github_branch?.trim() || "main";
-    if (data.github_auto_enabled !== undefined) patch.github_auto_enabled = data.github_auto_enabled;
+    if (data.github_branch !== undefined)
+      patch.github_branch = data.github_branch?.trim() || "main";
+    if (data.github_auto_enabled !== undefined)
+      patch.github_auto_enabled = data.github_auto_enabled;
 
     const { data: existing } = await context.supabase
       .from("backup_settings")
@@ -193,7 +202,8 @@ export async function performGithubSnapshot(opts: {
     .eq("singleton", true)
     .maybeSingle();
   if (sErr) throw new Error(sErr.message);
-  if (!settings?.drive_folder_id) throw new Error("Není zvolena složka pro zálohy na Google Disku.");
+  if (!settings?.drive_folder_id)
+    throw new Error("Není zvolena složka pro zálohy na Google Disku.");
   if (!settings.github_owner || !settings.github_repo) {
     throw new Error("Není nastavený GitHub repozitář (owner/repo).");
   }
@@ -237,11 +247,7 @@ export async function performGithubSnapshot(opts: {
     const tar = Buffer.from(ab);
 
     // 3) Nahraj na Disk
-    const stamp = new Date()
-      .toISOString()
-      .replace(/[:.]/g, "-")
-      .replace("T", "_")
-      .slice(0, 19);
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-").replace("T", "_").slice(0, 19);
     const shortSha = sha ? sha.slice(0, 7) : "nosha";
     const filename = `autoport-source-${settings.github_owner}-${settings.github_repo}-${branch}-${stamp}-${shortSha}.tar.gz`;
 

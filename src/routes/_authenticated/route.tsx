@@ -8,7 +8,9 @@ export const Route = createFileRoute("/_authenticated")({
     // sítě nebo zpomalený /user endpoint Auth služby nepřihlásí omylem ven.
     // Bearer token se k chráněným server fn připojí přes attachSupabaseAuth
     // a server ho validuje sám.
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session?.user) throw redirect({ to: "/auth" });
     return { user: session.user };
   },

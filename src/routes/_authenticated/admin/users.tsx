@@ -15,7 +15,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { UserPlus, KeyRound, Copy, Trash2, Power, Mail, Search, Shield, UserCheck, Users as UsersIcon, AlertCircle, Building2 } from "lucide-react";
+import {
+  UserPlus,
+  KeyRound,
+  Copy,
+  Trash2,
+  Power,
+  Mail,
+  Search,
+  Shield,
+  UserCheck,
+  Users as UsersIcon,
+  AlertCircle,
+  Building2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -36,7 +49,20 @@ export const Route = createFileRoute("/_authenticated/admin/users")({
   component: UsersPage,
 });
 
-type ModuleKey = "claims" | "vykupy" | "vykupy_external" | "users" | "approvals" | "dashboard" | "dochazka" | "defects" | "deals" | "logbook" | "tasks" | "demo_orders" | "evidence_zakazek";
+type ModuleKey =
+  | "claims"
+  | "vykupy"
+  | "vykupy_external"
+  | "users"
+  | "approvals"
+  | "dashboard"
+  | "dochazka"
+  | "defects"
+  | "deals"
+  | "logbook"
+  | "tasks"
+  | "demo_orders"
+  | "evidence_zakazek";
 type DepartmentKey = "vedeni" | "obchod" | "servis" | "nahradni_dily";
 
 const DEPARTMENT_LIST: { key: DepartmentKey; label: string }[] = [
@@ -106,11 +132,7 @@ function UsersPage() {
     }
   }
 
-  async function toggleMod(
-    user_id: string,
-    module: ModuleKey,
-    enable: boolean,
-  ) {
+  async function toggleMod(user_id: string, module: ModuleKey, enable: boolean) {
     try {
       await setMod({ data: { user_id, module, enable } });
       qc.invalidateQueries({ queryKey: ["users"] });
@@ -250,8 +272,8 @@ function UsersPage() {
           <div>
             <h1 className="text-2xl font-bold md:text-3xl">Uživatelé a přístupy</h1>
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-              Super admin (role <b>Admin</b>) má automaticky přístup ke všem modulům.
-              Ostatním uživatelům přidělte konkrétní moduly.
+              Super admin (role <b>Admin</b>) má automaticky přístup ke všem modulům. Ostatním
+              uživatelům přidělte konkrétní moduly.
             </p>
           </div>
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
@@ -333,10 +355,30 @@ function UsersPage() {
           return (
             <>
               <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <StatTile label="Celkem účtů" value={total} icon={<UsersIcon className="h-4 w-4" />} tint="bg-muted text-foreground" />
-                <StatTile label="Aktivních" value={activeCnt} icon={<UserCheck className="h-4 w-4" />} tint="bg-emerald-100 text-emerald-700" />
-                <StatTile label="Super adminů" value={adminsCnt} icon={<Shield className="h-4 w-4" />} tint="bg-primary/10 text-primary" />
-                <StatTile label="Čeká na schválení" value={pendingCnt} icon={<AlertCircle className="h-4 w-4" />} tint="bg-amber-100 text-amber-800" />
+                <StatTile
+                  label="Celkem účtů"
+                  value={total}
+                  icon={<UsersIcon className="h-4 w-4" />}
+                  tint="bg-muted text-foreground"
+                />
+                <StatTile
+                  label="Aktivních"
+                  value={activeCnt}
+                  icon={<UserCheck className="h-4 w-4" />}
+                  tint="bg-emerald-100 text-emerald-700"
+                />
+                <StatTile
+                  label="Super adminů"
+                  value={adminsCnt}
+                  icon={<Shield className="h-4 w-4" />}
+                  tint="bg-primary/10 text-primary"
+                />
+                <StatTile
+                  label="Čeká na schválení"
+                  value={pendingCnt}
+                  icon={<AlertCircle className="h-4 w-4" />}
+                  tint="bg-amber-100 text-amber-800"
+                />
               </div>
 
               <div className="mt-4 flex items-center gap-2 rounded-xl border bg-card p-2">
@@ -349,7 +391,9 @@ function UsersPage() {
                     className="h-9 border-0 bg-transparent pl-8 shadow-none focus-visible:ring-0"
                   />
                 </div>
-                <span className="px-2 text-xs text-muted-foreground">{rows.length} z {total}</span>
+                <span className="px-2 text-xs text-muted-foreground">
+                  {rows.length} z {total}
+                </span>
               </div>
 
               <div className="mt-4 space-y-3">
@@ -408,7 +452,9 @@ function UsersPage() {
                               </span>
                             )}
                           </div>
-                          <div className="mt-0.5 truncate text-sm text-muted-foreground">{u.email}</div>
+                          <div className="mt-0.5 truncate text-sm text-muted-foreground">
+                            {u.email}
+                          </div>
                         </div>
 
                         <div className="flex items-center gap-1">
@@ -519,7 +565,8 @@ function UsersPage() {
                                 <span>Vedoucí oddělení – podřízený pouze super adminovi.</span>
                               ) : (u as any).supervisor ? (
                                 <span>
-                                  Nadřízený: <b className="text-foreground">{(u as any).supervisor.name}</b>
+                                  Nadřízený:{" "}
+                                  <b className="text-foreground">{(u as any).supervisor.name}</b>
                                 </span>
                               ) : (u as any).department ? (
                                 <span>Nadřízený: super admin (vedoucí oddělení není určen).</span>
@@ -592,8 +639,8 @@ function UsersPage() {
               <DialogTitle>Heslo · {pwdUser?.email}</DialogTitle>
             </DialogHeader>
             <p className="text-sm text-muted-foreground">
-              Aktuální heslo nelze zobrazit – je v databázi uložené jako nevratný hash.
-              Můžete nastavit nové, nebo vygenerovat náhodné.
+              Aktuální heslo nelze zobrazit – je v databázi uložené jako nevratný hash. Můžete
+              nastavit nové, nebo vygenerovat náhodné.
             </p>
             {pwdGenerated ? (
               <div className="rounded-md border bg-amber-50 p-3">
@@ -634,11 +681,7 @@ function UsersPage() {
                 <Button onClick={() => setPwdUser(null)}>Hotovo</Button>
               ) : (
                 <>
-                  <Button
-                    variant="outline"
-                    disabled={pwdBusy}
-                    onClick={() => handleSetPwd(true)}
-                  >
+                  <Button variant="outline" disabled={pwdBusy} onClick={() => handleSetPwd(true)}>
                     Vygenerovat náhodné
                   </Button>
                   <Button
@@ -668,9 +711,9 @@ function UsersPage() {
               <DialogTitle>Informační e-mail · {welcomeUser?.email}</DialogTitle>
             </DialogHeader>
             <p className="text-sm text-muted-foreground">
-              Odešle uživateli uvítací e-mail s informací o založení účtu a
-              odkazem na přihlášení. Pokud chcete v e-mailu poslat i heslo, vyplňte
-              jej níže (jinak se ho v e-mailu uvedeno není).
+              Odešle uživateli uvítací e-mail s informací o založení účtu a odkazem na přihlášení.
+              Pokud chcete v e-mailu poslat i heslo, vyplňte jej níže (jinak se ho v e-mailu uvedeno
+              není).
             </p>
             <div className="space-y-2">
               <Label>Heslo (volitelné)</Label>
@@ -726,9 +769,7 @@ function StatTile({
         </p>
         <p className="mt-1 text-2xl font-bold">{value}</p>
       </div>
-      <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg", tint)}>
-        {icon}
-      </div>
+      <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg", tint)}>{icon}</div>
     </div>
   );
 }
@@ -781,7 +822,9 @@ function ToggleRow({
         </span>
         <span className="min-w-0">
           <span className="block text-sm font-medium leading-tight">{label}</span>
-          {hint && <span className="block text-[11px] leading-tight text-muted-foreground">{hint}</span>}
+          {hint && (
+            <span className="block text-[11px] leading-tight text-muted-foreground">{hint}</span>
+          )}
         </span>
       </span>
       <Switch checked={checked} onCheckedChange={onChange} />

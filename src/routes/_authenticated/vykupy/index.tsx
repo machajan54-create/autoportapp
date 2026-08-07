@@ -6,13 +6,16 @@ import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { Plus, Search, Pencil, Car, BarChart3 } from "lucide-react";
 import { RequestDeleteButton } from "@/components/RequestDeleteButton";
-import {
-  listVykupy, formatKc, formatDate, marze, stavBadge,
-} from "@/lib/vykupy";
+import { listVykupy, formatKc, formatDate, marze, stavBadge } from "@/lib/vykupy";
 import { getMyAccess } from "@/lib/claims.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { cn } from "@/lib/utils";
@@ -88,10 +91,14 @@ function VykupyList() {
         {/* Mobile: card list */}
         <div className="mt-4 space-y-2 md:hidden">
           {isLoading && (
-            <div className="rounded-xl border bg-card p-4 text-center text-sm text-muted-foreground">Načítám…</div>
+            <div className="rounded-xl border bg-card p-4 text-center text-sm text-muted-foreground">
+              Načítám…
+            </div>
           )}
           {!isLoading && rows.length === 0 && (
-            <div className="rounded-xl border bg-card p-4 text-center text-sm text-muted-foreground">Žádné záznamy.</div>
+            <div className="rounded-xl border bg-card p-4 text-center text-sm text-muted-foreground">
+              Žádné záznamy.
+            </div>
           )}
           {rows.map((v) => {
             const m = marze(v);
@@ -103,11 +110,18 @@ function VykupyList() {
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <div className="truncate font-semibold">{v.znacka} {v.model}</div>
+                    <div className="truncate font-semibold">
+                      {v.znacka} {v.model}
+                    </div>
                     <div className="truncate text-sm text-muted-foreground">{v.klient}</div>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
-                    <span className={cn("rounded-md border px-2 py-0.5 text-xs font-medium", stavBadge[v.stav] ?? "bg-muted")}>
+                    <span
+                      className={cn(
+                        "rounded-md border px-2 py-0.5 text-xs font-medium",
+                        stavBadge[v.stav] ?? "bg-muted",
+                      )}
+                    >
                       {v.stav}
                     </span>
                     {v.stav_changed_at && (
@@ -118,12 +132,22 @@ function VykupyList() {
                   </div>
                 </div>
                 <div className="mt-2 flex items-center justify-between gap-2 text-sm">
-                  <div className="text-muted-foreground">{formatDate(v.datum_vykupu)}{v.zpracoval ? ` · ${v.zpracoval}` : ""}</div>
+                  <div className="text-muted-foreground">
+                    {formatDate(v.datum_vykupu)}
+                    {v.zpracoval ? ` · ${v.zpracoval}` : ""}
+                  </div>
                   <div className="flex items-baseline gap-2">
                     <span className="tabular-nums">{formatKc(v.vykoupeno_za)}</span>
                     {m != null && (
-                      <span className={cn("tabular-nums font-medium", m < 0 && "text-rose-600", m > 0 && "text-emerald-600")}>
-                        {m > 0 ? "+" : ""}{formatKc(m)}
+                      <span
+                        className={cn(
+                          "tabular-nums font-medium",
+                          m < 0 && "text-rose-600",
+                          m > 0 && "text-emerald-600",
+                        )}
+                      >
+                        {m > 0 ? "+" : ""}
+                        {formatKc(m)}
                       </span>
                     )}
                   </div>
@@ -151,25 +175,50 @@ function VykupyList() {
             </TableHeader>
             <TableBody>
               {isLoading && (
-                <TableRow><TableCell colSpan={9} className="text-center text-sm text-muted-foreground">Načítám…</TableCell></TableRow>
+                <TableRow>
+                  <TableCell colSpan={9} className="text-center text-sm text-muted-foreground">
+                    Načítám…
+                  </TableCell>
+                </TableRow>
               )}
               {!isLoading && rows.length === 0 && (
-                <TableRow><TableCell colSpan={9} className="text-center text-sm text-muted-foreground">Žádné záznamy.</TableCell></TableRow>
+                <TableRow>
+                  <TableCell colSpan={9} className="text-center text-sm text-muted-foreground">
+                    Žádné záznamy.
+                  </TableCell>
+                </TableRow>
               )}
               {rows.map((v) => {
                 const m = marze(v);
                 return (
-                  <TableRow key={v.id} className="cursor-pointer" onClick={() => navigate({ to: "/vykupy/$id", params: { id: v.id } })}>
+                  <TableRow
+                    key={v.id}
+                    className="cursor-pointer"
+                    onClick={() => navigate({ to: "/vykupy/$id", params: { id: v.id } })}
+                  >
                     <TableCell className="font-medium">{v.znacka}</TableCell>
                     <TableCell>{v.model}</TableCell>
                     <TableCell>{v.klient}</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatKc(v.vykoupeno_za)}</TableCell>
-                    <TableCell className={cn("text-right tabular-nums font-medium", m != null && m < 0 && "text-rose-600", m != null && m > 0 && "text-emerald-600")}>
+                    <TableCell className="text-right tabular-nums">
+                      {formatKc(v.vykoupeno_za)}
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        "text-right tabular-nums font-medium",
+                        m != null && m < 0 && "text-rose-600",
+                        m != null && m > 0 && "text-emerald-600",
+                      )}
+                    >
                       {m == null ? "—" : formatKc(m)}
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-0.5">
-                        <span className={cn("inline-block w-fit rounded-md border px-2 py-0.5 text-xs font-medium", stavBadge[v.stav] ?? "bg-muted")}>
+                        <span
+                          className={cn(
+                            "inline-block w-fit rounded-md border px-2 py-0.5 text-xs font-medium",
+                            stavBadge[v.stav] ?? "bg-muted",
+                          )}
+                        >
                           {v.stav}
                         </span>
                         {v.stav_changed_at && (

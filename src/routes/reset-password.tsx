@@ -54,9 +54,7 @@ function ResetPasswordPage() {
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#0F172A] px-4 text-white">
         <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0F172A] p-8 shadow-2xl text-center">
           <h1 className="text-xl font-bold">Neplatný odkaz</h1>
-          <p className="mt-2 text-slate-400">
-            Odkaz pro reset hesla je neplatný nebo vypršel.
-          </p>
+          <p className="mt-2 text-slate-400">Odkaz pro reset hesla je neplatný nebo vypršel.</p>
           <Link to="/" className="mt-4 inline-block text-[#F97316] hover:underline">
             Zpět na přihlášení
           </Link>

@@ -30,7 +30,11 @@ const createInput = z.object({
   value_czk: z.number().min(0).max(1_000_000_000).optional().nullable(),
   vehicle: z.string().trim().max(120).optional().nullable(),
   stage: z.enum(DEAL_STAGES).default("lead"),
-  expected_close_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  expected_close_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
+    .nullable(),
   notes: z.string().trim().max(4000).optional().nullable(),
   follow_up_at: z
     .string()
@@ -43,15 +47,20 @@ const createInput = z.object({
 const updateInput = createInput.partial().extend({ id: z.string().uuid() });
 
 const importInput = z.object({
-  rows: z.array(z.object({
-    title: z.string().trim().min(1).max(200),
-    client_name: z.string().trim().max(200).optional().nullable(),
-    contact: z.string().trim().max(200).optional().nullable(),
-    value_czk: z.number().min(0).max(1_000_000_000).optional().nullable(),
-    vehicle: z.string().trim().max(120).optional().nullable(),
-    stage: z.enum(DEAL_STAGES).optional(),
-    notes: z.string().trim().max(4000).optional().nullable(),
-  })).min(1).max(500),
+  rows: z
+    .array(
+      z.object({
+        title: z.string().trim().min(1).max(200),
+        client_name: z.string().trim().max(200).optional().nullable(),
+        contact: z.string().trim().max(200).optional().nullable(),
+        value_czk: z.number().min(0).max(1_000_000_000).optional().nullable(),
+        vehicle: z.string().trim().max(120).optional().nullable(),
+        stage: z.enum(DEAL_STAGES).optional(),
+        notes: z.string().trim().max(4000).optional().nullable(),
+      }),
+    )
+    .min(1)
+    .max(500),
 });
 
 export const listDeals = createServerFn({ method: "GET" })
@@ -75,14 +84,16 @@ export const listDealStageHistory = createServerFn({ method: "GET" })
       .eq("deal_id", data.deal_id)
       .order("changed_at", { ascending: true });
     if (error) throw new Error(error.message);
-    return { rows: (rows ?? []) as Array<{
-      id: string;
-      from_stage: string | null;
-      to_stage: string;
-      changed_at: string;
-      duration_seconds: number | null;
-      changed_by_name: string | null;
-    }> };
+    return {
+      rows: (rows ?? []) as Array<{
+        id: string;
+        from_stage: string | null;
+        to_stage: string;
+        changed_at: string;
+        duration_seconds: number | null;
+        changed_by_name: string | null;
+      }>,
+    };
   });
 
 export const createDeal = createServerFn({ method: "POST" })
@@ -91,7 +102,10 @@ export const createDeal = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: profile } = await supabase
-      .from("profiles").select("full_name,email").eq("id", userId).maybeSingle();
+      .from("profiles")
+      .select("full_name,email")
+      .eq("id", userId)
+      .maybeSingle();
     const owner_name = profile?.full_name || profile?.email || null;
     const { data: row, error } = await supabase
       .from("deals")
@@ -104,11 +118,12 @@ export const createDeal = createServerFn({ method: "POST" })
         stage: data.stage,
         expected_close_date: data.expected_close_date || null,
         notes: data.notes || null,
-      follow_up_at: data.follow_up_at || null,
+        follow_up_at: data.follow_up_at || null,
         owner_id: userId,
         owner_name,
       })
-      .select("id").single();
+      .select("id")
+      .single();
     if (error) throw new Error(error.message);
     return { id: row.id };
   });
@@ -140,11 +155,19 @@ export const updateDeal = createServerFn({ method: "POST" })
     try {
       if (prev && typeof patch.stage === "string" && patch.stage !== prev.stage && prev.owner_id) {
         const { data: actor } = await supabase
-          .from("profiles").select("full_name,email").eq("id", userId).maybeSingle();
+          .from("profiles")
+          .select("full_name,email")
+          .eq("id", userId)
+          .maybeSingle();
         const { data: owner } = await supabase
-          .from("profiles").select("full_name,email").eq("id", prev.owner_id).maybeSingle();
+          .from("profiles")
+          .select("full_name,email")
+          .eq("id", prev.owner_id)
+          .maybeSingle();
         if (owner?.email) {
-          const sinceMs = prev.stage_changed_at ? Date.now() - new Date(prev.stage_changed_at).getTime() : 0;
+          const sinceMs = prev.stage_changed_at
+            ? Date.now() - new Date(prev.stage_changed_at).getTime()
+            : 0;
           const { enqueueTransactionalEmail } = await import("@/lib/email/notify.server");
           await enqueueTransactionalEmail({
             templateName: "deal-stage-changed",
@@ -184,7 +207,10 @@ export const importDeals = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: profile } = await supabase
-      .from("profiles").select("full_name,email").eq("id", userId).maybeSingle();
+      .from("profiles")
+      .select("full_name,email")
+      .eq("id", userId)
+      .maybeSingle();
     const owner_name = profile?.full_name || profile?.email || null;
     const payload = data.rows.map((r) => ({
       title: r.title,

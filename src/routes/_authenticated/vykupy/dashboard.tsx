@@ -5,7 +5,16 @@ import { useMemo, useState } from "react";
 import { AdminShell } from "@/components/AdminShell";
 import { listVykupy, formatKc, formatDate, marze, type Vykup } from "@/lib/vykupy";
 import { listEmployees } from "@/lib/claims.functions";
-import { Car, Coins, TrendingUp, TrendingDown, Clock, Award, BarChart3, ArrowLeft } from "lucide-react";
+import {
+  Car,
+  Coins,
+  TrendingUp,
+  TrendingDown,
+  Clock,
+  Award,
+  BarChart3,
+  ArrowLeft,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -18,7 +27,10 @@ type Period = "30d" | "90d" | "ytd" | "all";
 function VykupyDashboard() {
   const fetchEmployees = useServerFn(listEmployees);
   const { data: vykupy, isLoading } = useQuery({ queryKey: ["vykupy"], queryFn: listVykupy });
-  const { data: employees } = useQuery({ queryKey: ["employees"], queryFn: () => fetchEmployees({}) });
+  const { data: employees } = useQuery({
+    queryKey: ["employees"],
+    queryFn: () => fetchEmployees({}),
+  });
   const [period, setPeriod] = useState<Period>("90d");
 
   const filtered = useMemo(() => filterByPeriod(vykupy ?? [], period), [vykupy, period]);
@@ -38,7 +50,10 @@ function VykupyDashboard() {
   const byZdroj = groupBy(filtered, (v) => v.zdroj || "Neuvedeno");
   const byMonth = monthlyTrend(prodano);
   const topDeals = [...prodano].sort((a, b) => (marze(b) ?? 0) - (marze(a) ?? 0)).slice(0, 5);
-  const worstDeals = [...prodano].filter((v) => (marze(v) ?? 0) < 0).sort((a, b) => (marze(a) ?? 0) - (marze(b) ?? 0)).slice(0, 5);
+  const worstDeals = [...prodano]
+    .filter((v) => (marze(v) ?? 0) < 0)
+    .sort((a, b) => (marze(a) ?? 0) - (marze(b) ?? 0))
+    .slice(0, 5);
 
   const empName = (id: string | null) => employees?.find((e) => e.id === id)?.name ?? "—";
   const pricerStats = pricerLeaderboard(prodano, empName);
@@ -58,7 +73,10 @@ function VykupyDashboard() {
           </div>
           <div className="flex items-center gap-2">
             <Button asChild variant="outline" size="sm">
-              <Link to="/vykupy"><ArrowLeft className="mr-1 h-4 w-4" />Zpět na seznam</Link>
+              <Link to="/vykupy">
+                <ArrowLeft className="mr-1 h-4 w-4" />
+                Zpět na seznam
+              </Link>
             </Button>
           </div>
         </div>
@@ -70,7 +88,9 @@ function VykupyDashboard() {
               onClick={() => setPeriod(p)}
               className={cn(
                 "rounded-md px-3 py-1.5 font-medium transition",
-                period === p ? "bg-orange-500 text-white" : "text-muted-foreground hover:text-foreground",
+                period === p
+                  ? "bg-orange-500 text-white"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               {p === "30d" ? "30 dní" : p === "90d" ? "90 dní" : p === "ytd" ? "Tento rok" : "Vše"}
@@ -84,8 +104,18 @@ function VykupyDashboard() {
           <>
             {/* KPI */}
             <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-              <Stat label="Prodáno aut" value={prodano.length} icon={<TrendingUp className="h-5 w-5 text-emerald-600" />} tint="bg-emerald-100" />
-              <Stat label="Obrat" value={formatKc(obrat)} icon={<Coins className="h-5 w-5 text-primary" />} tint="bg-primary/10" />
+              <Stat
+                label="Prodáno aut"
+                value={prodano.length}
+                icon={<TrendingUp className="h-5 w-5 text-emerald-600" />}
+                tint="bg-emerald-100"
+              />
+              <Stat
+                label="Obrat"
+                value={formatKc(obrat)}
+                icon={<Coins className="h-5 w-5 text-primary" />}
+                tint="bg-primary/10"
+              />
               <Stat
                 label="Marže celkem"
                 value={formatKc(marzeTotal)}
@@ -93,14 +123,39 @@ function VykupyDashboard() {
                 icon={<Award className="h-5 w-5 text-amber-600" />}
                 tint="bg-amber-100"
               />
-              <Stat label="Ø marže / auto" value={formatKc(Math.round(avgMarze))} icon={<BarChart3 className="h-5 w-5 text-emerald-600" />} tint="bg-emerald-100" />
+              <Stat
+                label="Ø marže / auto"
+                value={formatKc(Math.round(avgMarze))}
+                icon={<BarChart3 className="h-5 w-5 text-emerald-600" />}
+                tint="bg-emerald-100"
+              />
             </div>
 
             <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
-              <Stat label="V nacenění" value={naceneni.length} icon={<Clock className="h-5 w-5 text-amber-600" />} tint="bg-amber-100" />
-              <Stat label="Skladem (vykoupeno)" value={vykoupeno.length} icon={<Car className="h-5 w-5 text-blue-600" />} tint="bg-blue-100" />
-              <Stat label="Vázaný kapitál" value={formatKc(vazanyKapital)} icon={<Coins className="h-5 w-5 text-blue-600" />} tint="bg-blue-100" />
-              <Stat label="Zamítnuto" value={zamitnuto.length} icon={<TrendingDown className="h-5 w-5 text-rose-600" />} tint="bg-rose-100" />
+              <Stat
+                label="V nacenění"
+                value={naceneni.length}
+                icon={<Clock className="h-5 w-5 text-amber-600" />}
+                tint="bg-amber-100"
+              />
+              <Stat
+                label="Skladem (vykoupeno)"
+                value={vykoupeno.length}
+                icon={<Car className="h-5 w-5 text-blue-600" />}
+                tint="bg-blue-100"
+              />
+              <Stat
+                label="Vázaný kapitál"
+                value={formatKc(vazanyKapital)}
+                icon={<Coins className="h-5 w-5 text-blue-600" />}
+                tint="bg-blue-100"
+              />
+              <Stat
+                label="Zamítnuto"
+                value={zamitnuto.length}
+                icon={<TrendingDown className="h-5 w-5 text-rose-600" />}
+                tint="bg-rose-100"
+              />
             </div>
 
             <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -108,14 +163,22 @@ function VykupyDashboard() {
                 <MonthlyBars data={byMonth} />
               </Panel>
               <Panel title="Podle značky (prodáno)">
-                <BarList items={byZnacka.map((g) => ({ label: g.key, value: g.items.length, secondary: formatKc(sum(g.items.map((v) => marze(v) ?? 0))) }))} />
+                <BarList
+                  items={byZnacka.map((g) => ({
+                    label: g.key,
+                    value: g.items.length,
+                    secondary: formatKc(sum(g.items.map((v) => marze(v) ?? 0))),
+                  }))}
+                />
               </Panel>
               <Panel title="Podle zdroje">
                 <BarList items={byZdroj.map((g) => ({ label: g.key, value: g.items.length }))} />
               </Panel>
               <Panel title="Výtěžnost podle cenaře (interní)">
                 {pricerStats.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Žádný prodaný výkup zatím nemá interní nacenění.</p>
+                  <p className="text-sm text-muted-foreground">
+                    Žádný prodaný výkup zatím nemá interní nacenění.
+                  </p>
                 ) : (
                   <div className="divide-y">
                     {pricerStats.map((r) => (
@@ -123,7 +186,12 @@ function VykupyDashboard() {
                         <span className="font-medium">{r.name}</span>
                         <span className="flex gap-4 tabular-nums text-muted-foreground">
                           <span>{r.deals} obch.</span>
-                          <span className={cn("font-semibold", r.marze >= 0 ? "text-emerald-600" : "text-rose-600")}>
+                          <span
+                            className={cn(
+                              "font-semibold",
+                              r.marze >= 0 ? "text-emerald-600" : "text-rose-600",
+                            )}
+                          >
                             {formatKc(r.marze)}
                           </span>
                         </span>
@@ -169,11 +237,15 @@ function Stat({
   return (
     <div className="flex items-center justify-between rounded-xl border bg-card p-4">
       <div className="min-w-0">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </p>
         <p className="mt-1 truncate text-xl font-bold md:text-2xl">{value}</p>
         {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
       </div>
-      <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-lg", tint)}>{icon}</div>
+      <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-lg", tint)}>
+        {icon}
+      </div>
     </div>
   );
 }
@@ -181,7 +253,9 @@ function Stat({
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-xl border bg-card p-5">
-      <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">{title}</h3>
+      <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+        {title}
+      </h3>
       {children}
     </div>
   );
@@ -192,19 +266,25 @@ function BarList({ items }: { items: { label: string; value: number; secondary?:
   if (items.length === 0) return <p className="text-sm text-muted-foreground">Žádná data.</p>;
   return (
     <div className="space-y-2">
-      {items.sort((a, b) => b.value - a.value).map((i) => (
-        <div key={i.label}>
-          <div className="flex items-center justify-between text-sm">
-            <span className="font-medium">{i.label}</span>
-            <span className="tabular-nums text-muted-foreground">
-              {i.value}{i.secondary ? ` · ${i.secondary}` : ""}
-            </span>
+      {items
+        .sort((a, b) => b.value - a.value)
+        .map((i) => (
+          <div key={i.label}>
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-medium">{i.label}</span>
+              <span className="tabular-nums text-muted-foreground">
+                {i.value}
+                {i.secondary ? ` · ${i.secondary}` : ""}
+              </span>
+            </div>
+            <div className="mt-1 h-2 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full bg-orange-500"
+                style={{ width: `${(i.value / max) * 100}%` }}
+              />
+            </div>
           </div>
-          <div className="mt-1 h-2 overflow-hidden rounded-full bg-muted">
-            <div className="h-full bg-orange-500" style={{ width: `${(i.value / max) * 100}%` }} />
-          </div>
-        </div>
-      ))}
+        ))}
     </div>
   );
 }
@@ -243,13 +323,19 @@ function DealList({ rows, positive }: { rows: Vykup[]; positive?: boolean }) {
             className="flex items-center justify-between py-2 text-sm hover:bg-muted/40"
           >
             <div className="min-w-0">
-              <div className="truncate font-medium">{v.znacka} {v.model}</div>
-              <div className="text-xs text-muted-foreground">{v.klient} · {formatDate(v.datum_vykupu)}</div>
+              <div className="truncate font-medium">
+                {v.znacka} {v.model}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {v.klient} · {formatDate(v.datum_vykupu)}
+              </div>
             </div>
-            <div className={cn(
-              "tabular-nums font-semibold",
-              positive ? "text-emerald-600" : m < 0 ? "text-rose-600" : "text-emerald-600",
-            )}>
+            <div
+              className={cn(
+                "tabular-nums font-semibold",
+                positive ? "text-emerald-600" : m < 0 ? "text-rose-600" : "text-emerald-600",
+              )}
+            >
               {formatKc(m)}
             </div>
           </Link>
@@ -260,7 +346,9 @@ function DealList({ rows, positive }: { rows: Vykup[]; positive?: boolean }) {
 }
 
 // --- helpers ---
-function sum(a: number[]) { return a.reduce((s, n) => s + (n || 0), 0); }
+function sum(a: number[]) {
+  return a.reduce((s, n) => s + (n || 0), 0);
+}
 
 function filterByPeriod(rows: Vykup[], period: Period): Vykup[] {
   if (period === "all") return rows;

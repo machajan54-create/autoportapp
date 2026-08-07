@@ -178,62 +178,98 @@ async function collectStoragePaths(
   switch (entityType) {
     case "claim_attachments": {
       const { data } = await db
-        .from("claim_attachments").select("file_path").eq("id", entityId).maybeSingle();
+        .from("claim_attachments")
+        .select("file_path")
+        .eq("id", entityId)
+        .maybeSingle();
       push("claim-files", [data?.file_path]);
       break;
     }
     case "claims": {
       const { data } = await db
-        .from("claim_attachments").select("file_path").eq("claim_id", entityId);
-      push("claim-files", (data ?? []).map((r: any) => r.file_path));
+        .from("claim_attachments")
+        .select("file_path")
+        .eq("claim_id", entityId);
+      push(
+        "claim-files",
+        (data ?? []).map((r: any) => r.file_path),
+      );
       break;
     }
     case "task_attachments": {
       const { data } = await db
-        .from("task_attachments").select("storage_path").eq("id", entityId).maybeSingle();
+        .from("task_attachments")
+        .select("storage_path")
+        .eq("id", entityId)
+        .maybeSingle();
       push("task-attachments", [data?.storage_path]);
       break;
     }
     case "tasks": {
       const { data } = await db
-        .from("task_attachments").select("storage_path").eq("task_id", entityId);
-      push("task-attachments", (data ?? []).map((r: any) => r.storage_path));
+        .from("task_attachments")
+        .select("storage_path")
+        .eq("task_id", entityId);
+      push(
+        "task-attachments",
+        (data ?? []).map((r: any) => r.storage_path),
+      );
       break;
     }
     case "vykup_photos": {
       const { data } = await db
-        .from("vykup_photos").select("storage_path").eq("id", entityId).maybeSingle();
+        .from("vykup_photos")
+        .select("storage_path")
+        .eq("id", entityId)
+        .maybeSingle();
       push("vykup-photos", [data?.storage_path]);
       break;
     }
     case "vykupy": {
       const { data } = await db
-        .from("vykup_photos").select("storage_path").eq("vykup_id", entityId);
-      push("vykup-photos", (data ?? []).map((r: any) => r.storage_path));
+        .from("vykup_photos")
+        .select("storage_path")
+        .eq("vykup_id", entityId);
+      push(
+        "vykup-photos",
+        (data ?? []).map((r: any) => r.storage_path),
+      );
       break;
     }
     case "logbook_entries": {
       const { data } = await db
-        .from("logbook_entries").select("receipt_path").eq("id", entityId).maybeSingle();
+        .from("logbook_entries")
+        .select("receipt_path")
+        .eq("id", entityId)
+        .maybeSingle();
       push("logbook-receipts", [data?.receipt_path]);
       break;
     }
     case "logbook_vehicles": {
       const { data } = await db
-        .from("logbook_entries").select("receipt_path").eq("vehicle_id", entityId);
-      push("logbook-receipts", (data ?? []).map((r: any) => r.receipt_path));
+        .from("logbook_entries")
+        .select("receipt_path")
+        .eq("vehicle_id", entityId);
+      push(
+        "logbook-receipts",
+        (data ?? []).map((r: any) => r.receipt_path),
+      );
       break;
     }
     case "demo_orders": {
       const { data } = await db
-        .from("demo_order_documents").select("storage_path").eq("order_id", entityId);
-      push("client-documents", (data ?? []).map((r: any) => r.storage_path));
+        .from("demo_order_documents")
+        .select("storage_path")
+        .eq("order_id", entityId);
+      push(
+        "client-documents",
+        (data ?? []).map((r: any) => r.storage_path),
+      );
       break;
     }
     case "defects": {
       // Photos live in JSONB column `photos: [{ path, ... }]` on the row itself
-      const { data } = await db
-        .from("defects").select("photos").eq("id", entityId).maybeSingle();
+      const { data } = await db.from("defects").select("photos").eq("id", entityId).maybeSingle();
       const paths = Array.isArray(data?.photos)
         ? (data.photos as any[]).map((p) => p?.path).filter(Boolean)
         : [];
@@ -336,7 +372,9 @@ export const requestDeletion = createServerFn({ method: "POST" })
     }
 
     const me = await (await loadNotify()).getUserEmail(context.userId);
-    await (await loadNotify()).notifyAdmins({
+    await (
+      await loadNotify()
+    ).notifyAdmins({
       templateName: "approval-request",
       templateData: {
         kind: "deletion",
@@ -364,9 +402,7 @@ export const listDeletionRequests = createServerFn({ method: "GET" })
     const rows = (data ?? []) as any[];
 
     const ids = Array.from(
-      new Set(
-        rows.flatMap((r) => [r.requested_by, r.decided_by]).filter(Boolean),
-      ),
+      new Set(rows.flatMap((r) => [r.requested_by, r.decided_by]).filter(Boolean)),
     ) as string[];
     const profMap = new Map<string, any>();
     if (ids.length) {
@@ -380,7 +416,7 @@ export const listDeletionRequests = createServerFn({ method: "GET" })
       ...r,
       type_label: ENTITY_TYPE_LABELS[r.entity_type] ?? r.entity_type,
       requester: profMap.get(r.requested_by) ?? null,
-      decider: r.decided_by ? profMap.get(r.decided_by) ?? null : null,
+      decider: r.decided_by ? (profMap.get(r.decided_by) ?? null) : null,
     }));
   });
 
@@ -413,11 +449,13 @@ export const cancelDeletionRequest = createServerFn({ method: "POST" })
 export const decideDeletionRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({
-      id: z.string().uuid(),
-      status: z.enum(["approved", "rejected"]),
-      decision_note: z.string().max(1000).optional().nullable(),
-    }).parse(d),
+    z
+      .object({
+        id: z.string().uuid(),
+        status: z.enum(["approved", "rejected"]),
+        decision_note: z.string().max(1000).optional().nullable(),
+      })
+      .parse(d),
   )
   .handler(async ({ context, data }) => {
     await assertAdmin(context.supabase, context.userId);
@@ -469,7 +507,9 @@ export const decideDeletionRequest = createServerFn({ method: "POST" })
     if (requesterId) {
       const u = await (await loadNotify()).getUserEmail(requesterId);
       if (u.email) {
-        await (await loadNotify()).enqueueTransactionalEmail({
+        await (
+          await loadNotify()
+        ).enqueueTransactionalEmail({
           templateName: "approval-decision",
           recipientEmail: u.email,
           idempotencyKey: `deletion-${data.id}-${data.status}`,

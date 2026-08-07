@@ -10,21 +10,32 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
-import {
-  ArrowLeft, FileText, Loader2, Upload, AlertTriangle, Trash2, Eye,
-} from "lucide-react";
+import { ArrowLeft, FileText, Loader2, Upload, AlertTriangle, Trash2, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  getVykup, upsertVykup, formatKc, marze,
-  ZNACKY, ZDROJE, STAVY, type Vykup,
+  getVykup,
+  upsertVykup,
+  formatKc,
+  marze,
+  ZNACKY,
+  ZDROJE,
+  STAVY,
+  type Vykup,
 } from "@/lib/vykupy";
 import { listEmployees, getMyAccess } from "@/lib/claims.functions";
 import { listClients } from "@/lib/clients.functions";
 import {
-  listVykupPhotos, recordVykupPhoto, updateVykupPhotoDefect,
-  deleteVykupPhoto, getVykupPhotoUrl,
+  listVykupPhotos,
+  recordVykupPhoto,
+  updateVykupPhotoDefect,
+  deleteVykupPhoto,
+  getVykupPhotoUrl,
 } from "@/lib/vykup-photos.functions";
 import { generateVykupContract } from "@/lib/vykup-contract.functions";
 import { resizeImage } from "@/lib/resize-image";
@@ -66,17 +77,34 @@ type FormState = {
 };
 
 const empty: FormState = {
-  znacka: "Citroën", model: "", rok_vyroby: "", pocet_km: "",
-  barva: "", new_in_cz: "", service_history: "",
-  klient: "", telefon: "", zdroj: "", zpracoval: "",
-  naceneno_od: "", owner_expectation_czk: "",
-  vykoupeno_za: "", prodano_za: "", naklady: "0", naklady_popis: "",
+  znacka: "Citroën",
+  model: "",
+  rok_vyroby: "",
+  pocet_km: "",
+  barva: "",
+  new_in_cz: "",
+  service_history: "",
+  klient: "",
+  telefon: "",
+  zdroj: "",
+  zpracoval: "",
+  naceneno_od: "",
+  owner_expectation_czk: "",
+  vykoupeno_za: "",
+  prodano_za: "",
+  naklady: "0",
+  naklady_popis: "",
   datum_vykupu: "",
-  stav: "Nacenění", poznamka: "",
+  stav: "Nacenění",
+  poznamka: "",
   follow_up_at: "",
-  internal_priced_by_user_id: "", internal_priced_amount: "", internal_priced_at: "",
+  internal_priced_by_user_id: "",
+  internal_priced_amount: "",
+  internal_priced_at: "",
   internal_priced_by_name: "",
-  external_priced_by: "", external_priced_amount: "", external_priced_at: "",
+  external_priced_by: "",
+  external_priced_amount: "",
+  external_priced_at: "",
 };
 
 function toNum(s: string): number | null {
@@ -87,14 +115,17 @@ function toNum(s: string): number | null {
 
 function fromVykup(v: Vykup): FormState {
   return {
-    znacka: v.znacka, model: v.model,
+    znacka: v.znacka,
+    model: v.model,
     rok_vyroby: v.rok_vyroby?.toString() ?? "",
     pocet_km: v.pocet_km?.toString() ?? "",
     barva: v.barva ?? "",
     new_in_cz: v.new_in_cz === true ? "yes" : v.new_in_cz === false ? "no" : "",
     service_history: v.service_history === true ? "yes" : v.service_history === false ? "no" : "",
-    klient: v.klient, telefon: v.telefon ?? "",
-    zdroj: v.zdroj ?? "Jiné", zpracoval: v.zpracoval ?? "",
+    klient: v.klient,
+    telefon: v.telefon ?? "",
+    zdroj: v.zdroj ?? "Jiné",
+    zpracoval: v.zpracoval ?? "",
     naceneno_od: v.naceneno_od?.toString() ?? "",
     owner_expectation_czk: v.owner_expectation_czk?.toString() ?? "",
     vykoupeno_za: v.vykoupeno_za?.toString() ?? "",
@@ -102,10 +133,11 @@ function fromVykup(v: Vykup): FormState {
     naklady: (v.naklady ?? 0).toString(),
     naklady_popis: v.naklady_popis ?? "",
     datum_vykupu: v.datum_vykupu ?? "",
-    stav: v.stav, poznamka: v.poznamka ?? "",
+    stav: v.stav,
+    poznamka: v.poznamka ?? "",
     follow_up_at: v.follow_up_at ? v.follow_up_at.slice(0, 16) : "",
-    internal_priced_by_user_id: v.internal_priced_by_user_id
-      ?? (v.internal_priced_by_name ? "__other__" : ""),
+    internal_priced_by_user_id:
+      v.internal_priced_by_user_id ?? (v.internal_priced_by_name ? "__other__" : ""),
     internal_priced_amount: v.internal_priced_amount?.toString() ?? "",
     internal_priced_at: v.internal_priced_at ? v.internal_priced_at.slice(0, 10) : "",
     internal_priced_by_name: v.internal_priced_by_name ?? "",
@@ -138,7 +170,11 @@ function VykupForm() {
     queryKey: ["clients"],
     queryFn: () => fetchClients({}),
   });
-  const clientList = (clientsData?.rows ?? []) as Array<{ id: string; full_name: string; phone: string | null }>;
+  const clientList = (clientsData?.rows ?? []) as Array<{
+    id: string;
+    full_name: string;
+    phone: string | null;
+  }>;
   const fetchAccess = useServerFn(getMyAccess);
   const { data: access } = useQuery({
     queryKey: ["my-access"],
@@ -196,7 +232,8 @@ function VykupForm() {
 
   function buildPayload(): Partial<Vykup> {
     // Auto-doplnění: datum výkupu při přechodu do stavu „Vykoupeno".
-    const autoDatumVykupu = form.datum_vykupu ||
+    const autoDatumVykupu =
+      form.datum_vykupu ||
       (form.stav === "Vykoupeno" ? new Date().toISOString().slice(0, 10) : null);
     const fullPayload: Partial<Vykup> = {
       znacka: form.znacka,
@@ -228,7 +265,7 @@ function VykupForm() {
       internal_priced_at: form.internal_priced_at || null,
       internal_priced_by_name:
         form.internal_priced_by_user_id === "__other__"
-          ? (form.internal_priced_by_name.trim() || null)
+          ? form.internal_priced_by_name.trim() || null
           : null,
       external_priced_by: form.external_priced_by.trim() || null,
       external_priced_amount: toNum(form.external_priced_amount) ?? null,
@@ -252,7 +289,8 @@ function VykupForm() {
       return 'Pro stav „Vykoupeno" vyplňte cenu Vykoupeno za.';
     }
     if (form.stav === "Prodáno") {
-      if (toNum(form.vykoupeno_za) == null) return 'Pro stav „Prodáno" vyplňte i cenu Vykoupeno za.';
+      if (toNum(form.vykoupeno_za) == null)
+        return 'Pro stav „Prodáno" vyplňte i cenu Vykoupeno za.';
       if (toNum(form.prodano_za) == null) return 'Pro stav „Prodáno" vyplňte cenu Prodáno za.';
     }
     return null;
@@ -266,7 +304,11 @@ function VykupForm() {
       if (toNum(f.internal_priced_amount) != null && !f.internal_priced_at) {
         patch.internal_priced_at = new Date().toISOString().slice(0, 10);
       }
-      if (toNum(f.internal_priced_amount) != null && !f.internal_priced_by_user_id && currentUserId) {
+      if (
+        toNum(f.internal_priced_amount) != null &&
+        !f.internal_priced_by_user_id &&
+        currentUserId
+      ) {
         patch.internal_priced_by_user_id = currentUserId;
       }
       if (toNum(f.external_priced_amount) != null && !f.external_priced_at) {
@@ -274,7 +316,6 @@ function VykupForm() {
       }
       return Object.keys(patch).length ? { ...f, ...patch } : f;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.internal_priced_amount, form.external_priced_amount, canFull, currentUserId]);
 
   // Automatické ukládání (debounce 1,5 s) – pro existující i nové (koncept).
@@ -359,7 +400,12 @@ function VykupForm() {
   return (
     <AdminShell requireModule={["vykupy", "vykupy_external"]}>
       <div className="mx-auto max-w-3xl px-4 py-8 md:py-10">
-        <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/vykupy" })} className="mb-3 -ml-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate({ to: "/vykupy" })}
+          className="mb-3 -ml-2"
+        >
           <ArrowLeft className="mr-1 h-4 w-4" /> Zpět
         </Button>
         <h1 className="text-2xl font-bold md:text-3xl">
@@ -375,25 +421,59 @@ function VykupForm() {
           <Section title="Vozidlo">
             <Field label="Značka">
               <Select value={form.znacka} onValueChange={(v) => set("znacka", v)} disabled={ro}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{ZNACKY.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}</SelectContent>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ZNACKY.map((z) => (
+                    <SelectItem key={z} value={z}>
+                      {z}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </Field>
             <Field label="Model">
-              <Input value={form.model} onChange={(e) => set("model", e.target.value)} required={!ro} readOnly={ro} />
+              <Input
+                value={form.model}
+                onChange={(e) => set("model", e.target.value)}
+                required={!ro}
+                readOnly={ro}
+              />
             </Field>
             <Field label="Rok výroby">
-              <Input type="number" value={form.rok_vyroby} onChange={(e) => set("rok_vyroby", e.target.value)} readOnly={ro} />
+              <Input
+                type="number"
+                value={form.rok_vyroby}
+                onChange={(e) => set("rok_vyroby", e.target.value)}
+                readOnly={ro}
+              />
             </Field>
             <Field label="Počet km">
-              <Input type="number" value={form.pocet_km} onChange={(e) => set("pocet_km", e.target.value)} readOnly={ro} />
+              <Input
+                type="number"
+                value={form.pocet_km}
+                onChange={(e) => set("pocet_km", e.target.value)}
+                readOnly={ro}
+              />
             </Field>
             <Field label="Barva">
-              <Input value={form.barva} onChange={(e) => set("barva", e.target.value)} readOnly={ro} placeholder="např. černá metalíza" />
+              <Input
+                value={form.barva}
+                onChange={(e) => set("barva", e.target.value)}
+                readOnly={ro}
+                placeholder="např. černá metalíza"
+              />
             </Field>
             <Field label="Nové v ČR">
-              <Select value={form.new_in_cz || "unknown"} onValueChange={(v) => set("new_in_cz", v === "unknown" ? "" : (v as "yes" | "no"))} disabled={ro}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={form.new_in_cz || "unknown"}
+                onValueChange={(v) => set("new_in_cz", v === "unknown" ? "" : (v as "yes" | "no"))}
+                disabled={ro}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="unknown">— neuvedeno —</SelectItem>
                   <SelectItem value="yes">Ano</SelectItem>
@@ -402,8 +482,16 @@ function VykupForm() {
               </Select>
             </Field>
             <Field label="Servisní historie">
-              <Select value={form.service_history || "unknown"} onValueChange={(v) => set("service_history", v === "unknown" ? "" : (v as "yes" | "no"))} disabled={ro}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={form.service_history || "unknown"}
+                onValueChange={(v) =>
+                  set("service_history", v === "unknown" ? "" : (v as "yes" | "no"))
+                }
+                disabled={ro}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="unknown">— neuvedeno —</SelectItem>
                   <SelectItem value="yes">Ano</SelectItem>
@@ -437,14 +525,28 @@ function VykupForm() {
               </>
             </Field>
             <Field label="Telefon">
-              <Input value={form.telefon} onChange={(e) => set("telefon", e.target.value)} readOnly={ro} />
+              <Input
+                value={form.telefon}
+                onChange={(e) => set("telefon", e.target.value)}
+                readOnly={ro}
+              />
             </Field>
             <Field label="Zdroj">
-              <Select value={form.zdroj || "none"} onValueChange={(v) => set("zdroj", v === "none" ? "" : v)} disabled={ro}>
-                <SelectTrigger><SelectValue placeholder="— vyberte —" /></SelectTrigger>
+              <Select
+                value={form.zdroj || "none"}
+                onValueChange={(v) => set("zdroj", v === "none" ? "" : v)}
+                disabled={ro}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="— vyberte —" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">— vyberte —</SelectItem>
-                  {ZDROJE.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
+                  {ZDROJE.map((z) => (
+                    <SelectItem key={z} value={z}>
+                      {z}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </Field>
@@ -454,133 +556,222 @@ function VykupForm() {
                 onValueChange={(v) => set("zpracoval", v === "none" ? "" : v)}
                 disabled={ro}
               >
-                <SelectTrigger><SelectValue placeholder="Vyberte…" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Vyberte…" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">— nezadáno —</SelectItem>
                   {(employees ?? []).map((u) => (
-                    <SelectItem key={u.id} value={u.name}>{u.name}</SelectItem>
+                    <SelectItem key={u.id} value={u.name}>
+                      {u.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </Field>
           </Section>
 
-          {canFull && <Section title="Cenová kalkulace">
-            <Field label="Představa majitele (Kč)">
-              <Input type="number" value={form.owner_expectation_czk} onChange={(e) => set("owner_expectation_czk", e.target.value)} />
-            </Field>
-            <Field label="Naceněno od (Kč)">
-              <Input type="number" value={form.naceneno_od} onChange={(e) => set("naceneno_od", e.target.value)} />
-            </Field>
-            <Field label="Vykoupeno za (Kč)">
-              <Input type="number" value={form.vykoupeno_za} onChange={(e) => set("vykoupeno_za", e.target.value)} />
-            </Field>
-            <Field label="Prodáno za (Kč)">
-              <Input type="number" value={form.prodano_za} onChange={(e) => set("prodano_za", e.target.value)} />
-            </Field>
-            <Field label="Náklady (Kč)">
-              <Input type="number" value={form.naklady} onChange={(e) => set("naklady", e.target.value)} />
-            </Field>
-            <div className="sm:col-span-2">
-              <Label className="mb-1.5 block text-sm">Náklady – popis (myčka, oprava, příprava…)</Label>
-              <Textarea rows={2} value={form.naklady_popis} onChange={(e) => set("naklady_popis", e.target.value)} placeholder="např. Myčka 500, oprava nárazníku 3 200, příprava 1 000" />
-            </div>
-            <div className="sm:col-span-2">
-              <div className={cn(
-                "rounded-lg border p-3 text-sm",
-                liveMarze == null && "bg-muted text-muted-foreground",
-                liveMarze != null && liveMarze >= 0 && "border-emerald-200 bg-emerald-50 text-emerald-900",
-                liveMarze != null && liveMarze < 0 && "border-rose-200 bg-rose-50 text-rose-900",
-              )}>
-                <span className="font-medium">Marže: </span>
-                <span className="tabular-nums font-bold">{liveMarze == null ? "vyplňte prodáno, vykoupeno; náklady se odečtou" : formatKc(liveMarze)}</span>
-              </div>
-            </div>
-          </Section>}
-
-          {canFull && <Section title="Nacenění – interní">
-            <Field label="Kdo nacenil (zaměstnanec)">
-              <Select
-                value={form.internal_priced_by_user_id || "none"}
-                onValueChange={(v) => set("internal_priced_by_user_id", v === "none" ? "" : v)}
-              >
-                <SelectTrigger><SelectValue placeholder="Vyberte…" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">— nezadáno —</SelectItem>
-                  {(employees ?? []).map((u) => (
-                    <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
-                  ))}
-                  <SelectItem value="__other__">Jiný…</SelectItem>
-                </SelectContent>
-              </Select>
-            </Field>
-            {form.internal_priced_by_user_id === "__other__" && (
-              <Field label="Jméno (jiný)">
+          {canFull && (
+            <Section title="Cenová kalkulace">
+              <Field label="Představa majitele (Kč)">
                 <Input
-                  value={form.internal_priced_by_name}
-                  onChange={(e) => set("internal_priced_by_name", e.target.value)}
-                  placeholder="Jméno osoby, která nacenila"
+                  type="number"
+                  value={form.owner_expectation_czk}
+                  onChange={(e) => set("owner_expectation_czk", e.target.value)}
                 />
               </Field>
-            )}
-            <Field label="Interní nacenění (Kč)">
-              <Input type="number" value={form.internal_priced_amount} onChange={(e) => set("internal_priced_amount", e.target.value)} />
-            </Field>
-            <Field label="Datum interního nacenění">
-              <Input type="date" value={form.internal_priced_at} onChange={(e) => set("internal_priced_at", e.target.value)} />
-            </Field>
-          </Section>}
+              <Field label="Naceněno od (Kč)">
+                <Input
+                  type="number"
+                  value={form.naceneno_od}
+                  onChange={(e) => set("naceneno_od", e.target.value)}
+                />
+              </Field>
+              <Field label="Vykoupeno za (Kč)">
+                <Input
+                  type="number"
+                  value={form.vykoupeno_za}
+                  onChange={(e) => set("vykoupeno_za", e.target.value)}
+                />
+              </Field>
+              <Field label="Prodáno za (Kč)">
+                <Input
+                  type="number"
+                  value={form.prodano_za}
+                  onChange={(e) => set("prodano_za", e.target.value)}
+                />
+              </Field>
+              <Field label="Náklady (Kč)">
+                <Input
+                  type="number"
+                  value={form.naklady}
+                  onChange={(e) => set("naklady", e.target.value)}
+                />
+              </Field>
+              <div className="sm:col-span-2">
+                <Label className="mb-1.5 block text-sm">
+                  Náklady – popis (myčka, oprava, příprava…)
+                </Label>
+                <Textarea
+                  rows={2}
+                  value={form.naklady_popis}
+                  onChange={(e) => set("naklady_popis", e.target.value)}
+                  placeholder="např. Myčka 500, oprava nárazníku 3 200, příprava 1 000"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <div
+                  className={cn(
+                    "rounded-lg border p-3 text-sm",
+                    liveMarze == null && "bg-muted text-muted-foreground",
+                    liveMarze != null &&
+                      liveMarze >= 0 &&
+                      "border-emerald-200 bg-emerald-50 text-emerald-900",
+                    liveMarze != null &&
+                      liveMarze < 0 &&
+                      "border-rose-200 bg-rose-50 text-rose-900",
+                  )}
+                >
+                  <span className="font-medium">Marže: </span>
+                  <span className="tabular-nums font-bold">
+                    {liveMarze == null
+                      ? "vyplňte prodáno, vykoupeno; náklady se odečtou"
+                      : formatKc(liveMarze)}
+                  </span>
+                </div>
+              </div>
+            </Section>
+          )}
+
+          {canFull && (
+            <Section title="Nacenění – interní">
+              <Field label="Kdo nacenil (zaměstnanec)">
+                <Select
+                  value={form.internal_priced_by_user_id || "none"}
+                  onValueChange={(v) => set("internal_priced_by_user_id", v === "none" ? "" : v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Vyberte…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">— nezadáno —</SelectItem>
+                    {(employees ?? []).map((u) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.name}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="__other__">Jiný…</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+              {form.internal_priced_by_user_id === "__other__" && (
+                <Field label="Jméno (jiný)">
+                  <Input
+                    value={form.internal_priced_by_name}
+                    onChange={(e) => set("internal_priced_by_name", e.target.value)}
+                    placeholder="Jméno osoby, která nacenila"
+                  />
+                </Field>
+              )}
+              <Field label="Interní nacenění (Kč)">
+                <Input
+                  type="number"
+                  value={form.internal_priced_amount}
+                  onChange={(e) => set("internal_priced_amount", e.target.value)}
+                />
+              </Field>
+              <Field label="Datum interního nacenění">
+                <Input
+                  type="date"
+                  value={form.internal_priced_at}
+                  onChange={(e) => set("internal_priced_at", e.target.value)}
+                />
+              </Field>
+            </Section>
+          )}
 
           <Section title="Nacenění – externí">
             <Field label="Kdo nacenil (firma / jméno)">
-              <Input value={form.external_priced_by} onChange={(e) => set("external_priced_by", e.target.value)} placeholder="např. AAA Auto" />
+              <Input
+                value={form.external_priced_by}
+                onChange={(e) => set("external_priced_by", e.target.value)}
+                placeholder="např. AAA Auto"
+              />
             </Field>
             <Field label="Externí nacenění (Kč)">
-              <Input type="number" value={form.external_priced_amount} onChange={(e) => set("external_priced_amount", e.target.value)} />
+              <Input
+                type="number"
+                value={form.external_priced_amount}
+                onChange={(e) => set("external_priced_amount", e.target.value)}
+              />
             </Field>
             <Field label="Datum externího nacenění">
-              <Input type="date" value={form.external_priced_at} onChange={(e) => set("external_priced_at", e.target.value)} />
+              <Input
+                type="date"
+                value={form.external_priced_at}
+                onChange={(e) => set("external_priced_at", e.target.value)}
+              />
             </Field>
           </Section>
 
-          {canFull && <Section title="Stav">
-            <Field label="Datum výkupu">
-              <Input type="date" value={form.datum_vykupu} onChange={(e) => set("datum_vykupu", e.target.value)} />
-            </Field>
-            <Field label="Stav">
-              <Select value={form.stav} onValueChange={(v) => set("stav", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{STAVY.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}</SelectContent>
-              </Select>
-            </Field>
-            <Field label="Follow-up (připomínka e-mailem)">
-              <>
+          {canFull && (
+            <Section title="Stav">
+              <Field label="Datum výkupu">
                 <Input
-                  type="datetime-local"
-                  value={form.follow_up_at}
-                  min={new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 16)}
-                  onChange={(e) => set("follow_up_at", e.target.value)}
-                />
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Připomínku pošleme e-mailem přihlášenému uživateli v tento čas.
-                </p>
-              </>
-            </Field>
-            {existing?.stav_changed_at && (
-              <Field label="Ve stavu od">
-                <Input
-                  readOnly
-                  value={`${new Date(existing.stav_changed_at).toLocaleDateString("cs-CZ")} (${daysSince(existing.stav_changed_at)} dní)`}
+                  type="date"
+                  value={form.datum_vykupu}
+                  onChange={(e) => set("datum_vykupu", e.target.value)}
                 />
               </Field>
-            )}
-            <div className="sm:col-span-2">
-              <Label className="mb-1.5 block text-sm">Poznámka</Label>
-              <Textarea rows={3} value={form.poznamka} onChange={(e) => set("poznamka", e.target.value)} />
-            </div>
-          </Section>}
+              <Field label="Stav">
+                <Select value={form.stav} onValueChange={(v) => set("stav", v)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STAVY.map((z) => (
+                      <SelectItem key={z} value={z}>
+                        {z}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Follow-up (připomínka e-mailem)">
+                <>
+                  <Input
+                    type="datetime-local"
+                    value={form.follow_up_at}
+                    min={new Date(Date.now() - new Date().getTimezoneOffset() * 60_000)
+                      .toISOString()
+                      .slice(0, 16)}
+                    onChange={(e) => set("follow_up_at", e.target.value)}
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Připomínku pošleme e-mailem přihlášenému uživateli v tento čas.
+                  </p>
+                </>
+              </Field>
+              {existing?.stav_changed_at && (
+                <Field label="Ve stavu od">
+                  <Input
+                    readOnly
+                    value={`${new Date(existing.stav_changed_at).toLocaleDateString("cs-CZ")} (${daysSince(existing.stav_changed_at)} dní)`}
+                  />
+                </Field>
+              )}
+              <div className="sm:col-span-2">
+                <Label className="mb-1.5 block text-sm">Poznámka</Label>
+                <Textarea
+                  rows={3}
+                  value={form.poznamka}
+                  onChange={(e) => set("poznamka", e.target.value)}
+                />
+              </div>
+            </Section>
+          )}
 
-            <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2">
             {!isNew && (
               <div className="mr-auto flex items-center text-xs text-muted-foreground">
                 {autoSaving
@@ -592,7 +783,9 @@ function VykupForm() {
             )}
             {isNew && canFull && (
               <div className="mr-auto flex items-center text-xs text-muted-foreground">
-                {autoSaving ? "Zakládám koncept…" : "Koncept se uloží automaticky po vyplnění klienta a modelu"}
+                {autoSaving
+                  ? "Zakládám koncept…"
+                  : "Koncept se uloží automaticky po vyplnění klienta a modelu"}
               </div>
             )}
             <Button type="button" variant="ghost" onClick={() => navigate({ to: "/vykupy" })}>
@@ -600,7 +793,11 @@ function VykupForm() {
             </Button>
             {!isNew && canFull && <ContractPdfButton vykupId={id} />}
             {(canFull || (!isNew && canExternalOnly)) && (
-              <Button type="submit" disabled={saving} className="bg-orange-500 text-white hover:bg-orange-600">
+              <Button
+                type="submit"
+                disabled={saving}
+                className="bg-orange-500 text-white hover:bg-orange-600"
+              >
                 {saving ? "Ukládám…" : "Uložit"}
               </Button>
             )}
@@ -616,7 +813,9 @@ function VykupForm() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</h2>
+      <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        {title}
+      </h2>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>
     </div>
   );
@@ -662,7 +861,11 @@ function ContractPdfButton({ vykupId }: { vykupId: string }) {
   }
   return (
     <Button type="button" variant="outline" onClick={handle} disabled={busy}>
-      {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+      {busy ? (
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+      ) : (
+        <FileText className="mr-2 h-4 w-4" />
+      )}
       Smlouva (PDF)
     </Button>
   );
@@ -887,11 +1090,7 @@ function PhotoGallery({ vykupId }: { vykupId: string }) {
               </div>
               <div className="space-y-1 p-2 text-xs">
                 <label className="flex items-center gap-1.5">
-                  <input
-                    type="checkbox"
-                    checked={p.has_defect}
-                    onChange={() => toggleDefect(p)}
-                  />
+                  <input type="checkbox" checked={p.has_defect} onChange={() => toggleDefect(p)} />
                   <span>Označit jako vadu</span>
                 </label>
                 {p.has_defect && (

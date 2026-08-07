@@ -14,18 +14,36 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import {
-  listDeals, createDeal, updateDeal,
-  importDeals, listDealStageHistory,
-  DEAL_STAGES, DEAL_STAGE_LABEL, DEAL_VEHICLES,
+  listDeals,
+  createDeal,
+  updateDeal,
+  importDeals,
+  listDealStageHistory,
+  DEAL_STAGES,
+  DEAL_STAGE_LABEL,
+  DEAL_VEHICLES,
 } from "@/lib/deals.functions";
 import { cn } from "@/lib/utils";
 
@@ -70,7 +88,11 @@ function formatCzk(v: number | string | null) {
   if (v === null || v === "" || v === undefined) return "—";
   const n = typeof v === "string" ? Number(v) : v;
   if (!Number.isFinite(n)) return "—";
-  return new Intl.NumberFormat("cs-CZ", { style: "currency", currency: "CZK", maximumFractionDigits: 0 }).format(n);
+  return new Intl.NumberFormat("cs-CZ", {
+    style: "currency",
+    currency: "CZK",
+    maximumFractionDigits: 0,
+  }).format(n);
 }
 
 function DealsPage() {
@@ -96,14 +118,16 @@ function DealsPage() {
   const [importText, setImportText] = useState("");
   const [importing, setImporting] = useState(false);
   const [historyDeal, setHistoryDeal] = useState<DealRow | null>(null);
-  const [history, setHistory] = useState<Array<{
-    id: string;
-    from_stage: string | null;
-    to_stage: string;
-    changed_at: string;
-    duration_seconds: number | null;
-    changed_by_name: string | null;
-  }>>([]);
+  const [history, setHistory] = useState<
+    Array<{
+      id: string;
+      from_stage: string | null;
+      to_stage: string;
+      changed_at: string;
+      duration_seconds: number | null;
+      changed_by_name: string | null;
+    }>
+  >([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
   const filtered = useMemo(
@@ -114,8 +138,7 @@ function DealsPage() {
   const totals = useMemo(() => {
     const open = rows.filter((r) => r.stage !== "won" && r.stage !== "lost");
     const won = rows.filter((r) => r.stage === "won");
-    const sum = (xs: DealRow[]) =>
-      xs.reduce((acc, r) => acc + (Number(r.value_czk) || 0), 0);
+    const sum = (xs: DealRow[]) => xs.reduce((acc, r) => acc + (Number(r.value_czk) || 0), 0);
     return { openCount: open.length, openSum: sum(open), wonSum: sum(won) };
   }, [rows]);
 
@@ -202,15 +225,31 @@ function DealsPage() {
   }
 
   function parseImport(text: string) {
-    const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-    if (lines.length === 0) return [] as Array<{ title: string; client_name?: string; contact?: string; value_czk?: number | null; notes?: string }>;
+    const lines = text
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter(Boolean);
+    if (lines.length === 0)
+      return [] as Array<{
+        title: string;
+        client_name?: string;
+        contact?: string;
+        value_czk?: number | null;
+        notes?: string;
+      }>;
     const sep = lines[0].includes("\t") ? "\t" : ";";
     const splitRow = (l: string) => l.split(sep).map((c) => c.trim());
     let start = 0;
     const first = splitRow(lines[0]).map((c) => c.toLowerCase());
     const headerKeywords = ["klient", "název", "nazev", "title", "client", "jméno", "jmeno"];
     if (first.some((c) => headerKeywords.includes(c))) start = 1;
-    const out: Array<{ title: string; client_name?: string; contact?: string; value_czk?: number | null; notes?: string }> = [];
+    const out: Array<{
+      title: string;
+      client_name?: string;
+      contact?: string;
+      value_czk?: number | null;
+      notes?: string;
+    }> = [];
     for (let i = start; i < lines.length; i++) {
       const cells = splitRow(lines[i]);
       const client = cells[0] || "";
@@ -277,7 +316,9 @@ function DealsPage() {
           </Card>
           <Card className="p-4">
             <div className="text-xs text-muted-foreground">Vyhráno (celkem)</div>
-            <div className="mt-1 text-2xl font-semibold text-emerald-700">{formatCzk(totals.wonSum)}</div>
+            <div className="mt-1 text-2xl font-semibold text-emerald-700">
+              {formatCzk(totals.wonSum)}
+            </div>
           </Card>
         </div>
 
@@ -285,7 +326,9 @@ function DealsPage() {
           <TabsList className="flex flex-wrap">
             <TabsTrigger value="all">Vše</TabsTrigger>
             {DEAL_STAGES.map((s) => (
-              <TabsTrigger key={s} value={s}>{DEAL_STAGE_LABEL[s]}</TabsTrigger>
+              <TabsTrigger key={s} value={s}>
+                {DEAL_STAGE_LABEL[s]}
+              </TabsTrigger>
             ))}
           </TabsList>
         </Tabs>
@@ -307,16 +350,26 @@ function DealsPage() {
             </TableHeader>
             <TableBody>
               {isLoading && (
-                <TableRow><TableCell colSpan={9} className="py-8 text-center text-sm text-muted-foreground">Načítám…</TableCell></TableRow>
+                <TableRow>
+                  <TableCell colSpan={9} className="py-8 text-center text-sm text-muted-foreground">
+                    Načítám…
+                  </TableCell>
+                </TableRow>
               )}
               {!isLoading && filtered.length === 0 && (
-                <TableRow><TableCell colSpan={9} className="py-8 text-center text-sm text-muted-foreground">Žádné případy</TableCell></TableRow>
+                <TableRow>
+                  <TableCell colSpan={9} className="py-8 text-center text-sm text-muted-foreground">
+                    Žádné případy
+                  </TableCell>
+                </TableRow>
               )}
               {filtered.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell className="font-medium">{r.title}</TableCell>
                   <TableCell>{r.client_name || "—"}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{r.contact || "—"}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {r.contact || "—"}
+                  </TableCell>
                   <TableCell className="text-xs">{r.vehicle || "—"}</TableCell>
                   <TableCell>
                     <Select value={r.stage} onValueChange={(v) => quickStage(r, v)}>
@@ -325,20 +378,38 @@ function DealsPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {DEAL_STAGES.map((s) => (
-                          <SelectItem key={s} value={s}>{DEAL_STAGE_LABEL[s]}</SelectItem>
+                          <SelectItem key={s} value={s}>
+                            {DEAL_STAGE_LABEL[s]}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    <Badge className={cn("ml-2 hidden", STAGE_STYLE[r.stage])}>{DEAL_STAGE_LABEL[r.stage]}</Badge>
+                    <Badge className={cn("ml-2 hidden", STAGE_STYLE[r.stage])}>
+                      {DEAL_STAGE_LABEL[r.stage]}
+                    </Badge>
                   </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{stageDurationLabel((r as any).stage_changed_at || r.created_at)}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {stageDurationLabel((r as any).stage_changed_at || r.created_at)}
+                  </TableCell>
                   <TableCell className="text-xs">{r.expected_close_date || "—"}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{r.owner_name || "—"}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {r.owner_name || "—"}
+                  </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => openHistory(r)} aria-label="Historie fází">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => openHistory(r)}
+                      aria-label="Historie fází"
+                    >
                       <History className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(r)} aria-label="Upravit">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => openEdit(r)}
+                      aria-label="Upravit"
+                    >
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <RequestDeleteButton
@@ -364,16 +435,26 @@ function DealsPage() {
           <div className="grid gap-3">
             <div>
               <Label>Název *</Label>
-              <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+              <Input
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Klient</Label>
-                <Input value={form.client_name} onChange={(e) => setForm({ ...form, client_name: e.target.value })} />
+                <Input
+                  value={form.client_name}
+                  onChange={(e) => setForm({ ...form, client_name: e.target.value })}
+                />
               </div>
               <div>
                 <Label>Kontakt</Label>
-                <Input placeholder="telefon / email" value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} />
+                <Input
+                  placeholder="telefon / email"
+                  value={form.contact}
+                  onChange={(e) => setForm({ ...form, contact: e.target.value })}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -383,22 +464,35 @@ function DealsPage() {
                   value={form.vehicle || "__none__"}
                   onValueChange={(v) => setForm({ ...form, vehicle: v === "__none__" ? "" : v })}
                 >
-                  <SelectTrigger><SelectValue placeholder="Vyberte vůz" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Vyberte vůz" />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none__">— Neuvedeno —</SelectItem>
                     {DEAL_VEHICLES.map((v) => (
-                      <SelectItem key={v} value={v}>{v}</SelectItem>
+                      <SelectItem key={v} value={v}>
+                        {v}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label>Fáze</Label>
-                <Select value={form.stage} onValueChange={(v) => setForm({ ...form, stage: v as (typeof DEAL_STAGES)[number] })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={form.stage}
+                  onValueChange={(v) =>
+                    setForm({ ...form, stage: v as (typeof DEAL_STAGES)[number] })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {DEAL_STAGES.map((s) => (
-                      <SelectItem key={s} value={s}>{DEAL_STAGE_LABEL[s]}</SelectItem>
+                      <SelectItem key={s} value={s}>
+                        {DEAL_STAGE_LABEL[s]}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -406,20 +500,38 @@ function DealsPage() {
             </div>
             <div>
               <Label>Hodnota (Kč)</Label>
-              <Input type="number" min="0" step="1" value={form.value_czk} onChange={(e) => setForm({ ...form, value_czk: e.target.value })} />
+              <Input
+                type="number"
+                min="0"
+                step="1"
+                value={form.value_czk}
+                onChange={(e) => setForm({ ...form, value_czk: e.target.value })}
+              />
             </div>
             <div>
               <Label>Očekávané uzavření</Label>
-              <Input type="date" value={form.expected_close_date} onChange={(e) => setForm({ ...form, expected_close_date: e.target.value })} />
+              <Input
+                type="date"
+                value={form.expected_close_date}
+                onChange={(e) => setForm({ ...form, expected_close_date: e.target.value })}
+              />
             </div>
             <div>
               <Label>Poznámky</Label>
-              <Textarea rows={4} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+              <Textarea
+                rows={4}
+                value={form.notes}
+                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Zrušit</Button>
-            <Button onClick={save} disabled={saving}>{saving ? "Ukládám…" : "Uložit"}</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Zrušit
+            </Button>
+            <Button onClick={save} disabled={saving}>
+              {saving ? "Ukládám…" : "Uložit"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -432,11 +544,14 @@ function DealsPage() {
           <div className="space-y-3 text-sm">
             <p className="text-muted-foreground">
               Vložte data oddělená středníkem nebo tabulátorem (např. zkopírovaná z Excelu).
-              Sloupce: <strong>Klient; Kontakt; Hodnota (Kč); Poznámka</strong>. První řádek může být hlavička.
+              Sloupce: <strong>Klient; Kontakt; Hodnota (Kč); Poznámka</strong>. První řádek může
+              být hlavička.
             </p>
             <Textarea
               rows={10}
-              placeholder={"Klient;Kontakt;Hodnota;Poznámka\nJan Novák;jan@firma.cz;120000;První kontakt\nFirma s.r.o.;+420 123 456 789;;Doporučení"}
+              placeholder={
+                "Klient;Kontakt;Hodnota;Poznámka\nJan Novák;jan@firma.cz;120000;První kontakt\nFirma s.r.o.;+420 123 456 789;;Doporučení"
+              }
               value={importText}
               onChange={(e) => setImportText(e.target.value)}
               className="font-mono text-xs"
@@ -446,8 +561,12 @@ function DealsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setImportOpen(false)}>Zrušit</Button>
-            <Button onClick={doImport} disabled={importing}>{importing ? "Importuji…" : "Importovat"}</Button>
+            <Button variant="outline" onClick={() => setImportOpen(false)}>
+              Zrušit
+            </Button>
+            <Button onClick={doImport} disabled={importing}>
+              {importing ? "Importuji…" : "Importovat"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -484,7 +603,9 @@ function DealsPage() {
             </ol>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setHistoryDeal(null)}>Zavřít</Button>
+            <Button variant="outline" onClick={() => setHistoryDeal(null)}>
+              Zavřít
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

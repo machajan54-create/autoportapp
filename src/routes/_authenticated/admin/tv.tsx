@@ -162,7 +162,10 @@ function TvAdmin() {
       })
       .select()
       .single();
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Slide vytvořen");
     qc.invalidateQueries({ queryKey: ["tv-slides"] });
     setSelectedId(data.id);
@@ -187,7 +190,10 @@ function TvAdmin() {
       valid_to: draft.valid_to || null,
     };
     const { error } = await supabase.from("slides").update(payload).eq("id", draft.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Uloženo");
     qc.invalidateQueries({ queryKey: ["tv-slides"] });
   }
@@ -195,15 +201,24 @@ function TvAdmin() {
   async function remove(id: string) {
     if (!confirm("Opravdu smazat tento slide?")) return;
     const { error } = await supabase.from("slides").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Smazáno");
-    if (selectedId === id) { setSelectedId(null); setDraft(null); }
+    if (selectedId === id) {
+      setSelectedId(null);
+      setDraft(null);
+    }
     qc.invalidateQueries({ queryKey: ["tv-slides"] });
   }
 
   async function toggleActive(s: Slide) {
     const { error } = await supabase.from("slides").update({ active: !s.active }).eq("id", s.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     qc.invalidateQueries({ queryKey: ["tv-slides"] });
     if (draft?.id === s.id) setDraft({ ...draft, active: !s.active });
   }
@@ -221,7 +236,10 @@ function TvAdmin() {
       });
       if (error) throw error;
       setDraft((d) => ({ ...(d ?? {}), image_url: path }));
-      const { error: updErr } = await supabase.from("slides").update({ image_url: path }).eq("id", draft.id);
+      const { error: updErr } = await supabase
+        .from("slides")
+        .update({ image_url: path })
+        .eq("id", draft.id);
       if (updErr) throw updErr;
       qc.invalidateQueries({ queryKey: ["tv-slides"] });
       toast.success("Obrázek nahrán");
@@ -243,10 +261,19 @@ function TvAdmin() {
     list.splice(to, 0, moved);
     const updates = list.map((s, i) => ({ id: s.id, sort_order: (i + 1) * 10 }));
     // Optimistic
-    qc.setQueryData<Slide[]>(["tv-slides"], list.map((s, i) => ({ ...s, sort_order: (i + 1) * 10 })));
+    qc.setQueryData<Slide[]>(
+      ["tv-slides"],
+      list.map((s, i) => ({ ...s, sort_order: (i + 1) * 10 })),
+    );
     for (const u of updates) {
-      const { error } = await supabase.from("slides").update({ sort_order: u.sort_order }).eq("id", u.id);
-      if (error) { toast.error(error.message); break; }
+      const { error } = await supabase
+        .from("slides")
+        .update({ sort_order: u.sort_order })
+        .eq("id", u.id);
+      if (error) {
+        toast.error(error.message);
+        break;
+      }
     }
     qc.invalidateQueries({ queryKey: ["tv-slides"] });
   }
@@ -261,7 +288,9 @@ function TvAdmin() {
       <div className="mx-auto max-w-7xl px-4 py-8">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Digital signage</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Digital signage
+            </p>
             <h1 className="mt-1 flex items-center gap-2 text-2xl font-bold md:text-3xl">
               <Tv className="h-6 w-6" /> TV Display
             </h1>
@@ -271,7 +300,10 @@ function TvAdmin() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => { navigator.clipboard.writeText(tvUrl); toast.success("Odkaz zkopírován"); }}
+                onClick={() => {
+                  navigator.clipboard.writeText(tvUrl);
+                  toast.success("Odkaz zkopírován");
+                }}
               >
                 <Copy className="mr-1.5 h-4 w-4" /> Kopírovat odkaz
               </Button>
@@ -291,10 +323,18 @@ function TvAdmin() {
                 <Label>Název</Label>
                 <Input
                   value={activeConfig.name}
-                  onChange={(e) => qc.setQueryData<DisplayConfig[]>(["tv-configs"], (prev) =>
-                    (prev ?? []).map((c) => c.id === activeConfig.id ? { ...c, name: e.target.value } : c))}
+                  onChange={(e) =>
+                    qc.setQueryData<DisplayConfig[]>(["tv-configs"], (prev) =>
+                      (prev ?? []).map((c) =>
+                        c.id === activeConfig.id ? { ...c, name: e.target.value } : c,
+                      ),
+                    )
+                  }
                   onBlur={async (e) => {
-                    await supabase.from("display_config").update({ name: e.target.value }).eq("id", activeConfig.id);
+                    await supabase
+                      .from("display_config")
+                      .update({ name: e.target.value })
+                      .eq("id", activeConfig.id);
                   }}
                 />
               </div>
@@ -308,10 +348,18 @@ function TvAdmin() {
                 <Label>Běžící text (ticker)</Label>
                 <Input
                   value={activeConfig.ticker_text ?? ""}
-                  onChange={(e) => qc.setQueryData<DisplayConfig[]>(["tv-configs"], (prev) =>
-                    (prev ?? []).map((c) => c.id === activeConfig.id ? { ...c, ticker_text: e.target.value } : c))}
+                  onChange={(e) =>
+                    qc.setQueryData<DisplayConfig[]>(["tv-configs"], (prev) =>
+                      (prev ?? []).map((c) =>
+                        c.id === activeConfig.id ? { ...c, ticker_text: e.target.value } : c,
+                      ),
+                    )
+                  }
                   onBlur={async (e) => {
-                    await supabase.from("display_config").update({ ticker_text: e.target.value }).eq("id", activeConfig.id);
+                    await supabase
+                      .from("display_config")
+                      .update({ ticker_text: e.target.value })
+                      .eq("id", activeConfig.id);
                     toast.success("Ticker uložen");
                   }}
                   placeholder="Text co poběží dole na displeji…"
@@ -321,7 +369,10 @@ function TvAdmin() {
                 <Switch
                   checked={activeConfig.show_clock}
                   onCheckedChange={async (v) => {
-                    await supabase.from("display_config").update({ show_clock: v }).eq("id", activeConfig.id);
+                    await supabase
+                      .from("display_config")
+                      .update({ show_clock: v })
+                      .eq("id", activeConfig.id);
                     qc.invalidateQueries({ queryKey: ["tv-configs"] });
                   }}
                 />
@@ -331,7 +382,10 @@ function TvAdmin() {
                 <Switch
                   checked={activeConfig.show_weather}
                   onCheckedChange={async (v) => {
-                    await supabase.from("display_config").update({ show_weather: v }).eq("id", activeConfig.id);
+                    await supabase
+                      .from("display_config")
+                      .update({ show_weather: v })
+                      .eq("id", activeConfig.id);
                     qc.invalidateQueries({ queryKey: ["tv-configs"] });
                   }}
                 />
@@ -341,7 +395,10 @@ function TvAdmin() {
                 <Switch
                   checked={activeConfig.show_feedback}
                   onCheckedChange={async (v) => {
-                    await supabase.from("display_config").update({ show_feedback: v }).eq("id", activeConfig.id);
+                    await supabase
+                      .from("display_config")
+                      .update({ show_feedback: v })
+                      .eq("id", activeConfig.id);
                     qc.invalidateQueries({ queryKey: ["tv-configs"] });
                   }}
                 />
@@ -351,7 +408,10 @@ function TvAdmin() {
                 <Switch
                   checked={activeConfig.show_lounge}
                   onCheckedChange={async (v) => {
-                    await supabase.from("display_config").update({ show_lounge: v }).eq("id", activeConfig.id);
+                    await supabase
+                      .from("display_config")
+                      .update({ show_lounge: v })
+                      .eq("id", activeConfig.id);
                     qc.invalidateQueries({ queryKey: ["tv-configs"] });
                   }}
                 />
@@ -361,7 +421,10 @@ function TvAdmin() {
                 <Switch
                   checked={activeConfig.show_buyout ?? true}
                   onCheckedChange={async (v) => {
-                    await supabase.from("display_config").update({ show_buyout: v }).eq("id", activeConfig.id);
+                    await supabase
+                      .from("display_config")
+                      .update({ show_buyout: v })
+                      .eq("id", activeConfig.id);
                     qc.invalidateQueries({ queryKey: ["tv-configs"] });
                   }}
                 />
@@ -374,11 +437,21 @@ function TvAdmin() {
                   min={3}
                   max={120}
                   value={activeConfig.feedback_duration_sec ?? 15}
-                  onChange={(e) => qc.setQueryData<DisplayConfig[]>(["tv-configs"], (prev) =>
-                    (prev ?? []).map((c) => c.id === activeConfig.id ? { ...c, feedback_duration_sec: Number(e.target.value) } : c))}
+                  onChange={(e) =>
+                    qc.setQueryData<DisplayConfig[]>(["tv-configs"], (prev) =>
+                      (prev ?? []).map((c) =>
+                        c.id === activeConfig.id
+                          ? { ...c, feedback_duration_sec: Number(e.target.value) }
+                          : c,
+                      ),
+                    )
+                  }
                   onBlur={async (e) => {
                     const v = Math.max(3, Math.min(120, Number(e.target.value) || 15));
-                    await supabase.from("display_config").update({ feedback_duration_sec: v }).eq("id", activeConfig.id);
+                    await supabase
+                      .from("display_config")
+                      .update({ feedback_duration_sec: v })
+                      .eq("id", activeConfig.id);
                     toast.success("Délka uložena");
                     qc.invalidateQueries({ queryKey: ["tv-configs"] });
                   }}
@@ -391,11 +464,21 @@ function TvAdmin() {
                   min={3}
                   max={120}
                   value={activeConfig.lounge_duration_sec ?? 12}
-                  onChange={(e) => qc.setQueryData<DisplayConfig[]>(["tv-configs"], (prev) =>
-                    (prev ?? []).map((c) => c.id === activeConfig.id ? { ...c, lounge_duration_sec: Number(e.target.value) } : c))}
+                  onChange={(e) =>
+                    qc.setQueryData<DisplayConfig[]>(["tv-configs"], (prev) =>
+                      (prev ?? []).map((c) =>
+                        c.id === activeConfig.id
+                          ? { ...c, lounge_duration_sec: Number(e.target.value) }
+                          : c,
+                      ),
+                    )
+                  }
                   onBlur={async (e) => {
                     const v = Math.max(3, Math.min(120, Number(e.target.value) || 12));
-                    await supabase.from("display_config").update({ lounge_duration_sec: v }).eq("id", activeConfig.id);
+                    await supabase
+                      .from("display_config")
+                      .update({ lounge_duration_sec: v })
+                      .eq("id", activeConfig.id);
                     toast.success("Délka uložena");
                     qc.invalidateQueries({ queryKey: ["tv-configs"] });
                   }}
@@ -408,11 +491,21 @@ function TvAdmin() {
                   min={3}
                   max={120}
                   value={activeConfig.buyout_duration_sec ?? 14}
-                  onChange={(e) => qc.setQueryData<DisplayConfig[]>(["tv-configs"], (prev) =>
-                    (prev ?? []).map((c) => c.id === activeConfig.id ? { ...c, buyout_duration_sec: Number(e.target.value) } : c))}
+                  onChange={(e) =>
+                    qc.setQueryData<DisplayConfig[]>(["tv-configs"], (prev) =>
+                      (prev ?? []).map((c) =>
+                        c.id === activeConfig.id
+                          ? { ...c, buyout_duration_sec: Number(e.target.value) }
+                          : c,
+                      ),
+                    )
+                  }
                   onBlur={async (e) => {
                     const v = Math.max(3, Math.min(120, Number(e.target.value) || 14));
-                    await supabase.from("display_config").update({ buyout_duration_sec: v }).eq("id", activeConfig.id);
+                    await supabase
+                      .from("display_config")
+                      .update({ buyout_duration_sec: v })
+                      .eq("id", activeConfig.id);
                     toast.success("Délka uložena");
                     qc.invalidateQueries({ queryKey: ["tv-configs"] });
                   }}
@@ -437,7 +530,10 @@ function TvAdmin() {
                   key={s.id}
                   draggable
                   onDragStart={(e) => e.dataTransfer.setData("text/plain", s.id)}
-                  onDragOver={(e) => { e.preventDefault(); setDragOverId(s.id); }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragOverId(s.id);
+                  }}
                   onDragLeave={() => setDragOverId((v) => (v === s.id ? null : v))}
                   onDrop={(e) => {
                     e.preventDefault();
@@ -448,7 +544,9 @@ function TvAdmin() {
                   onClick={() => pick(s)}
                   className={
                     "flex cursor-pointer items-center gap-2 rounded-md border bg-card p-2 text-sm transition " +
-                    (selectedId === s.id ? "border-primary ring-1 ring-primary/20 " : "hover:bg-muted ") +
+                    (selectedId === s.id
+                      ? "border-primary ring-1 ring-primary/20 "
+                      : "hover:bg-muted ") +
                     (dragOverId === s.id ? "border-dashed border-primary/60 " : "")
                   }
                 >
@@ -456,13 +554,18 @@ function TvAdmin() {
                   <div className="flex-1 truncate">
                     <div className="truncate font-medium">{s.title || "(bez názvu)"}</div>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Badge variant="outline" className="h-4 px-1 text-[10px]">{TYPE_LABELS[s.type]}</Badge>
+                      <Badge variant="outline" className="h-4 px-1 text-[10px]">
+                        {TYPE_LABELS[s.type]}
+                      </Badge>
                       <span>{s.duration_sec}s</span>
                     </div>
                   </div>
                   <Switch checked={s.active} onCheckedChange={() => toggleActive(s)} />
                   <button
-                    onClick={(e) => { e.stopPropagation(); remove(s.id); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      remove(s.id);
+                    }}
                     className="rounded p-1 text-muted-foreground hover:bg-rose-50 hover:text-rose-600"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -490,23 +593,42 @@ function TvAdmin() {
                   <div className="space-y-3">
                     <div>
                       <Label>Nadpis</Label>
-                      <Input value={draft.title ?? ""} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
+                      <Input
+                        value={draft.title ?? ""}
+                        onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+                      />
                     </div>
                     <div>
                       <Label>Podnadpis</Label>
-                      <Input value={draft.subtitle ?? ""} onChange={(e) => setDraft({ ...draft, subtitle: e.target.value })} />
+                      <Input
+                        value={draft.subtitle ?? ""}
+                        onChange={(e) => setDraft({ ...draft, subtitle: e.target.value })}
+                      />
                     </div>
                     <div>
                       <Label>Text</Label>
-                      <Textarea rows={4} value={draft.body ?? ""} onChange={(e) => setDraft({ ...draft, body: e.target.value })} />
+                      <Textarea
+                        rows={4}
+                        value={draft.body ?? ""}
+                        onChange={(e) => setDraft({ ...draft, body: e.target.value })}
+                      />
                     </div>
                     <div>
                       <Label>Druh obsahu</Label>
-                      <Select value={draft.kind ?? "image"} onValueChange={(v) => setDraft({ ...draft, kind: v as Slide["kind"], payload: {} })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                      <Select
+                        value={draft.kind ?? "image"}
+                        onValueChange={(v) =>
+                          setDraft({ ...draft, kind: v as Slide["kind"], payload: {} })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
                           {Object.entries(KIND_LABELS).map(([k, v]) => (
-                            <SelectItem key={k} value={k}>{v}</SelectItem>
+                            <SelectItem key={k} value={k}>
+                              {v}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -515,11 +637,18 @@ function TvAdmin() {
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <Label>Typ</Label>
-                        <Select value={draft.type ?? "news"} onValueChange={(v) => setDraft({ ...draft, type: v as Slide["type"] })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
+                        <Select
+                          value={draft.type ?? "news"}
+                          onValueChange={(v) => setDraft({ ...draft, type: v as Slide["type"] })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
                           <SelectContent>
                             {Object.entries(TYPE_LABELS).map(([k, v]) => (
-                              <SelectItem key={k} value={k}>{v}</SelectItem>
+                              <SelectItem key={k} value={k}>
+                                {v}
+                              </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -527,9 +656,13 @@ function TvAdmin() {
                       <div>
                         <Label>Doba (s)</Label>
                         <Input
-                          type="number" min={3} max={600}
+                          type="number"
+                          min={3}
+                          max={600}
                           value={draft.duration_sec ?? 12}
-                          onChange={(e) => setDraft({ ...draft, duration_sec: Number(e.target.value) })}
+                          onChange={(e) =>
+                            setDraft({ ...draft, duration_sec: Number(e.target.value) })
+                          }
                         />
                       </div>
                     </div>
@@ -539,7 +672,14 @@ function TvAdmin() {
                         <Input
                           type="datetime-local"
                           value={toDatetimeLocal(draft.valid_from ?? null)}
-                          onChange={(e) => setDraft({ ...draft, valid_from: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                          onChange={(e) =>
+                            setDraft({
+                              ...draft,
+                              valid_from: e.target.value
+                                ? new Date(e.target.value).toISOString()
+                                : null,
+                            })
+                          }
                         />
                       </div>
                       <div>
@@ -547,7 +687,14 @@ function TvAdmin() {
                         <Input
                           type="datetime-local"
                           value={toDatetimeLocal(draft.valid_to ?? null)}
-                          onChange={(e) => setDraft({ ...draft, valid_to: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                          onChange={(e) =>
+                            setDraft({
+                              ...draft,
+                              valid_to: e.target.value
+                                ? new Date(e.target.value).toISOString()
+                                : null,
+                            })
+                          }
                         />
                       </div>
                     </div>
@@ -557,12 +704,16 @@ function TvAdmin() {
                         <Input
                           type="file"
                           accept="image/*"
-                          onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadImage(f); }}
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) uploadImage(f);
+                          }}
                           disabled={uploading}
                         />
                         {draft.image_url && (
                           <Button
-                            variant="ghost" size="sm"
+                            variant="ghost"
+                            size="sm"
                             onClick={() => setDraft({ ...draft, image_url: null })}
                           >
                             Odebrat
@@ -570,7 +721,9 @@ function TvAdmin() {
                         )}
                       </div>
                       {draft.image_url && (
-                        <p className="mt-1 truncate text-xs text-muted-foreground">{draft.image_url}</p>
+                        <p className="mt-1 truncate text-xs text-muted-foreground">
+                          {draft.image_url}
+                        </p>
                       )}
                     </div>
                     <div className="flex items-center gap-2 pt-2">
@@ -597,7 +750,13 @@ function TvAdmin() {
   );
 }
 
-function KindPayloadEditor({ draft, setDraft }: { draft: Partial<Slide>; setDraft: (d: Partial<Slide>) => void }) {
+function KindPayloadEditor({
+  draft,
+  setDraft,
+}: {
+  draft: Partial<Slide>;
+  setDraft: (d: Partial<Slide>) => void;
+}) {
   const kind = draft.kind ?? "image";
   const payload = (draft.payload ?? {}) as Record<string, any>;
   const patch = (p: Record<string, any>) => setDraft({ ...draft, payload: { ...payload, ...p } });
@@ -609,23 +768,37 @@ function KindPayloadEditor({ draft, setDraft }: { draft: Partial<Slide>; setDraf
   if (kind === "video") {
     return (
       <div className="space-y-2 rounded-md border bg-muted/30 p-3">
-        <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Video</Label>
+        <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Video
+        </Label>
         <Input
           type="file"
           accept="video/mp4,video/webm"
           onChange={async (e) => {
-            const f = e.target.files?.[0]; if (!f || !draft.id) return;
-            const path = `${draft.id}/${Date.now()}.${(f.name.split(".").pop() || "mp4")}`;
-            const { error } = await supabase.storage.from("slides").upload(path, f, { contentType: f.type, upsert: false });
-            if (error) { toast.error(error.message); return; }
+            const f = e.target.files?.[0];
+            if (!f || !draft.id) return;
+            const path = `${draft.id}/${Date.now()}.${f.name.split(".").pop() || "mp4"}`;
+            const { error } = await supabase.storage
+              .from("slides")
+              .upload(path, f, { contentType: f.type, upsert: false });
+            if (error) {
+              toast.error(error.message);
+              return;
+            }
             patch({ storage_path: path });
             toast.success("Video nahráno");
           }}
         />
-        {payload.storage_path && <p className="truncate text-xs text-muted-foreground">{payload.storage_path}</p>}
+        {payload.storage_path && (
+          <p className="truncate text-xs text-muted-foreground">{payload.storage_path}</p>
+        )}
         <div>
           <Label>… nebo URL videa</Label>
-          <Input value={payload.url ?? ""} placeholder="https://…mp4" onChange={(e) => patch({ url: e.target.value })} />
+          <Input
+            value={payload.url ?? ""}
+            placeholder="https://…mp4"
+            onChange={(e) => patch({ url: e.target.value })}
+          />
         </div>
         <div className="flex items-center gap-2">
           <Switch checked={!!payload.loop} onCheckedChange={(v) => patch({ loop: v })} />
@@ -662,14 +835,23 @@ function KindPayloadEditor({ draft, setDraft }: { draft: Partial<Slide>; setDraf
           <Textarea
             rows={4}
             value={bullets.join("\n")}
-            onChange={(e) => patch({ bullets: e.target.value.split("\n").map(s => s.trim()).filter(Boolean) })}
+            onChange={(e) =>
+              patch({
+                bullets: e.target.value
+                  .split("\n")
+                  .map((s) => s.trim())
+                  .filter(Boolean),
+              })
+            }
           />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label>Zarovnání</Label>
             <Select value={payload.align ?? "left"} onValueChange={(v) => patch({ align: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="left">Vlevo</SelectItem>
                 <SelectItem value="center">Na střed</SelectItem>
@@ -678,7 +860,11 @@ function KindPayloadEditor({ draft, setDraft }: { draft: Partial<Slide>; setDraf
           </div>
           <div>
             <Label>Pozadí (CSS)</Label>
-            <Input value={payload.bg ?? ""} placeholder="linear-gradient(…) nebo #123" onChange={(e) => patch({ bg: e.target.value })} />
+            <Input
+              value={payload.bg ?? ""}
+              placeholder="linear-gradient(…) nebo #123"
+              onChange={(e) => patch({ bg: e.target.value })}
+            />
           </div>
         </div>
       </div>
@@ -689,8 +875,14 @@ function KindPayloadEditor({ draft, setDraft }: { draft: Partial<Slide>; setDraf
     return (
       <div className="space-y-2 rounded-md border bg-muted/30 p-3">
         <Label>URL stránky</Label>
-        <Input value={payload.url ?? ""} placeholder="https://…" onChange={(e) => patch({ url: e.target.value })} />
-        <p className="text-xs text-muted-foreground">Pozor: stránka musí povolit embed do iframe.</p>
+        <Input
+          value={payload.url ?? ""}
+          placeholder="https://…"
+          onChange={(e) => patch({ url: e.target.value })}
+        />
+        <p className="text-xs text-muted-foreground">
+          Pozor: stránka musí povolit embed do iframe.
+        </p>
       </div>
     );
   }
@@ -700,16 +892,18 @@ function KindPayloadEditor({ draft, setDraft }: { draft: Partial<Slide>; setDraf
       <div className="space-y-2 rounded-md border bg-muted/30 p-3">
         <Label>Widget</Label>
         <Select value={payload.widget ?? "stats"} onValueChange={(v) => patch({ widget: v })}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             {Object.entries(WIDGET_LABELS).map(([k, v]) => (
-              <SelectItem key={k} value={k}>{v}</SelectItem>
+              <SelectItem key={k} value={k}>
+                {v}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <p className="text-xs text-muted-foreground">
-          Widget načítá data z aplikace každých 30 s.
-        </p>
+        <p className="text-xs text-muted-foreground">Widget načítá data z aplikace každých 30 s.</p>
       </div>
     );
   }
@@ -722,7 +916,11 @@ function NewsManager() {
   const newsQ = useQuery({
     queryKey: ["display-news"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("display_news").select("*").order("sort_order", { ascending: true }).order("created_at", { ascending: false });
+      const { data, error } = await supabase
+        .from("display_news")
+        .select("*")
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: false });
       if (error) throw new Error(error.message);
       return data ?? [];
     },
@@ -732,15 +930,24 @@ function NewsManager() {
 
   async function add() {
     if (!title.trim()) return;
-    const { error } = await supabase.from("display_news").insert({ title: title.trim(), body: body.trim() || null });
-    if (error) { toast.error(error.message); return; }
-    setTitle(""); setBody("");
+    const { error } = await supabase
+      .from("display_news")
+      .insert({ title: title.trim(), body: body.trim() || null });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setTitle("");
+    setBody("");
     qc.invalidateQueries({ queryKey: ["display-news"] });
   }
   async function del(id: string) {
     if (!confirm("Smazat novinku?")) return;
     const { error } = await supabase.from("display_news").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     qc.invalidateQueries({ queryKey: ["display-news"] });
   }
   async function toggle(id: string, active: boolean) {
@@ -755,8 +962,14 @@ function NewsManager() {
       </h2>
       <div className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_2fr_auto]">
         <Input placeholder="Titulek" value={title} onChange={(e) => setTitle(e.target.value)} />
-        <Input placeholder="Krátký text (volitelné)" value={body} onChange={(e) => setBody(e.target.value)} />
-        <Button onClick={add}><Plus className="mr-1 h-4 w-4" /> Přidat</Button>
+        <Input
+          placeholder="Krátký text (volitelné)"
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+        />
+        <Button onClick={add}>
+          <Plus className="mr-1 h-4 w-4" /> Přidat
+        </Button>
       </div>
       <div className="mt-4 space-y-2">
         {(newsQ.data ?? []).map((n: any) => (
@@ -766,13 +979,18 @@ function NewsManager() {
               {n.body && <div className="text-xs text-muted-foreground">{n.body}</div>}
             </div>
             <Switch checked={n.active} onCheckedChange={() => toggle(n.id, n.active)} />
-            <button onClick={() => del(n.id)} className="rounded p-1 text-muted-foreground hover:bg-rose-50 hover:text-rose-600">
+            <button
+              onClick={() => del(n.id)}
+              className="rounded p-1 text-muted-foreground hover:bg-rose-50 hover:text-rose-600"
+            >
               <Trash2 className="h-4 w-4" />
             </button>
           </div>
         ))}
         {!(newsQ.data ?? []).length && (
-          <div className="rounded-md border bg-card p-4 text-center text-xs text-muted-foreground">Zatím žádné novinky.</div>
+          <div className="rounded-md border bg-card p-4 text-center text-xs text-muted-foreground">
+            Zatím žádné novinky.
+          </div>
         )}
       </div>
     </Card>
@@ -784,14 +1002,20 @@ function SlidePreview({ draft }: { draft: Partial<Slide> }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!draft.image_url) { setImgUrl(null); return; }
+      if (!draft.image_url) {
+        setImgUrl(null);
+        return;
+      }
       if (/^https?:\/\//i.test(draft.image_url) || draft.image_url.startsWith("data:")) {
-        setImgUrl(draft.image_url); return;
+        setImgUrl(draft.image_url);
+        return;
       }
       const { data } = await supabase.storage.from("slides").createSignedUrl(draft.image_url, 3600);
       if (!cancelled) setImgUrl(data?.signedUrl ?? null);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [draft.image_url]);
 
   return (
@@ -804,34 +1028,62 @@ function SlidePreview({ draft }: { draft: Partial<Slide> }) {
         {imgUrl && (
           <div
             style={{
-              position: "absolute", inset: 0,
+              position: "absolute",
+              inset: 0,
               backgroundImage: `url(${imgUrl})`,
-              backgroundSize: "cover", backgroundPosition: "center",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
             }}
           />
         )}
         <div
           style={{
-            position: "absolute", inset: 0,
+            position: "absolute",
+            inset: 0,
             background: imgUrl
               ? "linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.75) 100%)"
               : "radial-gradient(ellipse at center, #1f2b47 0%, #0b0f1a 100%)",
           }}
         />
-        <div style={{ position: "absolute", inset: "5%", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+        <div
+          style={{
+            position: "absolute",
+            inset: "5%",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "flex-end",
+          }}
+        >
           {draft.type && (
             <div
               style={{
-                display: "inline-block", alignSelf: "flex-start",
-                padding: "2px 8px", background: "#f97316", color: "white",
-                fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
-                borderRadius: 4, marginBottom: 8,
+                display: "inline-block",
+                alignSelf: "flex-start",
+                padding: "2px 8px",
+                background: "#f97316",
+                color: "white",
+                fontSize: 9,
+                fontWeight: 700,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                borderRadius: 4,
+                marginBottom: 8,
               }}
-            >{TYPE_LABELS[draft.type as Slide["type"]] ?? draft.type}</div>
+            >
+              {TYPE_LABELS[draft.type as Slide["type"]] ?? draft.type}
+            </div>
           )}
-          {draft.title && <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1.05 }}>{draft.title}</div>}
-          {draft.subtitle && <div style={{ fontSize: 16, marginTop: 4, opacity: 0.9 }}>{draft.subtitle}</div>}
-          {draft.body && <div style={{ fontSize: 12, marginTop: 6, opacity: 0.85, maxWidth: "70%" }}>{draft.body}</div>}
+          {draft.title && (
+            <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1.05 }}>{draft.title}</div>
+          )}
+          {draft.subtitle && (
+            <div style={{ fontSize: 16, marginTop: 4, opacity: 0.9 }}>{draft.subtitle}</div>
+          )}
+          {draft.body && (
+            <div style={{ fontSize: 12, marginTop: 6, opacity: 0.85, maxWidth: "70%" }}>
+              {draft.body}
+            </div>
+          )}
         </div>
       </div>
     </Card>

@@ -9,16 +9,38 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
-import { ArrowLeft, FileText, FileSignature, Mail, Trash2, Plus, Loader2, Download, Link as LinkIcon, Lock, Activity } from "lucide-react";
+import {
+  ArrowLeft,
+  FileText,
+  FileSignature,
+  Mail,
+  Trash2,
+  Plus,
+  Loader2,
+  Download,
+  Link as LinkIcon,
+  Lock,
+  Activity,
+} from "lucide-react";
 import { SignaturePad } from "@/components/SignaturePad";
 import {
-  getDemoOrder, createDemoOrder, updateDemoOrder,
-  generateOrderPdf, generateInvoicePdf,
-  signOrderInPerson, createRemoteSignatureLink,
-  sendDocumentsToClient, getDocumentDownloadUrl,
-  saveSellerSignature, clearSellerSignature,
+  getDemoOrder,
+  createDemoOrder,
+  updateDemoOrder,
+  generateOrderPdf,
+  generateInvoicePdf,
+  signOrderInPerson,
+  createRemoteSignatureLink,
+  sendDocumentsToClient,
+  getDocumentDownloadUrl,
+  saveSellerSignature,
+  clearSellerSignature,
 } from "@/lib/demo-orders.functions";
 import { listClients, createClient } from "@/lib/clients.functions";
 import { getMyAccess } from "@/lib/claims.functions";
@@ -45,10 +67,16 @@ const KIND_LABEL: Record<string, string> = {
 };
 
 function fmtKc(n: number) {
-  return new Intl.NumberFormat("cs-CZ", { style: "currency", currency: "CZK", maximumFractionDigits: 0 }).format(n);
+  return new Intl.NumberFormat("cs-CZ", {
+    style: "currency",
+    currency: "CZK",
+    maximumFractionDigits: 0,
+  }).format(n);
 }
 
-function todayISO() { return new Date().toISOString().slice(0, 10); }
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 function emptyForm() {
   return {
@@ -104,14 +132,25 @@ function DemoOrderForm() {
   const [sellerName, setSellerName] = useState("");
   const [sellerSig, setSellerSig] = useState<string | null>(null);
   const [clientOpen, setClientOpen] = useState(false);
-  const [newClient, setNewClient] = useState({ full_name: "", company: "", email: "", phone: "", ico: "", dic: "", address: "" });
+  const [newClient, setNewClient] = useState({
+    full_name: "",
+    company: "",
+    email: "",
+    phone: "",
+    ico: "",
+    dic: "",
+    address: "",
+  });
 
   const { data: orderData, isLoading } = useQuery({
     queryKey: ["demo-order", id],
     queryFn: () => fetchOrder({ data: { id } }),
     enabled: !isNew,
   });
-  const { data: clientsData } = useQuery({ queryKey: ["clients"], queryFn: () => fetchClients({}) });
+  const { data: clientsData } = useQuery({
+    queryKey: ["clients"],
+    queryFn: () => fetchClients({}),
+  });
   const clients = clientsData?.rows ?? [];
 
   useEffect(() => {
@@ -129,7 +168,10 @@ function DemoOrderForm() {
         registrace_datum: o.registrace_datum || "",
         datum_objednavky: o.datum_objednavky || todayISO(),
         datum_dodani: o.datum_dodani || "",
-        line_items: Array.isArray(o.line_items) && o.line_items.length ? o.line_items : emptyForm().line_items,
+        line_items:
+          Array.isArray(o.line_items) && o.line_items.length
+            ? o.line_items
+            : emptyForm().line_items,
         zaloha: Number(o.zaloha || 0),
         notes: o.notes || "",
       });
@@ -137,7 +179,8 @@ function DemoOrderForm() {
   }, [orderData?.order?.id]);
 
   const totals = useMemo(() => {
-    let bez = 0, s = 0;
+    let bez = 0,
+      s = 0;
     for (const it of form.line_items) {
       const b = Number(it.bez_dph || 0);
       bez += b;
@@ -160,8 +203,10 @@ function DemoOrderForm() {
       datum_objednavky: form.datum_objednavky || todayISO(),
       datum_dodani: form.datum_dodani || null,
       line_items: form.line_items.map((x) => ({
-        label: x.label, category: x.category as any,
-        bez_dph: Number(x.bez_dph || 0), dph_pct: Number(x.dph_pct || 0),
+        label: x.label,
+        category: x.category as any,
+        bez_dph: Number(x.bez_dph || 0),
+        dph_pct: Number(x.dph_pct || 0),
       })),
       zaloha: Number(form.zaloha || 0),
       notes: form.notes || null,
@@ -169,7 +214,10 @@ function DemoOrderForm() {
   }
 
   async function onSave() {
-    if (!form.client_id) { toast.error("Vyberte klienta"); return; }
+    if (!form.client_id) {
+      toast.error("Vyberte klienta");
+      return;
+    }
     setSaving(true);
     try {
       if (isNew) {
@@ -184,13 +232,20 @@ function DemoOrderForm() {
       }
     } catch (e) {
       toast.error((e as Error).message);
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function runBusy(key: string, fn: () => Promise<void>) {
     setBusy(key);
-    try { await fn(); } catch (e) { toast.error((e as Error).message); }
-    finally { setBusy(null); }
+    try {
+      await fn();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
   }
 
   function downloadBase64(base64: string, name: string) {
@@ -200,7 +255,9 @@ function DemoOrderForm() {
     const blob = new Blob([arr], { type: "application/pdf" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = name; a.click();
+    a.href = url;
+    a.download = name;
+    a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
@@ -221,21 +278,35 @@ function DemoOrderForm() {
     });
   }
   async function onSignInPerson() {
-    if (!signerName.trim() || !sigData) { toast.error("Doplňte jméno a podpis"); return; }
+    if (!signerName.trim() || !sigData) {
+      toast.error("Doplňte jméno a podpis");
+      return;
+    }
     await runBusy("sign-local", async () => {
-      await signLocal({ data: { orderId: id, signatureDataUrl: sigData!, signerName: signerName.trim() } });
+      await signLocal({
+        data: { orderId: id, signatureDataUrl: sigData!, signerName: signerName.trim() },
+      });
       toast.success("Podepsáno");
-      setSignOpen(false); setSigData(null); setSignerName("");
+      setSignOpen(false);
+      setSigData(null);
+      setSignerName("");
       qc.invalidateQueries({ queryKey: ["demo-order", id] });
     });
   }
 
   async function onSaveSellerSignature() {
-    if (!sellerName.trim() || !sellerSig) { toast.error("Doplňte jméno a podpis"); return; }
+    if (!sellerName.trim() || !sellerSig) {
+      toast.error("Doplňte jméno a podpis");
+      return;
+    }
     await runBusy("sign-seller", async () => {
-      await saveSeller({ data: { orderId: id, signatureDataUrl: sellerSig!, signerName: sellerName.trim() } });
+      await saveSeller({
+        data: { orderId: id, signatureDataUrl: sellerSig!, signerName: sellerName.trim() },
+      });
       toast.success("Podpis prodejce uložen");
-      setSellerOpen(false); setSellerSig(null); setSellerName("");
+      setSellerOpen(false);
+      setSellerSig(null);
+      setSellerName("");
       qc.invalidateQueries({ queryKey: ["demo-order", id] });
     });
   }
@@ -277,15 +348,28 @@ function DemoOrderForm() {
   }
 
   async function onCreateClient() {
-    if (!newClient.full_name && !newClient.company) { toast.error("Vyplňte jméno nebo firmu"); return; }
+    if (!newClient.full_name && !newClient.company) {
+      toast.error("Vyplňte jméno nebo firmu");
+      return;
+    }
     try {
       const r = await createClientFn({ data: newClient });
       toast.success("Klient vytvořen");
       qc.invalidateQueries({ queryKey: ["clients"] });
       setForm((f) => ({ ...f, client_id: r.id }));
       setClientOpen(false);
-      setNewClient({ full_name: "", company: "", email: "", phone: "", ico: "", dic: "", address: "" });
-    } catch (e) { toast.error((e as Error).message); }
+      setNewClient({
+        full_name: "",
+        company: "",
+        email: "",
+        phone: "",
+        ico: "",
+        dic: "",
+        address: "",
+      });
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
   }
 
   if (!isNew && isLoading) {
@@ -321,22 +405,40 @@ function DemoOrderForm() {
   function fmtDateTime(s: string) {
     try {
       return new Date(s).toLocaleString("cs-CZ", {
-        day: "numeric", month: "numeric", year: "numeric",
-        hour: "2-digit", minute: "2-digit",
+        day: "numeric",
+        month: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
-    } catch { return s; }
+    } catch {
+      return s;
+    }
   }
 
   const updateItem = (i: number, patch: Partial<LineItem>) => {
-    setForm((f) => ({ ...f, line_items: f.line_items.map((it, idx) => idx === i ? { ...it, ...patch } : it) }));
+    setForm((f) => ({
+      ...f,
+      line_items: f.line_items.map((it, idx) => (idx === i ? { ...it, ...patch } : it)),
+    }));
   };
-  const removeItem = (i: number) => setForm((f) => ({ ...f, line_items: f.line_items.filter((_, idx) => idx !== i) }));
-  const addItem = () => setForm((f) => ({ ...f, line_items: [...f.line_items, { label: "", category: "equipment", bez_dph: 0, dph_pct: 21 }] }));
+  const removeItem = (i: number) =>
+    setForm((f) => ({ ...f, line_items: f.line_items.filter((_, idx) => idx !== i) }));
+  const addItem = () =>
+    setForm((f) => ({
+      ...f,
+      line_items: [...f.line_items, { label: "", category: "equipment", bez_dph: 0, dph_pct: 21 }],
+    }));
 
   return (
     <AdminShell requireModule="demo_orders">
       <div className="mx-auto max-w-5xl px-4 py-6 md:py-8">
-        <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/demo-orders" })} className="mb-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate({ to: "/demo-orders" })}
+          className="mb-3"
+        >
           <ArrowLeft className="mr-1 h-4 w-4" /> Zpět na seznam
         </Button>
 
@@ -346,7 +448,9 @@ function DemoOrderForm() {
               {isNew ? "Nová objednávka" : order?.order_number}
             </h1>
             {!isNew && (
-              <p className="text-sm text-muted-foreground">Stav: {STATUS_LABEL[order?.status] || order?.status}</p>
+              <p className="text-sm text-muted-foreground">
+                Stav: {STATUS_LABEL[order?.status] || order?.status}
+              </p>
             )}
           </div>
           {!locked && (
@@ -361,8 +465,8 @@ function DemoOrderForm() {
           <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
             <Lock className="h-4 w-4 shrink-0" />
             <span className="flex-1">
-              Objednávka je uzamčena (stav: {STATUS_LABEL[order.status] || order.status}).
-              Po odeslání k podpisu nelze data měnit – požádejte super admina o úpravu nebo smazání.
+              Objednávka je uzamčena (stav: {STATUS_LABEL[order.status] || order.status}). Po
+              odeslání k podpisu nelze data měnit – požádejte super admina o úpravu nebo smazání.
             </span>
             <RequestDeleteButton
               entityType="demo_orders"
@@ -409,48 +513,146 @@ function DemoOrderForm() {
             <section className="rounded-xl border bg-card p-4">
               <h2 className="mb-3 font-semibold">Vozidlo</h2>
               <div className="grid gap-3 md:grid-cols-2">
-                <Field label="Model a verze"><Input value={form.model_verze} onChange={(e) => setForm({ ...form, model_verze: e.target.value })} /></Field>
-                <Field label="Barva"><Input value={form.barva} onChange={(e) => setForm({ ...form, barva: e.target.value })} /></Field>
-                <Field label="RZ (SPZ)"><Input value={form.rz} onChange={(e) => setForm({ ...form, rz: e.target.value })} /></Field>
-                <Field label="VIN"><Input value={form.vin} onChange={(e) => setForm({ ...form, vin: e.target.value })} /></Field>
-                <Field label="Rok výroby"><Input type="number" value={form.rok_vyroby} onChange={(e) => setForm({ ...form, rok_vyroby: e.target.value })} /></Field>
-                <Field label="Najeté km"><Input type="number" value={form.najete_km} onChange={(e) => setForm({ ...form, najete_km: e.target.value })} /></Field>
-                <Field label="Záruka spuštěna od"><Input value={form.zaruka_spustena_od} onChange={(e) => setForm({ ...form, zaruka_spustena_od: e.target.value })} placeholder="např. 1. registrace" /></Field>
-                <Field label="Registrace vozu"><Input type="date" value={form.registrace_datum} onChange={(e) => setForm({ ...form, registrace_datum: e.target.value })} /></Field>
-                <Field label="Datum objednávky"><Input type="date" value={form.datum_objednavky} onChange={(e) => setForm({ ...form, datum_objednavky: e.target.value })} /></Field>
-                <Field label="Datum dodání"><Input type="date" value={form.datum_dodani} onChange={(e) => setForm({ ...form, datum_dodani: e.target.value })} /></Field>
+                <Field label="Model a verze">
+                  <Input
+                    value={form.model_verze}
+                    onChange={(e) => setForm({ ...form, model_verze: e.target.value })}
+                  />
+                </Field>
+                <Field label="Barva">
+                  <Input
+                    value={form.barva}
+                    onChange={(e) => setForm({ ...form, barva: e.target.value })}
+                  />
+                </Field>
+                <Field label="RZ (SPZ)">
+                  <Input
+                    value={form.rz}
+                    onChange={(e) => setForm({ ...form, rz: e.target.value })}
+                  />
+                </Field>
+                <Field label="VIN">
+                  <Input
+                    value={form.vin}
+                    onChange={(e) => setForm({ ...form, vin: e.target.value })}
+                  />
+                </Field>
+                <Field label="Rok výroby">
+                  <Input
+                    type="number"
+                    value={form.rok_vyroby}
+                    onChange={(e) => setForm({ ...form, rok_vyroby: e.target.value })}
+                  />
+                </Field>
+                <Field label="Najeté km">
+                  <Input
+                    type="number"
+                    value={form.najete_km}
+                    onChange={(e) => setForm({ ...form, najete_km: e.target.value })}
+                  />
+                </Field>
+                <Field label="Záruka spuštěna od">
+                  <Input
+                    value={form.zaruka_spustena_od}
+                    onChange={(e) => setForm({ ...form, zaruka_spustena_od: e.target.value })}
+                    placeholder="např. 1. registrace"
+                  />
+                </Field>
+                <Field label="Registrace vozu">
+                  <Input
+                    type="date"
+                    value={form.registrace_datum}
+                    onChange={(e) => setForm({ ...form, registrace_datum: e.target.value })}
+                  />
+                </Field>
+                <Field label="Datum objednávky">
+                  <Input
+                    type="date"
+                    value={form.datum_objednavky}
+                    onChange={(e) => setForm({ ...form, datum_objednavky: e.target.value })}
+                  />
+                </Field>
+                <Field label="Datum dodání">
+                  <Input
+                    type="date"
+                    value={form.datum_dodani}
+                    onChange={(e) => setForm({ ...form, datum_dodani: e.target.value })}
+                  />
+                </Field>
               </div>
             </section>
 
             <section className="rounded-xl border bg-card p-4">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="font-semibold">Ceník</h2>
-                <Button type="button" variant="outline" size="sm" onClick={addItem}><Plus className="mr-1 h-3 w-3" /> Položka</Button>
+                <Button type="button" variant="outline" size="sm" onClick={addItem}>
+                  <Plus className="mr-1 h-3 w-3" /> Položka
+                </Button>
               </div>
               <div className="space-y-2">
                 {form.line_items.map((it, i) => (
                   <div key={i} className="grid grid-cols-12 items-center gap-2">
-                    <Input className="col-span-6" value={it.label} placeholder="Popis" onChange={(e) => updateItem(i, { label: e.target.value })} />
-                    <Input className="col-span-3" type="number" value={it.bez_dph} onChange={(e) => updateItem(i, { bez_dph: Number(e.target.value) })} placeholder="Bez DPH" />
-                    <Input className="col-span-2" type="number" value={it.dph_pct} onChange={(e) => updateItem(i, { dph_pct: Number(e.target.value) })} placeholder="DPH %" />
-                    <Button type="button" variant="ghost" size="icon" className="col-span-1 text-rose-600" onClick={() => removeItem(i)}><Trash2 className="h-4 w-4" /></Button>
+                    <Input
+                      className="col-span-6"
+                      value={it.label}
+                      placeholder="Popis"
+                      onChange={(e) => updateItem(i, { label: e.target.value })}
+                    />
+                    <Input
+                      className="col-span-3"
+                      type="number"
+                      value={it.bez_dph}
+                      onChange={(e) => updateItem(i, { bez_dph: Number(e.target.value) })}
+                      placeholder="Bez DPH"
+                    />
+                    <Input
+                      className="col-span-2"
+                      type="number"
+                      value={it.dph_pct}
+                      onChange={(e) => updateItem(i, { dph_pct: Number(e.target.value) })}
+                      placeholder="DPH %"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="col-span-1 text-rose-600"
+                      onClick={() => removeItem(i)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 ))}
               </div>
               <div className="mt-4 flex flex-col items-end gap-1 border-t pt-3 text-sm">
-                <div>Bez DPH: <span className="ml-2 font-medium tabular-nums">{fmtKc(totals.bez)}</span></div>
-                <div className="text-base font-semibold">Celkem s DPH: <span className="ml-2 tabular-nums">{fmtKc(totals.s)}</span></div>
+                <div>
+                  Bez DPH:{" "}
+                  <span className="ml-2 font-medium tabular-nums">{fmtKc(totals.bez)}</span>
+                </div>
+                <div className="text-base font-semibold">
+                  Celkem s DPH: <span className="ml-2 tabular-nums">{fmtKc(totals.s)}</span>
+                </div>
               </div>
             </section>
 
             <section className="rounded-xl border bg-card p-4">
               <h2 className="mb-3 font-semibold">Záloha &amp; poznámka</h2>
               <div className="grid gap-3 md:grid-cols-2">
-                <Field label="Záloha (Kč)"><Input type="number" value={form.zaloha} onChange={(e) => setForm({ ...form, zaloha: Number(e.target.value) })} /></Field>
+                <Field label="Záloha (Kč)">
+                  <Input
+                    type="number"
+                    value={form.zaloha}
+                    onChange={(e) => setForm({ ...form, zaloha: Number(e.target.value) })}
+                  />
+                </Field>
               </div>
               <div className="mt-3">
                 <Label className="text-xs">Poznámka</Label>
-                <Textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+                <Textarea
+                  rows={3}
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                />
               </div>
             </section>
           </fieldset>
@@ -467,36 +669,83 @@ function DemoOrderForm() {
                       {order?.seller_signed_at ? (
                         <div className="mt-1 flex items-center justify-between gap-2">
                           <span className="truncate text-muted-foreground">
-                            ✓ {order.seller_signer_name} · {new Date(order.seller_signed_at).toLocaleDateString("cs-CZ")}
+                            ✓ {order.seller_signer_name} ·{" "}
+                            {new Date(order.seller_signed_at).toLocaleDateString("cs-CZ")}
                           </span>
-                          <button onClick={onClearSellerSignature} className="text-rose-600 hover:underline" disabled={busy === "clear-seller"}>
+                          <button
+                            onClick={onClearSellerSignature}
+                            className="text-rose-600 hover:underline"
+                            disabled={busy === "clear-seller"}
+                          >
                             odstranit
                           </button>
                         </div>
                       ) : (
-                        <button onClick={() => setSellerOpen(true)} className="mt-1 text-primary hover:underline">
+                        <button
+                          onClick={() => setSellerOpen(true)}
+                          className="mt-1 text-primary hover:underline"
+                        >
                           Přidat podpis prodejce
                         </button>
                       )}
                     </div>
-                    <Button className="w-full justify-start" variant="outline" onClick={onGenerateOrder} disabled={busy === "gen-order"}>
-                      {busy === "gen-order" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                    <Button
+                      className="w-full justify-start"
+                      variant="outline"
+                      onClick={onGenerateOrder}
+                      disabled={busy === "gen-order"}
+                    >
+                      {busy === "gen-order" ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <FileText className="mr-2 h-4 w-4" />
+                      )}
                       Vygenerovat PDF objednávky
                     </Button>
-                    <Button className="w-full justify-start" variant="outline" onClick={onGenerateInvoice} disabled={busy === "gen-invoice"}>
-                      {busy === "gen-invoice" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                    <Button
+                      className="w-full justify-start"
+                      variant="outline"
+                      onClick={onGenerateInvoice}
+                      disabled={busy === "gen-invoice"}
+                    >
+                      {busy === "gen-invoice" ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <FileText className="mr-2 h-4 w-4" />
+                      )}
                       Vygenerovat zálohovou fakturu
                     </Button>
-                    <Button className="w-full justify-start" variant="outline" onClick={() => setSignOpen(true)}>
+                    <Button
+                      className="w-full justify-start"
+                      variant="outline"
+                      onClick={() => setSignOpen(true)}
+                    >
                       <FileSignature className="mr-2 h-4 w-4" />
                       Podpis u prodejce
                     </Button>
-                    <Button className="w-full justify-start" variant="outline" onClick={onSendSignLink} disabled={busy === "sign-remote"}>
-                      {busy === "sign-remote" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LinkIcon className="mr-2 h-4 w-4" />}
+                    <Button
+                      className="w-full justify-start"
+                      variant="outline"
+                      onClick={onSendSignLink}
+                      disabled={busy === "sign-remote"}
+                    >
+                      {busy === "sign-remote" ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <LinkIcon className="mr-2 h-4 w-4" />
+                      )}
                       Odeslat klientovi odkaz pro podpis
                     </Button>
-                    <Button className="w-full justify-start" onClick={onSendDocs} disabled={busy === "send-docs"}>
-                      {busy === "send-docs" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
+                    <Button
+                      className="w-full justify-start"
+                      onClick={onSendDocs}
+                      disabled={busy === "send-docs"}
+                    >
+                      {busy === "send-docs" ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Mail className="mr-2 h-4 w-4" />
+                      )}
                       Odeslat dokumenty klientovi
                     </Button>
                   </div>
@@ -510,10 +759,15 @@ function DemoOrderForm() {
                     <ul className="space-y-1">
                       {latestDocs.map((d: any) => (
                         <li key={d.id}>
-                          <button onClick={() => onOpenDoc(d.id)} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted">
+                          <button
+                            onClick={() => onOpenDoc(d.id)}
+                            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted"
+                          >
                             <Download className="h-3.5 w-3.5 text-muted-foreground" />
                             <span className="flex-1 truncate">{KIND_LABEL[d.kind] || d.kind}</span>
-                            <span className="whitespace-nowrap text-[10px] text-muted-foreground">{fmtDateTime(d.created_at)}</span>
+                            <span className="whitespace-nowrap text-[10px] text-muted-foreground">
+                              {fmtDateTime(d.created_at)}
+                            </span>
                           </button>
                         </li>
                       ))}
@@ -550,13 +804,19 @@ function DemoOrderForm() {
       {/* In-person sign dialog */}
       <Dialog open={signOpen} onOpenChange={setSignOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Podpis klienta u prodejce</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Podpis klienta u prodejce</DialogTitle>
+          </DialogHeader>
           <div className="space-y-3">
-            <Field label="Jméno podepisujícího"><Input value={signerName} onChange={(e) => setSignerName(e.target.value)} /></Field>
+            <Field label="Jméno podepisujícího">
+              <Input value={signerName} onChange={(e) => setSignerName(e.target.value)} />
+            </Field>
             <SignaturePad onChange={setSigData} />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSignOpen(false)}>Zrušit</Button>
+            <Button variant="outline" onClick={() => setSignOpen(false)}>
+              Zrušit
+            </Button>
             <Button onClick={onSignInPerson} disabled={busy === "sign-local"}>
               {busy === "sign-local" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Potvrdit podpis
@@ -568,14 +828,22 @@ function DemoOrderForm() {
       {/* Seller signature dialog */}
       <Dialog open={sellerOpen} onOpenChange={setSellerOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Podpis prodejce</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Podpis prodejce</DialogTitle>
+          </DialogHeader>
           <div className="space-y-3">
-            <Field label="Jméno prodejce"><Input value={sellerName} onChange={(e) => setSellerName(e.target.value)} /></Field>
+            <Field label="Jméno prodejce">
+              <Input value={sellerName} onChange={(e) => setSellerName(e.target.value)} />
+            </Field>
             <SignaturePad onChange={setSellerSig} />
-            <p className="text-xs text-muted-foreground">Podpis se automaticky vloží do PDF objednávky.</p>
+            <p className="text-xs text-muted-foreground">
+              Podpis se automaticky vloží do PDF objednávky.
+            </p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSellerOpen(false)}>Zrušit</Button>
+            <Button variant="outline" onClick={() => setSellerOpen(false)}>
+              Zrušit
+            </Button>
             <Button onClick={onSaveSellerSignature} disabled={busy === "sign-seller"}>
               {busy === "sign-seller" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Uložit podpis
@@ -587,21 +855,59 @@ function DemoOrderForm() {
       {/* New client dialog */}
       <Dialog open={clientOpen} onOpenChange={setClientOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Nový klient</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Nový klient</DialogTitle>
+          </DialogHeader>
           <div className="grid gap-3 md:grid-cols-2">
-            <Field label="Jméno"><Input value={newClient.full_name} onChange={(e) => setNewClient({ ...newClient, full_name: e.target.value })} /></Field>
-            <Field label="Firma"><Input value={newClient.company} onChange={(e) => setNewClient({ ...newClient, company: e.target.value })} /></Field>
-            <Field label="E-mail"><Input type="email" value={newClient.email} onChange={(e) => setNewClient({ ...newClient, email: e.target.value })} /></Field>
-            <Field label="Telefon"><Input value={newClient.phone} onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })} /></Field>
-            <Field label="IČ"><Input value={newClient.ico} onChange={(e) => setNewClient({ ...newClient, ico: e.target.value })} /></Field>
-            <Field label="DIČ"><Input value={newClient.dic} onChange={(e) => setNewClient({ ...newClient, dic: e.target.value })} /></Field>
+            <Field label="Jméno">
+              <Input
+                value={newClient.full_name}
+                onChange={(e) => setNewClient({ ...newClient, full_name: e.target.value })}
+              />
+            </Field>
+            <Field label="Firma">
+              <Input
+                value={newClient.company}
+                onChange={(e) => setNewClient({ ...newClient, company: e.target.value })}
+              />
+            </Field>
+            <Field label="E-mail">
+              <Input
+                type="email"
+                value={newClient.email}
+                onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+              />
+            </Field>
+            <Field label="Telefon">
+              <Input
+                value={newClient.phone}
+                onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
+              />
+            </Field>
+            <Field label="IČ">
+              <Input
+                value={newClient.ico}
+                onChange={(e) => setNewClient({ ...newClient, ico: e.target.value })}
+              />
+            </Field>
+            <Field label="DIČ">
+              <Input
+                value={newClient.dic}
+                onChange={(e) => setNewClient({ ...newClient, dic: e.target.value })}
+              />
+            </Field>
             <div className="md:col-span-2">
               <Label className="text-xs">Adresa</Label>
-              <Input value={newClient.address} onChange={(e) => setNewClient({ ...newClient, address: e.target.value })} />
+              <Input
+                value={newClient.address}
+                onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setClientOpen(false)}>Zrušit</Button>
+            <Button variant="outline" onClick={() => setClientOpen(false)}>
+              Zrušit
+            </Button>
             <Button onClick={onCreateClient}>Vytvořit klienta</Button>
           </DialogFooter>
         </DialogContent>

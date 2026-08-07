@@ -76,7 +76,11 @@ function Page() {
   const [signature, setSignature] = useState<string | null>(initial?.signature ?? null);
   const [busy, setBusy] = useState(false);
   const [files, setFiles] = useState<Record<FileCategory, File[]>>({
-    tp: [], rp: [], accident: [], damage: [], photos: [],
+    tp: [],
+    rp: [],
+    accident: [],
+    damage: [],
+    photos: [],
   });
   const [form, setForm] = useState<Record<string, string>>(initial?.form ?? {});
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
@@ -146,12 +150,17 @@ function Page() {
     }
     return true;
   }
-  const next = () => { if (validateStep()) setStep((s) => Math.min(s + 1, steps.length - 1)); };
+  const next = () => {
+    if (validateStep()) setStep((s) => Math.min(s + 1, steps.length - 1));
+  };
   const prev = () => setStep((s) => Math.max(s - 1, 0));
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (step !== steps.length - 1) { next(); return; }
+    if (step !== steps.length - 1) {
+      next();
+      return;
+    }
     if (!form.first_name || !form.last_name || !form.phone) {
       toast.error("Vyplňte povinná pole.");
       setStep(0);
@@ -166,7 +175,13 @@ function Page() {
       const finalInsurer =
         insurerChoice === "__other__" ? form.insurer_other?.trim() || null : insurerChoice || null;
       const tempId = crypto.randomUUID();
-      const uploaded: { category: string; file_path: string; file_name: string; mime_type?: string; size?: number }[] = [];
+      const uploaded: {
+        category: string;
+        file_path: string;
+        file_name: string;
+        mime_type?: string;
+        size?: number;
+      }[] = [];
       for (const cat of Object.keys(files) as FileCategory[]) {
         for (const file of files[cat]) {
           const resized = await resizeImage(file, { maxWidth: 1920, maxHeight: 1920 });
@@ -229,9 +244,7 @@ function Page() {
       toast.success("Pojistná událost byla odeslána.");
       if (typeof window !== "undefined") localStorage.removeItem(DRAFT_KEY);
       const uploadUrl =
-        typeof window !== "undefined"
-          ? `${window.location.origin}/upload/${res.upload_token}`
-          : "";
+        typeof window !== "undefined" ? `${window.location.origin}/upload/${res.upload_token}` : "";
       setSubmitted({ pu: res.pu_number ?? "—", uploadUrl });
     } catch (err) {
       toast.error((err as Error).message);
@@ -249,9 +262,7 @@ function Page() {
             <CheckCircle2 className="h-9 w-9 text-emerald-600" />
           </div>
           <h1 className="mt-6 text-3xl font-bold">Pojistná událost odeslána</h1>
-          <p className="mt-2 text-muted-foreground">
-            Vaše číslo pojistné události:
-          </p>
+          <p className="mt-2 text-muted-foreground">Vaše číslo pojistné události:</p>
           <div className="mt-3 inline-block rounded-lg border bg-card px-6 py-3 font-mono text-2xl font-bold text-primary">
             {submitted.pu}
           </div>
@@ -294,7 +305,9 @@ function Page() {
             >
               <Phone className="h-3.5 w-3.5" /> +420 800 100 200
             </a>
-            <Link to="/" className="hover:text-foreground">Přihlášení</Link>
+            <Link to="/" className="hover:text-foreground">
+              Přihlášení
+            </Link>
           </div>
         }
       />
@@ -304,7 +317,8 @@ function Page() {
           Pole označená * jsou povinná. Potřebujete pomoc?{" "}
           <a href="tel:+420800100200" className="font-medium text-primary underline">
             Zavolejte +420 800 100 200
-          </a>.
+          </a>
+          .
         </p>
 
         {hasDraft && (
@@ -332,8 +346,8 @@ function Page() {
                     i < step
                       ? "border-primary bg-primary text-primary-foreground"
                       : i === step
-                      ? "border-primary text-primary"
-                      : "border-muted text-muted-foreground"
+                        ? "border-primary text-primary"
+                        : "border-muted text-muted-foreground"
                   }`}
                 >
                   {i < step ? <Check className="h-4 w-4" /> : i + 1}
@@ -342,7 +356,9 @@ function Page() {
                   {s}
                 </span>
                 {i < steps.length - 1 && (
-                  <div className={`mx-2 hidden h-px flex-1 sm:block ${i < step ? "bg-primary" : "bg-muted"}`} />
+                  <div
+                    className={`mx-2 hidden h-px flex-1 sm:block ${i < step ? "bg-primary" : "bg-muted"}`}
+                  />
                 )}
               </div>
             ))}
@@ -357,123 +373,172 @@ function Page() {
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
           {step === 0 && (
-          <section className="rounded-xl border bg-card p-6">
-            <h2 className="text-lg font-semibold">Kontaktní údaje</h2>
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Jméno *" k="first_name" set={set} value={form.first_name} />
-              <Field label="Příjmení *" k="last_name" set={set} value={form.last_name} />
-              <Field label="Společnost" k="company" set={set} value={form.company} />
-              <Field label="IČ" k="ico" set={set} value={form.ico} />
-              <Field label="Adresa" k="address" set={set} value={form.address} className="sm:col-span-2" />
-              <Field label="Telefon *" k="phone" set={set} value={form.phone} />
-              <Field label="E-mail" k="email" set={set} value={form.email} type="email" />
-            </div>
-          </section>
+            <section className="rounded-xl border bg-card p-6">
+              <h2 className="text-lg font-semibold">Kontaktní údaje</h2>
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Field label="Jméno *" k="first_name" set={set} value={form.first_name} />
+                <Field label="Příjmení *" k="last_name" set={set} value={form.last_name} />
+                <Field label="Společnost" k="company" set={set} value={form.company} />
+                <Field label="IČ" k="ico" set={set} value={form.ico} />
+                <Field
+                  label="Adresa"
+                  k="address"
+                  set={set}
+                  value={form.address}
+                  className="sm:col-span-2"
+                />
+                <Field label="Telefon *" k="phone" set={set} value={form.phone} />
+                <Field label="E-mail" k="email" set={set} value={form.email} type="email" />
+              </div>
+            </section>
           )}
 
           {step === 1 && (
-          <section className="rounded-xl border bg-card p-6">
-            <h2 className="text-lg font-semibold">Pojistná událost</h2>
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <Label>Pojišťovna</Label>
-                <Select value={insurerChoice} onValueChange={setInsurerChoice}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Vyberte pojišťovnu" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {INSURERS.map((n) => (
-                      <SelectItem key={n} value={n}>{n}</SelectItem>
-                    ))}
-                    <SelectItem value="__other__">Jiná…</SelectItem>
-                  </SelectContent>
-                </Select>
-                {insurerChoice === "__other__" && (
-                  <Input
-                    className="mt-2"
-                    placeholder="Zadejte název pojišťovny"
-                    defaultValue={form.insurer_other ?? ""}
-                    onChange={(e) => set("insurer_other", e.target.value)}
-                  />
-                )}
-              </div>
-              <Field label="Číslo škody" k="claim_number" set={set} value={form.claim_number} />
-              <Field label="Datum a čas události" k="event_at" set={set} value={form.event_at} type="datetime-local" />
-              <Field label="Místo události" k="location" set={set} value={form.location} />
-              <SelectField label="Způsob likvidace" k="liquidation_type" set={set} value={form.liquidation_type}
-                options={[["havarijni","Havarijní pojištění"],["povinne_ruceni","Povinné ručení"]]} />
-              <SelectField label="Plátce DPH" k="vat_payer" set={set} value={form.vat_payer} options={yesNo} />
-              <SelectField label="Vozidlo na úvěr/leasing" k="loan_lease" set={set} value={form.loan_lease} options={yesNo} />
-              <SelectField label="Záznam o dopravní nehodě" k="accident_record" set={set} value={form.accident_record} options={yesNo} />
-              <SelectField label="Záznam o poškození pojišťovnou" k="insurer_record" set={set} value={form.insurer_record} options={yesNo} />
-              {form.accident_record === "ano" && (
-                <div className="sm:col-span-2 rounded-lg border border-dashed border-primary/40 bg-primary/5 p-4">
-                  <Label>Soubor / fotografie záznamu o dopravní nehodě</Label>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Nahrajte sken nebo vyfoťte mobilem (max. 8 MB / soubor).
-                  </p>
-                  <Input
-                    type="file"
-                    multiple
-                    accept="image/*,application/pdf"
-                    capture="environment"
-                    className="mt-2"
-                    onChange={(e) => onFile("accident", e.target.files, true)}
-                  />
-                  <FilePreview list={files.accident} onRemove={(i) => removeFile("accident", i)} />
+            <section className="rounded-xl border bg-card p-6">
+              <h2 className="text-lg font-semibold">Pojistná událost</h2>
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <Label>Pojišťovna</Label>
+                  <Select value={insurerChoice} onValueChange={setInsurerChoice}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Vyberte pojišťovnu" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {INSURERS.map((n) => (
+                        <SelectItem key={n} value={n}>
+                          {n}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="__other__">Jiná…</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {insurerChoice === "__other__" && (
+                    <Input
+                      className="mt-2"
+                      placeholder="Zadejte název pojišťovny"
+                      defaultValue={form.insurer_other ?? ""}
+                      onChange={(e) => set("insurer_other", e.target.value)}
+                    />
+                  )}
                 </div>
-              )}
-              <div className="sm:col-span-2">
-                <Label>Doplňující informace</Label>
-                <Textarea
-                  className="mt-1"
-                  rows={4}
-                  defaultValue={form.notes ?? ""}
-                  onChange={(e) => set("notes", e.target.value)}
+                <Field label="Číslo škody" k="claim_number" set={set} value={form.claim_number} />
+                <Field
+                  label="Datum a čas události"
+                  k="event_at"
+                  set={set}
+                  value={form.event_at}
+                  type="datetime-local"
                 />
+                <Field label="Místo události" k="location" set={set} value={form.location} />
+                <SelectField
+                  label="Způsob likvidace"
+                  k="liquidation_type"
+                  set={set}
+                  value={form.liquidation_type}
+                  options={[
+                    ["havarijni", "Havarijní pojištění"],
+                    ["povinne_ruceni", "Povinné ručení"],
+                  ]}
+                />
+                <SelectField
+                  label="Plátce DPH"
+                  k="vat_payer"
+                  set={set}
+                  value={form.vat_payer}
+                  options={yesNo}
+                />
+                <SelectField
+                  label="Vozidlo na úvěr/leasing"
+                  k="loan_lease"
+                  set={set}
+                  value={form.loan_lease}
+                  options={yesNo}
+                />
+                <SelectField
+                  label="Záznam o dopravní nehodě"
+                  k="accident_record"
+                  set={set}
+                  value={form.accident_record}
+                  options={yesNo}
+                />
+                <SelectField
+                  label="Záznam o poškození pojišťovnou"
+                  k="insurer_record"
+                  set={set}
+                  value={form.insurer_record}
+                  options={yesNo}
+                />
+                {form.accident_record === "ano" && (
+                  <div className="sm:col-span-2 rounded-lg border border-dashed border-primary/40 bg-primary/5 p-4">
+                    <Label>Soubor / fotografie záznamu o dopravní nehodě</Label>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Nahrajte sken nebo vyfoťte mobilem (max. 8 MB / soubor).
+                    </p>
+                    <Input
+                      type="file"
+                      multiple
+                      accept="image/*,application/pdf"
+                      capture="environment"
+                      className="mt-2"
+                      onChange={(e) => onFile("accident", e.target.files, true)}
+                    />
+                    <FilePreview
+                      list={files.accident}
+                      onRemove={(i) => removeFile("accident", i)}
+                    />
+                  </div>
+                )}
+                <div className="sm:col-span-2">
+                  <Label>Doplňující informace</Label>
+                  <Textarea
+                    className="mt-1"
+                    rows={4}
+                    defaultValue={form.notes ?? ""}
+                    onChange={(e) => set("notes", e.target.value)}
+                  />
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
           )}
 
           {step === 2 && (
-          <section className="rounded-xl border bg-card p-6">
-            <h2 className="text-lg font-semibold">Přílohy</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Maximální velikost souboru 8 MB. U dokladů dbejte na čitelnost.
-            </p>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              {fileFields.map((f) => (
-                <div key={f.key}>
-                  <Label>{f.label}</Label>
-                  <Input
-                    type="file"
-                    multiple={f.multiple}
-                    accept="image/*,application/pdf"
-                    className="mt-1"
-                    onChange={(e) => onFile(f.key, e.target.files, !!f.multiple)}
-                  />
-                  <FilePreview list={files[f.key]} onRemove={(i) => removeFile(f.key, i)} />
-                </div>
-              ))}
-            </div>
-          </section>
+            <section className="rounded-xl border bg-card p-6">
+              <h2 className="text-lg font-semibold">Přílohy</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Maximální velikost souboru 8 MB. U dokladů dbejte na čitelnost.
+              </p>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                {fileFields.map((f) => (
+                  <div key={f.key}>
+                    <Label>{f.label}</Label>
+                    <Input
+                      type="file"
+                      multiple={f.multiple}
+                      accept="image/*,application/pdf"
+                      className="mt-1"
+                      onChange={(e) => onFile(f.key, e.target.files, !!f.multiple)}
+                    />
+                    <FilePreview list={files[f.key]} onRemove={(i) => removeFile(f.key, i)} />
+                  </div>
+                ))}
+              </div>
+            </section>
           )}
 
           {step === 3 && (
-          <section className="rounded-xl border bg-card p-6">
-            <h2 className="text-lg font-semibold">Elektronický podpis *</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              <strong>Podepište se v poli níže</strong> — prstem na mobilu nebo myší na počítači.
-              Podpis bude vložen do plných mocí.
-            </p>
-            <div className="mt-4">
-              <SignaturePad onChange={setSignature} initialDataUrl={signature} />
-            </div>
-            <p className="mt-4 text-xs text-muted-foreground">
-              Po odeslání se automaticky vygenerují předvyplněné plné moci.
-            </p>
-          </section>
+            <section className="rounded-xl border bg-card p-6">
+              <h2 className="text-lg font-semibold">Elektronický podpis *</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                <strong>Podepište se v poli níže</strong> — prstem na mobilu nebo myší na počítači.
+                Podpis bude vložen do plných mocí.
+              </p>
+              <div className="mt-4">
+                <SignaturePad onChange={setSignature} initialDataUrl={signature} />
+              </div>
+              <p className="mt-4 text-xs text-muted-foreground">
+                Po odeslání se automaticky vygenerují předvyplněné plné moci.
+              </p>
+            </section>
           )}
 
           <div className="flex gap-3">
@@ -498,7 +563,10 @@ function Page() {
   );
 }
 
-const yesNo: [string, string][] = [["ano","Ano"],["ne","Ne"]];
+const yesNo: [string, string][] = [
+  ["ano", "Ano"],
+  ["ne", "Ne"],
+];
 
 function FilePreview({ list, onRemove }: { list: File[]; onRemove: (i: number) => void }) {
   if (!list.length) return null;
@@ -538,8 +606,20 @@ function FilePreview({ list, onRemove }: { list: File[]; onRemove: (i: number) =
   );
 }
 
-function Field({ label, k, set, value, type = "text", className }: {
-  label: string; k: string; set: (k: string, v: string) => void; value?: string; type?: string; className?: string;
+function Field({
+  label,
+  k,
+  set,
+  value,
+  type = "text",
+  className,
+}: {
+  label: string;
+  k: string;
+  set: (k: string, v: string) => void;
+  value?: string;
+  type?: string;
+  className?: string;
 }) {
   return (
     <div className={className}>
@@ -554,16 +634,32 @@ function Field({ label, k, set, value, type = "text", className }: {
   );
 }
 
-function SelectField({ label, k, set, value, options }: {
-  label: string; k: string; set: (k: string, v: string) => void; value?: string; options: [string, string][];
+function SelectField({
+  label,
+  k,
+  set,
+  value,
+  options,
+}: {
+  label: string;
+  k: string;
+  set: (k: string, v: string) => void;
+  value?: string;
+  options: [string, string][];
 }) {
   return (
     <div>
       <Label>{label}</Label>
       <Select value={value ?? ""} onValueChange={(v) => set(k, v)}>
-        <SelectTrigger className="mt-1"><SelectValue placeholder="Nevybráno" /></SelectTrigger>
+        <SelectTrigger className="mt-1">
+          <SelectValue placeholder="Nevybráno" />
+        </SelectTrigger>
         <SelectContent>
-          {options.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
+          {options.map(([v, l]) => (
+            <SelectItem key={v} value={v}>
+              {l}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
     </div>

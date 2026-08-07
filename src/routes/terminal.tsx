@@ -37,7 +37,10 @@ function TerminalPage() {
   const fetchShifts = useServerFn(publicListShifts);
   const submit = useServerFn(terminalCheckIn);
 
-  const { data: shifts } = useQuery({ queryKey: ["terminal", "shifts"], queryFn: () => fetchShifts() });
+  const { data: shifts } = useQuery({
+    queryKey: ["terminal", "shifts"],
+    queryFn: () => fetchShifts(),
+  });
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -112,7 +115,10 @@ function TerminalPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 p-4">
       <div className="mx-auto flex max-w-5xl items-center justify-between py-3">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="h-4 w-4" /> Hlavní stránka
         </Link>
         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -124,9 +130,15 @@ function TerminalPage() {
       <div className="mx-auto mt-4 grid max-w-5xl gap-6 md:grid-cols-2">
         <Card className="flex flex-col items-center justify-center gap-6 bg-white p-8 shadow-lg">
           <div className="text-center">
-            <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Aktuální čas</p>
+            <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Aktuální čas
+            </p>
             <p className="mt-2 font-mono text-6xl font-bold tabular-nums tracking-tight md:text-7xl">
-              {now.toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+              {now.toLocaleTimeString("cs-CZ", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+              })}
             </p>
           </div>
 
@@ -166,7 +178,9 @@ function TerminalPage() {
                 onClick={() => setShiftId(null)}
                 className={cn(
                   "rounded-full border px-3 py-1 text-xs font-medium transition",
-                  shiftId === null ? "border-primary bg-primary text-primary-foreground" : "border-slate-300 bg-white text-slate-700 hover:border-slate-400",
+                  shiftId === null
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-slate-300 bg-white text-slate-700 hover:border-slate-400",
                 )}
               >
                 Bez směny
@@ -203,14 +217,19 @@ function TerminalPage() {
               {geoEnabled ? "Geolokace zapnuta" : "Zapnout geolokaci (volitelné)"}
             </button>
             <p className="mt-1 text-[11px] text-muted-foreground">
-              Poloha se ukládá pouze k záznamu o příchodu pro ověření, že píchnutí proběhlo z pracoviště.
+              Poloha se ukládá pouze k záznamu o příchodu pro ověření, že píchnutí proběhlo z
+              pracoviště.
             </p>
           </div>
         </Card>
 
         <Card className="bg-white p-8 shadow-lg">
           <div className="mb-4 flex h-16 items-center justify-center rounded-xl border-2 border-slate-200 bg-slate-50 font-mono text-3xl tracking-[0.5em]">
-            {pin ? "•".repeat(pin.length) : <span className="text-base text-muted-foreground tracking-normal">PIN</span>}
+            {pin ? (
+              "•".repeat(pin.length)
+            ) : (
+              <span className="text-base text-muted-foreground tracking-normal">PIN</span>
+            )}
           </div>
           <div className="grid grid-cols-3 gap-3">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (

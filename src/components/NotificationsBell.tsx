@@ -33,19 +33,35 @@ const LS_DISMISSED_PREFIX = "notif-dismissed-v1:";
 type LastSeen = Partial<Record<"purchases" | "defects" | "absences" | "tasks", string>>;
 function readLastSeen(userId: string | null): LastSeen {
   if (typeof window === "undefined" || !userId) return {};
-  try { return JSON.parse(localStorage.getItem(LS_PREFIX + userId) || "{}"); } catch { return {}; }
+  try {
+    return JSON.parse(localStorage.getItem(LS_PREFIX + userId) || "{}");
+  } catch {
+    return {};
+  }
 }
 function writeLastSeen(userId: string | null, v: LastSeen) {
   if (typeof window === "undefined" || !userId) return;
-  try { localStorage.setItem(LS_PREFIX + userId, JSON.stringify(v)); } catch { /* ignore */ }
+  try {
+    localStorage.setItem(LS_PREFIX + userId, JSON.stringify(v));
+  } catch {
+    /* ignore */
+  }
 }
 function readDismissed(userId: string | null): Record<string, true> {
   if (typeof window === "undefined" || !userId) return {};
-  try { return JSON.parse(localStorage.getItem(LS_DISMISSED_PREFIX + userId) || "{}"); } catch { return {}; }
+  try {
+    return JSON.parse(localStorage.getItem(LS_DISMISSED_PREFIX + userId) || "{}");
+  } catch {
+    return {};
+  }
 }
 function writeDismissed(userId: string | null, v: Record<string, true>) {
   if (typeof window === "undefined" || !userId) return;
-  try { localStorage.setItem(LS_DISMISSED_PREFIX + userId, JSON.stringify(v)); } catch { /* ignore */ }
+  try {
+    localStorage.setItem(LS_DISMISSED_PREFIX + userId, JSON.stringify(v));
+  } catch {
+    /* ignore */
+  }
 }
 
 export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
@@ -165,7 +181,10 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
         if (!ts || Date.parse(String(ts)) <= sinceTasks) continue;
         const isNew =
           !t.updated_at ||
-          Math.abs(Date.parse(String(t.last_activity_at ?? t.updated_at)) - Date.parse(String(t.created_at))) < 2000;
+          Math.abs(
+            Date.parse(String(t.last_activity_at ?? t.updated_at)) -
+              Date.parse(String(t.created_at)),
+          ) < 2000;
         const isAssignee = t.assignee_id === userId;
         let title: string;
         if (isNew && isAssignee) {
@@ -204,9 +223,13 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
         const ts = d.resolved_at ?? d.updated_at;
         if (!ts || Date.parse(ts) <= sinceDefects) continue;
         const label =
-          d.status === "in_progress" ? "v řešení" :
-          d.status === "resolved" ? "vyřešena" :
-          d.status === "closed" ? "uzavřena" : d.status;
+          d.status === "in_progress"
+            ? "v řešení"
+            : d.status === "resolved"
+              ? "vyřešena"
+              : d.status === "closed"
+                ? "uzavřena"
+                : d.status;
         out.push({
           key: `defect-${d.id}-${d.status}`,
           title: `Vaše závada ${label}: ${d.title}`,
@@ -280,7 +303,10 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
       const dpp = emps.filter((e: any) => e.employment_type === "dpp" && e.active);
       const hoursById = new Map<string, number>();
       for (const r of recs as any[]) {
-        hoursById.set(r.employee_id, (hoursById.get(r.employee_id) ?? 0) + Number(r.hours_worked ?? 0));
+        hoursById.set(
+          r.employee_id,
+          (hoursById.get(r.employee_id) ?? 0) + Number(r.hours_worked ?? 0),
+        );
       }
       for (const e of dpp) {
         const h = hoursById.get(e.id) ?? 0;
@@ -305,7 +331,20 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
     }
 
     return out;
-  }, [claims, defects, absences, emps, recs, pending, isAdmin, myPurchases, myAbsences, tasksData, userId, lastSeen]);
+  }, [
+    claims,
+    defects,
+    absences,
+    emps,
+    recs,
+    pending,
+    isAdmin,
+    myPurchases,
+    myAbsences,
+    tasksData,
+    userId,
+    lastSeen,
+  ]);
 
   const visibleItems = useMemo(() => items.filter((it) => !dismissed[it.key]), [items, dismissed]);
   const count = visibleItems.length;
@@ -327,10 +366,7 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
   }
 
   return (
-    <Popover
-      open={open}
-      onOpenChange={setOpen}
-    >
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" aria-label="Notifikace" className="relative">
           <Bell className="h-5 w-5" />
@@ -345,21 +381,20 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
         <div className="flex items-center justify-between border-b px-3 py-2">
           <span className="text-sm font-semibold">Notifikace</span>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">{count} {count === 1 ? "položka" : "položek"}</span>
+            <span className="text-xs text-muted-foreground">
+              {count} {count === 1 ? "položka" : "položek"}
+            </span>
             {count > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-xs"
-                onClick={dismissAll}
-              >
+              <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={dismissAll}>
                 Skrýt vše
               </Button>
             )}
           </div>
         </div>
         {count === 0 ? (
-          <div className="px-3 py-6 text-center text-sm text-muted-foreground">Vše v pořádku 🎉</div>
+          <div className="px-3 py-6 text-center text-sm text-muted-foreground">
+            Vše v pořádku 🎉
+          </div>
         ) : (
           <ul className="max-h-96 divide-y overflow-y-auto">
             {visibleItems.map((it) => (

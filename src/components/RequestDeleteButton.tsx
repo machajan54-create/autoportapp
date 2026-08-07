@@ -102,10 +102,7 @@ export function RequestDeleteButton({
         {children ?? <Trash2 className="h-4 w-4" />}
       </Button>
       <Dialog open={open} onOpenChange={(o) => !busy && setOpen(o)}>
-        <DialogContent
-          onClick={(e) => e.stopPropagation()}
-          className="sm:max-w-md"
-        >
+        <DialogContent onClick={(e) => e.stopPropagation()} className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Požádat o smazání</DialogTitle>
             <DialogDescription>
@@ -129,12 +126,7 @@ export function RequestDeleteButton({
               />
             </div>
             <DialogFooter className="gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setOpen(false)}
-                disabled={busy}
-              >
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={busy}>
                 Zrušit
               </Button>
               <Button type="submit" disabled={busy}>

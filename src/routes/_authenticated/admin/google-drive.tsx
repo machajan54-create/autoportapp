@@ -18,7 +18,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, FolderPlus, RefreshCw, Cloud, HardDrive, Loader2, Upload, CalendarClock, Play, ExternalLink, AlertTriangle, Github } from "lucide-react";
+import {
+  CheckCircle2,
+  XCircle,
+  FolderPlus,
+  RefreshCw,
+  Cloud,
+  HardDrive,
+  Loader2,
+  Upload,
+  CalendarClock,
+  Play,
+  ExternalLink,
+  AlertTriangle,
+  Github,
+} from "lucide-react";
 import {
   getGoogleDriveStatus,
   listGoogleDriveFolders,
@@ -217,13 +231,9 @@ function GoogleDrivePage() {
       restoreFn({ data: input }),
     onSuccess: (data: any) => {
       if (data.ok) {
-        toast.success(
-          `Obnova hotová – ${data.tables} tabulek, ${data.rowsRestored} řádků.`,
-        );
+        toast.success(`Obnova hotová – ${data.tables} tabulek, ${data.rowsRestored} řádků.`);
       } else {
-        toast.error(
-          `Obnova dokončena s chybami (${data.errors?.length ?? 0}). Viz historie běhů.`,
-        );
+        toast.error(`Obnova dokončena s chybami (${data.errors?.length ?? 0}). Viz historie běhů.`);
       }
       setSelectedFile(null);
       setConfirmText("");
@@ -292,10 +302,14 @@ function GoogleDrivePage() {
                 <div className="rounded-lg border p-3">
                   <div className="text-xs uppercase text-muted-foreground">Účet Google</div>
                   <div className="mt-1 font-medium">{s.account.displayName ?? "—"}</div>
-                  <div className="text-sm text-muted-foreground">{s.account.emailAddress ?? "—"}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {s.account.emailAddress ?? "—"}
+                  </div>
                 </div>
                 <div className="rounded-lg border p-3">
-                  <div className="text-xs uppercase text-muted-foreground">Úložiště Google Disku</div>
+                  <div className="text-xs uppercase text-muted-foreground">
+                    Úložiště Google Disku
+                  </div>
                   <div className="mt-1 font-medium">
                     {formatBytes(s.account.storageQuota?.usage)} využito
                   </div>
@@ -310,8 +324,12 @@ function GoogleDrivePage() {
                 <p className="mb-2 font-medium">Jak propojit účet Google:</p>
                 <ol className="list-decimal space-y-1 pl-5 text-muted-foreground">
                   <li>Otevřete v Lovable panel „Connectors" nahoře v editoru.</li>
-                  <li>Vyberte <strong>Google Drive</strong> a přihlaste se svým firemním účtem Google.</li>
-                  <li>Vraťte se na tuto stránku a klikněte na <em>Obnovit</em>.</li>
+                  <li>
+                    Vyberte <strong>Google Drive</strong> a přihlaste se svým firemním účtem Google.
+                  </li>
+                  <li>
+                    Vraťte se na tuto stránku a klikněte na <em>Obnovit</em>.
+                  </li>
                 </ol>
               </div>
             )}
@@ -462,9 +480,7 @@ function GoogleDrivePage() {
                   <Label className="text-xs">Frekvence</Label>
                   <Select
                     value={settings?.schedule_frequency ?? "weekly"}
-                    onValueChange={(v) =>
-                      saveM.mutate({ schedule_frequency: v as any })
-                    }
+                    onValueChange={(v) => saveM.mutate({ schedule_frequency: v as any })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -513,9 +529,7 @@ function GoogleDrivePage() {
                     <Label className="text-xs">Den v týdnu</Label>
                     <Select
                       value={String(settings?.schedule_day_of_week ?? 1)}
-                      onValueChange={(v) =>
-                        saveM.mutate({ schedule_day_of_week: Number(v) })
-                      }
+                      onValueChange={(v) => saveM.mutate({ schedule_day_of_week: Number(v) })}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -550,9 +564,7 @@ function GoogleDrivePage() {
                 )}
               </div>
 
-              <p className="text-xs text-muted-foreground">
-                {describeSchedule(settings)}
-              </p>
+              <p className="text-xs text-muted-foreground">{describeSchedule(settings)}</p>
             </div>
 
             <Separator />
@@ -572,7 +584,8 @@ function GoogleDrivePage() {
 
             {settings?.last_connected_at && (
               <div className="text-xs text-muted-foreground">
-                Naposledy aktualizováno: {new Date(settings.last_connected_at).toLocaleString("cs-CZ")}
+                Naposledy aktualizováno:{" "}
+                {new Date(settings.last_connected_at).toLocaleString("cs-CZ")}
               </div>
             )}
           </CardContent>
@@ -586,7 +599,8 @@ function GoogleDrivePage() {
               Spustit zálohu teď
             </CardTitle>
             <CardDescription>
-              Ihned vytvoří kompletní JSON zálohu databáze (gzip) a nahraje ji do vybrané složky na Google Disku.
+              Ihned vytvoří kompletní JSON zálohu databáze (gzip) a nahraje ji do vybrané složky na
+              Google Disku.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -619,7 +633,8 @@ function GoogleDrivePage() {
                   <div className="h-full w-1/2 animate-pulse rounded bg-primary" />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Neopouštějte tuto stránku, dokud běh neskončí. Podle množství dat to může trvat i několik minut.
+                  Neopouštějte tuto stránku, dokud běh neskončí. Podle množství dat to může trvat i
+                  několik minut.
                 </p>
               </div>
             )}
@@ -629,7 +644,9 @@ function GoogleDrivePage() {
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>
                   <div className="font-medium">Záloha se nezdařila</div>
-                  <div className="text-xs opacity-90">{(runM.error as any)?.message ?? "Neznámá chyba"}</div>
+                  <div className="text-xs opacity-90">
+                    {(runM.error as any)?.message ?? "Neznámá chyba"}
+                  </div>
                 </div>
               </div>
             )}
@@ -670,9 +687,13 @@ function GoogleDrivePage() {
                         {new Date(r.started_at).toLocaleString("cs-CZ")}
                       </span>
                       {r.trigger === "scheduled" ? (
-                        <Badge variant="outline" className="text-xs">plán</Badge>
+                        <Badge variant="outline" className="text-xs">
+                          plán
+                        </Badge>
                       ) : (
-                        <Badge variant="outline" className="text-xs">ručně</Badge>
+                        <Badge variant="outline" className="text-xs">
+                          ručně
+                        </Badge>
                       )}
                       {typeof r.duration_ms === "number" && (
                         <span className="text-xs text-muted-foreground">
@@ -722,8 +743,8 @@ function GoogleDrivePage() {
               Obnova ze zálohy
             </CardTitle>
             <CardDescription>
-              Vyberte zálohu z Google Disku a přepište jí aktuální data. Tato akce je
-              nevratná – doporučujeme nejprve spustit novou zálohu.
+              Vyberte zálohu z Google Disku a přepište jí aktuální data. Tato akce je nevratná –
+              doporučujeme nejprve spustit novou zálohu.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -752,10 +773,7 @@ function GoogleDrivePage() {
             ) : files.data?.files?.length ? (
               <ul className="divide-y rounded-md border">
                 {files.data.files.map((f) => (
-                  <li
-                    key={f.id}
-                    className="flex flex-wrap items-center gap-3 p-3 text-sm"
-                  >
+                  <li key={f.id} className="flex flex-wrap items-center gap-3 p-3 text-sm">
                     <HardDrive className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">{f.name}</span>
                     {f.modifiedTime && (
@@ -764,9 +782,7 @@ function GoogleDrivePage() {
                       </span>
                     )}
                     {f.size && (
-                      <span className="text-xs text-muted-foreground">
-                        {formatBytes(f.size)}
-                      </span>
+                      <span className="text-xs text-muted-foreground">{formatBytes(f.size)}</span>
                     )}
                     <div className="ml-auto flex items-center gap-2">
                       {f.webViewLink && (
@@ -1079,17 +1095,16 @@ function GoogleDrivePage() {
                       </span>
                     </>
                   )}
-                  . Existující záznamy v zálohovaných tabulkách budou smazány
-                  a nahrazeny obsahem zálohy. Tato akce je nevratná.
+                  . Existující záznamy v zálohovaných tabulkách budou smazány a nahrazeny obsahem
+                  zálohy. Tato akce je nevratná.
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Přeskočí se: PIN kódy zaměstnanců, audit log, e-mailová fronta,
-                  historie záloh a nastavení záloh.
+                  Přeskočí se: PIN kódy zaměstnanců, audit log, e-mailová fronta, historie záloh a
+                  nastavení záloh.
                 </p>
                 <div className="space-y-1">
                   <Label htmlFor="confirm-restore" className="text-xs">
-                    Pro potvrzení napište slovo{" "}
-                    <span className="font-mono font-bold">OBNOVIT</span>
+                    Pro potvrzení napište slovo <span className="font-mono font-bold">OBNOVIT</span>
                   </Label>
                   <Input
                     id="confirm-restore"

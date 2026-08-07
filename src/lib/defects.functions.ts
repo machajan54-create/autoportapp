@@ -83,8 +83,8 @@ export const updateDefect = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     type UpdatePatch = {
-      status?: typeof DEFECT_STATUS[number];
-      priority?: typeof DEFECT_PRIORITY[number];
+      status?: (typeof DEFECT_STATUS)[number];
+      priority?: (typeof DEFECT_PRIORITY)[number];
       resolution_note?: string | null;
       resolved_by?: string | null;
       resolved_at?: string | null;
@@ -114,7 +114,11 @@ export const updateDefect = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (data.status) {
       const { logEvent } = await import("@/lib/audit.server");
-      const { data: defect } = await supabase.from("defects").select("title").eq("id", data.id).maybeSingle();
+      const { data: defect } = await supabase
+        .from("defects")
+        .select("title")
+        .eq("id", data.id)
+        .maybeSingle();
       await logEvent({
         actorId: userId,
         actorEmail: context.claims?.email ?? null,

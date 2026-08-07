@@ -103,7 +103,10 @@ const employeeInput = z.object({
   active: z.boolean().default(true),
   can_approve_absences: z.boolean().default(false),
   user_id: z.string().uuid().nullable().optional(),
-  employment_types: z.array(z.enum(["HPP", "DPP"])).min(1).default(["HPP"]),
+  employment_types: z
+    .array(z.enum(["HPP", "DPP"]))
+    .min(1)
+    .default(["HPP"]),
 });
 
 export const listEmployees = createServerFn({ method: "GET" })
@@ -112,7 +115,9 @@ export const listEmployees = createServerFn({ method: "GET" })
     const access = await getDochazkaAccess(context.supabase, context.userId);
     let q = context.supabase
       .from("attendance_employees")
-      .select("id,name,role,avatar_color,active,can_approve_absences,user_id,employment_types,created_at,updated_at")
+      .select(
+        "id,name,role,avatar_color,active,can_approve_absences,user_id,employment_types,created_at,updated_at",
+      )
       .order("name");
     if (!access.canApproveAll) {
       if (access.canApproveTeam) {
@@ -187,9 +192,7 @@ export const upsertEmployee = createServerFn({ method: "POST" })
         recipientEmail = prof?.email ?? null;
       }
       if (recipientEmail) {
-        const origin =
-          process.env.SITE_URL?.replace(/\/$/, "") ||
-          "https://www.autoport-app.cz";
+        const origin = process.env.SITE_URL?.replace(/\/$/, "") || "https://www.autoport-app.cz";
         await enqueueTransactionalEmail({
           templateName: "dochazka-employee-welcome",
           recipientEmail,
@@ -246,7 +249,10 @@ export const upsertShift = createServerFn({ method: "POST" })
     const access = await getDochazkaAccess(context.supabase, context.userId);
     if (!access.isAdmin) throw new Error("Úpravy směn může provádět pouze super admin.");
     if (data.id) {
-      const { error } = await context.supabase.from("attendance_shifts").update(data).eq("id", data.id);
+      const { error } = await context.supabase
+        .from("attendance_shifts")
+        .update(data)
+        .eq("id", data.id);
       if (error) throw new Error(error.message);
       return { id: data.id };
     }
@@ -285,12 +291,15 @@ const recordInput = z.object({
 function roundHours(hours: number, stepMinutes: number) {
   if (!stepMinutes || stepMinutes <= 0) return Math.round(hours * 100) / 100;
   const step = stepMinutes / 60;
-  return Math.round((Math.round(hours / step) * step) * 100) / 100;
+  return Math.round(Math.round(hours / step) * step * 100) / 100;
 }
 
 async function getRoundingMinutes(supabase: any): Promise<number> {
   const { data } = await supabase
-    .from("attendance_settings").select("rounding_minutes").eq("id", true).maybeSingle();
+    .from("attendance_settings")
+    .select("rounding_minutes")
+    .eq("id", true)
+    .maybeSingle();
   return Number(data?.rounding_minutes ?? 0) | 0;
 }
 
@@ -390,13 +399,15 @@ export const deleteRecord = createServerFn({ method: "POST" })
 // Terminal check-in: PUBLIC endpoint authenticated by PIN; uses admin client
 export const terminalCheckIn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
-    z.object({
-      pin: z.string().regex(/^\d{4,8}$/, "PIN musí být 4–8 číslic"),
-      shift_id: z.string().uuid().nullable().optional(),
-      geo_lat: z.number().min(-90).max(90).nullable().optional(),
-      geo_lng: z.number().min(-180).max(180).nullable().optional(),
-      geo_accuracy: z.number().min(0).max(100000).nullable().optional(),
-    }).parse(d),
+    z
+      .object({
+        pin: z.string().regex(/^\d{4,8}$/, "PIN musí být 4–8 číslic"),
+        shift_id: z.string().uuid().nullable().optional(),
+        geo_lat: z.number().min(-90).max(90).nullable().optional(),
+        geo_lng: z.number().min(-180).max(180).nullable().optional(),
+        geo_accuracy: z.number().min(0).max(100000).nullable().optional(),
+      })
+      .parse(d),
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -421,9 +432,13 @@ export const terminalCheckIn = createServerFn({ method: "POST" })
     const v = Array.isArray(verifyRows) ? verifyRows[0] : verifyRows;
     if (!v || v.status !== "ok") {
       if (v?.status === "ip_locked")
-        throw new Error(`Příliš mnoho pokusů z této IP. Zkuste to za ${Math.ceil((v.retry_after_seconds ?? 900) / 60)} min.`);
+        throw new Error(
+          `Příliš mnoho pokusů z této IP. Zkuste to za ${Math.ceil((v.retry_after_seconds ?? 900) / 60)} min.`,
+        );
       if (v?.status === "employee_locked")
-        throw new Error(`Účet je dočasně uzamčen. Zkuste to za ${Math.ceil((v.retry_after_seconds ?? 900) / 60)} min.`);
+        throw new Error(
+          `Účet je dočasně uzamčen. Zkuste to za ${Math.ceil((v.retry_after_seconds ?? 900) / 60)} min.`,
+        );
       throw new Error("Neplatný PIN");
     }
     const emp = { id: v.employee_id as string, name: v.name as string, active: true };
@@ -447,7 +462,10 @@ export const terminalCheckIn = createServerFn({ method: "POST" })
       const breakMs = (open.break_duration ?? 0) * 60_000;
       const hours = Math.max(0, (now - checkIn - breakMs) / 3_600_000);
       const { data: settings } = await supabaseAdmin
-        .from("attendance_settings").select("rounding_minutes").eq("id", true).maybeSingle();
+        .from("attendance_settings")
+        .select("rounding_minutes")
+        .eq("id", true)
+        .maybeSingle();
       const rounded = roundHours(hours, Number(settings?.rounding_minutes ?? 0));
       const { error: updErr } = await supabaseAdmin
         .from("attendance_records")
@@ -609,10 +627,12 @@ export const upsertAbsence = createServerFn({ method: "POST" })
 export const resolveAbsence = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({
-      id: z.string().uuid(),
-      status: z.enum(["approved", "rejected"]),
-    }).parse(d),
+    z
+      .object({
+        id: z.string().uuid(),
+        status: z.enum(["approved", "rejected"]),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const access = await getDochazkaAccess(context.supabase, context.userId);
@@ -629,7 +649,9 @@ export const resolveAbsence = createServerFn({ method: "POST" })
         throw new Error("Nemáte oprávnění schvalovat");
       }
       if (!access.departmentEmployeeIds.includes(absRow.employee_id)) {
-        throw new Error("Tuto žádost můžete schválit pouze vedoucí jejího oddělení nebo super admin.");
+        throw new Error(
+          "Tuto žádost můžete schválit pouze vedoucí jejího oddělení nebo super admin.",
+        );
       }
     }
     const { data: resolverEmp } = await context.supabase
@@ -805,16 +827,19 @@ export const updateDochazkaSettings = createServerFn({ method: "POST" })
 export const getMonthCalendar = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({
-      year: z.number().int().min(2020).max(2100),
-      month: z.number().int().min(1).max(12),
-    }).parse(d),
+    z
+      .object({
+        year: z.number().int().min(2020).max(2100),
+        month: z.number().int().min(1).max(12),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const start = `${data.year}-${String(data.month).padStart(2, "0")}-01`;
-    const next = data.month === 12
-      ? `${data.year + 1}-01-01`
-      : `${data.year}-${String(data.month + 1).padStart(2, "0")}-01`;
+    const next =
+      data.month === 12
+        ? `${data.year + 1}-01-01`
+        : `${data.year}-${String(data.month + 1).padStart(2, "0")}-01`;
 
     const access = await getDochazkaAccess(context.supabase, context.userId);
     let empQ = context.supabase
@@ -868,9 +893,7 @@ export const getMonthCalendar = createServerFn({ method: "GET" })
 export const listResolvers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
-      .from("profiles")
-      .select("id,full_name,email");
+    const { data, error } = await context.supabase.from("profiles").select("id,full_name,email");
     if (error) throw new Error(error.message);
     return data ?? [];
   });
@@ -888,7 +911,9 @@ export const DPP_YEAR_LIMIT = 300;
 export const getDppYearOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ year: z.number().int().min(2020).max(2100) }).parse(d ?? { year: new Date().getFullYear() }),
+    z
+      .object({ year: z.number().int().min(2020).max(2100) })
+      .parse(d ?? { year: new Date().getFullYear() }),
   )
   .handler(async ({ data, context }) => {
     const start = `${data.year}-01-01`;
@@ -1076,9 +1101,7 @@ export const autoFillMonth = createServerFn({ method: "POST" })
       const hours = perDay[idx];
       const day = Number(date.slice(8, 10));
       const checkIn = new Date(Date.UTC(data.year, data.month - 1, day, startHour, startMinute, 0));
-      const checkOut = new Date(
-        checkIn.getTime() + (hours * 60 + data.break_minutes) * 60_000,
-      );
+      const checkOut = new Date(checkIn.getTime() + (hours * 60 + data.break_minutes) * 60_000);
       return {
         employee_id: data.employee_id,
         shift_id: data.shift_id ?? null,
@@ -1135,19 +1158,16 @@ export const autoFillMonth = createServerFn({ method: "POST" })
         xlsxPath = `${data.employee_id}/${monthStr}_DPP_${ts}.xlsx`;
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-          await supabaseAdmin.storage
-            .from("attendance-reports")
-            .upload(
-              xlsxPath,
-              new Blob([xlsx as BlobPart], {
-                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-              }),
-              {
-                contentType:
-                  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                upsert: false,
-              },
-            );
+          await supabaseAdmin.storage.from("attendance-reports").upload(
+            xlsxPath,
+            new Blob([xlsx as BlobPart], {
+              type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            }),
+            {
+              contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              upsert: false,
+            },
+          );
         } catch (e) {
           console.error("[dochazka] failed to upload DPP XLSX", e);
         }
@@ -1173,17 +1193,33 @@ export const autoFillMonth = createServerFn({ method: "POST" })
 function buildAttendanceCsv(
   employeeName: string,
   monthStr: string,
-  rows: Array<{ date: string; check_in: string; check_out: string; break_duration: number; hours_worked: number; note?: string }>,
+  rows: Array<{
+    date: string;
+    check_in: string;
+    check_out: string;
+    break_duration: number;
+    hours_worked: number;
+    note?: string;
+  }>,
 ): string {
   const fmtTime = (iso: string) => {
     const d = new Date(iso);
     return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
   };
   const head = ["Zaměstnanec", employeeName, "Měsíc", monthStr].join(";");
-  const cols = ["Datum", "Příchod", "Odchod", "Pauza (min)", "Odpracováno (h)", "Poznámka"].join(";");
+  const cols = ["Datum", "Příchod", "Odchod", "Pauza (min)", "Odpracováno (h)", "Poznámka"].join(
+    ";",
+  );
   const body = rows
     .map((r) =>
-      [r.date, fmtTime(r.check_in), fmtTime(r.check_out), r.break_duration, r.hours_worked, (r.note ?? "").replace(/;/g, ",")].join(";"),
+      [
+        r.date,
+        fmtTime(r.check_in),
+        fmtTime(r.check_out),
+        r.break_duration,
+        r.hours_worked,
+        (r.note ?? "").replace(/;/g, ","),
+      ].join(";"),
     )
     .join("\n");
   const total = Math.round(rows.reduce((s, r) => s + r.hours_worked, 0) * 100) / 100;
@@ -1214,7 +1250,12 @@ export const submitRecord = createServerFn({ method: "POST" })
     }
     const { error } = await context.supabase
       .from("attendance_records")
-      .update({ approval_status: "submitted", approved_by: null, approved_at: null, approval_note: null })
+      .update({
+        approval_status: "submitted",
+        approved_by: null,
+        approved_at: null,
+        approval_note: null,
+      })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -1223,11 +1264,13 @@ export const submitRecord = createServerFn({ method: "POST" })
 export const decideRecord = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({
-      id: z.string().uuid(),
-      status: z.enum(["approved", "rejected"]),
-      note: z.string().max(500).nullable().optional(),
-    }).parse(d),
+    z
+      .object({
+        id: z.string().uuid(),
+        status: z.enum(["approved", "rejected"]),
+        note: z.string().max(500).nullable().optional(),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const access = await getDochazkaAccess(context.supabase, context.userId);
@@ -1248,10 +1291,12 @@ export const decideRecord = createServerFn({ method: "POST" })
 export const bulkDecideRecords = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({
-      ids: z.array(z.string().uuid()).min(1).max(1000),
-      status: z.enum(["approved", "rejected"]),
-    }).parse(d),
+    z
+      .object({
+        ids: z.array(z.string().uuid()).min(1).max(1000),
+        status: z.enum(["approved", "rejected"]),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const access = await getDochazkaAccess(context.supabase, context.userId);
@@ -1283,7 +1328,10 @@ export const bulkDecideRecords = createServerFn({ method: "POST" })
         for (const [key, list] of groups) {
           const [employeeId, monthStr] = key.split("::");
           const { data: emp } = await context.supabase
-            .from("attendance_employees").select("name").eq("id", employeeId).maybeSingle();
+            .from("attendance_employees")
+            .select("name")
+            .eq("id", employeeId)
+            .maybeSingle();
           const sorted = (list as any[]).slice().sort((a, b) => a.date.localeCompare(b.date));
           const csv = buildAttendanceCsv(emp?.name ?? "Zaměstnanec", monthStr, sorted as any);
           const ts = new Date().toISOString().replace(/[:.]/g, "-");

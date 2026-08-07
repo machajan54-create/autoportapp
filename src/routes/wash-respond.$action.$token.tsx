@@ -63,9 +63,7 @@ function WashRespondPage() {
           washer: r.washer,
         });
       })
-      .catch((e: any) =>
-        setState({ kind: "error", message: e?.message ?? "Něco se pokazilo." }),
-      );
+      .catch((e: any) => setState({ kind: "error", message: e?.message ?? "Něco se pokazilo." }));
   }, [action, token]);
 
   return (
@@ -73,11 +71,7 @@ function WashRespondPage() {
       {/* Header */}
       <header className="border-b bg-card px-4 py-4">
         <div className="mx-auto flex max-w-md items-center justify-center">
-          <img
-            src={autoportLogo.url}
-            alt="Autoport APP"
-            className="h-8 w-auto object-contain"
-          />
+          <img src={autoportLogo.url} alt="Autoport APP" className="h-8 w-auto object-contain" />
         </div>
       </header>
 
@@ -96,9 +90,7 @@ function WashRespondPage() {
               <AlertCircle className="h-8 w-8 text-destructive" />
             </div>
             <div className="space-y-2">
-              <h1 className="text-2xl font-semibold tracking-tight">
-                Něco se nepovedlo
-              </h1>
+              <h1 className="text-2xl font-semibold tracking-tight">Něco se nepovedlo</h1>
               <p className="text-sm text-muted-foreground">{state.message}</p>
             </div>
             <Link
@@ -180,9 +172,8 @@ function WashRespondPage() {
                       icon={<CalendarDays className="h-4 w-4" />}
                       label="Termín"
                       value={
-                        [fmtDate(state.order.den), state.order.hodina]
-                          .filter(Boolean)
-                          .join(" ") || undefined
+                        [fmtDate(state.order.den), state.order.hodina].filter(Boolean).join(" ") ||
+                        undefined
                       }
                     />
                   )}

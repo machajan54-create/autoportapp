@@ -15,7 +15,7 @@ export const TASK_RECURRENCE_LABEL: Record<string, string> = {
 /** Returns next due date (YYYY-MM-DD) given a base date and recurrence rule. */
 export function computeNextDueDate(
   baseDate: string | null,
-  recurrence: typeof TASK_RECURRENCE[number],
+  recurrence: (typeof TASK_RECURRENCE)[number],
 ): string {
   const base = baseDate ? new Date(baseDate + "T00:00:00Z") : new Date();
   const d = new Date(base);
@@ -47,10 +47,18 @@ const createInput = z.object({
   title: z.string().trim().min(1).max(200),
   description: z.string().trim().max(4000).optional().nullable(),
   priority: z.enum(TASK_PRIORITY).default("medium"),
-  due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  due_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
+    .nullable(),
   assignee_id: z.string().uuid().optional().nullable(),
   recurrence: z.enum(TASK_RECURRENCE).optional().nullable(),
-  recurrence_until: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  recurrence_until: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
+    .nullable(),
 });
 
 const updateInput = z.object({
@@ -59,7 +67,11 @@ const updateInput = z.object({
   description: z.string().trim().max(4000).optional().nullable(),
   status: z.enum(TASK_STATUS).optional(),
   priority: z.enum(TASK_PRIORITY).optional(),
-  due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  due_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
+    .nullable(),
   assignee_id: z.string().uuid().optional().nullable(),
 });
 
@@ -78,19 +90,15 @@ async function notifyAssignee(opts: {
   assignerName: string | null;
   title: string;
   description?: string | null;
-  priority?: typeof TASK_PRIORITY[number];
+  priority?: (typeof TASK_PRIORITY)[number];
   dueDate?: string | null;
   taskId: string;
 }) {
   try {
-    const { getUserEmail, enqueueTransactionalEmail } = await import(
-      "@/lib/email/notify.server"
-    );
+    const { getUserEmail, enqueueTransactionalEmail } = await import("@/lib/email/notify.server");
     const { email, name } = await getUserEmail(opts.assigneeId);
     if (!email) return;
-    const dueFmt = opts.dueDate
-      ? new Date(opts.dueDate).toLocaleDateString("cs-CZ")
-      : null;
+    const dueFmt = opts.dueDate ? new Date(opts.dueDate).toLocaleDateString("cs-CZ") : null;
     await enqueueTransactionalEmail({
       templateName: "task-assigned",
       recipientEmail: email,
@@ -100,9 +108,7 @@ async function notifyAssignee(opts: {
         assignerName: opts.assignerName || "Kolega",
         title: opts.title,
         description: opts.description || "",
-        priorityLabel: opts.priority
-          ? TASK_PRIORITY_LABEL[opts.priority]
-          : undefined,
+        priorityLabel: opts.priority ? TASK_PRIORITY_LABEL[opts.priority] : undefined,
         dueDate: dueFmt,
         actionUrl: "https://www.autoport-app.cz/ukoly",
         context: "task",
@@ -118,20 +124,16 @@ async function notifyCreatorStatus(opts: {
   assigneeName: string | null;
   title: string;
   description?: string | null;
-  priority?: typeof TASK_PRIORITY[number];
+  priority?: (typeof TASK_PRIORITY)[number];
   dueDate?: string | null;
   event: "done" | "in_progress" | "todo";
   taskId: string;
 }) {
   try {
-    const { getUserEmail, enqueueTransactionalEmail } = await import(
-      "@/lib/email/notify.server"
-    );
+    const { getUserEmail, enqueueTransactionalEmail } = await import("@/lib/email/notify.server");
     const { email, name } = await getUserEmail(opts.creatorId);
     if (!email) return;
-    const dueFmt = opts.dueDate
-      ? new Date(opts.dueDate).toLocaleDateString("cs-CZ")
-      : null;
+    const dueFmt = opts.dueDate ? new Date(opts.dueDate).toLocaleDateString("cs-CZ") : null;
     await enqueueTransactionalEmail({
       templateName: "task-status-changed",
       recipientEmail: email,
@@ -141,9 +143,7 @@ async function notifyCreatorStatus(opts: {
         assigneeName: opts.assigneeName || "",
         title: opts.title,
         description: opts.description || "",
-        priorityLabel: opts.priority
-          ? TASK_PRIORITY_LABEL[opts.priority]
-          : undefined,
+        priorityLabel: opts.priority ? TASK_PRIORITY_LABEL[opts.priority] : undefined,
         dueDate: dueFmt,
         event: opts.event,
         actionUrl: "https://www.autoport-app.cz/ukoly",
@@ -159,20 +159,16 @@ async function notifyTaskUpdated(opts: {
   actorName: string | null;
   title: string;
   description?: string | null;
-  priority?: typeof TASK_PRIORITY[number];
+  priority?: (typeof TASK_PRIORITY)[number];
   dueDate?: string | null;
   changes: string[];
   taskId: string;
 }) {
   try {
-    const { getUserEmail, enqueueTransactionalEmail } = await import(
-      "@/lib/email/notify.server"
-    );
+    const { getUserEmail, enqueueTransactionalEmail } = await import("@/lib/email/notify.server");
     const { email, name } = await getUserEmail(opts.recipientId);
     if (!email) return;
-    const dueFmt = opts.dueDate
-      ? new Date(opts.dueDate).toLocaleDateString("cs-CZ")
-      : null;
+    const dueFmt = opts.dueDate ? new Date(opts.dueDate).toLocaleDateString("cs-CZ") : null;
     await enqueueTransactionalEmail({
       templateName: "task-updated",
       recipientEmail: email,
@@ -182,9 +178,7 @@ async function notifyTaskUpdated(opts: {
         actorName: opts.actorName || "Kolega",
         title: opts.title,
         description: opts.description || "",
-        priorityLabel: opts.priority
-          ? TASK_PRIORITY_LABEL[opts.priority]
-          : undefined,
+        priorityLabel: opts.priority ? TASK_PRIORITY_LABEL[opts.priority] : undefined,
         dueDate: dueFmt,
         changes: opts.changes,
         actionUrl: "https://www.autoport-app.cz/ukoly",
@@ -254,33 +248,33 @@ export const updateTask = createServerFn({ method: "POST" })
     const prev = (
       await supabase
         .from("tasks")
-        .select("assignee_id,assignee_name,title,description,priority,due_date,recurrence,recurrence_until,recurrence_parent_id,status,created_by,creator_name")
+        .select(
+          "assignee_id,assignee_name,title,description,priority,due_date,recurrence,recurrence_until,recurrence_parent_id,status,created_by,creator_name",
+        )
         .eq("id", data.id)
         .maybeSingle()
-    ).data as
-      | {
-          assignee_id: string | null;
-          assignee_name: string | null;
-          title: string;
-          description: string | null;
-          priority: typeof TASK_PRIORITY[number];
-          due_date: string | null;
-          recurrence: typeof TASK_RECURRENCE[number] | null;
-          recurrence_until: string | null;
-          recurrence_parent_id: string | null;
-          status: typeof TASK_STATUS[number];
-          created_by: string;
-          creator_name: string | null;
-        }
-      | null;
+    ).data as {
+      assignee_id: string | null;
+      assignee_name: string | null;
+      title: string;
+      description: string | null;
+      priority: (typeof TASK_PRIORITY)[number];
+      due_date: string | null;
+      recurrence: (typeof TASK_RECURRENCE)[number] | null;
+      recurrence_until: string | null;
+      recurrence_parent_id: string | null;
+      status: (typeof TASK_STATUS)[number];
+      created_by: string;
+      creator_name: string | null;
+    } | null;
     type Patch = {
       title?: string;
       description?: string | null;
-      priority?: typeof TASK_PRIORITY[number];
+      priority?: (typeof TASK_PRIORITY)[number];
       due_date?: string | null;
       assignee_id?: string | null;
       assignee_name?: string | null;
-      status?: typeof TASK_STATUS[number];
+      status?: (typeof TASK_STATUS)[number];
       completed_at?: string | null;
     };
     const patch: Patch = {};
@@ -304,12 +298,7 @@ export const updateTask = createServerFn({ method: "POST" })
       .update({ last_activity_by: userId, last_activity_at: new Date().toISOString() })
       .eq("id", data.id);
     // Recurrence: when marking a recurring task done, create next occurrence
-    if (
-      patch.status === "done" &&
-      prev &&
-      prev.status !== "done" &&
-      prev.recurrence
-    ) {
+    if (patch.status === "done" && prev && prev.status !== "done" && prev.recurrence) {
       const nextDue = computeNextDueDate(prev.due_date, prev.recurrence);
       const untilOk = !prev.recurrence_until || nextDue <= prev.recurrence_until;
       if (untilOk) {
@@ -329,11 +318,7 @@ export const updateTask = createServerFn({ method: "POST" })
       }
     }
     const newAssignee = patch.assignee_id;
-    if (
-      newAssignee &&
-      newAssignee !== userId &&
-      newAssignee !== prev?.assignee_id
-    ) {
+    if (newAssignee && newAssignee !== userId && newAssignee !== prev?.assignee_id) {
       const assignerName = await lookupName(supabase, userId);
       await notifyAssignee({
         assigneeId: newAssignee,
@@ -372,7 +357,10 @@ export const updateTask = createServerFn({ method: "POST" })
       if (patch.title !== undefined && patch.title !== prev.title) {
         changes.push(`Název: „${prev.title}" → „${patch.title}"`);
       }
-      if (patch.description !== undefined && (patch.description || "") !== (prev.description || "")) {
+      if (
+        patch.description !== undefined &&
+        (patch.description || "") !== (prev.description || "")
+      ) {
         changes.push("Popis byl upraven");
       }
       if (patch.priority !== undefined && patch.priority !== prev.priority) {
@@ -381,17 +369,14 @@ export const updateTask = createServerFn({ method: "POST" })
         );
       }
       if (patch.due_date !== undefined && (patch.due_date || null) !== (prev.due_date || null)) {
-        const fmt = (d: string | null) =>
-          d ? new Date(d).toLocaleDateString("cs-CZ") : "—";
+        const fmt = (d: string | null) => (d ? new Date(d).toLocaleDateString("cs-CZ") : "—");
         changes.push(`Termín: ${fmt(prev.due_date)} → ${fmt(patch.due_date || null)}`);
       }
       if (
         patch.assignee_id !== undefined &&
         (patch.assignee_id || null) !== (prev.assignee_id || null)
       ) {
-        changes.push(
-          `Řešitel: ${prev.assignee_name || "—"} → ${patch.assignee_name || "—"}`,
-        );
+        changes.push(`Řešitel: ${prev.assignee_name || "—"} → ${patch.assignee_name || "—"}`);
       }
       if (changes.length > 0) {
         const actorName = await lookupName(supabase, userId);

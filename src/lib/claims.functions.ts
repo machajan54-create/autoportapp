@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-
 const CLAIM_STATUS_LABEL: Record<string, string> = {
   new: "Nová",
   in_progress: "V řešení",
@@ -63,7 +62,9 @@ export const createClaim = createServerFn({ method: "POST" })
       if (aerr) throw new Error(aerr.message);
     }
     // Notify super admin about new claim
-    await (await import("@/lib/email/notify.server")).notifyAdmins({
+    await (
+      await import("@/lib/email/notify.server")
+    ).notifyAdmins({
       templateName: "approval-request",
       templateData: {
         kind: "claim",
@@ -102,7 +103,9 @@ export const listClaims = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("claims")
-      .select("id,pu_number,status,vat_paid,first_name,last_name,phone,insurer,claim_number,event_at,created_at")
+      .select(
+        "id,pu_number,status,vat_paid,first_name,last_name,phone,insurer,claim_number,event_at,created_at",
+      )
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return data;
@@ -129,7 +132,7 @@ export const getClaim = createServerFn({ method: "POST" })
           .from("claim-files")
           .createSignedUrl(a.file_path, 3600);
         return { ...a, url: s?.signedUrl ?? null };
-      })
+      }),
     );
     const { data: events } = await context.supabase
       .from("claim_events")
@@ -185,7 +188,9 @@ export const updateClaimStatus = createServerFn({ method: "POST" })
     if (claim?.email) {
       const isApproved = data.status === "done";
       const isRejected = data.status === "closed";
-      await (await import("@/lib/email/notify.server")).enqueueTransactionalEmail({
+      await (
+        await import("@/lib/email/notify.server")
+      ).enqueueTransactionalEmail({
         templateName: "approval-decision",
         recipientEmail: claim.email,
         idempotencyKey: `claim-${data.id}-${data.status}`,
@@ -204,22 +209,18 @@ export const updateClaimStatus = createServerFn({ method: "POST" })
 
 export const setVatPaid = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ id: z.string().uuid(), paid: z.boolean() }).parse(d),
-  )
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), paid: z.boolean() }).parse(d))
   .handler(async ({ context, data }) => {
     const { error } = await context.supabase
       .from("claims")
       .update({ vat_paid: data.paid })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
-    await context.supabase
-      .from("claim_events")
-      .insert({
-        claim_id: data.id,
-        type: "vat",
-        message: data.paid ? "DPH označeno jako zaplacené" : "DPH vráceno do nezaplaceno",
-      });
+    await context.supabase.from("claim_events").insert({
+      claim_id: data.id,
+      type: "vat",
+      message: data.paid ? "DPH označeno jako zaplacené" : "DPH vráceno do nezaplaceno",
+    });
     {
       const { logEvent } = await import("@/lib/audit.server");
       await logEvent({
@@ -248,9 +249,7 @@ export const addTask = createServerFn({ method: "POST" })
 
 export const toggleTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ id: z.string().uuid(), done: z.boolean() }).parse(d),
-  )
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), done: z.boolean() }).parse(d))
   .handler(async ({ context, data }) => {
     const { error } = await context.supabase
       .from("claim_tasks")
@@ -300,9 +299,7 @@ export const listUsers = createServerFn({ method: "GET" })
       .select("id,email,full_name,created_at,approved,department,is_department_head")
       .order("created_at", { ascending: false });
     const { data: roles } = await context.supabase.from("user_roles").select("user_id,role");
-    const { data: modules } = await context.supabase
-      .from("user_modules")
-      .select("user_id,module");
+    const { data: modules } = await context.supabase.from("user_modules").select("user_id,module");
     // Načti banned_until pro každého uživatele (super admin)
     const { data: meRoles } = await context.supabase
       .from("user_roles")
@@ -322,9 +319,16 @@ export const listUsers = createServerFn({ method: "GET" })
       }
     }
     // Spočítej vedoucího pro každé oddělení
-    const headByDept = new Map<string, { id: string; full_name: string | null; email: string | null }>();
+    const headByDept = new Map<
+      string,
+      { id: string; full_name: string | null; email: string | null }
+    >();
     for (const p of profiles ?? []) {
-      if ((p as any).is_department_head && (p as any).department && !headByDept.has((p as any).department)) {
+      if (
+        (p as any).is_department_head &&
+        (p as any).department &&
+        !headByDept.has((p as any).department)
+      ) {
         headByDept.set((p as any).department, { id: p.id, full_name: p.full_name, email: p.email });
       }
     }
@@ -334,7 +338,7 @@ export const listUsers = createServerFn({ method: "GET" })
       const userRoles = (roles ?? []).filter((r) => r.user_id === p.id).map((r) => r.role);
       const isUserAdmin = userRoles.includes("admin");
       const dept = (p as any).department as string | null;
-      const head = dept ? headByDept.get(dept) ?? null : null;
+      const head = dept ? (headByDept.get(dept) ?? null) : null;
       // Nadřízený: vedoucí oddělení (pokud existuje a není to on sám), jinak super admin
       const supervisor =
         !isUserAdmin && head && head.id !== p.id
@@ -355,7 +359,11 @@ export const setUserRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z
-      .object({ user_id: z.string().uuid(), role: z.enum(["admin", "employee"]), enable: z.boolean() })
+      .object({
+        user_id: z.string().uuid(),
+        role: z.enum(["admin", "employee"]),
+        enable: z.boolean(),
+      })
       .parse(d),
   )
   .handler(async ({ context, data }) => {
@@ -396,7 +404,21 @@ export const setUserModule = createServerFn({ method: "POST" })
     z
       .object({
         user_id: z.string().uuid(),
-        module: z.enum(["claims", "vykupy", "vykupy_external", "users", "approvals", "dashboard", "dochazka", "defects", "deals", "logbook", "tasks", "demo_orders", "evidence_zakazek"]),
+        module: z.enum([
+          "claims",
+          "vykupy",
+          "vykupy_external",
+          "users",
+          "approvals",
+          "dashboard",
+          "dochazka",
+          "defects",
+          "deals",
+          "logbook",
+          "tasks",
+          "demo_orders",
+          "evidence_zakazek",
+        ]),
         enable: z.boolean(),
       })
       .parse(d),
@@ -454,7 +476,21 @@ export const getMyAccess = createServerFn({ method: "GET" })
         approved: true,
         userId: context.userId,
         userName,
-        modules: ["claims", "vykupy", "vykupy_external", "users", "approvals", "dashboard", "dochazka", "defects", "deals", "logbook", "tasks", "demo_orders", "evidence_zakazek"] as const,
+        modules: [
+          "claims",
+          "vykupy",
+          "vykupy_external",
+          "users",
+          "approvals",
+          "dashboard",
+          "dochazka",
+          "defects",
+          "deals",
+          "logbook",
+          "tasks",
+          "demo_orders",
+          "evidence_zakazek",
+        ] as const,
       };
     }
     const { data: mods } = await context.supabase
@@ -606,9 +642,7 @@ export const adminSetUserActive = createServerFn({ method: "POST" })
 
 export const adminDeleteUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ user_id: z.string().uuid() }).parse(d),
-  )
+  .inputValidator((d: unknown) => z.object({ user_id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { data: meRoles } = await context.supabase
       .from("user_roles")
@@ -708,7 +742,10 @@ export const generatePoaPdf = createServerFn({ method: "POST" })
     const font = await pdf.embedFont(StandardFonts.Helvetica);
     const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
     const ascii = (s: string) =>
-      s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\x00-\x7F]/g, "");
+      s
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^\x00-\x7F]/g, "");
     const vars: Record<string, string> = {
       first_name: claim.first_name ?? "",
       last_name: claim.last_name ?? "",
@@ -889,7 +926,11 @@ export const publicSubmissionUpload = createServerFn({ method: "POST" })
     z
       .object({
         temp_id: z.string().uuid(),
-        category: z.string().min(1).max(40).regex(/^[a-z0-9_-]+$/i, "Neplatná kategorie"),
+        category: z
+          .string()
+          .min(1)
+          .max(40)
+          .regex(/^[a-z0-9_-]+$/i, "Neplatná kategorie"),
         file_name: z.string().min(1).max(200),
         mime_type: z
           .string()
@@ -925,9 +966,7 @@ export const setUserDepartment = createServerFn({ method: "POST" })
     z
       .object({
         user_id: z.string().uuid(),
-        department: z
-          .enum(["vedeni", "obchod", "servis", "nahradni_dily"])
-          .nullable(),
+        department: z.enum(["vedeni", "obchod", "servis", "nahradni_dily"]).nullable(),
         is_department_head: z.boolean().optional(),
       })
       .parse(d),
@@ -951,10 +990,7 @@ export const setUserDepartment = createServerFn({ method: "POST" })
       department: data.department,
       ...(typeof isHead === "boolean" ? { is_department_head: isHead } : {}),
     };
-    const { error } = await supabaseAdmin
-      .from("profiles")
-      .update(patch)
-      .eq("id", data.user_id);
+    const { error } = await supabaseAdmin.from("profiles").update(patch).eq("id", data.user_id);
     if (error) throw new Error(error.message);
     {
       const { logEvent } = await import("@/lib/audit.server");

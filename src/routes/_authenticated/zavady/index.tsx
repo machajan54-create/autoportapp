@@ -14,16 +14,31 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getMyAccess } from "@/lib/claims.functions";
 import {
-  listDefects, createDefect, updateDefect, getDefectPhotoUrls,
-  DEFECT_PRIORITY, DEFECT_STATUS, DEFECT_PRIORITY_LABEL, DEFECT_STATUS_LABEL,
+  listDefects,
+  createDefect,
+  updateDefect,
+  getDefectPhotoUrls,
+  DEFECT_PRIORITY,
+  DEFECT_STATUS,
+  DEFECT_PRIORITY_LABEL,
+  DEFECT_STATUS_LABEL,
 } from "@/lib/defects.functions";
 import { cn } from "@/lib/utils";
 
@@ -71,7 +86,8 @@ function DefectsPage() {
 
   const [filter, setFilter] = useState<"all" | "open" | "mine">("all");
   const visible = useMemo(() => {
-    if (filter === "open") return rows.filter((r) => r.status === "new" || r.status === "in_progress");
+    if (filter === "open")
+      return rows.filter((r) => r.status === "new" || r.status === "in_progress");
     if (filter === "mine") return rows.filter((r) => r.reported_by === userId);
     return rows;
   }, [rows, filter, userId]);
@@ -94,7 +110,7 @@ function DefectsPage() {
 
   const [createOpen, setCreateOpen] = useState(false);
 
-  async function handleStatus(id: string, status: typeof DEFECT_STATUS[number]) {
+  async function handleStatus(id: string, status: (typeof DEFECT_STATUS)[number]) {
     try {
       await updateFn({ data: { id, status } });
       toast.success("Stav aktualizován");
@@ -140,9 +156,12 @@ function DefectsPage() {
           <TabsList>
             <TabsTrigger value="all">Vše ({rows.length})</TabsTrigger>
             <TabsTrigger value="open">
-              Otevřené ({rows.filter((r) => r.status === "new" || r.status === "in_progress").length})
+              Otevřené (
+              {rows.filter((r) => r.status === "new" || r.status === "in_progress").length})
             </TabsTrigger>
-            <TabsTrigger value="mine">Moje ({rows.filter((r) => r.reported_by === userId).length})</TabsTrigger>
+            <TabsTrigger value="mine">
+              Moje ({rows.filter((r) => r.reported_by === userId).length})
+            </TabsTrigger>
           </TabsList>
         </Tabs>
 
@@ -151,9 +170,7 @@ function DefectsPage() {
             <Loader2 className="h-6 w-6 animate-spin" />
           </div>
         ) : visible.length === 0 ? (
-          <Card className="p-12 text-center text-muted-foreground">
-            Žádné závady k zobrazení.
-          </Card>
+          <Card className="p-12 text-center text-muted-foreground">Žádné závady k zobrazení.</Card>
         ) : (
           <div className="grid gap-4">
             {visible.map((r) => {
@@ -176,7 +193,11 @@ function DefectsPage() {
                         Nahlásil: {r.reporter_name ?? "—"} ·{" "}
                         {new Date(r.created_at).toLocaleString("cs-CZ")}
                         {r.resolved_at && r.resolver_name && (
-                          <> · Vyřešil: {r.resolver_name} ({new Date(r.resolved_at).toLocaleDateString("cs-CZ")})</>
+                          <>
+                            {" "}
+                            · Vyřešil: {r.resolver_name} (
+                            {new Date(r.resolved_at).toLocaleDateString("cs-CZ")})
+                          </>
                         )}
                       </div>
                       {r.description && (
@@ -186,18 +207,24 @@ function DefectsPage() {
                         <div className="mt-3 flex flex-wrap gap-2">
                           {photos.map((p) => {
                             const url = photoUrls[p.path];
-                            const isImage = /\.(png|jpe?g|gif|webp|heic|heif|bmp|svg)$/i.test(p.name);
+                            const isImage = /\.(png|jpe?g|gif|webp|heic|heif|bmp|svg)$/i.test(
+                              p.name,
+                            );
                             return url ? (
                               isImage ? (
-                              <a
-                                key={p.path}
-                                href={url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="block h-20 w-20 overflow-hidden rounded-md border bg-muted"
-                              >
-                                <img src={url} alt={p.name} className="h-full w-full object-cover" />
-                              </a>
+                                <a
+                                  key={p.path}
+                                  href={url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="block h-20 w-20 overflow-hidden rounded-md border bg-muted"
+                                >
+                                  <img
+                                    src={url}
+                                    alt={p.name}
+                                    className="h-full w-full object-cover"
+                                  />
+                                </a>
                               ) : (
                                 <a
                                   key={p.path}
@@ -227,7 +254,9 @@ function DefectsPage() {
                       {isAdmin && (
                         <Select
                           value={r.status}
-                          onValueChange={(v) => handleStatus(r.id, v as typeof DEFECT_STATUS[number])}
+                          onValueChange={(v) =>
+                            handleStatus(r.id, v as (typeof DEFECT_STATUS)[number])
+                          }
                         >
                           <SelectTrigger className="h-8 w-40">
                             <SelectValue />
@@ -273,11 +302,18 @@ function CreateDefectDialog({
 }: {
   onClose: () => void;
   onCreated: () => void;
-  createFn: (args: { data: { title: string; description?: string | null; priority: typeof DEFECT_PRIORITY[number]; photos: Photo[] } }) => Promise<unknown>;
+  createFn: (args: {
+    data: {
+      title: string;
+      description?: string | null;
+      priority: (typeof DEFECT_PRIORITY)[number];
+      photos: Photo[];
+    };
+  }) => Promise<unknown>;
 }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState<typeof DEFECT_PRIORITY[number]>("medium");
+  const [priority, setPriority] = useState<(typeof DEFECT_PRIORITY)[number]>("medium");
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -381,7 +417,10 @@ function CreateDefectDialog({
         </div>
         <div className="space-y-1.5">
           <Label>Priorita</Label>
-          <Select value={priority} onValueChange={(v) => setPriority(v as typeof DEFECT_PRIORITY[number])}>
+          <Select
+            value={priority}
+            onValueChange={(v) => setPriority(v as (typeof DEFECT_PRIORITY)[number])}
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>

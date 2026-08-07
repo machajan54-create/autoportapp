@@ -51,8 +51,7 @@ export const Route = createFileRoute("/_authenticated/approvals")({
 function StatusBadge({ status }: { status: string }) {
   if (status === "approved")
     return <Badge className="bg-green-600 hover:bg-green-600">Schváleno</Badge>;
-  if (status === "rejected")
-    return <Badge variant="destructive">Zamítnuto</Badge>;
+  if (status === "rejected") return <Badge variant="destructive">Zamítnuto</Badge>;
   return <Badge variant="secondary">Čeká</Badge>;
 }
 
@@ -128,7 +127,16 @@ function SuppliersTab({ isAdmin }: { isAdmin: boolean }) {
       await create({ data: form });
       toast.success("Dodavatel přidán");
       setOpen(false);
-      setForm({ name: "", ico: "", dic: "", contact_person: "", email: "", phone: "", address: "", notes: "" });
+      setForm({
+        name: "",
+        ico: "",
+        dic: "",
+        contact_person: "",
+        email: "",
+        phone: "",
+        address: "",
+        notes: "",
+      });
       refetch();
     } catch (err: any) {
       toast.error(err.message ?? "Chyba");
@@ -150,24 +158,80 @@ function SuppliersTab({ isAdmin }: { isAdmin: boolean }) {
         <CardTitle>Dodavatelé</CardTitle>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm"><Plus className="mr-1 h-4 w-4" /> Nový dodavatel</Button>
+            <Button size="sm">
+              <Plus className="mr-1 h-4 w-4" /> Nový dodavatel
+            </Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>Nový dodavatel</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>Nový dodavatel</DialogTitle>
+            </DialogHeader>
             <form onSubmit={submit} className="space-y-3">
-              <div><Label>Název *</Label><Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-              <div className="grid grid-cols-2 gap-2">
-                <div><Label>IČO</Label><Input value={form.ico} onChange={(e) => setForm({ ...form, ico: e.target.value })} /></div>
-                <div><Label>DIČ</Label><Input value={form.dic} onChange={(e) => setForm({ ...form, dic: e.target.value })} /></div>
+              <div>
+                <Label>Název *</Label>
+                <Input
+                  required
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                />
               </div>
-              <div><Label>Kontaktní osoba</Label><Input value={form.contact_person} onChange={(e) => setForm({ ...form, contact_person: e.target.value })} /></div>
               <div className="grid grid-cols-2 gap-2">
-                <div><Label>E-mail</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-                <div><Label>Telefon</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+                <div>
+                  <Label>IČO</Label>
+                  <Input
+                    value={form.ico}
+                    onChange={(e) => setForm({ ...form, ico: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>DIČ</Label>
+                  <Input
+                    value={form.dic}
+                    onChange={(e) => setForm({ ...form, dic: e.target.value })}
+                  />
+                </div>
               </div>
-              <div><Label>Adresa</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
-              <div><Label>Poznámka</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
-              <DialogFooter><Button type="submit">Uložit</Button></DialogFooter>
+              <div>
+                <Label>Kontaktní osoba</Label>
+                <Input
+                  value={form.contact_person}
+                  onChange={(e) => setForm({ ...form, contact_person: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label>E-mail</Label>
+                  <Input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Telefon</Label>
+                  <Input
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>Adresa</Label>
+                <Input
+                  value={form.address}
+                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Poznámka</Label>
+                <Textarea
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                />
+              </div>
+              <DialogFooter>
+                <Button type="submit">Uložit</Button>
+              </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
@@ -180,14 +244,19 @@ function SuppliersTab({ isAdmin }: { isAdmin: boolean }) {
         ) : (
           <div className="space-y-2">
             {data.map((s: any) => (
-              <div key={s.id} className="flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:items-center sm:justify-between">
+              <div
+                key={s.id}
+                className="flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:items-center sm:justify-between"
+              >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <div className="truncate font-medium">{s.name}</div>
                     <StatusBadge status={s.status} />
                   </div>
                   <div className="truncate text-xs text-muted-foreground">
-                    {[s.ico && `IČO ${s.ico}`, s.contact_person, s.email, s.phone].filter(Boolean).join(" · ")}
+                    {[s.ico && `IČO ${s.ico}`, s.contact_person, s.email, s.phone]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </div>
                   {s.requester && (
                     <div className="truncate text-xs text-muted-foreground">
@@ -210,9 +279,11 @@ function SuppliersTab({ isAdmin }: { isAdmin: boolean }) {
                     <ForwardAsTaskDialog
                       sourceTitle={s.name}
                       sourceTypeLabel="dodavatele"
-                      sourceDetails={[s.ico && `IČO ${s.ico}`, s.contact_person, s.email, s.phone, s.address]
-                        .filter(Boolean)
-                        .join(" · ") || null}
+                      sourceDetails={
+                        [s.ico && `IČO ${s.ico}`, s.contact_person, s.email, s.phone, s.address]
+                          .filter(Boolean)
+                          .join(" · ") || null
+                      }
                     />
                   )}
                   {isAdmin && (
@@ -242,7 +313,9 @@ function DeletionsTab({ isAdmin }: { isAdmin: boolean }) {
     queryFn: () => fetchList({}),
   });
   const [statusFilter, setStatusFilter] = useState<"pending" | "all" | "decided">("pending");
-  const [noteOpen, setNoteOpen] = useState<{ id: string; status: "approved" | "rejected" } | null>(null);
+  const [noteOpen, setNoteOpen] = useState<{ id: string; status: "approved" | "rejected" } | null>(
+    null,
+  );
   const [note, setNote] = useState("");
 
   const rows = (data ?? []).filter((r: any) => {
@@ -254,11 +327,11 @@ function DeletionsTab({ isAdmin }: { isAdmin: boolean }) {
   async function confirmDecision() {
     if (!noteOpen) return;
     try {
-      await decide({ data: { id: noteOpen.id, status: noteOpen.status, decision_note: note || null } });
+      await decide({
+        data: { id: noteOpen.id, status: noteOpen.status, decision_note: note || null },
+      });
       toast.success(
-        noteOpen.status === "approved"
-          ? "Žádost schválena a záznam smazán."
-          : "Žádost zamítnuta.",
+        noteOpen.status === "approved" ? "Žádost schválena a záznam smazán." : "Žádost zamítnuta.",
       );
       setNoteOpen(null);
       setNote("");
@@ -283,7 +356,9 @@ function DeletionsTab({ isAdmin }: { isAdmin: boolean }) {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Žádosti o smazání</CardTitle>
         <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
-          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-40">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="pending">Čekající</SelectItem>
             <SelectItem value="decided">Rozhodnuté</SelectItem>
@@ -299,7 +374,10 @@ function DeletionsTab({ isAdmin }: { isAdmin: boolean }) {
         ) : (
           <div className="space-y-2">
             {rows.map((r: any) => (
-              <div key={r.id} className="flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:items-center sm:justify-between">
+              <div
+                key={r.id}
+                className="flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:items-center sm:justify-between"
+              >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <Badge variant="outline">{r.type_label}</Badge>
@@ -311,7 +389,8 @@ function DeletionsTab({ isAdmin }: { isAdmin: boolean }) {
                     {new Date(r.created_at).toLocaleString("cs-CZ")}
                   </div>
                   <div className="mt-1 text-sm whitespace-pre-wrap">
-                    <span className="text-muted-foreground">Důvod: </span>{r.reason}
+                    <span className="text-muted-foreground">Důvod: </span>
+                    {r.reason}
                   </div>
                   {r.decision_note && (
                     <div className="mt-1 text-xs text-muted-foreground">
@@ -325,14 +404,20 @@ function DeletionsTab({ isAdmin }: { isAdmin: boolean }) {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => { setNote(""); setNoteOpen({ id: r.id, status: "rejected" }); }}
+                        onClick={() => {
+                          setNote("");
+                          setNoteOpen({ id: r.id, status: "rejected" });
+                        }}
                       >
                         <X className="mr-1 h-4 w-4" /> Zamítnout
                       </Button>
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={() => { setNote(""); setNoteOpen({ id: r.id, status: "approved" }); }}
+                        onClick={() => {
+                          setNote("");
+                          setNoteOpen({ id: r.id, status: "approved" });
+                        }}
                       >
                         <Check className="mr-1 h-4 w-4" /> Schválit a smazat
                       </Button>
@@ -364,10 +449,17 @@ function DeletionsTab({ isAdmin }: { isAdmin: boolean }) {
               </p>
             )}
             <Label>Poznámka (volitelné)</Label>
-            <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} maxLength={1000} />
+            <Textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={3}
+              maxLength={1000}
+            />
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setNoteOpen(null)}>Zrušit</Button>
+            <Button variant="ghost" onClick={() => setNoteOpen(null)}>
+              Zrušit
+            </Button>
             <Button
               variant={noteOpen?.status === "approved" ? "destructive" : "default"}
               onClick={confirmDecision}
@@ -421,7 +513,15 @@ function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
       });
       toast.success("Žádost o nákup vytvořena");
       setOpen(false);
-      setForm({ title: "", description: "", supplier_id: "", amount: "", amount_net: "", vat_rate: "21", currency: "CZK" });
+      setForm({
+        title: "",
+        description: "",
+        supplier_id: "",
+        amount: "",
+        amount_net: "",
+        vat_rate: "21",
+        currency: "CZK",
+      });
       refetch();
     } catch (err: any) {
       toast.error(err.message ?? "Chyba");
@@ -445,26 +545,52 @@ function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
         <CardTitle>Nákupy</CardTitle>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm"><Plus className="mr-1 h-4 w-4" /> Nový nákup</Button>
+            <Button size="sm">
+              <Plus className="mr-1 h-4 w-4" /> Nový nákup
+            </Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>Nový nákup ke schválení</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>Nový nákup ke schválení</DialogTitle>
+            </DialogHeader>
             <form onSubmit={submit} className="space-y-3">
-              <div><Label>Název *</Label><Input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
-              <div><Label>Popis</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+              <div>
+                <Label>Název *</Label>
+                <Input
+                  required
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Popis</Label>
+                <Textarea
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                />
+              </div>
               <div>
                 <Label>Dodavatel</Label>
-                <Select value={form.supplier_id || "none"} onValueChange={(v) => setForm({ ...form, supplier_id: v === "none" ? "" : v })}>
-                  <SelectTrigger><SelectValue placeholder="Vyberte dodavatele" /></SelectTrigger>
+                <Select
+                  value={form.supplier_id || "none"}
+                  onValueChange={(v) => setForm({ ...form, supplier_id: v === "none" ? "" : v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Vyberte dodavatele" />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">— bez dodavatele —</SelectItem>
                     {approvedSuppliers.map((s: any) => (
-                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 {!approvedSuppliers.length && (
-                  <p className="mt-1 text-xs text-muted-foreground">Tip: nejprve schvalte dodavatele v záložce Dodavatelé.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Tip: nejprve schvalte dodavatele v záložce Dodavatelé.
+                  </p>
                 )}
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -478,7 +604,9 @@ function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
                     onChange={(e) => {
                       const net = e.target.value;
                       const vat = Number(form.vat_rate) || 0;
-                      const gross = net ? (Math.round(Number(net) * (1 + vat / 100) * 100) / 100).toString() : "";
+                      const gross = net
+                        ? (Math.round(Number(net) * (1 + vat / 100) * 100) / 100).toString()
+                        : "";
                       setForm({ ...form, amount_net: net, amount: gross });
                     }}
                   />
@@ -493,7 +621,9 @@ function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
                     onChange={(e) => {
                       const gross = e.target.value;
                       const vat = Number(form.vat_rate) || 0;
-                      const net = gross ? (Math.round((Number(gross) / (1 + vat / 100)) * 100) / 100).toString() : "";
+                      const net = gross
+                        ? (Math.round((Number(gross) / (1 + vat / 100)) * 100) / 100).toString()
+                        : "";
                       setForm({ ...form, amount: gross, amount_net: net });
                     }}
                   />
@@ -506,12 +636,16 @@ function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
                       const vat = Number(v) || 0;
                       // Recompute gross from net when VAT changes
                       const gross = form.amount_net
-                        ? (Math.round(Number(form.amount_net) * (1 + vat / 100) * 100) / 100).toString()
+                        ? (
+                            Math.round(Number(form.amount_net) * (1 + vat / 100) * 100) / 100
+                          ).toString()
                         : form.amount;
                       setForm({ ...form, vat_rate: v, amount: gross });
                     }}
                   >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="0">0 %</SelectItem>
                       <SelectItem value="12">12 %</SelectItem>
@@ -521,10 +655,15 @@ function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
                 </div>
                 <div>
                   <Label>Měna</Label>
-                  <Input value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} />
+                  <Input
+                    value={form.currency}
+                    onChange={(e) => setForm({ ...form, currency: e.target.value })}
+                  />
                 </div>
               </div>
-              <DialogFooter><Button type="submit">Uložit</Button></DialogFooter>
+              <DialogFooter>
+                <Button type="submit">Uložit</Button>
+              </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
@@ -537,7 +676,10 @@ function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
         ) : (
           <div className="space-y-2">
             {data.map((p: any) => (
-              <div key={p.id} className="flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:items-center sm:justify-between">
+              <div
+                key={p.id}
+                className="flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:items-center sm:justify-between"
+              >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <div className="truncate font-medium">{p.title}</div>
@@ -546,10 +688,14 @@ function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
                   <div className="truncate text-xs text-muted-foreground">
                     {[
                       p.supplier?.name,
-                      p.amount_net != null && `${Number(p.amount_net).toLocaleString("cs-CZ")} ${p.currency} bez DPH`,
-                      p.amount != null && `${Number(p.amount).toLocaleString("cs-CZ")} ${p.currency} s DPH (${Number(p.vat_rate ?? 21)} %)`,
+                      p.amount_net != null &&
+                        `${Number(p.amount_net).toLocaleString("cs-CZ")} ${p.currency} bez DPH`,
+                      p.amount != null &&
+                        `${Number(p.amount).toLocaleString("cs-CZ")} ${p.currency} s DPH (${Number(p.vat_rate ?? 21)} %)`,
                       new Date(p.created_at).toLocaleDateString("cs-CZ"),
-                    ].filter(Boolean).join(" · ")}
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </div>
                   {p.requester && (
                     <div className="truncate text-xs text-muted-foreground">
@@ -573,14 +719,18 @@ function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
                     <ForwardAsTaskDialog
                       sourceTitle={p.title}
                       sourceTypeLabel="nákup"
-                      sourceDetails={[
-                        p.supplier?.name && `Dodavatel: ${p.supplier.name}`,
-                        p.amount_net != null && `Bez DPH: ${Number(p.amount_net).toLocaleString("cs-CZ")} ${p.currency}`,
-                        p.amount != null && `S DPH: ${Number(p.amount).toLocaleString("cs-CZ")} ${p.currency}`,
-                        p.description,
-                      ]
-                        .filter(Boolean)
-                        .join("\n") || null}
+                      sourceDetails={
+                        [
+                          p.supplier?.name && `Dodavatel: ${p.supplier.name}`,
+                          p.amount_net != null &&
+                            `Bez DPH: ${Number(p.amount_net).toLocaleString("cs-CZ")} ${p.currency}`,
+                          p.amount != null &&
+                            `S DPH: ${Number(p.amount).toLocaleString("cs-CZ")} ${p.currency}`,
+                          p.description,
+                        ]
+                          .filter(Boolean)
+                          .join("\n") || null
+                      }
                     />
                   )}
                   {isAdmin && (

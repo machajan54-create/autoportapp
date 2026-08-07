@@ -85,8 +85,8 @@ function EvidencePage() {
         <header>
           <h1 className="text-2xl font-semibold">Evidence mytí vozů</h1>
           <p className="text-sm text-muted-foreground">
-            Plán předávání nových vozů. K zakázce lze přiřadit myče, kteří
-            potvrzují převzetí e-mailem.
+            Plán předávání nových vozů. K zakázce lze přiřadit myče, kteří potvrzují převzetí
+            e-mailem.
           </p>
         </header>
         <div className="flex gap-3 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
@@ -102,13 +102,12 @@ function EvidencePage() {
                 Po přiřazení myče se odešle e-mail s tlačítky <em>Přijímám / Odmítám</em>.
               </li>
               <li>
-                Pokud myč nepotvrdí ani neodmítne do 2 hodin, systém mu
-                automaticky pošle připomínku — a opakuje ji každé 2 hodiny,
-                dokud nereaguje.
+                Pokud myč nepotvrdí ani neodmítne do 2 hodin, systém mu automaticky pošle připomínku
+                — a opakuje ji každé 2 hodiny, dokud nereaguje.
               </li>
               <li>
-                Připomínky končí ve chvíli, kdy myč potvrdí, odmítne, zakázka je
-                zrušena nebo termín dokončení uplynul.
+                Připomínky končí ve chvíli, kdy myč potvrdí, odmítne, zakázka je zrušena nebo termín
+                dokončení uplynul.
               </li>
             </ul>
           </div>
@@ -221,24 +220,96 @@ function OrdersTab() {
         <CardTitle>Plán předávání</CardTitle>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm"><Plus className="mr-1 h-4 w-4" /> Nová zakázka</Button>
+            <Button size="sm">
+              <Plus className="mr-1 h-4 w-4" /> Nová zakázka
+            </Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>Nová zakázka</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>Nová zakázka</DialogTitle>
+            </DialogHeader>
             <form onSubmit={submit} className="space-y-3">
               <div className="grid grid-cols-2 gap-2">
-                <div className="col-span-2"><Label>Klient *</Label><Input required value={form.klient} onChange={(e) => setForm({ ...form, klient: e.target.value })} /></div>
-                <div><Label>Vozidlo *</Label><Input required value={form.vozidlo} onChange={(e) => setForm({ ...form, vozidlo: e.target.value })} /></div>
-                <div><Label>VIS / SPZ</Label><Input value={form.vis} onChange={(e) => setForm({ ...form, vis: e.target.value })} /></div>
-                <div><Label>Vyzvednutí od</Label><Input type="datetime-local" value={form.pickup_from} onChange={(e) => setForm({ ...form, pickup_from: e.target.value })} /></div>
-                <div><Label>Dokončit do</Label><Input type="datetime-local" value={form.complete_by} onChange={(e) => setForm({ ...form, complete_by: e.target.value })} /></div>
-                <div><Label>Den (orientačně)</Label><Input type="date" value={form.den} onChange={(e) => setForm({ ...form, den: e.target.value })} /></div>
-                <div><Label>Hodina</Label><Input placeholder="9:00" value={form.hodina} onChange={(e) => setForm({ ...form, hodina: e.target.value })} /></div>
-                <div><Label>Kdo předává</Label><Input value={form.kdo_predava} onChange={(e) => setForm({ ...form, kdo_predava: e.target.value })} /></div>
-                <div><Label>Č. zakázky</Label><Input value={form.cislo_zakazky} onChange={(e) => setForm({ ...form, cislo_zakazky: e.target.value })} /></div>
-                <div className="col-span-2"><Label>Poznámka</Label><Textarea value={form.poznamka} onChange={(e) => setForm({ ...form, poznamka: e.target.value })} /></div>
+                <div className="col-span-2">
+                  <Label>Klient *</Label>
+                  <Input
+                    required
+                    value={form.klient}
+                    onChange={(e) => setForm({ ...form, klient: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Vozidlo *</Label>
+                  <Input
+                    required
+                    value={form.vozidlo}
+                    onChange={(e) => setForm({ ...form, vozidlo: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>VIS / SPZ</Label>
+                  <Input
+                    value={form.vis}
+                    onChange={(e) => setForm({ ...form, vis: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Vyzvednutí od</Label>
+                  <Input
+                    type="datetime-local"
+                    value={form.pickup_from}
+                    onChange={(e) => setForm({ ...form, pickup_from: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Dokončit do</Label>
+                  <Input
+                    type="datetime-local"
+                    value={form.complete_by}
+                    onChange={(e) => setForm({ ...form, complete_by: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Den (orientačně)</Label>
+                  <Input
+                    type="date"
+                    value={form.den}
+                    onChange={(e) => setForm({ ...form, den: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Hodina</Label>
+                  <Input
+                    placeholder="9:00"
+                    value={form.hodina}
+                    onChange={(e) => setForm({ ...form, hodina: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Kdo předává</Label>
+                  <Input
+                    value={form.kdo_predava}
+                    onChange={(e) => setForm({ ...form, kdo_predava: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Č. zakázky</Label>
+                  <Input
+                    value={form.cislo_zakazky}
+                    onChange={(e) => setForm({ ...form, cislo_zakazky: e.target.value })}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label>Poznámka</Label>
+                  <Textarea
+                    value={form.poznamka}
+                    onChange={(e) => setForm({ ...form, poznamka: e.target.value })}
+                  />
+                </div>
               </div>
-              <DialogFooter><Button type="submit">Uložit</Button></DialogFooter>
+              <DialogFooter>
+                <Button type="submit">Uložit</Button>
+              </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
@@ -272,14 +343,24 @@ function OrdersTab() {
                       <td className="py-2 pr-2 font-medium">{o.klient}</td>
                       <td className="py-2 pr-2">{o.vozidlo}</td>
                       <td className="py-2 pr-2 font-mono text-xs">{o.vis ?? "—"}</td>
-                      <td className="py-2 pr-2">{fmtDt(o.pickup_from) || (o.den ? new Date(o.den).toLocaleDateString("cs-CZ") + (o.hodina ? ` ${o.hodina}` : "") : "—")}</td>
+                      <td className="py-2 pr-2">
+                        {fmtDt(o.pickup_from) ||
+                          (o.den
+                            ? new Date(o.den).toLocaleDateString("cs-CZ") +
+                              (o.hodina ? ` ${o.hodina}` : "")
+                            : "—")}
+                      </td>
                       <td className="py-2 pr-2">{fmtDt(o.complete_by) || "—"}</td>
                       <td className="py-2 pr-2">{o.kdo_predava ?? "—"}</td>
                       <td className="py-2 pr-2 font-mono text-xs">{o.cislo_zakazky ?? "—"}</td>
                       <td className="py-2 pr-2">
                         <Select value={o.stav} onValueChange={(v: any) => changeStav(o.id, v)}>
                           <SelectTrigger className="h-8 w-32">
-                            <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs ${stav.cls}`}>{stav.label}</span>
+                            <span
+                              className={`inline-flex items-center rounded px-2 py-0.5 text-xs ${stav.cls}`}
+                            >
+                              {stav.label}
+                            </span>
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="nova">Nová</SelectItem>
@@ -321,7 +402,10 @@ function OrdersTab() {
                             size="sm"
                             variant="outline"
                             className="h-7"
-                            onClick={() => { setAssignTarget(o.id); setWasherPick(""); }}
+                            onClick={() => {
+                              setAssignTarget(o.id);
+                              setWasherPick("");
+                            }}
                           >
                             <Send className="mr-1 h-3 w-3" /> Přiřadit myče
                           </Button>
@@ -338,7 +422,9 @@ function OrdersTab() {
 
       <Dialog open={!!assignTarget} onOpenChange={(o) => !o && setAssignTarget(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Přiřadit myče</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Přiřadit myče</DialogTitle>
+          </DialogHeader>
           <div className="space-y-3">
             {!activeWashers.length ? (
               <p className="text-sm text-muted-foreground">
@@ -348,7 +434,9 @@ function OrdersTab() {
               <>
                 <Label>Myč</Label>
                 <Select value={washerPick} onValueChange={setWasherPick}>
-                  <SelectTrigger><SelectValue placeholder="Vyberte myče" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Vyberte myče" />
+                  </SelectTrigger>
                   <SelectContent>
                     {activeWashers.map((w: any) => (
                       <SelectItem key={w.id} value={w.id}>
@@ -364,7 +452,9 @@ function OrdersTab() {
             )}
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setAssignTarget(null)}>Zrušit</Button>
+            <Button variant="ghost" onClick={() => setAssignTarget(null)}>
+              Zrušit
+            </Button>
             <Button disabled={!washerPick} onClick={sendAssign}>
               <Send className="mr-1 h-4 w-4" /> Odeslat e-mail
             </Button>
@@ -426,14 +516,35 @@ function WashersTab({ isAdmin }: { isAdmin: boolean }) {
         {isAdmin && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button size="sm"><Plus className="mr-1 h-4 w-4" /> Nový myč</Button>
+              <Button size="sm">
+                <Plus className="mr-1 h-4 w-4" /> Nový myč
+              </Button>
             </DialogTrigger>
             <DialogContent>
-              <DialogHeader><DialogTitle>Nový myč</DialogTitle></DialogHeader>
+              <DialogHeader>
+                <DialogTitle>Nový myč</DialogTitle>
+              </DialogHeader>
               <form onSubmit={submit} className="space-y-3">
-                <div><Label>Jméno *</Label><Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-                <div><Label>E-mail *</Label><Input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-                <DialogFooter><Button type="submit">Uložit</Button></DialogFooter>
+                <div>
+                  <Label>Jméno *</Label>
+                  <Input
+                    required
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>E-mail *</Label>
+                  <Input
+                    required
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button type="submit">Uložit</Button>
+                </DialogFooter>
               </form>
             </DialogContent>
           </Dialog>
@@ -462,7 +573,11 @@ function WashersTab({ isAdmin }: { isAdmin: boolean }) {
                 </div>
                 {isAdmin && (
                   <div className="flex gap-1">
-                    <Button size="sm" variant="outline" onClick={() => toggleActive(w.id, !w.active)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => toggleActive(w.id, !w.active)}
+                    >
                       {w.active ? "Deaktivovat" : "Aktivovat"}
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => del(w.id)}>

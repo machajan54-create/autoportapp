@@ -124,23 +124,25 @@ export function TvDisplay({ token }: { token: string }) {
         .order("sort_order", { ascending: true });
       if (sErr) throw sErr;
       const filtered = (rows ?? [])
-        .map((r: any): Slide => ({
-          id: r.id,
-          title: r.title,
-          subtitle: r.subtitle,
-          body: r.body,
-          image_url: r.image_url,
-          type: r.type ?? "news",
-          kind: r.kind ?? "image",
-          payload: r.payload ?? {},
-          duration_sec: r.duration_sec ?? 12,
-          transition: r.transition ?? "fade",
-          weight: r.weight ?? 1,
-          sort_order: r.sort_order ?? 0,
-          active: !!r.active,
-          valid_from: r.valid_from,
-          valid_to: r.valid_to,
-        }))
+        .map(
+          (r: any): Slide => ({
+            id: r.id,
+            title: r.title,
+            subtitle: r.subtitle,
+            body: r.body,
+            image_url: r.image_url,
+            type: r.type ?? "news",
+            kind: r.kind ?? "image",
+            payload: r.payload ?? {},
+            duration_sec: r.duration_sec ?? 12,
+            transition: r.transition ?? "fade",
+            weight: r.weight ?? 1,
+            sort_order: r.sort_order ?? 0,
+            active: !!r.active,
+            valid_from: r.valid_from,
+            valid_to: r.valid_to,
+          }),
+        )
         .filter((s) => isSlideValidNow(s));
       const cfgTyped = cfg as DisplayConfig | null;
       const showLounge = cfgTyped?.show_lounge !== false;
@@ -168,17 +170,23 @@ export function TvDisplay({ token }: { token: string }) {
     }
   }, [token]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   // Realtime updates
   useEffect(() => {
     const ch = supabase
       .channel("tv-display-" + token)
       .on("postgres_changes", { event: "*", schema: "public", table: "slides" }, () => load())
-      .on("postgres_changes", { event: "*", schema: "public", table: "display_config" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "display_config" }, () =>
+        load(),
+      )
       .on("postgres_changes", { event: "*", schema: "public", table: "display_news" }, () => load())
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => {
+      supabase.removeChannel(ch);
+    };
   }, [token, load]);
 
   // Advance slides
@@ -203,19 +211,27 @@ export function TvDisplay({ token }: { token: string }) {
     let wl: any = null;
     async function acquire() {
       try {
-        const nav = navigator as Navigator & { wakeLock?: { request: (t: string) => Promise<unknown> } };
+        const nav = navigator as Navigator & {
+          wakeLock?: { request: (t: string) => Promise<unknown> };
+        };
         if (nav.wakeLock?.request) wl = await nav.wakeLock.request("screen");
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
     acquire();
-    const onVis = () => { if (document.visibilityState === "visible") acquire(); };
+    const onVis = () => {
+      if (document.visibilityState === "visible") acquire();
+    };
     document.addEventListener("visibilitychange", onVis);
     const reload = setTimeout(() => location.reload(), 6 * 60 * 60 * 1000);
     return () => {
       document.body.style.cursor = "";
       document.removeEventListener("visibilitychange", onVis);
       clearTimeout(reload);
-      try { wl?.release?.(); } catch {}
+      try {
+        wl?.release?.();
+      } catch {}
     };
   }, []);
 
@@ -237,16 +253,34 @@ export function TvDisplay({ token }: { token: string }) {
       }}
     >
       {/* Ambient background glow */}
-      <div style={{
-        position: "absolute", top: "-10%", right: "-10%", width: 800, height: 800,
-        background: "rgba(108, 92, 231, 0.10)", filter: "blur(150px)", borderRadius: "50%",
-        pointerEvents: "none", zIndex: 0,
-      }} />
-      <div style={{
-        position: "absolute", bottom: "-5%", left: "10%", width: 600, height: 600,
-        background: "rgba(255, 107, 53, 0.06)", filter: "blur(120px)", borderRadius: "50%",
-        pointerEvents: "none", zIndex: 0,
-      }} />
+      <div
+        style={{
+          position: "absolute",
+          top: "-10%",
+          right: "-10%",
+          width: 800,
+          height: 800,
+          background: "rgba(108, 92, 231, 0.10)",
+          filter: "blur(150px)",
+          borderRadius: "50%",
+          pointerEvents: "none",
+          zIndex: 0,
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          bottom: "-5%",
+          left: "10%",
+          width: 600,
+          height: 600,
+          background: "rgba(255, 107, 53, 0.06)",
+          filter: "blur(120px)",
+          borderRadius: "50%",
+          pointerEvents: "none",
+          zIndex: 0,
+        }}
+      />
 
       {/* Slide layers (crossfade) */}
       {slides.length === 0 ? (
@@ -270,7 +304,9 @@ export function TvDisplay({ token }: { token: string }) {
       <div
         style={{
           position: "absolute",
-          top: 0, left: 0, right: 0,
+          top: 0,
+          left: 0,
+          right: 0,
           height: 128,
           padding: "0 4vw",
           display: "flex",
@@ -285,46 +321,126 @@ export function TvDisplay({ token }: { token: string }) {
           <img
             src={citroenAutoportLogo.url}
             alt="Citroën Autoport"
-            style={{ height: 78, width: "auto", objectFit: "contain", filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.4))" }}
+            style={{
+              height: 78,
+              width: "auto",
+              objectFit: "contain",
+              filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.4))",
+            }}
           />
-          <div style={{ width: 1, height: 50, background: "linear-gradient(180deg, transparent, rgba(255,255,255,0.25), transparent)", animation: "fade-in 0.6s ease-out both", animationDelay: "0.1s" }} />
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div className="animate-fade-in" style={{
-              animationDelay: "0.2s", animationFillMode: "both",
-              display: "flex", alignItems: "center", gap: 10,
+          <div
+            style={{
+              width: 1,
               height: 50,
-              padding: "0 14px",
-              background: "rgba(255,255,255,0.94)",
-              borderRadius: 12,
-              boxShadow: "0 6px 20px rgba(0,0,0,0.35)",
-              backdropFilter: "blur(8px)",
-            }}>
-              <img src={citroenLogo.url} alt="Citroën" style={{ height: 32, width: 32, objectFit: "contain", flexShrink: 0 }} />
-              <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", lineHeight: 1.15, color: "#0b0f1a" }}>
-                <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.55 }}>
+              background:
+                "linear-gradient(180deg, transparent, rgba(255,255,255,0.25), transparent)",
+              animation: "fade-in 0.6s ease-out both",
+              animationDelay: "0.1s",
+            }}
+          />
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div
+              className="animate-fade-in"
+              style={{
+                animationDelay: "0.2s",
+                animationFillMode: "both",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                height: 50,
+                padding: "0 14px",
+                background: "rgba(255,255,255,0.94)",
+                borderRadius: 12,
+                boxShadow: "0 6px 20px rgba(0,0,0,0.35)",
+                backdropFilter: "blur(8px)",
+              }}
+            >
+              <img
+                src={citroenLogo.url}
+                alt="Citroën"
+                style={{ height: 32, width: 32, objectFit: "contain", flexShrink: 0 }}
+              />
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  lineHeight: 1.15,
+                  color: "#0b0f1a",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 9,
+                    fontWeight: 800,
+                    letterSpacing: "0.16em",
+                    textTransform: "uppercase",
+                    opacity: 0.55,
+                  }}
+                >
                   Autorizovaný
                 </div>
-                <div style={{ fontFamily: "'Space Grotesk', system-ui", fontSize: 13, fontWeight: 700, letterSpacing: "-0.01em" }}>
+                <div
+                  style={{
+                    fontFamily: "'Space Grotesk', system-ui",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    letterSpacing: "-0.01em",
+                  }}
+                >
                   Prodejce & Servis
                 </div>
               </div>
             </div>
-            <div className="animate-fade-in" style={{
-              animationDelay: "0.35s", animationFillMode: "both",
-              display: "flex", alignItems: "center", gap: 10,
-              height: 50,
-              padding: "0 14px",
-              background: "rgba(255,255,255,0.94)",
-              borderRadius: 12,
-              boxShadow: "0 6px 20px rgba(0,0,0,0.35)",
-              backdropFilter: "blur(8px)",
-            }}>
-              <img src={peugeotLogo.url} alt="Peugeot" style={{ height: 32, width: 32, objectFit: "contain", flexShrink: 0 }} />
-              <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", lineHeight: 1.15, color: "#0b0f1a" }}>
-                <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.55 }}>
+            <div
+              className="animate-fade-in"
+              style={{
+                animationDelay: "0.35s",
+                animationFillMode: "both",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                height: 50,
+                padding: "0 14px",
+                background: "rgba(255,255,255,0.94)",
+                borderRadius: 12,
+                boxShadow: "0 6px 20px rgba(0,0,0,0.35)",
+                backdropFilter: "blur(8px)",
+              }}
+            >
+              <img
+                src={peugeotLogo.url}
+                alt="Peugeot"
+                style={{ height: 32, width: 32, objectFit: "contain", flexShrink: 0 }}
+              />
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  lineHeight: 1.15,
+                  color: "#0b0f1a",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 9,
+                    fontWeight: 800,
+                    letterSpacing: "0.16em",
+                    textTransform: "uppercase",
+                    opacity: 0.55,
+                  }}
+                >
                   Autorizovaný servis
                 </div>
-                <div style={{ fontFamily: "'Space Grotesk', system-ui", fontSize: 13, fontWeight: 700, letterSpacing: "-0.01em" }}>
+                <div
+                  style={{
+                    fontFamily: "'Space Grotesk', system-ui",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    letterSpacing: "-0.01em",
+                  }}
+                >
                   Nově od září 2026
                 </div>
               </div>
@@ -335,18 +451,36 @@ export function TvDisplay({ token }: { token: string }) {
         <div style={{ display: "flex", alignItems: "center", gap: 40 }}>
           {config?.show_clock !== false && (
             <div style={{ textAlign: "right", lineHeight: 1.05 }}>
-              <div style={{ fontSize: 11, opacity: 0.4, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 4 }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  opacity: 0.4,
+                  fontWeight: 700,
+                  letterSpacing: "0.16em",
+                  textTransform: "uppercase",
+                  marginBottom: 4,
+                }}
+              >
                 Právě je
               </div>
-              <div style={{
-                fontFamily: "'Space Grotesk', system-ui",
-                fontSize: 46, fontWeight: 700, letterSpacing: "-0.02em",
-                fontVariantNumeric: "tabular-nums",
-              }}>
+              <div
+                style={{
+                  fontFamily: "'Space Grotesk', system-ui",
+                  fontSize: 46,
+                  fontWeight: 700,
+                  letterSpacing: "-0.02em",
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
                 {now.toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" })}
               </div>
               <div style={{ fontSize: 14, opacity: 0.55 }}>
-                {now.toLocaleDateString("cs-CZ", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+                {now.toLocaleDateString("cs-CZ", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
               </div>
             </div>
           )}
@@ -362,7 +496,9 @@ export function TvDisplay({ token }: { token: string }) {
         <div
           style={{
             position: "absolute",
-            left: 0, right: 0, bottom: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
             height: 80,
             background: "rgba(0,0,0,0.55)",
             borderTop: "1px solid rgba(255,255,255,0.08)",
@@ -374,20 +510,35 @@ export function TvDisplay({ token }: { token: string }) {
             zIndex: 12,
           }}
         >
-          <div style={{
-            height: "100%", padding: "0 40px",
-            background: "linear-gradient(90deg, #ff6b35, #f7931e)",
-            color: "#0b0f1a",
-            display: "flex", alignItems: "center",
-            fontFamily: "'Space Grotesk', system-ui",
-            fontWeight: 800, fontStyle: "italic",
-            letterSpacing: "-0.02em", fontSize: 26, textTransform: "uppercase",
-            boxShadow: "10px 0 30px rgba(0,0,0,0.5)",
-            zIndex: 2, flexShrink: 0,
-          }}>NEWSFLASH</div>
-          <div className="tv-ticker" style={{ whiteSpace: "nowrap", fontSize: 26, fontWeight: 500, paddingLeft: "100vw" }}>
+          <div
+            style={{
+              height: "100%",
+              padding: "0 40px",
+              background: "linear-gradient(90deg, #ff6b35, #f7931e)",
+              color: "#0b0f1a",
+              display: "flex",
+              alignItems: "center",
+              fontFamily: "'Space Grotesk', system-ui",
+              fontWeight: 800,
+              fontStyle: "italic",
+              letterSpacing: "-0.02em",
+              fontSize: 26,
+              textTransform: "uppercase",
+              boxShadow: "10px 0 30px rgba(0,0,0,0.5)",
+              zIndex: 2,
+              flexShrink: 0,
+            }}
+          >
+            NEWSFLASH
+          </div>
+          <div
+            className="tv-ticker"
+            style={{ whiteSpace: "nowrap", fontSize: 26, fontWeight: 500, paddingLeft: "100vw" }}
+          >
             {Array.from({ length: 3 }).map((_, i) => (
-              <span key={i} style={{ marginRight: 120 }}>{config.ticker_text}</span>
+              <span key={i} style={{ marginRight: 120 }}>
+                {config.ticker_text}
+              </span>
             ))}
           </div>
         </div>
@@ -395,14 +546,17 @@ export function TvDisplay({ token }: { token: string }) {
 
       {/* Progress bar */}
       {current && (
-        <div style={{
-          position: "absolute",
-          left: 0, right: 0,
-          bottom: config?.ticker_text ? 80 : 0,
-          height: 3,
-          background: "rgba(255,255,255,0.15)",
-          zIndex: 11,
-        }}>
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: config?.ticker_text ? 80 : 0,
+            height: 3,
+            background: "rgba(255,255,255,0.15)",
+            zIndex: 11,
+          }}
+        >
           <div
             key={current.id + "-" + index}
             style={{
@@ -417,10 +571,16 @@ export function TvDisplay({ token }: { token: string }) {
       )}
 
       {error && (
-        <div style={{
-          position: "absolute", top: 8, left: 8,
-          fontSize: 10, color: "rgba(255,255,255,0.35)", zIndex: 20,
-        }}>
+        <div
+          style={{
+            position: "absolute",
+            top: 8,
+            left: 8,
+            fontSize: 10,
+            color: "rgba(255,255,255,0.35)",
+            zIndex: 20,
+          }}
+        >
           offline režim
         </div>
       )}
@@ -493,24 +653,33 @@ export function TvDisplay({ token }: { token: string }) {
         .tv-avatar { width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0; }
         .tv-live-dot { margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 12px #22c55e; }
       `}</style>
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=DM+Sans:wght@400;500;700&display=swap" />
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=DM+Sans:wght@400;500;700&display=swap"
+      />
     </div>
   );
 }
 
 function BrandingSlide() {
   return (
-    <div style={{
-      position: "absolute",
-      inset: 0,
-      background: "radial-gradient(ellipse at center, #1f2b47 0%, #0b0f1a 100%)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      flexDirection: "column",
-      gap: 40,
-    }}>
-      <img src={autoportLogo.url} alt="Autoport" style={{ height: 140, filter: "brightness(0) invert(1)" }} />
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        background: "radial-gradient(ellipse at center, #1f2b47 0%, #0b0f1a 100%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexDirection: "column",
+        gap: 40,
+      }}
+    >
+      <img
+        src={autoportLogo.url}
+        alt="Autoport"
+        style={{ height: 140, filter: "brightness(0) invert(1)" }}
+      />
       <div style={{ fontSize: 44, fontWeight: 300, opacity: 0.75, letterSpacing: "0.02em" }}>
         Vítejte v Autoportu
       </div>
@@ -529,12 +698,36 @@ function WeatherPill({ token, enabled }: { token: string; enabled: boolean }) {
   if (!enabled) return null;
   const w = q.data && q.data.widget === "weather" ? q.data : null;
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, paddingLeft: 32, borderLeft: "1px solid rgba(255,255,255,0.1)" }}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        paddingLeft: 32,
+        borderLeft: "1px solid rgba(255,255,255,0.1)",
+      }}
+    >
       <div style={{ textAlign: "right", lineHeight: 1.05 }}>
-        <div style={{ fontSize: 11, opacity: 0.4, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 4 }}>
+        <div
+          style={{
+            fontSize: 11,
+            opacity: 0.4,
+            fontWeight: 700,
+            letterSpacing: "0.16em",
+            textTransform: "uppercase",
+            marginBottom: 4,
+          }}
+        >
           Počasí
         </div>
-        <div style={{ fontFamily: "'Space Grotesk', system-ui", fontSize: 46, fontWeight: 700, letterSpacing: "-0.02em" }}>
+        <div
+          style={{
+            fontFamily: "'Space Grotesk', system-ui",
+            fontSize: 46,
+            fontWeight: 700,
+            letterSpacing: "-0.02em",
+          }}
+        >
           {w?.temp_c != null ? `${Math.round(w.temp_c)}°C` : "—"}
         </div>
       </div>
@@ -577,7 +770,9 @@ function TvSidebar({ token }: { token: string }) {
         <div className="tv-side-label">V showroomu dnes</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <div className="tv-side-card">
-            <div className="tv-stat-val" style={{ color: "#f7931e" }}>{stats?.day.vykupy ?? 0}</div>
+            <div className="tv-stat-val" style={{ color: "#f7931e" }}>
+              {stats?.day.vykupy ?? 0}
+            </div>
             <div className="tv-stat-lbl">Nové výkupy dnes</div>
           </div>
           <div className="tv-side-card">
@@ -585,11 +780,15 @@ function TvSidebar({ token }: { token: string }) {
             <div className="tv-stat-lbl">Hotové úkoly</div>
           </div>
           <div className="tv-side-card">
-            <div className="tv-stat-val" style={{ color: "#e84393" }}>{stats?.week.vykupy ?? 0}</div>
+            <div className="tv-stat-val" style={{ color: "#e84393" }}>
+              {stats?.week.vykupy ?? 0}
+            </div>
             <div className="tv-stat-lbl">Výkupy / týden</div>
           </div>
           <div className="tv-side-card">
-            <div className="tv-stat-val" style={{ color: "#6c5ce7" }}>{stats?.week.prodano ?? 0}</div>
+            <div className="tv-stat-val" style={{ color: "#6c5ce7" }}>
+              {stats?.week.prodano ?? 0}
+            </div>
             <div className="tv-stat-lbl">Prodáno / týden</div>
           </div>
         </div>
@@ -598,34 +797,69 @@ function TvSidebar({ token }: { token: string }) {
       <div style={{ minHeight: 0, display: "flex", flexDirection: "column" }}>
         <div className="tv-side-label">Kdo je právě v práci</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10, overflow: "hidden" }}>
-          {people.length ? people.slice(0, 4).map((p, i) => (
-            <div key={i} className="tv-person-row">
-              <div className="tv-avatar" style={{ background: gradients[i % gradients.length] }} />
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontWeight: 700, fontSize: 16, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
-                <div style={{ fontSize: 12, opacity: 0.5 }}>Online</div>
+          {people.length ? (
+            people.slice(0, 4).map((p, i) => (
+              <div key={i} className="tv-person-row">
+                <div
+                  className="tv-avatar"
+                  style={{ background: gradients[i % gradients.length] }}
+                />
+                <div style={{ minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontWeight: 700,
+                      fontSize: 16,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {p.name}
+                  </div>
+                  <div style={{ fontSize: 12, opacity: 0.5 }}>Online</div>
+                </div>
+                <div className="tv-live-dot" />
               </div>
-              <div className="tv-live-dot" />
+            ))
+          ) : (
+            <div style={{ fontSize: 14, opacity: 0.5, padding: "8px 0" }}>
+              Nikdo aktuálně nepracuje
             </div>
-          )) : (
-            <div style={{ fontSize: 14, opacity: 0.5, padding: "8px 0" }}>Nikdo aktuálně nepracuje</div>
           )}
         </div>
       </div>
 
-      <div style={{
-        marginTop: "auto",
-        padding: 24,
-        background: "linear-gradient(135deg, rgba(255,107,53,0.2), rgba(232,67,147,0.15))",
-        border: "1px solid rgba(255,255,255,0.1)",
-        borderRadius: 24,
-      }}>
-        <div style={{ color: "rgba(255,255,255,0.6)", fontWeight: 700, fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 8 }}>
+      <div
+        style={{
+          marginTop: "auto",
+          padding: 24,
+          background: "linear-gradient(135deg, rgba(255,107,53,0.2), rgba(232,67,147,0.15))",
+          border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: 24,
+        }}
+      >
+        <div
+          style={{
+            color: "rgba(255,255,255,0.6)",
+            fontWeight: 700,
+            fontSize: 11,
+            letterSpacing: "0.16em",
+            textTransform: "uppercase",
+            marginBottom: 8,
+          }}
+        >
           Aktuality
         </div>
         {news[0] ? (
           <>
-            <div style={{ fontFamily: "'Space Grotesk', system-ui", fontSize: 22, fontWeight: 700, lineHeight: 1.2 }}>
+            <div
+              style={{
+                fontFamily: "'Space Grotesk', system-ui",
+                fontSize: 22,
+                fontWeight: 700,
+                lineHeight: 1.2,
+              }}
+            >
               {news[0].title}
             </div>
             {news[0].body && (
@@ -639,4 +873,3 @@ function TvSidebar({ token }: { token: string }) {
     </aside>
   );
 }
-

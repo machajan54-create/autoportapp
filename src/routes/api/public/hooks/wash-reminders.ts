@@ -41,12 +41,8 @@ export const Route = createFileRoute("/api/public/hooks/wash-reminders")({
       POST: async ({ request }) => {
         const unauthorized = await requireCronAuth(request);
         if (unauthorized) return unauthorized;
-        const { supabaseAdmin } = await import(
-          "@/integrations/supabase/client.server"
-        );
-        const { enqueueTransactionalEmail } = await import(
-          "@/lib/email/notify.server"
-        );
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { enqueueTransactionalEmail } = await import("@/lib/email/notify.server");
 
         // ~2h window (1h55m) so hourly cron consistently re-sends after 2h.
         const cutoff = new Date(Date.now() - 115 * 60 * 1000).toISOString();
@@ -59,10 +55,10 @@ export const Route = createFileRoute("/api/public/hooks/wash-reminders")({
           )
           .eq("status", "pending");
         if (error) {
-          return new Response(
-            JSON.stringify({ ok: false, error: error.message }),
-            { status: 500, headers: { "Content-Type": "application/json" } },
-          );
+          return new Response(JSON.stringify({ ok: false, error: error.message }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          });
         }
 
         const due = (assignments ?? []).filter((a: any) => {
@@ -109,9 +105,7 @@ export const Route = createFileRoute("/api/public/hooks/wash-reminders")({
             await enqueueTransactionalEmail({
               templateName: "wash-reminder",
               recipientEmail: washer.email,
-              idempotencyKey: `wash-reminder-${a.id}-${new Date()
-                .toISOString()
-                .slice(0, 10)}`,
+              idempotencyKey: `wash-reminder-${a.id}-${new Date().toISOString().slice(0, 10)}`,
               templateData: {
                 recipientName: washer.name ?? "",
                 klient: order.klient ?? "",

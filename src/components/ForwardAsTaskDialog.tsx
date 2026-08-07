@@ -162,11 +162,7 @@ export function ForwardAsTaskDialog({
             </div>
             <div>
               <Label>Termín</Label>
-              <Input
-                type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-              />
+              <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
             </div>
           </div>
           <div>
