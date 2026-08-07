@@ -503,6 +503,7 @@ export async function performBackup(params: {
   webViewLink?: string | null;
   buckets: number;
   files: number;
+  folder: string;
 }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -523,6 +524,18 @@ export async function performBackup(params: {
   const runId = run.id as string;
 
   try {
+    const cache = new Map<string, string>();
+    const runStamp = new Date()
+      .toISOString()
+      .replace(/[:.]/g, "-")
+      .replace("T", "_")
+      .slice(0, 16);
+    const runFolderId = await ensureFolderPath(
+      settings.drive_folder_id,
+      ["AutoPort zálohy", runStamp],
+      cache,
+    );
+
     const dump: Record<string, unknown> = {
       __meta: { generated_at: new Date().toISOString(), app: "autoport", version: 1 },
     };
@@ -555,13 +568,14 @@ export async function performBackup(params: {
     const { gzipSync } = await import("node:zlib");
     const gz = gzipSync(Buffer.from(JSON.stringify(dump), "utf8"), { level: 9 });
     const stamp = new Date().toISOString().replace(/[:.]/g, "-").replace("T", "_").slice(0, 19);
+    const dbFolderId = await ensureFolderPath(runFolderId, ["databaze"], cache);
     const uploaded = await uploadGzipToDrive(
-      settings.drive_folder_id,
+      dbFolderId,
       `autoport-backup-${stamp}.json.gz`,
       gz,
     );
 
-    const storage = await backupStorageBuckets(supabaseAdmin, settings.drive_folder_id);
+    const storage = await backupStorageBuckets(supabaseAdmin, runFolderId);
     const totalSize = (uploaded.size ?? gz.byteLength) + storage.sizeBytes;
     const duration = Date.now() - startedAt;
 
@@ -596,6 +610,7 @@ export async function performBackup(params: {
       webViewLink: uploaded.webViewLink ?? null,
       buckets: storage.bucketsCount,
       files: storage.filesCount,
+      folder: runStamp,
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
