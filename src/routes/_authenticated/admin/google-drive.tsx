@@ -1368,6 +1368,7 @@ function GoogleDrivePage() {
 }
 
 type HistoryRun = {
+*** MARKER ***
   id: string;
   kind: string | null;
   status: string;
