@@ -215,6 +215,42 @@ function GoogleDrivePage() {
 
   const listFiles = useServerFn(listBackupFiles);
   const restoreFn = useServerFn(restoreBackupFromDrive);
+  const listStorageFiles = useServerFn(listStorageBackupFiles);
+  const restoreStorageFn = useServerFn(restoreStorageFromDrive);
+
+  const storageFiles = useQuery({
+    queryKey: ["gdrive-storage-files"],
+    queryFn: () => listStorageFiles({}),
+    enabled: !!status.data?.connected && !!status.data?.settings?.drive_folder_id,
+  });
+
+  const [selectedStorageFile, setSelectedStorageFile] = useState<null | {
+    id: string;
+    name: string;
+  }>(null);
+  const [storageConfirm, setStorageConfirm] = useState("");
+  const [storageOverwrite, setStorageOverwrite] = useState(false);
+
+  const restoreStorageM = useMutation({
+    mutationFn: (input: {
+      fileId: string;
+      fileName: string;
+      overwrite: boolean;
+      confirm: string;
+    }) => restoreStorageFn({ data: input }),
+    onSuccess: (data: any) => {
+      if (data.ok) {
+        toast.success(
+          `Soubory obnoveny – bucket ${data.bucket}: ${data.restored} souborů (přeskočeno ${data.skipped}).`,
+        );
+      } else {
+        toast.error(`Obnova souborů dokončena s chybami (${data.errors?.length ?? 0}).`);
+      }
+      setSelectedStorageFile(null);
+      setStorageConfirm("");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Obnova souborů selhala"),
+  });
 
   const files = useQuery({
     queryKey: ["gdrive-backup-files"],
