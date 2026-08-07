@@ -869,6 +869,17 @@ function GoogleDrivePage() {
                       )}
                       <Button
                         size="sm"
+                        variant="outline"
+                        onClick={() => validateM.mutate({ fileId: f.id, fileName: f.name })}
+                        disabled={validateM.isPending}
+                      >
+                        {validateM.isPending && validateM.variables?.fileId === f.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : null}
+                        Zkontrolovat (dry-run)
+                      </Button>
+                      <Button
+                        size="sm"
                         variant="destructive"
                         onClick={() => {
                           setSelectedFile({
@@ -884,6 +895,11 @@ function GoogleDrivePage() {
                         <Download className="h-4 w-4" /> Obnovit
                       </Button>
                     </div>
+                    {validation?.fileId === f.id && (
+                      <div className="w-full">
+                        <ValidationReport result={validation.result} />
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
