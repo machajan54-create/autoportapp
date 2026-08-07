@@ -236,6 +236,18 @@ function GoogleDrivePage() {
   const restoreFn = useServerFn(restoreBackupFromDrive);
   const listStorageFiles = useServerFn(listStorageBackupFiles);
   const restoreStorageFn = useServerFn(restoreStorageFromDrive);
+  const validateFn = useServerFn(validateBackupArchive);
+
+  const [validation, setValidation] = useState<null | { fileId: string; result: any }>(null);
+  const validateM = useMutation({
+    mutationFn: (input: { fileId: string; fileName: string }) => validateFn({ data: input }),
+    onSuccess: (result: any, vars) => {
+      setValidation({ fileId: vars.fileId, result });
+      if (result.ok) toast.success("Kontrola archivu proběhla v pořádku (bez zápisu).");
+      else toast.error("Archiv neprošel kontrolou – obnova by selhala.");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Kontrola archivu selhala"),
+  });
 
   const storageFiles = useQuery({
     queryKey: ["gdrive-storage-files"],
