@@ -1,68 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { BACKUP_TABLES } from "@/lib/backup-tables";
 
 const GATEWAY_BASE = "https://connector-gateway.lovable.dev/google_drive";
-
-// Uživatelské tabulky, které se zálohují (bez systémových auth/storage schémat).
-const BACKUP_TABLES = [
-  "profiles",
-  "user_roles",
-  "user_modules",
-  "attendance_absences",
-  "attendance_employees",
-  "attendance_employee_pins",
-  "attendance_notifications",
-  "attendance_pin_ip_allowlist",
-  "attendance_records",
-  "attendance_settings",
-  "attendance_shifts",
-  "audit_log",
-  "backup_settings",
-  "backup_runs",
-  "claim_attachments",
-  "claim_events",
-  "claim_tasks",
-  "claims",
-  "clients",
-  "deal_stage_history",
-  "deals",
-  "defects",
-  "deletion_requests",
-  "demo_order_documents",
-  "demo_order_events",
-  "demo_order_signatures",
-  "demo_orders",
-  "document_templates",
-  "email_send_log",
-  "email_send_state",
-  "email_unsubscribe_tokens",
-  "evidence_orders",
-  "evidence_wash_assignments",
-  "logbook_entries",
-  "logbook_vehicles",
-  "pin_attempt_log",
-  "purchases",
-  "suppliers",
-  "suppressed_emails",
-  "task_attachments",
-  "task_comments",
-  "tasks",
-  "vykup_photos",
-  "vykupy",
-  "washers",
-] as const;
-
-// Storage buckety (soubory, fotky, PDF), které se zálohují na Disk.
-const BACKUP_BUCKETS = [
-  "attendance-reports",
-  "defect-photos",
-  "logbook-receipts",
-  "slides",
-  "vykup-photos",
-  "task-attachments",
-  "claim-files",
-] as const;
 
 function requireEnv() {
   const lovableKey = process.env.LOVABLE_API_KEY;
@@ -309,51 +250,6 @@ export const testGoogleDriveWrite = createServerFn({ method: "POST" })
     return JSON.parse(text);
   });
 
-async function uploadJsonGzipToDrive(
-  folderId: string,
-  name: string,
-  content: Buffer,
-): Promise<{ id: string; name: string; webViewLink?: string; size?: number }> {
-  const { lovableKey, connKey } = requireEnv();
-  const boundary = `-------lovable${Date.now()}`;
-  const metadata = {
-    name,
-    parents: [folderId],
-    mimeType: "application/gzip",
-  };
-  const preamble =
-    `--${boundary}\r\n` +
-    `Content-Type: application/json; charset=UTF-8\r\n\r\n` +
-    `${JSON.stringify(metadata)}\r\n` +
-    `--${boundary}\r\n` +
-    `Content-Type: application/gzip\r\n` +
-    `Content-Transfer-Encoding: binary\r\n\r\n`;
-  const closing = `\r\n--${boundary}--`;
-  const body = Buffer.concat([
-    Buffer.from(preamble, "utf8"),
-    content,
-    Buffer.from(closing, "utf8"),
-  ]);
-
-  const res = await fetch(
-    `${GATEWAY_BASE}/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,size`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${lovableKey}`,
-        "X-Connection-Api-Key": connKey,
-        "Content-Type": `multipart/related; boundary=${boundary}`,
-      },
-      body,
-    },
-  );
-  const text = await res.text();
-  if (!res.ok) {
-    throw new Error(`Nahrání zálohy selhalo (${res.status}): ${text.slice(0, 300)}`);
-  }
-  const parsed = JSON.parse(text);
-  return { ...parsed, size: parsed.size ? Number(parsed.size) : undefined };
-}
 
 // ---------------- ZÁLOHA (deleguje do backup-core.server) ----------------
 
