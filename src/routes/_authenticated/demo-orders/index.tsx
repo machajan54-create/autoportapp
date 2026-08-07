@@ -6,7 +6,14 @@ import { toast } from "sonner";
 import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Plus, Search, ClipboardSignature } from "lucide-react";
 import { RequestDeleteButton } from "@/components/RequestDeleteButton";
 import { listDemoOrders } from "@/lib/demo-orders.functions";
@@ -32,7 +39,11 @@ const STATUS_CLASS: Record<string, string> = {
 
 function fmtKc(n: number | null | undefined) {
   if (n == null) return "—";
-  return new Intl.NumberFormat("cs-CZ", { style: "currency", currency: "CZK", maximumFractionDigits: 0 }).format(Number(n));
+  return new Intl.NumberFormat("cs-CZ", {
+    style: "currency",
+    currency: "CZK",
+    maximumFractionDigits: 0,
+  }).format(Number(n));
 }
 
 function DemoOrdersList() {
@@ -61,7 +72,9 @@ function DemoOrdersList() {
   return (
     <AdminShell requireModule="demo_orders">
       <div className="mx-auto max-w-6xl px-4 py-8 md:py-10">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Divize Nové vozy</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Divize Nové vozy
+        </p>
         <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
           <h1 className="flex items-center gap-2 text-2xl font-bold md:text-3xl">
             <ClipboardSignature className="h-7 w-7 text-primary" />
@@ -76,7 +89,12 @@ function DemoOrdersList() {
         <div className="mt-6 rounded-xl border bg-card p-3">
           <div className="relative max-w-xs">
             <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Hledat číslo, klient, model…" className="h-9 pl-8" />
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Hledat číslo, klient, model…"
+              className="h-9 pl-8"
+            />
           </div>
         </div>
 
@@ -96,21 +114,46 @@ function DemoOrdersList() {
             </TableHeader>
             <TableBody>
               {isLoading && (
-                <TableRow><TableCell colSpan={8} className="text-center text-sm text-muted-foreground">Načítám…</TableCell></TableRow>
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center text-sm text-muted-foreground">
+                    Načítám…
+                  </TableCell>
+                </TableRow>
               )}
               {!isLoading && rows.length === 0 && (
-                <TableRow><TableCell colSpan={8} className="text-center text-sm text-muted-foreground">Žádné objednávky.</TableCell></TableRow>
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center text-sm text-muted-foreground">
+                    Žádné objednávky.
+                  </TableCell>
+                </TableRow>
               )}
               {rows.map((r: any) => (
-                <TableRow key={r.id} className="cursor-pointer" onClick={() => navigate({ to: "/demo-orders/$id", params: { id: r.id } })}>
+                <TableRow
+                  key={r.id}
+                  className="cursor-pointer"
+                  onClick={() => navigate({ to: "/demo-orders/$id", params: { id: r.id } })}
+                >
                   <TableCell className="font-medium">{r.order_number}</TableCell>
                   <TableCell>{r.client?.full_name || r.client?.company || "—"}</TableCell>
                   <TableCell>{r.model_verze || "—"}</TableCell>
-                  <TableCell className="text-xs tabular-nums">{[r.rz, r.vin].filter(Boolean).join(" / ") || "—"}</TableCell>
-                  <TableCell>{r.datum_objednavky ? new Date(r.datum_objednavky).toLocaleDateString("cs-CZ") : "—"}</TableCell>
-                  <TableCell className="text-right tabular-nums">{fmtKc(r.cena_celkem_s_dph)}</TableCell>
+                  <TableCell className="text-xs tabular-nums">
+                    {[r.rz, r.vin].filter(Boolean).join(" / ") || "—"}
+                  </TableCell>
                   <TableCell>
-                    <span className={cn("inline-block rounded-md border px-2 py-0.5 text-xs font-medium", STATUS_CLASS[r.status] || "bg-muted")}>
+                    {r.datum_objednavky
+                      ? new Date(r.datum_objednavky).toLocaleDateString("cs-CZ")
+                      : "—"}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {fmtKc(r.cena_celkem_s_dph)}
+                  </TableCell>
+                  <TableCell>
+                    <span
+                      className={cn(
+                        "inline-block rounded-md border px-2 py-0.5 text-xs font-medium",
+                        STATUS_CLASS[r.status] || "bg-muted",
+                      )}
+                    >
                       {STATUS_LABEL[r.status] || r.status}
                     </span>
                   </TableCell>

@@ -4,8 +4,16 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
-  CheckSquare, Plus, Trash2, Loader2, MessageSquare, Paperclip,
-  Download, Repeat, Filter as FilterIcon, X,
+  CheckSquare,
+  Plus,
+  Trash2,
+  Loader2,
+  MessageSquare,
+  Paperclip,
+  Download,
+  Repeat,
+  Filter as FilterIcon,
+  X,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminShell } from "@/components/AdminShell";
@@ -16,21 +24,38 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { listResolvers } from "@/lib/dochazka.functions";
 import {
-  listTasks, createTask, updateTask,
-  TASK_PRIORITY, TASK_STATUS, TASK_PRIORITY_LABEL, TASK_STATUS_LABEL,
-  TASK_RECURRENCE, TASK_RECURRENCE_LABEL,
+  listTasks,
+  createTask,
+  updateTask,
+  TASK_PRIORITY,
+  TASK_STATUS,
+  TASK_PRIORITY_LABEL,
+  TASK_STATUS_LABEL,
+  TASK_RECURRENCE,
+  TASK_RECURRENCE_LABEL,
 } from "@/lib/tasks.functions";
 import {
-  listTaskComments, addTaskComment,
-  listTaskAttachments, recordTaskAttachment,
+  listTaskComments,
+  addTaskComment,
+  listTaskAttachments,
+  recordTaskAttachment,
   getTaskAttachmentUrl,
 } from "@/lib/task-extras.functions";
 import { cn } from "@/lib/utils";
@@ -64,7 +89,10 @@ function TasksPage() {
   }, []);
 
   const { data, isLoading } = useQuery({ queryKey: ["tasks"], queryFn: () => fetchList({}) });
-  const { data: users } = useQuery({ queryKey: ["dochazka", "users"], queryFn: () => fetchUsers({}) });
+  const { data: users } = useQuery({
+    queryKey: ["dochazka", "users"],
+    queryFn: () => fetchUsers({}),
+  });
   const rows = data?.rows ?? [];
 
   const [filter, setFilter] = useState<"open" | "mine" | "all">("open");
@@ -104,14 +132,12 @@ function TasksPage() {
   }, [rows, filter, userId, assigneeFilter, priorityFilter, deadlineFilter]);
 
   const filtersActive =
-    assigneeFilter !== "__all" ||
-    priorityFilter !== "__all" ||
-    deadlineFilter !== "all";
+    assigneeFilter !== "__all" || priorityFilter !== "__all" || deadlineFilter !== "all";
 
   const [createOpen, setCreateOpen] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
 
-  async function handleStatus(id: string, status: typeof TASK_STATUS[number]) {
+  async function handleStatus(id: string, status: (typeof TASK_STATUS)[number]) {
     try {
       await updateFn({ data: { id, status } });
       qc.invalidateQueries({ queryKey: ["tasks"] });
@@ -130,14 +156,14 @@ function TasksPage() {
             </div>
             <div>
               <h1 className="text-2xl font-semibold">Úkoly</h1>
-              <p className="text-sm text-muted-foreground">
-                Sledování úkolů, přiřazení a stavu.
-              </p>
+              <p className="text-sm text-muted-foreground">Sledování úkolů, přiřazení a stavu.</p>
             </div>
           </div>
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
-              <Button><Plus className="mr-2 h-4 w-4" /> Nový úkol</Button>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" /> Nový úkol
+              </Button>
             </DialogTrigger>
             {createOpen && (
               <CreateTaskDialog
@@ -155,8 +181,12 @@ function TasksPage() {
 
         <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
           <TabsList>
-            <TabsTrigger value="open">Otevřené ({rows.filter((r) => r.status !== "done").length})</TabsTrigger>
-            <TabsTrigger value="mine">Moje ({rows.filter((r) => r.assignee_id === userId).length})</TabsTrigger>
+            <TabsTrigger value="open">
+              Otevřené ({rows.filter((r) => r.status !== "done").length})
+            </TabsTrigger>
+            <TabsTrigger value="mine">
+              Moje ({rows.filter((r) => r.assignee_id === userId).length})
+            </TabsTrigger>
             <TabsTrigger value="all">Vše ({rows.length})</TabsTrigger>
           </TabsList>
         </Tabs>
@@ -168,12 +198,16 @@ function TasksPage() {
           <div className="space-y-1">
             <Label className="text-xs">Přiřazená osoba</Label>
             <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-              <SelectTrigger className="h-9 w-48"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-9 w-48">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__all">Všichni</SelectItem>
                 <SelectItem value="__none">Bez přiřazení</SelectItem>
                 {(users ?? []).map((u) => (
-                  <SelectItem key={u.id} value={u.id}>{u.full_name || u.email || u.id}</SelectItem>
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.full_name || u.email || u.id}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -181,11 +215,15 @@ function TasksPage() {
           <div className="space-y-1">
             <Label className="text-xs">Priorita</Label>
             <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-              <SelectTrigger className="h-9 w-36"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-9 w-36">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__all">Všechny</SelectItem>
                 {TASK_PRIORITY.map((p) => (
-                  <SelectItem key={p} value={p}>{TASK_PRIORITY_LABEL[p]}</SelectItem>
+                  <SelectItem key={p} value={p}>
+                    {TASK_PRIORITY_LABEL[p]}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -193,7 +231,9 @@ function TasksPage() {
           <div className="space-y-1">
             <Label className="text-xs">Termín</Label>
             <Select value={deadlineFilter} onValueChange={(v) => setDeadlineFilter(v as any)}>
-              <SelectTrigger className="h-9 w-44"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-9 w-44">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Vše</SelectItem>
                 <SelectItem value="overdue">Po termínu</SelectItem>
@@ -253,7 +293,9 @@ function TasksPage() {
                       Vytvořil: {r.creator_name ?? "—"} ·{" "}
                       {new Date(r.created_at).toLocaleDateString("cs-CZ")}
                       {r.assignee_name && <> · Přiřazeno: {r.assignee_name}</>}
-                      {r.due_date && <> · Termín: {new Date(r.due_date).toLocaleDateString("cs-CZ")}</>}
+                      {r.due_date && (
+                        <> · Termín: {new Date(r.due_date).toLocaleDateString("cs-CZ")}</>
+                      )}
                     </div>
                     {r.description && (
                       <p className="mt-2 whitespace-pre-wrap text-sm">{r.description}</p>
@@ -262,12 +304,16 @@ function TasksPage() {
                   <div className="flex flex-col items-end gap-2">
                     <Select
                       value={r.status}
-                      onValueChange={(v) => handleStatus(r.id, v as typeof TASK_STATUS[number])}
+                      onValueChange={(v) => handleStatus(r.id, v as (typeof TASK_STATUS)[number])}
                     >
-                      <SelectTrigger className="h-8 w-36"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="h-8 w-36">
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         {TASK_STATUS.map((s) => (
-                          <SelectItem key={s} value={s}>{TASK_STATUS_LABEL[s]}</SelectItem>
+                          <SelectItem key={s} value={s}>
+                            {TASK_STATUS_LABEL[s]}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -290,17 +336,17 @@ function TasksPage() {
           </div>
         )}
 
-        <TaskDetailDialog
-          taskId={detailId}
-          onClose={() => setDetailId(null)}
-        />
+        <TaskDetailDialog taskId={detailId} onClose={() => setDetailId(null)} />
       </div>
     </AdminShell>
   );
 }
 
 function CreateTaskDialog({
-  users, onClose, onCreated, createFn,
+  users,
+  onClose,
+  onCreated,
+  createFn,
 }: {
   users: Array<{ id: string; full_name: string | null; email: string | null }>;
   onClose: () => void;
@@ -309,7 +355,7 @@ function CreateTaskDialog({
 }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState<typeof TASK_PRIORITY[number]>("medium");
+  const [priority, setPriority] = useState<(typeof TASK_PRIORITY)[number]>("medium");
   const [dueDate, setDueDate] = useState("");
   const [assigneeId, setAssigneeId] = useState<string>("__none");
   const [recurrence, setRecurrence] = useState<string>("__none");
@@ -345,41 +391,70 @@ function CreateTaskDialog({
 
   return (
     <DialogContent className="sm:max-w-lg">
-      <DialogHeader><DialogTitle>Nový úkol</DialogTitle></DialogHeader>
+      <DialogHeader>
+        <DialogTitle>Nový úkol</DialogTitle>
+      </DialogHeader>
       <div className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor="t-title">Název *</Label>
-          <Input id="t-title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} />
+          <Input
+            id="t-title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            maxLength={200}
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="t-desc">Popis</Label>
-          <Textarea id="t-desc" value={description} onChange={(e) => setDescription(e.target.value)} maxLength={4000} rows={4} />
+          <Textarea
+            id="t-desc"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            maxLength={4000}
+            rows={4}
+          />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label>Priorita</Label>
-            <Select value={priority} onValueChange={(v) => setPriority(v as typeof TASK_PRIORITY[number])}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+            <Select
+              value={priority}
+              onValueChange={(v) => setPriority(v as (typeof TASK_PRIORITY)[number])}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 {TASK_PRIORITY.map((p) => (
-                  <SelectItem key={p} value={p}>{TASK_PRIORITY_LABEL[p]}</SelectItem>
+                  <SelectItem key={p} value={p}>
+                    {TASK_PRIORITY_LABEL[p]}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="t-due">Termín</Label>
-            <Input id="t-due" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+            <Input
+              id="t-due"
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+            />
           </div>
         </div>
         <div className="space-y-1.5">
           <Label>Přiřadit komu</Label>
           <Select value={assigneeId} onValueChange={setAssigneeId}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="__none">Bez přiřazení</SelectItem>
               {users.map((u) => (
-                <SelectItem key={u.id} value={u.id}>{u.full_name || u.email || u.id}</SelectItem>
+                <SelectItem key={u.id} value={u.id}>
+                  {u.full_name || u.email || u.id}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -388,11 +463,15 @@ function CreateTaskDialog({
           <div className="space-y-1.5">
             <Label>Opakování</Label>
             <Select value={recurrence} onValueChange={setRecurrence}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__none">Jednorázový</SelectItem>
                 {TASK_RECURRENCE.map((r) => (
-                  <SelectItem key={r} value={r}>{TASK_RECURRENCE_LABEL[r]}</SelectItem>
+                  <SelectItem key={r} value={r}>
+                    {TASK_RECURRENCE_LABEL[r]}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -415,7 +494,9 @@ function CreateTaskDialog({
         </div>
       </div>
       <DialogFooter>
-        <Button variant="outline" onClick={onClose} disabled={submitting}>Zrušit</Button>
+        <Button variant="outline" onClick={onClose} disabled={submitting}>
+          Zrušit
+        </Button>
         <Button onClick={submit} disabled={submitting}>
           {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Vytvořit
@@ -425,13 +506,7 @@ function CreateTaskDialog({
   );
 }
 
-function TaskDetailDialog({
-  taskId,
-  onClose,
-}: {
-  taskId: string | null;
-  onClose: () => void;
-}) {
+function TaskDetailDialog({ taskId, onClose }: { taskId: string | null; onClose: () => void }) {
   const qc = useQueryClient();
   const open = !!taskId;
   const fetchComments = useServerFn(listTaskComments);
@@ -535,12 +610,7 @@ function TaskDetailDialog({
               <Paperclip className="h-4 w-4" /> Přílohy
             </div>
             <div className="flex items-center gap-2">
-              <input
-                ref={fileRef}
-                type="file"
-                className="hidden"
-                onChange={handleUpload}
-              />
+              <input ref={fileRef} type="file" className="hidden" onChange={handleUpload} />
               <Button
                 variant="outline"
                 size="sm"
@@ -563,15 +633,11 @@ function TaskDetailDialog({
             ) : (
               <ul className="divide-y rounded border">
                 {(attachmentsData?.rows ?? []).map((a: any) => (
-                  <li
-                    key={a.id}
-                    className="flex items-center justify-between gap-2 p-2 text-sm"
-                  >
+                  <li key={a.id} className="flex items-center justify-between gap-2 p-2 text-sm">
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-medium">{a.file_name}</div>
                       <div className="text-xs text-muted-foreground">
-                        {a.uploader_name ?? "—"} ·{" "}
-                        {(a.size_bytes / 1024).toFixed(0)} KB
+                        {a.uploader_name ?? "—"} · {(a.size_bytes / 1024).toFixed(0)} KB
                       </div>
                     </div>
                     <Button variant="ghost" size="sm" onClick={() => handleDownload(a.id)}>
@@ -604,8 +670,7 @@ function TaskDetailDialog({
                   <li key={c.id} className="rounded border bg-muted/30 p-2 text-sm">
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>
-                        {c.author_name ?? "—"} ·{" "}
-                        {new Date(c.created_at).toLocaleString("cs-CZ")}
+                        {c.author_name ?? "—"} · {new Date(c.created_at).toLocaleString("cs-CZ")}
                       </span>
                       <RequestDeleteButton
                         entityType="task_comments"
@@ -640,7 +705,9 @@ function TaskDetailDialog({
           </section>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Zavřít</Button>
+          <Button variant="outline" onClick={onClose}>
+            Zavřít
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

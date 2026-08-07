@@ -5,7 +5,13 @@ import { useState } from "react";
 import { AdminShell } from "@/components/AdminShell";
 import { listAuditLog, listAuditModules } from "@/lib/audit.functions";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/admin/audit")({
@@ -49,12 +55,19 @@ function AuditPage() {
 
         <div className="mt-6 flex flex-wrap gap-3">
           <div className="w-48">
-            <Select value={module || "__all"} onValueChange={(v) => setModule(v === "__all" ? "" : v)}>
-              <SelectTrigger><SelectValue placeholder="Modul" /></SelectTrigger>
+            <Select
+              value={module || "__all"}
+              onValueChange={(v) => setModule(v === "__all" ? "" : v)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Modul" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__all">Všechny moduly</SelectItem>
                 {(mods?.modules ?? []).map((m) => (
-                  <SelectItem key={m} value={m}>{MODULE_LABEL[m] ?? m}</SelectItem>
+                  <SelectItem key={m} value={m}>
+                    {MODULE_LABEL[m] ?? m}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -80,9 +93,17 @@ function AuditPage() {
             </thead>
             <tbody className="divide-y">
               {isLoading ? (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">Načítám…</td></tr>
+                <tr>
+                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                    Načítám…
+                  </td>
+                </tr>
               ) : (data?.rows ?? []).length === 0 ? (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">Žádné záznamy.</td></tr>
+                <tr>
+                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                    Žádné záznamy.
+                  </td>
+                </tr>
               ) : (
                 (data?.rows ?? []).map((r: any) => (
                   <tr key={r.id} className="hover:bg-muted/30">
@@ -98,9 +119,13 @@ function AuditPage() {
                       <div className="truncate">{r.entity_label ?? r.entity_id ?? "—"}</div>
                       {r.details && (
                         <div className="text-xs text-muted-foreground">
-                          {Object.entries(r.details).slice(0, 3).map(([k, v]) => (
-                            <span key={k} className="mr-3">{k}: {String(v)}</span>
-                          ))}
+                          {Object.entries(r.details)
+                            .slice(0, 3)
+                            .map(([k, v]) => (
+                              <span key={k} className="mr-3">
+                                {k}: {String(v)}
+                              </span>
+                            ))}
                         </div>
                       )}
                     </td>

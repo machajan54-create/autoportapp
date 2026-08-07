@@ -1,40 +1,32 @@
-import React from 'react'
-import { Head, Heading, Html, Preview, Section, Text } from '@react-email/components'
-import type { TemplateEntry } from './registry'
-import {
-  Body,
-  Container,
-  Footer,
-  Header,
-  Hr,
-  PrimaryButton,
-  styles,
-} from './_layout'
+import React from "react";
+import { Head, Heading, Html, Preview, Section, Text } from "@react-email/components";
+import type { TemplateEntry } from "./registry";
+import { Body, Container, Footer, Header, Hr, PrimaryButton, styles } from "./_layout";
 
 export interface ApprovalRequestProps {
-  kind?: 'vacation' | 'purchase' | 'claim'
-  requesterName?: string
-  title?: string
-  details?: string
-  meta?: Array<{ label: string; value: string }>
-  actionUrl?: string
+  kind?: "vacation" | "purchase" | "claim";
+  requesterName?: string;
+  title?: string;
+  details?: string;
+  meta?: Array<{ label: string; value: string }>;
+  actionUrl?: string;
 }
 
 const KIND_LABEL: Record<string, string> = {
-  vacation: 'Žádost o dovolenou',
-  purchase: 'Žádost o nákup',
-  claim: 'Nová reklamace',
-}
+  vacation: "Žádost o dovolenou",
+  purchase: "Žádost o nákup",
+  claim: "Nová reklamace",
+};
 
 const Email = ({
-  kind = 'purchase',
-  requesterName = 'Uživatel',
-  title = '',
-  details = '',
+  kind = "purchase",
+  requesterName = "Uživatel",
+  title = "",
+  details = "",
   meta = [],
-  actionUrl = 'https://www.autoport-app.cz/dashboard',
+  actionUrl = "https://www.autoport-app.cz/dashboard",
 }: ApprovalRequestProps) => {
-  const label = KIND_LABEL[kind] ?? 'Nová žádost'
+  const label = KIND_LABEL[kind] ?? "Nová žádost";
   return (
     <Html lang="cs" dir="ltr">
       <Head />
@@ -44,9 +36,7 @@ const Email = ({
           <Header />
           <Section style={styles.content}>
             <Heading style={styles.h1}>{label}</Heading>
-            <Text style={styles.lead}>
-              {requesterName} podal/a novou žádost ke schválení.
-            </Text>
+            <Text style={styles.lead}>{requesterName} podal/a novou žádost ke schválení.</Text>
             {title ? <Text style={styles.title}>{title}</Text> : null}
             {meta.length > 0 ? (
               <Section style={styles.metaBox}>
@@ -65,23 +55,23 @@ const Email = ({
         </Container>
       </Body>
     </Html>
-  )
-}
+  );
+};
 
 export const template = {
   component: Email,
   subject: (d: Record<string, any>) =>
-    `${KIND_LABEL[d?.kind] ?? 'Nová žádost'} – ${d?.title || d?.requesterName || 'Autoport App'}`,
-  displayName: 'Žádost ke schválení (super admin)',
+    `${KIND_LABEL[d?.kind] ?? "Nová žádost"} – ${d?.title || d?.requesterName || "Autoport App"}`,
+  displayName: "Žádost ke schválení (super admin)",
   previewData: {
-    kind: 'purchase',
-    requesterName: 'Jan Novák',
-    title: 'Nákup nářadí',
-    details: 'Sada klíčů pro servis.',
+    kind: "purchase",
+    requesterName: "Jan Novák",
+    title: "Nákup nářadí",
+    details: "Sada klíčů pro servis.",
     meta: [
-      { label: 'Částka', value: '4 500 CZK' },
-      { label: 'Dodavatel', value: 'ACME s.r.o.' },
+      { label: "Částka", value: "4 500 CZK" },
+      { label: "Dodavatel", value: "ACME s.r.o." },
     ],
-    actionUrl: 'https://www.autoport-app.cz/approvals',
+    actionUrl: "https://www.autoport-app.cz/approvals",
   },
-} satisfies TemplateEntry
+} satisfies TemplateEntry;

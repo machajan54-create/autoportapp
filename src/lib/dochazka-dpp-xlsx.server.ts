@@ -98,7 +98,9 @@ export async function buildDppXlsx(opts: {
 
     // Souhrnné hodiny/minuty (formule shodné se šablonou)
     ws.getCell(`S${row}`).value = { formula: `IF(AE${row}=0," ",INT(AE${row}))` } as any;
-    ws.getCell(`T${row}`).value = { formula: `IF(AE${row}=0," ",60*(AE${row}-INT(AE${row})))` } as any;
+    ws.getCell(`T${row}`).value = {
+      formula: `IF(AE${row}=0," ",60*(AE${row}-INT(AE${row})))`,
+    } as any;
   }
 
   const out = await wb.xlsx.writeBuffer();

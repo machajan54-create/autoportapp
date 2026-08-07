@@ -21,7 +21,10 @@ async function handle({ request }: { request: Request }) {
       return Response.json({ ok: true, skipped: "auto_disabled" });
     }
     if (!settings.github_owner || !settings.github_repo || !settings.drive_folder_id) {
-      return Response.json({ ok: false, error: "Chybí GitHub repo nebo cílová složka." }, { status: 400 });
+      return Response.json(
+        { ok: false, error: "Chybí GitHub repo nebo cílová složka." },
+        { status: 400 },
+      );
     }
 
     const { performGithubSnapshot } = await import("@/lib/github-snapshot.functions");

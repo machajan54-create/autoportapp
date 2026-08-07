@@ -1,32 +1,32 @@
-import { createServerFn } from '@tanstack/react-start'
-import { z } from 'zod'
-import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware'
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function lookupName(supabase: any, userId: string) {
   const { data } = await supabase
-    .from('profiles')
-    .select('full_name,email')
-    .eq('id', userId)
-    .maybeSingle()
-  return data?.full_name || data?.email || null
+    .from("profiles")
+    .select("full_name,email")
+    .eq("id", userId)
+    .maybeSingle();
+  return data?.full_name || data?.email || null;
 }
 
 /* ---------- Comments ---------- */
 
-export const listTaskComments = createServerFn({ method: 'GET' })
+export const listTaskComments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ taskId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
-      .from('task_comments')
-      .select('*')
-      .eq('task_id', data.taskId)
-      .order('created_at', { ascending: true })
-    if (error) throw new Error(error.message)
-    return { rows: rows ?? [] }
-  })
+      .from("task_comments")
+      .select("*")
+      .eq("task_id", data.taskId)
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+    return { rows: rows ?? [] };
+  });
 
-export const addTaskComment = createServerFn({ method: 'POST' })
+export const addTaskComment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z
@@ -37,86 +37,85 @@ export const addTaskComment = createServerFn({ method: 'POST' })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context
-    const author_name = await lookupName(supabase, userId!)
+    const { supabase, userId } = context;
+    const author_name = await lookupName(supabase, userId!);
     const { data: row, error } = await supabase
-      .from('task_comments')
+      .from("task_comments")
       .insert({
         task_id: data.taskId,
         author_id: userId!,
         author_name,
         body: data.body,
       })
-      .select('id')
-      .single()
-    if (error) throw new Error(error.message)
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
     // Bump task activity (used by in-app bell to detect activity by other users)
     await supabase
-      .from('tasks')
+      .from("tasks")
       .update({ last_activity_by: userId, last_activity_at: new Date().toISOString() })
-      .eq('id', data.taskId)
+      .eq("id", data.taskId);
     // Notify the other participants (creator + assignee), excluding the author.
     try {
       const { data: task } = await supabase
-        .from('tasks')
-        .select('title,created_by,assignee_id')
-        .eq('id', data.taskId)
-        .maybeSingle()
+        .from("tasks")
+        .select("title,created_by,assignee_id")
+        .eq("id", data.taskId)
+        .maybeSingle();
       if (task) {
-        const recipients = new Set<string>()
-        if (task.created_by && task.created_by !== userId) recipients.add(task.created_by)
-        if (task.assignee_id && task.assignee_id !== userId) recipients.add(task.assignee_id)
+        const recipients = new Set<string>();
+        if (task.created_by && task.created_by !== userId) recipients.add(task.created_by);
+        if (task.assignee_id && task.assignee_id !== userId) recipients.add(task.assignee_id);
         if (recipients.size > 0) {
-          const { getUserEmail, enqueueTransactionalEmail } = await import(
-            '@/lib/email/notify.server'
-          )
+          const { getUserEmail, enqueueTransactionalEmail } =
+            await import("@/lib/email/notify.server");
           for (const rid of recipients) {
-            const { email, name } = await getUserEmail(rid)
-            if (!email) continue
+            const { email, name } = await getUserEmail(rid);
+            if (!email) continue;
             await enqueueTransactionalEmail({
-              templateName: 'task-comment',
+              templateName: "task-comment",
               recipientEmail: email,
               idempotencyKey: `task-comment-${row.id}-${rid}`,
               templateData: {
-                recipientName: name || '',
-                authorName: author_name || 'Kolega',
+                recipientName: name || "",
+                authorName: author_name || "Kolega",
                 title: task.title,
                 body: data.body,
-                actionUrl: 'https://www.autoport-app.cz/ukoly',
+                actionUrl: "https://www.autoport-app.cz/ukoly",
               },
-            })
+            });
           }
         }
       }
     } catch (e) {
-      console.error('[tasks] notify on comment failed', e)
+      console.error("[tasks] notify on comment failed", e);
     }
-    return { id: row.id }
-  })
+    return { id: row.id };
+  });
 
-export const deleteTaskComment = createServerFn({ method: 'POST' })
+export const deleteTaskComment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async () => {
-    throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.")
-  })
+    throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
+  });
 
 /* ---------- Attachments ---------- */
 
-export const listTaskAttachments = createServerFn({ method: 'GET' })
+export const listTaskAttachments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ taskId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
-      .from('task_attachments')
-      .select('*')
-      .eq('task_id', data.taskId)
-      .order('created_at', { ascending: false })
-    if (error) throw new Error(error.message)
-    return { rows: rows ?? [] }
-  })
+      .from("task_attachments")
+      .select("*")
+      .eq("task_id", data.taskId)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return { rows: rows ?? [] };
+  });
 
-export const recordTaskAttachment = createServerFn({ method: 'POST' })
+export const recordTaskAttachment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z
@@ -124,16 +123,20 @@ export const recordTaskAttachment = createServerFn({ method: 'POST' })
         taskId: z.string().uuid(),
         file_name: z.string().min(1).max(255),
         storage_path: z.string().min(1).max(500),
-        size_bytes: z.number().int().nonnegative().max(50 * 1024 * 1024),
+        size_bytes: z
+          .number()
+          .int()
+          .nonnegative()
+          .max(50 * 1024 * 1024),
         content_type: z.string().max(127).optional().nullable(),
       })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context
-    const uploader_name = await lookupName(supabase, userId!)
+    const { supabase, userId } = context;
+    const uploader_name = await lookupName(supabase, userId!);
     const { data: row, error } = await supabase
-      .from('task_attachments')
+      .from("task_attachments")
       .insert({
         task_id: data.taskId,
         uploader_id: userId!,
@@ -143,34 +146,34 @@ export const recordTaskAttachment = createServerFn({ method: 'POST' })
         size_bytes: data.size_bytes,
         content_type: data.content_type ?? null,
       })
-      .select('id')
-      .single()
-    if (error) throw new Error(error.message)
-    return { id: row.id }
-  })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    return { id: row.id };
+  });
 
-export const deleteTaskAttachment = createServerFn({ method: 'POST' })
+export const deleteTaskAttachment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async () => {
-    throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.")
-  })
+    throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
+  });
 
-export const getTaskAttachmentUrl = createServerFn({ method: 'POST' })
+export const getTaskAttachmentUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { supabase } = context
+    const { supabase } = context;
     const { data: row, error } = await supabase
-      .from('task_attachments')
-      .select('storage_path,file_name')
-      .eq('id', data.id)
-      .maybeSingle()
-    if (error) throw new Error(error.message)
-    if (!row) throw new Error('Příloha nenalezena')
+      .from("task_attachments")
+      .select("storage_path,file_name")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Příloha nenalezena");
     const { data: signed, error: sErr } = await supabase.storage
-      .from('task-attachments')
-      .createSignedUrl(row.storage_path, 300, { download: row.file_name })
-    if (sErr) throw new Error(sErr.message)
-    return { url: signed.signedUrl, file_name: row.file_name }
-  })
+      .from("task-attachments")
+      .createSignedUrl(row.storage_path, 300, { download: row.file_name });
+    if (sErr) throw new Error(sErr.message);
+    return { url: signed.signedUrl, file_name: row.file_name };
+  });

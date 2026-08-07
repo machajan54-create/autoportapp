@@ -5,16 +5,8 @@ export type ResizeOptions = {
   preserveFormat?: boolean;
 };
 
-export async function resizeImage(
-  file: File,
-  options: ResizeOptions = {},
-): Promise<File> {
-  const {
-    maxWidth = 1920,
-    maxHeight = 1920,
-    quality = 0.85,
-    preserveFormat = false,
-  } = options;
+export async function resizeImage(file: File, options: ResizeOptions = {}): Promise<File> {
+  const { maxWidth = 1920, maxHeight = 1920, quality = 0.85, preserveFormat = false } = options;
 
   if (!file.type.startsWith("image/")) return file;
   // HEIC/HEIF canvas nezpracuje – vrátíme původní, ať to nezablokuje upload
@@ -47,9 +39,7 @@ export async function resizeImage(
       ctx.drawImage(img, 0, 0, w, h);
 
       const outType = preserveFormat ? file.type : "image/jpeg";
-      const outName = preserveFormat
-        ? file.name
-        : file.name.replace(/\.[^.]+$/, ".jpg");
+      const outName = preserveFormat ? file.name : file.name.replace(/\.[^.]+$/, ".jpg");
 
       canvas.toBlob(
         (blob) => {

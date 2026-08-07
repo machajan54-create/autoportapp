@@ -66,9 +66,13 @@ export const countPendingApprovalItems = createServerFn({ method: "GET" })
     if (admin) {
       const [s, p] = await Promise.all([
         context.supabase
-          .from("suppliers").select("id", { count: "exact", head: true }).eq("status", "pending"),
+          .from("suppliers")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "pending"),
         context.supabase
-          .from("purchases").select("id", { count: "exact", head: true }).eq("status", "pending"),
+          .from("purchases")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "pending"),
       ]);
       return { count: (s.count ?? 0) + (p.count ?? 0) };
     }
@@ -76,11 +80,15 @@ export const countPendingApprovalItems = createServerFn({ method: "GET" })
     if (!memberIds.length) return { count: 0 };
     const [s, p] = await Promise.all([
       context.supabase
-        .from("suppliers").select("id", { count: "exact", head: true })
-        .eq("status", "pending").in("requested_by", memberIds),
+        .from("suppliers")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending")
+        .in("requested_by", memberIds),
       context.supabase
-        .from("purchases").select("id", { count: "exact", head: true })
-        .eq("status", "pending").in("requested_by", memberIds),
+        .from("purchases")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending")
+        .in("requested_by", memberIds),
     ]);
     return { count: (s.count ?? 0) + (p.count ?? 0) };
   });
@@ -88,12 +96,17 @@ export const countPendingApprovalItems = createServerFn({ method: "GET" })
 async function attachRequesters<T extends { requested_by?: string | null }>(
   supabase: any,
   rows: T[],
-): Promise<(T & { requester?: { id: string; full_name: string | null; email: string | null } | null })[]> {
+): Promise<
+  (T & { requester?: { id: string; full_name: string | null; email: string | null } | null })[]
+> {
   const ids = Array.from(new Set(rows.map((r) => r.requested_by).filter(Boolean))) as string[];
   if (!ids.length) return rows.map((r) => ({ ...r, requester: null }));
   const { data } = await supabase.from("profiles").select("id, full_name, email").in("id", ids);
   const map = new Map<string, any>((data ?? []).map((p: any) => [p.id, p]));
-  return rows.map((r) => ({ ...r, requester: r.requested_by ? map.get(r.requested_by) ?? null : null }));
+  return rows.map((r) => ({
+    ...r,
+    requester: r.requested_by ? (map.get(r.requested_by) ?? null) : null,
+  }));
 }
 
 /** Annotate rows with `can_decide` for the current viewer. */
@@ -112,7 +125,10 @@ export const listSuppliers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const admin = await isAdmin(context.supabase, context.userId);
-    let q = context.supabase.from("suppliers").select("*").order("created_at", { ascending: false });
+    let q = context.supabase
+      .from("suppliers")
+      .select("*")
+      .order("created_at", { ascending: false });
     if (!admin) {
       const memberIds = await getDepartmentMemberIds(context.supabase, context.userId);
       const visibleIds = Array.from(new Set([context.userId, ...memberIds]));
@@ -174,10 +190,12 @@ export const createSupplier = createServerFn({ method: "POST" })
 export const decideSupplier = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({
-      id: z.string().uuid(),
-      status: z.enum(["approved", "rejected", "pending"]),
-    }).parse(d),
+    z
+      .object({
+        id: z.string().uuid(),
+        status: z.enum(["approved", "rejected", "pending"]),
+      })
+      .parse(d),
   )
   .handler(async ({ context, data }) => {
     const { data: row } = await context.supabase
@@ -186,7 +204,9 @@ export const decideSupplier = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .maybeSingle();
     if (!(await canDecideForRequester(context.supabase, context.userId, row?.requested_by))) {
-      throw new Error("Tuto žádost můžete schválit jen jako super admin nebo vedoucí oddělení žadatele.");
+      throw new Error(
+        "Tuto žádost můžete schválit jen jako super admin nebo vedoucí oddělení žadatele.",
+      );
     }
     const { error } = await context.supabase
       .from("suppliers")
@@ -200,7 +220,9 @@ export const decideSupplier = createServerFn({ method: "POST" })
     if (row?.requested_by && data.status !== "pending") {
       const u = await (await loadNotify()).getUserEmail(row.requested_by);
       if (u.email) {
-        await (await loadNotify()).enqueueTransactionalEmail({
+        await (
+          await loadNotify()
+        ).enqueueTransactionalEmail({
           templateName: "approval-decision",
           recipientEmail: u.email,
           idempotencyKey: `supplier-${data.id}-${data.status}`,
@@ -289,7 +311,12 @@ export const createPurchase = createServerFn({ method: "POST" })
         details: data.description ?? "",
         meta: [
           ...(data.amount != null
-            ? [{ label: "Částka", value: `${Number(data.amount).toLocaleString("cs-CZ")} ${data.currency}` }]
+            ? [
+                {
+                  label: "Částka",
+                  value: `${Number(data.amount).toLocaleString("cs-CZ")} ${data.currency}`,
+                },
+              ]
             : []),
         ],
         actionUrl: APP_URL,
@@ -305,11 +332,13 @@ export const createPurchase = createServerFn({ method: "POST" })
 export const decidePurchase = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({
-      id: z.string().uuid(),
-      status: z.enum(["approved", "rejected", "pending"]),
-      decision_note: z.string().max(1000).optional().nullable(),
-    }).parse(d),
+    z
+      .object({
+        id: z.string().uuid(),
+        status: z.enum(["approved", "rejected", "pending"]),
+        decision_note: z.string().max(1000).optional().nullable(),
+      })
+      .parse(d),
   )
   .handler(async ({ context, data }) => {
     const { data: row } = await context.supabase
@@ -318,7 +347,9 @@ export const decidePurchase = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .maybeSingle();
     if (!(await canDecideForRequester(context.supabase, context.userId, row?.requested_by))) {
-      throw new Error("Tuto žádost můžete schválit jen jako super admin nebo vedoucí oddělení žadatele.");
+      throw new Error(
+        "Tuto žádost můžete schválit jen jako super admin nebo vedoucí oddělení žadatele.",
+      );
     }
     const { error } = await context.supabase
       .from("purchases")
@@ -333,7 +364,9 @@ export const decidePurchase = createServerFn({ method: "POST" })
     if (row?.requested_by && data.status !== "pending") {
       const u = await (await loadNotify()).getUserEmail(row.requested_by);
       if (u.email) {
-        await (await loadNotify()).enqueueTransactionalEmail({
+        await (
+          await loadNotify()
+        ).enqueueTransactionalEmail({
           templateName: "approval-decision",
           recipientEmail: u.email,
           idempotencyKey: `purchase-${data.id}-${data.status}`,
@@ -343,9 +376,15 @@ export const decidePurchase = createServerFn({ method: "POST" })
             recipientName: u.name ?? "",
             title: row.title,
             note: data.decision_note ?? "",
-            meta: row.amount != null
-              ? [{ label: "Částka", value: `${Number(row.amount).toLocaleString("cs-CZ")} ${row.currency}` }]
-              : [],
+            meta:
+              row.amount != null
+                ? [
+                    {
+                      label: "Částka",
+                      value: `${Number(row.amount).toLocaleString("cs-CZ")} ${row.currency}`,
+                    },
+                  ]
+                : [],
             actionUrl: APP_URL,
           },
         });

@@ -119,10 +119,7 @@ export const updateWasher = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid(), patch: washerInput.partial() }).parse(d),
   )
   .handler(async ({ context, data }) => {
-    const { error } = await context.supabase
-      .from("washers")
-      .update(data.patch)
-      .eq("id", data.id);
+    const { error } = await context.supabase.from("washers").update(data.patch).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -155,11 +152,7 @@ export const assignWasher = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     // Load order and washer
     const [{ data: order }, { data: washer }] = await Promise.all([
-      context.supabase
-        .from("evidence_orders")
-        .select("*")
-        .eq("id", data.order_id)
-        .maybeSingle(),
+      context.supabase.from("evidence_orders").select("*").eq("id", data.order_id).maybeSingle(),
       context.supabase
         .from("washers")
         .select("id, name, email, active")
@@ -233,10 +226,16 @@ export const removeWashAssignment = createServerFn({ method: "POST" })
 
 export const respondToWashAssignment = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
-    z.object({
-      token: z.string().min(8).max(128).regex(/^[a-zA-Z0-9_-]+$/),
-      action: z.enum(["accept", "decline"]),
-    }).parse(d),
+    z
+      .object({
+        token: z
+          .string()
+          .min(8)
+          .max(128)
+          .regex(/^[a-zA-Z0-9_-]+$/),
+        action: z.enum(["accept", "decline"]),
+      })
+      .parse(d),
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -254,11 +253,7 @@ export const respondToWashAssignment = createServerFn({ method: "POST" })
         .select("klient, vozidlo, vis, den, hodina, cislo_zakazky")
         .eq("id", row.order_id)
         .maybeSingle(),
-      supabaseAdmin
-        .from("washers")
-        .select("name")
-        .eq("id", row.washer_id)
-        .maybeSingle(),
+      supabaseAdmin.from("washers").select("name").eq("id", row.washer_id).maybeSingle(),
     ]);
     if (row.status !== "pending") {
       return {

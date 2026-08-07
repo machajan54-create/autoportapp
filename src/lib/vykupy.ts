@@ -77,10 +77,10 @@ export function marze(v: Pick<Vykup, "prodano_za" | "vykoupeno_za" | "naklady">)
 }
 
 export const stavBadge: Record<string, string> = {
-  "Nacenění": "bg-amber-100 text-amber-900 border-amber-200",
-  "Vykoupeno": "bg-blue-100 text-blue-900 border-blue-200",
-  "Prodáno": "bg-emerald-100 text-emerald-900 border-emerald-200",
-  "Zamítnuto": "bg-rose-100 text-rose-900 border-rose-200",
+  Nacenění: "bg-amber-100 text-amber-900 border-amber-200",
+  Vykoupeno: "bg-blue-100 text-blue-900 border-blue-200",
+  Prodáno: "bg-emerald-100 text-emerald-900 border-emerald-200",
+  Zamítnuto: "bg-rose-100 text-rose-900 border-rose-200",
 };
 
 export async function listVykupy(): Promise<Vykup[]> {
@@ -105,7 +105,10 @@ export async function getVykup(id: string): Promise<Vykup | null> {
 export async function upsertVykup(v: Partial<Vykup> & { id?: string }) {
   if (v.id) {
     const { id, created_at: _c, ...rest } = v;
-    const { error } = await supabase.from("vykupy" as never).update(rest as never).eq("id", id);
+    const { error } = await supabase
+      .from("vykupy" as never)
+      .update(rest as never)
+      .eq("id", id);
     if (error) throw error;
     return id;
   }

@@ -3,7 +3,19 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { BookOpen, Plus, Pencil, Trash2, Car, Fuel, Route as RouteIcon, Camera, X, Receipt, Download } from "lucide-react";
+import {
+  BookOpen,
+  Plus,
+  Pencil,
+  Trash2,
+  Car,
+  Fuel,
+  Route as RouteIcon,
+  Camera,
+  X,
+  Receipt,
+  Download,
+} from "lucide-react";
 import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
 import { RequestDeleteButton } from "@/components/RequestDeleteButton";
@@ -13,17 +25,33 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import {
-  listVehicles, upsertVehicle,
-  listEntries, upsertEntry, getReceiptUrls,
+  listVehicles,
+  upsertVehicle,
+  listEntries,
+  upsertEntry,
+  getReceiptUrls,
 } from "@/lib/logbook.functions";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -78,13 +106,20 @@ function num(v: number | string | null | undefined): number | null {
 function fmt(n: number | string | null | undefined, suffix = "") {
   const v = num(n);
   if (v === null) return "—";
-  return new Intl.NumberFormat("cs-CZ", { maximumFractionDigits: 2 }).format(v) + (suffix ? ` ${suffix}` : "");
+  return (
+    new Intl.NumberFormat("cs-CZ", { maximumFractionDigits: 2 }).format(v) +
+    (suffix ? ` ${suffix}` : "")
+  );
 }
 
 function fmtCzk(n: number | string | null | undefined) {
   const v = num(n);
   if (v === null) return "—";
-  return new Intl.NumberFormat("cs-CZ", { style: "currency", currency: "CZK", maximumFractionDigits: 2 }).format(v);
+  return new Intl.NumberFormat("cs-CZ", {
+    style: "currency",
+    currency: "CZK",
+    maximumFractionDigits: 2,
+  }).format(v);
 }
 
 function LogbookPage() {
@@ -127,10 +162,13 @@ function LogbookPage() {
     return m;
   }, [vehicles]);
 
-  const selectedVehicle = selectedVehicleId === "all" ? null : vehicleById.get(selectedVehicleId) ?? null;
+  const selectedVehicle =
+    selectedVehicleId === "all" ? null : (vehicleById.get(selectedVehicleId) ?? null);
 
   const totals = useMemo(() => {
-    let km = 0, liters = 0, cost = 0;
+    let km = 0,
+      liters = 0,
+      cost = 0;
     for (const e of entries) {
       km += num(e.km_driven) ?? 0;
       liters += num(e.fuel_liters) ?? 0;
@@ -189,7 +227,7 @@ function LogbookPage() {
     }
   }
 
-      qc.invalidateQueries({ queryKey: ["logbook-entries"] });
+  qc.invalidateQueries({ queryKey: ["logbook-entries"] });
   // Entry dialog
   const [entryOpen, setEntryOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
@@ -202,7 +240,8 @@ function LogbookPage() {
       toast.error("Nejdřív přidejte vozidlo");
       return;
     }
-    const defaultVehicle = selectedVehicleId !== "all" ? selectedVehicleId : vehicles[0]?.id ?? "";
+    const defaultVehicle =
+      selectedVehicleId !== "all" ? selectedVehicleId : (vehicles[0]?.id ?? "");
     setEditingEntry(null);
     setEntryVehicleId(defaultVehicle);
     setEForm({ ...emptyEntry, entry_date: today() });
@@ -306,7 +345,11 @@ function LogbookPage() {
     const path = eForm.receipt_path;
     setEForm((f) => ({ ...f, receipt_path: "" }));
     if (path) {
-      try { await supabase.storage.from("logbook-receipts").remove([path]); } catch { /* ignore */ }
+      try {
+        await supabase.storage.from("logbook-receipts").remove([path]);
+      } catch {
+        /* ignore */
+      }
     }
   }
 
@@ -327,27 +370,40 @@ function LogbookPage() {
         return;
       }
       const header = [
-        "Datum", "Vozidlo", "RZ", "Trasa", "Účel",
-        "Najeto KM", "Stav tachometru", "PHM (l)", "Cena (Kč)",
-        "Účtenka", "Poznámka", "Zapsal",
+        "Datum",
+        "Vozidlo",
+        "RZ",
+        "Trasa",
+        "Účel",
+        "Najeto KM",
+        "Stav tachometru",
+        "PHM (l)",
+        "Cena (Kč)",
+        "Účtenka",
+        "Poznámka",
+        "Zapsal",
       ];
       const lines = [header.join(";")];
       for (const e of rows) {
         const v = vehicleById.get(e.vehicle_id);
-        lines.push([
-          e.entry_date,
-          v?.type ?? "",
-          v?.spz ?? "",
-          e.route ?? "",
-          e.purpose ?? "",
-          num(e.km_driven) ?? "",
-          num(e.odometer) ?? "",
-          num(e.fuel_liters) ?? "",
-          num(e.fuel_cost_czk) ?? "",
-          e.receipt_path ? "ano" : "",
-          e.note ?? "",
-          e.created_by_name ?? "",
-        ].map(csvEscape).join(";"));
+        lines.push(
+          [
+            e.entry_date,
+            v?.type ?? "",
+            v?.spz ?? "",
+            e.route ?? "",
+            e.purpose ?? "",
+            num(e.km_driven) ?? "",
+            num(e.odometer) ?? "",
+            num(e.fuel_liters) ?? "",
+            num(e.fuel_cost_czk) ?? "",
+            e.receipt_path ? "ano" : "",
+            e.note ?? "",
+            e.created_by_name ?? "",
+          ]
+            .map(csvEscape)
+            .join(";"),
+        );
       }
       const csv = "\uFEFF" + lines.join("\r\n");
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -399,7 +455,10 @@ function LogbookPage() {
         <Card className="p-3">
           <div className="flex flex-wrap items-center gap-2">
             <Label className="text-xs text-muted-foreground">Vozidlo:</Label>
-            <Select value={selectedVehicleId} onValueChange={(v) => setSelectedVehicleId(v as string)}>
+            <Select
+              value={selectedVehicleId}
+              onValueChange={(v) => setSelectedVehicleId(v as string)}
+            >
               <SelectTrigger className="h-8 w-[260px]">
                 <SelectValue placeholder="Vyberte vozidlo" />
               </SelectTrigger>
@@ -407,7 +466,8 @@ function LogbookPage() {
                 <SelectItem value="all">Všechna vozidla</SelectItem>
                 {vehicles.map((v) => (
                   <SelectItem key={v.id} value={v.id}>
-                    {v.type}{v.spz ? ` · ${v.spz}` : ""}
+                    {v.type}
+                    {v.spz ? ` · ${v.spz}` : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -434,7 +494,10 @@ function LogbookPage() {
 
         <div className="grid gap-3 sm:grid-cols-4">
           <Card className="p-4">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground"><RouteIcon className="h-3.5 w-3.5" />Záznamů</div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <RouteIcon className="h-3.5 w-3.5" />
+              Záznamů
+            </div>
             <div className="mt-1 text-2xl font-semibold">{totals.count}</div>
           </Card>
           <Card className="p-4">
@@ -442,7 +505,10 @@ function LogbookPage() {
             <div className="mt-1 text-2xl font-semibold">{fmt(totals.km, "km")}</div>
           </Card>
           <Card className="p-4">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground"><Fuel className="h-3.5 w-3.5" />Natankováno</div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Fuel className="h-3.5 w-3.5" />
+              Natankováno
+            </div>
             <div className="mt-1 text-2xl font-semibold">{fmt(totals.liters, "l")}</div>
           </Card>
           <Card className="p-4">
@@ -472,10 +538,24 @@ function LogbookPage() {
             </TableHeader>
             <TableBody>
               {(eLoading || vLoading) && (
-                <TableRow><TableCell colSpan={selectedVehicleId === "all" ? 10 : 9} className="py-8 text-center text-sm text-muted-foreground">Načítám…</TableCell></TableRow>
+                <TableRow>
+                  <TableCell
+                    colSpan={selectedVehicleId === "all" ? 10 : 9}
+                    className="py-8 text-center text-sm text-muted-foreground"
+                  >
+                    Načítám…
+                  </TableCell>
+                </TableRow>
               )}
               {!eLoading && entries.length === 0 && (
-                <TableRow><TableCell colSpan={selectedVehicleId === "all" ? 10 : 9} className="py-8 text-center text-sm text-muted-foreground">Žádné záznamy</TableCell></TableRow>
+                <TableRow>
+                  <TableCell
+                    colSpan={selectedVehicleId === "all" ? 10 : 9}
+                    className="py-8 text-center text-sm text-muted-foreground"
+                  >
+                    Žádné záznamy
+                  </TableCell>
+                </TableRow>
               )}
               {entries.map((e) => {
                 const v = vehicleById.get(e.vehicle_id);
@@ -489,12 +569,18 @@ function LogbookPage() {
                       </TableCell>
                     )}
                     <TableCell>{e.route || "—"}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{e.purpose || "—"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {e.purpose || "—"}
+                    </TableCell>
                     <TableCell className="text-right tabular-nums">{fmt(e.km_driven)}</TableCell>
                     <TableCell className="text-right tabular-nums">{fmt(e.odometer)}</TableCell>
                     <TableCell className="text-right tabular-nums">{fmt(e.fuel_liters)}</TableCell>
-                    <TableCell className="text-right tabular-nums">{e.fuel_cost_czk == null ? "—" : fmtCzk(e.fuel_cost_czk)}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{e.created_by_name || "—"}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {e.fuel_cost_czk == null ? "—" : fmtCzk(e.fuel_cost_czk)}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {e.created_by_name || "—"}
+                    </TableCell>
                     <TableCell className="text-right">
                       {e.receipt_path && receiptUrls[e.receipt_path] && (
                         <a
@@ -508,7 +594,12 @@ function LogbookPage() {
                           <Receipt className="h-4 w-4" />
                         </a>
                       )}
-                      <Button variant="ghost" size="icon" onClick={() => openEditEntry(e)} aria-label="Upravit">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEditEntry(e)}
+                        aria-label="Upravit"
+                      >
                         <Pencil className="h-4 w-4" />
                       </Button>
                       <RequestDeleteButton
@@ -550,14 +641,30 @@ function LogbookPage() {
                     <TableCell>{v.body_number || "—"}</TableCell>
                     <TableCell>{v.responsible_person || "—"}</TableCell>
                     <TableCell>
-                      {v.active ? <Badge variant="outline" className="bg-emerald-50 text-emerald-700">Aktivní</Badge>
-                        : <Badge variant="outline">Neaktivní</Badge>}
+                      {v.active ? (
+                        <Badge variant="outline" className="bg-emerald-50 text-emerald-700">
+                          Aktivní
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline">Neaktivní</Badge>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => exportVehicle(v)} aria-label="Export CSV" title="Export knihy jízd">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => exportVehicle(v)}
+                        aria-label="Export CSV"
+                        title="Export knihy jízd"
+                      >
                         <Download className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => openEditVehicle(v)} aria-label="Upravit">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEditVehicle(v)}
+                        aria-label="Upravit"
+                      >
                         <Pencil className="h-4 w-4" />
                       </Button>
                       <RequestDeleteButton
@@ -585,30 +692,51 @@ function LogbookPage() {
           <div className="grid gap-3">
             <div>
               <Label>Typ vozidla *</Label>
-              <Input placeholder="např. Berlingo" value={vForm.type} onChange={(e) => setVForm({ ...vForm, type: e.target.value })} />
+              <Input
+                placeholder="např. Berlingo"
+                value={vForm.type}
+                onChange={(e) => setVForm({ ...vForm, type: e.target.value })}
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>RZ (SPZ)</Label>
-                <Input value={vForm.spz} onChange={(e) => setVForm({ ...vForm, spz: e.target.value })} />
+                <Input
+                  value={vForm.spz}
+                  onChange={(e) => setVForm({ ...vForm, spz: e.target.value })}
+                />
               </div>
               <div>
                 <Label>Číslo karoserie</Label>
-                <Input value={vForm.body_number} onChange={(e) => setVForm({ ...vForm, body_number: e.target.value })} />
+                <Input
+                  value={vForm.body_number}
+                  onChange={(e) => setVForm({ ...vForm, body_number: e.target.value })}
+                />
               </div>
             </div>
             <div>
               <Label>Odpovědná osoba</Label>
-              <Input value={vForm.responsible_person} onChange={(e) => setVForm({ ...vForm, responsible_person: e.target.value })} />
+              <Input
+                value={vForm.responsible_person}
+                onChange={(e) => setVForm({ ...vForm, responsible_person: e.target.value })}
+              />
             </div>
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={vForm.active} onChange={(e) => setVForm({ ...vForm, active: e.target.checked })} />
+              <input
+                type="checkbox"
+                checked={vForm.active}
+                onChange={(e) => setVForm({ ...vForm, active: e.target.checked })}
+              />
               Aktivní
             </label>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setVehicleOpen(false)}>Zrušit</Button>
-            <Button onClick={saveVehicle} disabled={vSaving}>{vSaving ? "Ukládám…" : "Uložit"}</Button>
+            <Button variant="outline" onClick={() => setVehicleOpen(false)}>
+              Zrušit
+            </Button>
+            <Button onClick={saveVehicle} disabled={vSaving}>
+              {vSaving ? "Ukládám…" : "Uložit"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -617,18 +745,23 @@ function LogbookPage() {
       <Dialog open={entryOpen} onOpenChange={setEntryOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editingEntry ? "Upravit záznam" : "Nový záznam (jízda / tankování)"}</DialogTitle>
+            <DialogTitle>
+              {editingEntry ? "Upravit záznam" : "Nový záznam (jízda / tankování)"}
+            </DialogTitle>
           </DialogHeader>
           <div className="grid gap-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Vozidlo *</Label>
                 <Select value={entryVehicleId} onValueChange={setEntryVehicleId}>
-                  <SelectTrigger><SelectValue placeholder="Vyberte" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Vyberte" />
+                  </SelectTrigger>
                   <SelectContent>
                     {vehicles.map((v) => (
                       <SelectItem key={v.id} value={v.id}>
-                        {v.type}{v.spz ? ` · ${v.spz}` : ""}
+                        {v.type}
+                        {v.spz ? ` · ${v.spz}` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -636,46 +769,91 @@ function LogbookPage() {
               </div>
               <div>
                 <Label>Datum *</Label>
-                <Input type="date" value={eForm.entry_date} onChange={(e) => setEForm({ ...eForm, entry_date: e.target.value })} />
+                <Input
+                  type="date"
+                  value={eForm.entry_date}
+                  onChange={(e) => setEForm({ ...eForm, entry_date: e.target.value })}
+                />
               </div>
             </div>
             <div>
               <Label>Trasa</Label>
-              <Input placeholder="např. Praha – Brno" value={eForm.route} onChange={(e) => setEForm({ ...eForm, route: e.target.value })} />
+              <Input
+                placeholder="např. Praha – Brno"
+                value={eForm.route}
+                onChange={(e) => setEForm({ ...eForm, route: e.target.value })}
+              />
             </div>
             <div>
               <Label>Účel</Label>
-              <Input placeholder="např. servisní cesta" value={eForm.purpose} onChange={(e) => setEForm({ ...eForm, purpose: e.target.value })} />
+              <Input
+                placeholder="např. servisní cesta"
+                value={eForm.purpose}
+                onChange={(e) => setEForm({ ...eForm, purpose: e.target.value })}
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Najeto (km)</Label>
-                <Input type="number" inputMode="decimal" step="0.1" min="0" value={eForm.km_driven} onChange={(e) => setEForm({ ...eForm, km_driven: e.target.value })} />
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.1"
+                  min="0"
+                  value={eForm.km_driven}
+                  onChange={(e) => setEForm({ ...eForm, km_driven: e.target.value })}
+                />
               </div>
               <div>
                 <Label>Stav tachometru</Label>
-                <Input type="number" inputMode="decimal" step="0.1" min="0" value={eForm.odometer} onChange={(e) => setEForm({ ...eForm, odometer: e.target.value })} />
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.1"
+                  min="0"
+                  value={eForm.odometer}
+                  onChange={(e) => setEForm({ ...eForm, odometer: e.target.value })}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 rounded-md border border-amber-200 bg-amber-50/50 p-3">
               <div>
                 <Label>Tankování – PHM (l)</Label>
-                <Input type="number" inputMode="decimal" step="0.01" min="0" value={eForm.fuel_liters} onChange={(e) => setEForm({ ...eForm, fuel_liters: e.target.value })} />
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min="0"
+                  value={eForm.fuel_liters}
+                  onChange={(e) => setEForm({ ...eForm, fuel_liters: e.target.value })}
+                />
               </div>
               <div>
                 <Label>Cena (Kč)</Label>
-                <Input type="number" inputMode="decimal" step="0.01" min="0" value={eForm.fuel_cost_czk} onChange={(e) => setEForm({ ...eForm, fuel_cost_czk: e.target.value })} />
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min="0"
+                  value={eForm.fuel_cost_czk}
+                  onChange={(e) => setEForm({ ...eForm, fuel_cost_czk: e.target.value })}
+                />
               </div>
               <div className="col-span-2">
                 <Label className="flex items-center gap-1">
                   <Receipt className="h-3.5 w-3.5" />
-                  Fotka účtenky {num(eForm.fuel_liters) ? <span className="text-destructive">*</span> : null}
+                  Fotka účtenky{" "}
+                  {num(eForm.fuel_liters) ? <span className="text-destructive">*</span> : null}
                 </Label>
                 {eForm.receipt_path ? (
                   <div className="mt-1 flex items-center gap-2">
                     {receiptUrls[eForm.receipt_path] ? (
                       <a href={receiptUrls[eForm.receipt_path]} target="_blank" rel="noreferrer">
-                        <img src={receiptUrls[eForm.receipt_path]} alt="Účtenka" className="h-20 w-20 rounded border object-cover" />
+                        <img
+                          src={receiptUrls[eForm.receipt_path]}
+                          alt="Účtenka"
+                          className="h-20 w-20 rounded border object-cover"
+                        />
                       </a>
                     ) : (
                       <Badge variant="outline">Nahráno</Badge>
@@ -699,18 +877,28 @@ function LogbookPage() {
                   </label>
                 )}
                 {num(eForm.fuel_liters) ? (
-                  <p className="mt-1 text-xs text-muted-foreground">Bez fotky účtenky nelze tankování uložit.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Bez fotky účtenky nelze tankování uložit.
+                  </p>
                 ) : null}
               </div>
             </div>
             <div>
               <Label>Poznámka</Label>
-              <Textarea rows={3} value={eForm.note} onChange={(e) => setEForm({ ...eForm, note: e.target.value })} />
+              <Textarea
+                rows={3}
+                value={eForm.note}
+                onChange={(e) => setEForm({ ...eForm, note: e.target.value })}
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEntryOpen(false)}>Zrušit</Button>
-            <Button onClick={saveEntry} disabled={eSaving}>{eSaving ? "Ukládám…" : "Uložit"}</Button>
+            <Button variant="outline" onClick={() => setEntryOpen(false)}>
+              Zrušit
+            </Button>
+            <Button onClick={saveEntry} disabled={eSaving}>
+              {eSaving ? "Ukládám…" : "Uložit"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

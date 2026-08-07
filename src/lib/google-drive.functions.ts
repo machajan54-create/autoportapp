@@ -6,20 +6,51 @@ const GATEWAY_BASE = "https://connector-gateway.lovable.dev/google_drive";
 
 // Uživatelské tabulky, které se zálohují (bez systémových auth/storage schémat).
 const BACKUP_TABLES = [
-  "profiles","user_roles","user_modules",
-  "attendance_absences","attendance_employees","attendance_employee_pins",
-  "attendance_notifications","attendance_pin_ip_allowlist","attendance_records",
-  "attendance_settings","attendance_shifts",
-  "audit_log","backup_settings","backup_runs",
-  "claim_attachments","claim_events","claim_tasks","claims",
-  "clients","deal_stage_history","deals","defects","deletion_requests",
-  "demo_order_documents","demo_order_events","demo_order_signatures","demo_orders",
-  "document_templates","email_send_log","email_send_state","email_unsubscribe_tokens",
-  "evidence_orders","evidence_wash_assignments",
-  "logbook_entries","logbook_vehicles",
-  "pin_attempt_log","purchases","suppliers","suppressed_emails",
-  "task_attachments","task_comments","tasks",
-  "vykup_photos","vykupy","washers",
+  "profiles",
+  "user_roles",
+  "user_modules",
+  "attendance_absences",
+  "attendance_employees",
+  "attendance_employee_pins",
+  "attendance_notifications",
+  "attendance_pin_ip_allowlist",
+  "attendance_records",
+  "attendance_settings",
+  "attendance_shifts",
+  "audit_log",
+  "backup_settings",
+  "backup_runs",
+  "claim_attachments",
+  "claim_events",
+  "claim_tasks",
+  "claims",
+  "clients",
+  "deal_stage_history",
+  "deals",
+  "defects",
+  "deletion_requests",
+  "demo_order_documents",
+  "demo_order_events",
+  "demo_order_signatures",
+  "demo_orders",
+  "document_templates",
+  "email_send_log",
+  "email_send_state",
+  "email_unsubscribe_tokens",
+  "evidence_orders",
+  "evidence_wash_assignments",
+  "logbook_entries",
+  "logbook_vehicles",
+  "pin_attempt_log",
+  "purchases",
+  "suppliers",
+  "suppressed_emails",
+  "task_attachments",
+  "task_comments",
+  "tasks",
+  "vykup_photos",
+  "vykupy",
+  "washers",
 ] as const;
 
 function requireEnv() {
@@ -116,10 +147,7 @@ export const listGoogleDriveFolders = createServerFn({ method: "GET" })
   )
   .handler(async ({ context, data }) => {
     await requireAdmin(context);
-    const parts: string[] = [
-      "mimeType='application/vnd.google-apps.folder'",
-      "trashed=false",
-    ];
+    const parts: string[] = ["mimeType='application/vnd.google-apps.folder'", "trashed=false"];
     if (data.parentId) parts.push(`'${data.parentId}' in parents`);
     if (data.query) parts.push(`name contains '${data.query.replace(/'/g, "\\'")}'`);
     const q = encodeURIComponent(parts.join(" and "));
@@ -150,33 +178,34 @@ export const createGoogleDriveFolder = createServerFn({ method: "POST" })
 
 export const saveBackupSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: {
-    drive_folder_id?: string | null;
-    drive_folder_name?: string | null;
-    drive_account_email?: string | null;
-    auto_backup_enabled?: boolean;
-    schedule_frequency?: "interval" | "daily" | "weekly" | "monthly";
-    schedule_time?: string;
-    schedule_day_of_week?: number;
-    schedule_day_of_month?: number;
-    schedule_interval_hours?: number;
-  }) =>
-    z
-      .object({
-        drive_folder_id: z.string().nullable().optional(),
-        drive_folder_name: z.string().nullable().optional(),
-        drive_account_email: z.string().nullable().optional(),
-        auto_backup_enabled: z.boolean().optional(),
-        schedule_frequency: z.enum(["interval", "daily", "weekly", "monthly"]).optional(),
-        schedule_time: z
-          .string()
-          .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Čas musí být ve formátu HH:MM")
-          .optional(),
-        schedule_day_of_week: z.number().int().min(0).max(6).optional(),
-        schedule_day_of_month: z.number().int().min(1).max(31).optional(),
-        schedule_interval_hours: z.number().int().min(1).max(168).optional(),
-      })
-      .parse(data),
+  .inputValidator(
+    (data: {
+      drive_folder_id?: string | null;
+      drive_folder_name?: string | null;
+      drive_account_email?: string | null;
+      auto_backup_enabled?: boolean;
+      schedule_frequency?: "interval" | "daily" | "weekly" | "monthly";
+      schedule_time?: string;
+      schedule_day_of_week?: number;
+      schedule_day_of_month?: number;
+      schedule_interval_hours?: number;
+    }) =>
+      z
+        .object({
+          drive_folder_id: z.string().nullable().optional(),
+          drive_folder_name: z.string().nullable().optional(),
+          drive_account_email: z.string().nullable().optional(),
+          auto_backup_enabled: z.boolean().optional(),
+          schedule_frequency: z.enum(["interval", "daily", "weekly", "monthly"]).optional(),
+          schedule_time: z
+            .string()
+            .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Čas musí být ve formátu HH:MM")
+            .optional(),
+          schedule_day_of_week: z.number().int().min(0).max(6).optional(),
+          schedule_day_of_month: z.number().int().min(1).max(31).optional(),
+          schedule_interval_hours: z.number().int().min(1).max(168).optional(),
+        })
+        .parse(data),
   )
   .handler(async ({ context, data }) => {
     await requireAdmin(context);
@@ -186,12 +215,16 @@ export const saveBackupSettings = createServerFn({ method: "POST" })
     };
     if (data.drive_folder_id !== undefined) patch.drive_folder_id = data.drive_folder_id;
     if (data.drive_folder_name !== undefined) patch.drive_folder_name = data.drive_folder_name;
-    if (data.drive_account_email !== undefined) patch.drive_account_email = data.drive_account_email;
-    if (data.auto_backup_enabled !== undefined) patch.auto_backup_enabled = data.auto_backup_enabled;
+    if (data.drive_account_email !== undefined)
+      patch.drive_account_email = data.drive_account_email;
+    if (data.auto_backup_enabled !== undefined)
+      patch.auto_backup_enabled = data.auto_backup_enabled;
     if (data.schedule_frequency !== undefined) patch.schedule_frequency = data.schedule_frequency;
     if (data.schedule_time !== undefined) patch.schedule_time = data.schedule_time;
-    if (data.schedule_day_of_week !== undefined) patch.schedule_day_of_week = data.schedule_day_of_week;
-    if (data.schedule_day_of_month !== undefined) patch.schedule_day_of_month = data.schedule_day_of_month;
+    if (data.schedule_day_of_week !== undefined)
+      patch.schedule_day_of_week = data.schedule_day_of_week;
+    if (data.schedule_day_of_month !== undefined)
+      patch.schedule_day_of_month = data.schedule_day_of_month;
     if (data.schedule_interval_hours !== undefined)
       patch.schedule_interval_hours = data.schedule_interval_hours;
 
@@ -285,7 +318,11 @@ async function uploadJsonGzipToDrive(
     `Content-Type: application/gzip\r\n` +
     `Content-Transfer-Encoding: binary\r\n\r\n`;
   const closing = `\r\n--${boundary}--`;
-  const body = Buffer.concat([Buffer.from(preamble, "utf8"), content, Buffer.from(closing, "utf8")]);
+  const body = Buffer.concat([
+    Buffer.from(preamble, "utf8"),
+    content,
+    Buffer.from(closing, "utf8"),
+  ]);
 
   const res = await fetch(
     `${GATEWAY_BASE}/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,size`,
@@ -353,7 +390,7 @@ export const runBackupNow = createServerFn({ method: "POST" })
         const pageSize = 1000;
         let from = 0;
         // pagination loop
-        // eslint-disable-next-line no-constant-condition
+
         while (true) {
           const { data, error } = await supabaseAdmin
             .from(table as any)
@@ -378,18 +415,10 @@ export const runBackupNow = createServerFn({ method: "POST" })
       const { gzipSync } = await import("node:zlib");
       const gz = gzipSync(Buffer.from(json, "utf8"), { level: 9 });
 
-      const stamp = new Date()
-        .toISOString()
-        .replace(/[:.]/g, "-")
-        .replace("T", "_")
-        .slice(0, 19);
+      const stamp = new Date().toISOString().replace(/[:.]/g, "-").replace("T", "_").slice(0, 19);
       const filename = `autoport-backup-${stamp}.json.gz`;
 
-      const uploaded = await uploadJsonGzipToDrive(
-        settings.drive_folder_id,
-        filename,
-        gz,
-      );
+      const uploaded = await uploadJsonGzipToDrive(settings.drive_folder_id, filename, gz);
 
       const duration = Date.now() - startedAt;
       await context.supabase

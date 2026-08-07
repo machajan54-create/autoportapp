@@ -11,22 +11,24 @@ const vehicleInput = z.object({
   active: z.boolean().optional(),
 });
 
-const entryInput = z.object({
-  id: z.string().uuid().optional(),
-  vehicle_id: z.string().uuid(),
-  entry_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  route: z.string().trim().max(300).optional().nullable(),
-  purpose: z.string().trim().max(200).optional().nullable(),
-  km_driven: z.number().min(0).max(100000).optional().nullable(),
-  odometer: z.number().min(0).max(10000000).optional().nullable(),
-  fuel_liters: z.number().min(0).max(10000).optional().nullable(),
-  fuel_cost_czk: z.number().min(0).max(1_000_000).optional().nullable(),
-  note: z.string().trim().max(2000).optional().nullable(),
-  receipt_path: z.string().trim().max(500).optional().nullable(),
-}).refine(
-  (d) => !(d.fuel_liters && d.fuel_liters > 0) || !!d.receipt_path,
-  { message: "Tankování vyžaduje fotku účtenky", path: ["receipt_path"] },
-);
+const entryInput = z
+  .object({
+    id: z.string().uuid().optional(),
+    vehicle_id: z.string().uuid(),
+    entry_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    route: z.string().trim().max(300).optional().nullable(),
+    purpose: z.string().trim().max(200).optional().nullable(),
+    km_driven: z.number().min(0).max(100000).optional().nullable(),
+    odometer: z.number().min(0).max(10000000).optional().nullable(),
+    fuel_liters: z.number().min(0).max(10000).optional().nullable(),
+    fuel_cost_czk: z.number().min(0).max(1_000_000).optional().nullable(),
+    note: z.string().trim().max(2000).optional().nullable(),
+    receipt_path: z.string().trim().max(500).optional().nullable(),
+  })
+  .refine((d) => !(d.fuel_liters && d.fuel_liters > 0) || !!d.receipt_path, {
+    message: "Tankování vyžaduje fotku účtenky",
+    path: ["receipt_path"],
+  });
 
 export const listVehicles = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -54,14 +56,17 @@ export const upsertVehicle = createServerFn({ method: "POST" })
     };
     if (id) {
       const { error } = await context.supabase
-        .from("logbook_vehicles").update(payload).eq("id", id);
+        .from("logbook_vehicles")
+        .update(payload)
+        .eq("id", id);
       if (error) throw new Error(error.message);
       return { id };
     }
     const { data: row, error } = await context.supabase
       .from("logbook_vehicles")
       .insert({ ...payload, created_by: context.userId })
-      .select("id").single();
+      .select("id")
+      .single();
     if (error) throw new Error(error.message);
     return { id: row.id };
   });
@@ -76,7 +81,10 @@ export const deleteVehicle = createServerFn({ method: "POST" })
 export const listEntries = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ vehicle_id: z.string().uuid().optional() }).partial().parse(d ?? {}),
+    z
+      .object({ vehicle_id: z.string().uuid().optional() })
+      .partial()
+      .parse(d ?? {}),
   )
   .handler(async ({ data, context }) => {
     let q = context.supabase
@@ -109,18 +117,21 @@ export const upsertEntry = createServerFn({ method: "POST" })
       receipt_path: rest.receipt_path || null,
     };
     if (id) {
-      const { error } = await context.supabase
-        .from("logbook_entries").update(payload).eq("id", id);
+      const { error } = await context.supabase.from("logbook_entries").update(payload).eq("id", id);
       if (error) throw new Error(error.message);
       return { id };
     }
     const { data: profile } = await context.supabase
-      .from("profiles").select("full_name,email").eq("id", context.userId).maybeSingle();
+      .from("profiles")
+      .select("full_name,email")
+      .eq("id", context.userId)
+      .maybeSingle();
     const created_by_name = profile?.full_name || profile?.email || null;
     const { data: row, error } = await context.supabase
       .from("logbook_entries")
       .insert({ ...payload, created_by: context.userId, created_by_name })
-      .select("id").single();
+      .select("id")
+      .single();
     if (error) throw new Error(error.message);
     return { id: row.id };
   });

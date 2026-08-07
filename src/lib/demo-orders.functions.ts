@@ -40,7 +40,9 @@ async function isAdminUser(supabase: any, userId: string): Promise<boolean> {
 
 const lineItemSchema = z.object({
   label: z.string().trim().min(1).max(200),
-  category: z.enum(["vehicle", "equipment", "package", "discount", "vip", "other"]).default("equipment"),
+  category: z
+    .enum(["vehicle", "equipment", "package", "discount", "vip", "other"])
+    .default("equipment"),
   bez_dph: z.number().default(0),
   dph_pct: z.number().min(0).max(100).default(21),
 });
@@ -54,9 +56,20 @@ const orderInput = z.object({
   najete_km: z.number().int().min(0).max(2_000_000).optional().nullable(),
   rok_vyroby: z.number().int().min(1990).max(2100).optional().nullable(),
   zaruka_spustena_od: z.string().trim().max(40).optional().nullable(),
-  registrace_datum: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
-  datum_objednavky: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  datum_dodani: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  registrace_datum: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
+    .nullable(),
+  datum_objednavky: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  datum_dodani: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
+    .nullable(),
   line_items: z.array(lineItemSchema).max(50).default([]),
   zaloha: z.number().min(0).default(0),
   notes: z.string().trim().max(4000).optional().nullable(),
@@ -80,7 +93,9 @@ export const listDemoOrders = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("demo_orders" as never)
-      .select("id,order_number,invoice_number,status,model_verze,vin,rz,cena_celkem_s_dph,datum_objednavky,created_at,client_id")
+      .select(
+        "id,order_number,invoice_number,status,model_verze,vin,rz,cena_celkem_s_dph,datum_objednavky,created_at,client_id",
+      )
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     const rows = (data ?? []) as any[];
@@ -238,18 +253,25 @@ function fmtDate(s: string | null | undefined): string {
 
 // Signature box coords (used by both order PDF and signed embed)
 const SIG = {
-  sellerX: 48, sellerY: 90, sellerW: 220, sellerH: 70,
-  buyerX: 595.28 - 48 - 220, buyerY: 90, buyerW: 220, buyerH: 70,
-  labelY: 80, lineY: 88,
+  sellerX: 48,
+  sellerY: 90,
+  sellerW: 220,
+  sellerH: 70,
+  buyerX: 595.28 - 48 - 220,
+  buyerY: 90,
+  buyerW: 220,
+  buyerH: 70,
+  labelY: 80,
+  lineY: 88,
 };
 
 const BRAND = {
   primary: [0.93, 0.36, 0.04] as [number, number, number], // sytější oranžová
   primarySoft: [1.0, 0.93, 0.85] as [number, number, number],
-  dark: [0.07, 0.10, 0.15] as [number, number, number],
-  ink: [0.10, 0.13, 0.18] as [number, number, number],
+  dark: [0.07, 0.1, 0.15] as [number, number, number],
+  ink: [0.1, 0.13, 0.18] as [number, number, number],
   muted: [0.42, 0.46, 0.52] as [number, number, number],
-  hairline: [0.90, 0.92, 0.94] as [number, number, number],
+  hairline: [0.9, 0.92, 0.94] as [number, number, number],
   panel: [0.97, 0.97, 0.98] as [number, number, number],
   panelStrong: [1, 0.93, 0.78] as [number, number, number],
 };
@@ -293,7 +315,10 @@ async function embedSignatureAt(
   const ratio = png.width / png.height;
   let w = box.w;
   let h = w / ratio;
-  if (h > box.h) { h = box.h; w = h * ratio; }
+  if (h > box.h) {
+    h = box.h;
+    w = h * ratio;
+  }
   const x = box.x + (box.w - w) / 2;
   const y = box.y + (box.h - h) / 2;
   page.drawImage(png, { x, y, width: w, height: h });
@@ -307,18 +332,23 @@ async function buildOrderPdf(order: any, client: any): Promise<Uint8Array> {
   let page = pdf.addPage([595.28, 841.89]);
   const { width, height } = page.getSize();
   const { font, fontB } = await embedUnicodeFonts(pdf);
-  const black = rgb(0.10, 0.13, 0.18);
+  const black = rgb(0.1, 0.13, 0.18);
   const muted = rgb(...BRAND.muted);
   const primary = rgb(...BRAND.primary);
   const hair = rgb(...BRAND.hairline);
   const marginX = 48;
 
   const draw = (
-    pg: any, text: string, x: number, y: number,
+    pg: any,
+    text: string,
+    x: number,
+    y: number,
     o: { size?: number; bold?: boolean; color?: any } = {},
   ) => {
     pg.drawText(sanitize(text), {
-      x, y, size: o.size ?? 9.5,
+      x,
+      y,
+      size: o.size ?? 9.5,
       font: o.bold ? fontB : font,
       color: o.color ?? black,
     });
@@ -328,15 +358,37 @@ async function buildOrderPdf(order: any, client: any): Promise<Uint8Array> {
   page.drawRectangle({ x: 0, y: height - 90, width, height: 90, color: rgb(...BRAND.dark) });
   page.drawRectangle({ x: 0, y: height - 94, width, height: 4, color: primary });
   draw(page, "AUTOPORT", marginX, height - 40, { size: 18, bold: true, color: rgb(1, 1, 1) });
-  draw(page, "Objednavka predvadeciho vozu", marginX, height - 60, { size: 11, color: rgb(0.78, 0.82, 0.88) });
-  draw(page, "AutoPort s.r.o.  -  Korytna 47, 100 00 Praha 10", marginX, height - 76, { size: 7.5, color: rgb(0.65, 0.7, 0.78) });
-  draw(page, "IC 49614703  -  DIC CZ49614703", marginX, height - 85, { size: 7.5, color: rgb(0.65, 0.7, 0.78) });
+  draw(page, "Objednavka predvadeciho vozu", marginX, height - 60, {
+    size: 11,
+    color: rgb(0.78, 0.82, 0.88),
+  });
+  draw(page, "AutoPort s.r.o.  -  Korytna 47, 100 00 Praha 10", marginX, height - 76, {
+    size: 7.5,
+    color: rgb(0.65, 0.7, 0.78),
+  });
+  draw(page, "IC 49614703  -  DIC CZ49614703", marginX, height - 85, {
+    size: 7.5,
+    color: rgb(0.65, 0.7, 0.78),
+  });
 
   // Right side: order number + date
   const rNumLabel = "OBJEDNAVKA";
-  draw(page, rNumLabel, width - marginX - 160, height - 40, { size: 8, color: rgb(0.78, 0.82, 0.88) });
-  draw(page, order.order_number || "—", width - marginX - 160, height - 56, { size: 14, bold: true, color: rgb(1, 1, 1) });
-  draw(page, "Datum vystaveni: " + fmtDate(order.datum_objednavky), width - marginX - 160, height - 76, { size: 8, color: rgb(0.78, 0.82, 0.88) });
+  draw(page, rNumLabel, width - marginX - 160, height - 40, {
+    size: 8,
+    color: rgb(0.78, 0.82, 0.88),
+  });
+  draw(page, order.order_number || "—", width - marginX - 160, height - 56, {
+    size: 14,
+    bold: true,
+    color: rgb(1, 1, 1),
+  });
+  draw(
+    page,
+    "Datum vystaveni: " + fmtDate(order.datum_objednavky),
+    width - marginX - 160,
+    height - 76,
+    { size: 8, color: rgb(0.78, 0.82, 0.88) },
+  );
 
   // ===== Two info cards: vehicle + client =====
   let y = height - 120;
@@ -344,7 +396,13 @@ async function buildOrderPdf(order: any, client: any): Promise<Uint8Array> {
   const cardH = 170;
 
   const card = (x: number, title: string, rows: Array<[string, string]>) => {
-    page.drawRectangle({ x, y: y - cardH, width: cardW, height: cardH, color: rgb(...BRAND.panel) });
+    page.drawRectangle({
+      x,
+      y: y - cardH,
+      width: cardW,
+      height: cardH,
+      color: rgb(...BRAND.panel),
+    });
     page.drawRectangle({ x, y: y - 4, width: cardW, height: 4, color: primary });
     draw(page, title, x + 12, y - 22, { size: 10.5, bold: true });
     let ry = y - 42;
@@ -359,8 +417,14 @@ async function buildOrderPdf(order: any, client: any): Promise<Uint8Array> {
     ["Model a verze", order.model_verze || "—"],
     ["VIN / RZ", order.vin || "—"],
     ["Barva", order.barva || "—"],
-    ["Rok / km", `${order.rok_vyroby ?? "—"}  -  ${order.najete_km != null ? new Intl.NumberFormat("cs-CZ").format(order.najete_km) + " km" : "—"}`],
-    ["Registrace / zaruka", `${fmtDate(order.registrace_datum)}  -  ${order.zaruka_spustena_od || "—"}`],
+    [
+      "Rok / km",
+      `${order.rok_vyroby ?? "—"}  -  ${order.najete_km != null ? new Intl.NumberFormat("cs-CZ").format(order.najete_km) + " km" : "—"}`,
+    ],
+    [
+      "Registrace / zaruka",
+      `${fmtDate(order.registrace_datum)}  -  ${order.zaruka_spustena_od || "—"}`,
+    ],
   ]);
 
   card(marginX + cardW + 16, "KLIENT", [
@@ -376,7 +440,12 @@ async function buildOrderPdf(order: any, client: any): Promise<Uint8Array> {
   // ===== Line items table =====
   draw(page, "POLOZKY OBJEDNAVKY", marginX, y, { size: 10.5, bold: true });
   y -= 6;
-  page.drawLine({ start: { x: marginX, y }, end: { x: width - marginX, y }, thickness: 1.2, color: primary });
+  page.drawLine({
+    start: { x: marginX, y },
+    end: { x: width - marginX, y },
+    thickness: 1.2,
+    color: primary,
+  });
   y -= 16;
 
   const colBezX = width - marginX - 240;
@@ -387,7 +456,12 @@ async function buildOrderPdf(order: any, client: any): Promise<Uint8Array> {
   draw(page, "DPH", colDphX, y, { size: 8, bold: true, color: muted });
   draw(page, "S DPH", colSDphX, y, { size: 8, bold: true, color: muted });
   y -= 6;
-  page.drawLine({ start: { x: marginX, y }, end: { x: width - marginX, y }, thickness: 0.5, color: hair });
+  page.drawLine({
+    start: { x: marginX, y },
+    end: { x: width - marginX, y },
+    thickness: 0.5,
+    color: hair,
+  });
   y -= 14;
 
   const items = Array.isArray(order.line_items) ? order.line_items : [];
@@ -397,7 +471,13 @@ async function buildOrderPdf(order: any, client: any): Promise<Uint8Array> {
     const dph = bez * (Number(it.dph_pct || 0) / 100);
     const s = bez + dph;
     if (zebra) {
-      page.drawRectangle({ x: marginX - 2, y: y - 4, width: width - marginX * 2 + 4, height: 16, color: rgb(0.975, 0.975, 0.98) });
+      page.drawRectangle({
+        x: marginX - 2,
+        y: y - 4,
+        width: width - marginX * 2 + 4,
+        height: 16,
+        color: rgb(0.975, 0.975, 0.98),
+      });
     }
     draw(page, it.label || "", marginX, y, { size: 9.5 });
     draw(page, fmtKc(bez), colBezX, y, { size: 9.5 });
@@ -413,16 +493,40 @@ async function buildOrderPdf(order: any, client: any): Promise<Uint8Array> {
 
   y -= 6;
   // Totals panel
-  page.drawRectangle({ x: marginX, y: y - 56, width: width - marginX * 2, height: 56, color: rgb(...BRAND.dark) });
-  page.drawRectangle({ x: marginX, y: y - 4, width: width - marginX * 2, height: 4, color: primary });
+  page.drawRectangle({
+    x: marginX,
+    y: y - 56,
+    width: width - marginX * 2,
+    height: 56,
+    color: rgb(...BRAND.dark),
+  });
+  page.drawRectangle({
+    x: marginX,
+    y: y - 4,
+    width: width - marginX * 2,
+    height: 4,
+    color: primary,
+  });
   draw(page, "CELKEM BEZ DPH", marginX + 16, y - 22, { size: 8, color: rgb(0.78, 0.82, 0.88) });
-  draw(page, fmtKc(order.cena_celkem_bez_dph), marginX + 16, y - 40, { size: 14, bold: true, color: rgb(1, 1, 1) });
+  draw(page, fmtKc(order.cena_celkem_bez_dph), marginX + 16, y - 40, {
+    size: 14,
+    bold: true,
+    color: rgb(1, 1, 1),
+  });
 
   draw(page, "ZALOHA", marginX + 220, y - 22, { size: 8, color: rgb(0.78, 0.82, 0.88) });
-  draw(page, fmtKc(order.zaloha), marginX + 220, y - 40, { size: 14, bold: true, color: rgb(1, 1, 1) });
+  draw(page, fmtKc(order.zaloha), marginX + 220, y - 40, {
+    size: 14,
+    bold: true,
+    color: rgb(1, 1, 1),
+  });
 
   draw(page, "K UHRADE S DPH", width - marginX - 170, y - 22, { size: 8, color: primary });
-  draw(page, fmtKc(order.cena_celkem_s_dph), width - marginX - 170, y - 42, { size: 18, bold: true, color: rgb(1, 1, 1) });
+  draw(page, fmtKc(order.cena_celkem_s_dph), width - marginX - 170, y - 42, {
+    size: 18,
+    bold: true,
+    color: rgb(1, 1, 1),
+  });
   y -= 72;
 
   // Delivery + notes
@@ -434,7 +538,10 @@ async function buildOrderPdf(order: any, client: any): Promise<Uint8Array> {
     draw(page, "Poznamka:", marginX, y, { size: 9, color: muted });
     y -= 12;
     for (const line of String(order.notes).split(/\n/)) {
-      if (y < 200) { page = pdf.addPage([595.28, 841.89]); y = height - 60; }
+      if (y < 200) {
+        page = pdf.addPage([595.28, 841.89]);
+        y = height - 60;
+      }
       draw(page, line, marginX, y, { size: 9 });
       y -= 12;
     }
@@ -442,8 +549,18 @@ async function buildOrderPdf(order: any, client: any): Promise<Uint8Array> {
 
   // ===== Signature row (on the last page) =====
   // Lines
-  page.drawLine({ start: { x: SIG.sellerX, y: SIG.lineY }, end: { x: SIG.sellerX + SIG.sellerW, y: SIG.lineY }, thickness: 0.6, color: rgb(0.4, 0.4, 0.45) });
-  page.drawLine({ start: { x: SIG.buyerX, y: SIG.lineY }, end: { x: SIG.buyerX + SIG.buyerW, y: SIG.lineY }, thickness: 0.6, color: rgb(0.4, 0.4, 0.45) });
+  page.drawLine({
+    start: { x: SIG.sellerX, y: SIG.lineY },
+    end: { x: SIG.sellerX + SIG.sellerW, y: SIG.lineY },
+    thickness: 0.6,
+    color: rgb(0.4, 0.4, 0.45),
+  });
+  page.drawLine({
+    start: { x: SIG.buyerX, y: SIG.lineY },
+    end: { x: SIG.buyerX + SIG.buyerW, y: SIG.lineY },
+    thickness: 0.6,
+    color: rgb(0.4, 0.4, 0.45),
+  });
   draw(page, "Podpis prodavajiciho", SIG.sellerX, SIG.labelY, { size: 8, color: muted });
   draw(page, "Podpis kupujiciho", SIG.buyerX, SIG.labelY, { size: 8, color: muted });
 
@@ -451,22 +568,48 @@ async function buildOrderPdf(order: any, client: any): Promise<Uint8Array> {
   if (order.seller_signature_data) {
     try {
       await embedSignatureAt(pdf, page, order.seller_signature_data, {
-        x: SIG.sellerX, y: SIG.lineY + 4, w: SIG.sellerW, h: SIG.sellerH,
+        x: SIG.sellerX,
+        y: SIG.lineY + 4,
+        w: SIG.sellerW,
+        h: SIG.sellerH,
       });
       if (order.seller_signer_name) {
-        draw(page, sanitize(order.seller_signer_name), SIG.sellerX, SIG.labelY, { size: 8, color: muted });
+        draw(page, sanitize(order.seller_signer_name), SIG.sellerX, SIG.labelY, {
+          size: 8,
+          color: muted,
+        });
       }
-    } catch { /* ignore embed errors */ }
+    } catch {
+      /* ignore embed errors */
+    }
   }
 
   // Footer
-  page.drawLine({ start: { x: marginX, y: 40 }, end: { x: width - marginX, y: 40 }, thickness: 0.4, color: hair });
-  draw(page, "AutoPort s.r.o.  -  Korytna 47, 100 00 Praha 10  -  IC 49614703  -  DIC CZ49614703", marginX, 30, { size: 7, color: muted });
-  draw(page, "Vygenerovano AutoPort App  -  " + new Date().toLocaleString("cs-CZ"), marginX, 20, { size: 7, color: muted });
+  page.drawLine({
+    start: { x: marginX, y: 40 },
+    end: { x: width - marginX, y: 40 },
+    thickness: 0.4,
+    color: hair,
+  });
+  draw(
+    page,
+    "AutoPort s.r.o.  -  Korytna 47, 100 00 Praha 10  -  IC 49614703  -  DIC CZ49614703",
+    marginX,
+    30,
+    { size: 7, color: muted },
+  );
+  draw(page, "Vygenerovano AutoPort App  -  " + new Date().toLocaleString("cs-CZ"), marginX, 20, {
+    size: 7,
+    color: muted,
+  });
   return await pdf.save();
 }
 
-async function buildInvoicePdf(order: any, client: any, invoiceNumber: string): Promise<Uint8Array> {
+async function buildInvoicePdf(
+  order: any,
+  client: any,
+  invoiceNumber: string,
+): Promise<Uint8Array> {
   const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
   const QRCode = (await import("qrcode")).default;
   const pdf = await PDFDocument.create();
@@ -481,8 +624,19 @@ async function buildInvoicePdf(order: any, client: any, invoiceNumber: string): 
   const hair = rgb(...BRAND.hairline);
   const marginX = 48;
 
-  const draw = (t: string, x: number, y: number, o: { size?: number; bold?: boolean; color?: any } = {}) => {
-    page.drawText(sanitize(t), { x, y, size: o.size ?? 9.5, font: o.bold ? fontB : font, color: o.color ?? black });
+  const draw = (
+    t: string,
+    x: number,
+    y: number,
+    o: { size?: number; bold?: boolean; color?: any } = {},
+  ) => {
+    page.drawText(sanitize(t), {
+      x,
+      y,
+      size: o.size ?? 9.5,
+      font: o.bold ? fontB : font,
+      color: o.color ?? black,
+    });
   };
 
   // Header
@@ -490,16 +644,36 @@ async function buildInvoicePdf(order: any, client: any, invoiceNumber: string): 
   page.drawRectangle({ x: 0, y: height - 94, width, height: 4, color: primary });
   draw("AUTOPORT", marginX, height - 40, { size: 18, bold: true, color: rgb(1, 1, 1) });
   draw("Zalohova faktura", marginX, height - 60, { size: 11, color: rgb(0.78, 0.82, 0.88) });
-  draw(invoiceNumber, width - marginX - 160, height - 40, { size: 16, bold: true, color: rgb(1, 1, 1) });
-  draw("Datum vystaveni: " + fmtDate(new Date().toISOString()), width - marginX - 160, height - 60, { size: 8, color: rgb(0.78, 0.82, 0.88) });
-  draw("Splatnost: " + fmtDate(new Date(Date.now() + 14 * 86400000).toISOString()), width - marginX - 160, height - 72, { size: 8, color: rgb(0.78, 0.82, 0.88) });
+  draw(invoiceNumber, width - marginX - 160, height - 40, {
+    size: 16,
+    bold: true,
+    color: rgb(1, 1, 1),
+  });
+  draw(
+    "Datum vystaveni: " + fmtDate(new Date().toISOString()),
+    width - marginX - 160,
+    height - 60,
+    { size: 8, color: rgb(0.78, 0.82, 0.88) },
+  );
+  draw(
+    "Splatnost: " + fmtDate(new Date(Date.now() + 14 * 86400000).toISOString()),
+    width - marginX - 160,
+    height - 72,
+    { size: 8, color: rgb(0.78, 0.82, 0.88) },
+  );
 
   let y = height - 120;
   const cardW = (width - marginX * 2 - 16) / 2;
   const cardH = 110;
 
   const card = (x: number, title: string, lines: string[]) => {
-    page.drawRectangle({ x, y: y - cardH, width: cardW, height: cardH, color: rgb(...BRAND.panel) });
+    page.drawRectangle({
+      x,
+      y: y - cardH,
+      width: cardW,
+      height: cardH,
+      color: rgb(...BRAND.panel),
+    });
     page.drawRectangle({ x, y: y - 4, width: cardW, height: 4, color: primary });
     draw(title, x + 12, y - 22, { size: 9, bold: true, color: muted });
     let ry = y - 40;
@@ -524,7 +698,12 @@ async function buildInvoicePdf(order: any, client: any, invoiceNumber: string): 
 
   draw("PREDMET PLATBY", marginX, y, { size: 9, bold: true, color: muted });
   y -= 6;
-  page.drawLine({ start: { x: marginX, y }, end: { x: width - marginX, y }, thickness: 1.2, color: primary });
+  page.drawLine({
+    start: { x: marginX, y },
+    end: { x: width - marginX, y },
+    thickness: 1.2,
+    color: primary,
+  });
   y -= 18;
   draw(`Zaloha na objednavku ${order.order_number}`, marginX, y, { size: 10, bold: true });
   y -= 14;
@@ -532,11 +711,26 @@ async function buildInvoicePdf(order: any, client: any, invoiceNumber: string): 
   y -= 28;
 
   // Amount panel
-  page.drawRectangle({ x: marginX, y: y - 70, width: width - marginX * 2, height: 70, color: rgb(...BRAND.dark) });
-  page.drawRectangle({ x: marginX, y: y - 4, width: width - marginX * 2, height: 4, color: primary });
+  page.drawRectangle({
+    x: marginX,
+    y: y - 70,
+    width: width - marginX * 2,
+    height: 70,
+    color: rgb(...BRAND.dark),
+  });
+  page.drawRectangle({
+    x: marginX,
+    y: y - 4,
+    width: width - marginX * 2,
+    height: 4,
+    color: primary,
+  });
   draw("CASTKA K UHRADE", marginX + 16, y - 24, { size: 8, color: primary });
   draw(fmtKc(order.zaloha), marginX + 16, y - 52, { size: 24, bold: true, color: rgb(1, 1, 1) });
-  draw("(zalohova faktura - po pripsani platby vystavime danovy doklad)", marginX + 16, y - 66, { size: 7.5, color: rgb(0.78, 0.82, 0.88) });
+  draw("(zalohova faktura - po pripsani platby vystavime danovy doklad)", marginX + 16, y - 66, {
+    size: 7.5,
+    color: rgb(0.78, 0.82, 0.88),
+  });
   y -= 90;
 
   // Bank details + Czech SPAYD QR code
@@ -546,12 +740,18 @@ async function buildInvoicePdf(order: any, client: any, invoiceNumber: string): 
   const iban = buildCzIban(BANK_ACCOUNT, BANK_CODE);
   const ibanPretty = iban.replace(/(.{4})/g, "$1 ").trim();
   const amount = Number(order.zaloha || 0).toFixed(2);
-  const vs = (order.order_number || "").replace(/[^0-9]/g, "") || invoiceNumber.replace(/[^0-9]/g, "");
+  const vs =
+    (order.order_number || "").replace(/[^0-9]/g, "") || invoiceNumber.replace(/[^0-9]/g, "");
   const spayd = `SPD*1.0*ACC:${iban}*AM:${amount}*CC:CZK*X-VS:${vs}*MSG:ZALOHA ${order.order_number || invoiceNumber}`;
 
   draw("PLATEBNI UDAJE", marginX, y, { size: 9, bold: true, color: muted });
   y -= 6;
-  page.drawLine({ start: { x: marginX, y }, end: { x: width - marginX, y }, thickness: 0.5, color: hair });
+  page.drawLine({
+    start: { x: marginX, y },
+    end: { x: width - marginX, y },
+    thickness: 0.5,
+    color: hair,
+  });
   y -= 18;
   const blockTop = y;
   const kv2 = (k: string, v: string) => {
@@ -567,28 +767,56 @@ async function buildInvoicePdf(order: any, client: any, invoiceNumber: string): 
 
   // QR platba
   try {
-    const qrDataUrl = await QRCode.toDataURL(spayd, { errorCorrectionLevel: "M", margin: 1, width: 320 });
+    const qrDataUrl = await QRCode.toDataURL(spayd, {
+      errorCorrectionLevel: "M",
+      margin: 1,
+      width: 320,
+    });
     const qrBytes = Uint8Array.from(atob(qrDataUrl.split(",")[1]), (c) => c.charCodeAt(0));
     const qrImg = await pdf.embedPng(qrBytes);
     const qrSize = 110;
     const qrX = width - marginX - qrSize;
     const qrY = blockTop - qrSize + 8;
-    page.drawRectangle({ x: qrX - 8, y: qrY - 22, width: qrSize + 16, height: qrSize + 30, color: rgb(1, 1, 1), borderColor: hair, borderWidth: 0.5 });
+    page.drawRectangle({
+      x: qrX - 8,
+      y: qrY - 22,
+      width: qrSize + 16,
+      height: qrSize + 30,
+      color: rgb(1, 1, 1),
+      borderColor: hair,
+      borderWidth: 0.5,
+    });
     page.drawImage(qrImg, { x: qrX, y: qrY, width: qrSize, height: qrSize });
     draw("QR PLATBA", qrX + qrSize / 2 - 22, qrY - 14, { size: 8, bold: true, color: muted });
-  } catch { /* ignore qr errors */ }
+  } catch {
+    /* ignore qr errors */
+  }
 
   // Footer
-  page.drawLine({ start: { x: marginX, y: 40 }, end: { x: width - marginX, y: 40 }, thickness: 0.4, color: hair });
-  draw("AutoPort s.r.o.  -  Korytna 47, 100 00 Praha 10  -  IC 49614703  -  DIC CZ49614703", marginX, 30, { size: 7, color: muted });
-  draw("Vygenerovano AutoPort App  -  " + new Date().toLocaleString("cs-CZ"), marginX, 20, { size: 7, color: muted });
+  page.drawLine({
+    start: { x: marginX, y: 40 },
+    end: { x: width - marginX, y: 40 },
+    thickness: 0.4,
+    color: hair,
+  });
+  draw(
+    "AutoPort s.r.o.  -  Korytna 47, 100 00 Praha 10  -  IC 49614703  -  DIC CZ49614703",
+    marginX,
+    30,
+    { size: 7, color: muted },
+  );
+  draw("Vygenerovano AutoPort App  -  " + new Date().toLocaleString("cs-CZ"), marginX, 20, {
+    size: 7,
+    color: muted,
+  });
   return await pdf.save();
 }
 
 function bytesToBase64(bytes: Uint8Array): string {
   let bin = "";
   const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  for (let i = 0; i < bytes.length; i += chunk)
+    bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
   return btoa(bin);
 }
 
@@ -635,12 +863,26 @@ export const generateOrderPdf = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: order } = await context.supabase.from("demo_orders" as never).select("*").eq("id", data.orderId).maybeSingle();
+    const { data: order } = await context.supabase
+      .from("demo_orders" as never)
+      .select("*")
+      .eq("id", data.orderId)
+      .maybeSingle();
     if (!order) throw new Error("Objednávka nenalezena");
-    const { data: client } = await context.supabase.from("clients" as never).select("*").eq("id", (order as any).client_id).maybeSingle();
+    const { data: client } = await context.supabase
+      .from("clients" as never)
+      .select("*")
+      .eq("id", (order as any).client_id)
+      .maybeSingle();
     const bytes = await buildOrderPdf(order, client);
     const file = `objednavka-${(order as any).order_number}.pdf`;
-    const rec = await uploadAndRecord({ clientId: (order as any).client_id, orderId: data.orderId, kind: "order", fileName: file, bytes });
+    const rec = await uploadAndRecord({
+      clientId: (order as any).client_id,
+      orderId: data.orderId,
+      kind: "order",
+      fileName: file,
+      bytes,
+    });
     await logEvent({
       orderId: data.orderId,
       type: "order_pdf_generated",
@@ -654,24 +896,46 @@ export const generateInvoicePdf = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: order } = await context.supabase.from("demo_orders" as never).select("*").eq("id", data.orderId).maybeSingle();
+    const { data: order } = await context.supabase
+      .from("demo_orders" as never)
+      .select("*")
+      .eq("id", data.orderId)
+      .maybeSingle();
     if (!order) throw new Error("Objednávka nenalezena");
     if (!(order as any).zaloha || Number((order as any).zaloha) <= 0) {
       throw new Error("Objednávka nemá vyplněnou zálohu");
     }
-    const { data: client } = await context.supabase.from("clients" as never).select("*").eq("id", (order as any).client_id).maybeSingle();
+    const { data: client } = await context.supabase
+      .from("clients" as never)
+      .select("*")
+      .eq("id", (order as any).client_id)
+      .maybeSingle();
 
     let invoiceNumber = (order as any).invoice_number as string | null;
     if (!invoiceNumber) {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data: nextNum, error: seqErr } = await supabaseAdmin.rpc("next_demo_invoice_number" as any);
-      if (seqErr || !nextNum) throw new Error("Nepodařilo se vygenerovat číslo faktury: " + (seqErr?.message || "prázdná odpověď"));
+      const { data: nextNum, error: seqErr } = await supabaseAdmin.rpc(
+        "next_demo_invoice_number" as any,
+      );
+      if (seqErr || !nextNum)
+        throw new Error(
+          "Nepodařilo se vygenerovat číslo faktury: " + (seqErr?.message || "prázdná odpověď"),
+        );
       invoiceNumber = String(nextNum);
-      await supabaseAdmin.from("demo_orders" as never).update({ invoice_number: invoiceNumber } as never).eq("id", data.orderId);
+      await supabaseAdmin
+        .from("demo_orders" as never)
+        .update({ invoice_number: invoiceNumber } as never)
+        .eq("id", data.orderId);
     }
     const bytes = await buildInvoicePdf(order, client, invoiceNumber);
     const file = `zalohova-faktura-${invoiceNumber}.pdf`;
-    const rec = await uploadAndRecord({ clientId: (order as any).client_id, orderId: data.orderId, kind: "invoice", fileName: file, bytes });
+    const rec = await uploadAndRecord({
+      clientId: (order as any).client_id,
+      orderId: data.orderId,
+      kind: "invoice",
+      fileName: file,
+      bytes,
+    });
     await logEvent({
       orderId: data.orderId,
       type: "invoice_pdf_generated",
@@ -681,7 +945,11 @@ export const generateInvoicePdf = createServerFn({ method: "POST" })
     return { ok: true, base64: bytesToBase64(bytes), file_name: rec.file_name, invoiceNumber };
   });
 
-async function buildSignedFromBase(baseBytes: Uint8Array, signatureDataUrl: string, signerName: string): Promise<Uint8Array> {
+async function buildSignedFromBase(
+  baseBytes: Uint8Array,
+  signatureDataUrl: string,
+  signerName: string,
+): Promise<Uint8Array> {
   const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
   const pdf = await PDFDocument.load(baseBytes);
   const pages = pdf.getPages();
@@ -689,10 +957,17 @@ async function buildSignedFromBase(baseBytes: Uint8Array, signatureDataUrl: stri
   const { font } = await embedUnicodeFonts(pdf);
 
   await embedSignatureAt(pdf, last, signatureDataUrl, {
-    x: SIG.buyerX, y: SIG.lineY + 4, w: SIG.buyerW, h: SIG.buyerH,
+    x: SIG.buyerX,
+    y: SIG.lineY + 4,
+    w: SIG.buyerW,
+    h: SIG.buyerH,
   });
   last.drawText(sanitize(`${signerName}  -  ${new Date().toLocaleString("cs-CZ")}`), {
-    x: SIG.buyerX, y: SIG.labelY - 10, size: 7.5, font, color: rgb(0.42, 0.46, 0.52),
+    x: SIG.buyerX,
+    y: SIG.labelY - 10,
+    size: 7.5,
+    font,
+    color: rgb(0.42, 0.46, 0.52),
   });
   return await pdf.save();
 }
@@ -708,7 +983,9 @@ async function fetchLatestDoc(orderId: string, kind: "order" | "invoice") {
     .limit(1);
   const row = ((data ?? []) as any[])[0];
   if (!row) return null;
-  const { data: file, error } = await supabaseAdmin.storage.from("client-documents").download(row.storage_path);
+  const { data: file, error } = await supabaseAdmin.storage
+    .from("client-documents")
+    .download(row.storage_path);
   if (error || !file) return null;
   const buf = new Uint8Array(await file.arrayBuffer());
   return { row, bytes: buf };
@@ -717,17 +994,23 @@ async function fetchLatestDoc(orderId: string, kind: "order" | "invoice") {
 export const signOrderInPerson = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({
-      orderId: z.string().uuid(),
-      signatureDataUrl: z.string().min(20),
-      signerName: z.string().trim().min(1).max(200),
-    }).parse(d),
+    z
+      .object({
+        orderId: z.string().uuid(),
+        signatureDataUrl: z.string().min(20),
+        signerName: z.string().trim().min(1).max(200),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const base = await fetchLatestDoc(data.orderId, "order");
     if (!base) throw new Error("Nejprve vygenerujte PDF objednávky");
     const signed = await buildSignedFromBase(base.bytes, data.signatureDataUrl, data.signerName);
-    const { data: order } = await context.supabase.from("demo_orders" as never).select("client_id,order_number").eq("id", data.orderId).maybeSingle();
+    const { data: order } = await context.supabase
+      .from("demo_orders" as never)
+      .select("client_id,order_number")
+      .eq("id", data.orderId)
+      .maybeSingle();
     const file = `objednavka-podepsana-${(order as any)?.order_number || data.orderId}.pdf`;
     await uploadAndRecord({
       clientId: (order as any).client_id,
@@ -745,7 +1028,10 @@ export const signOrderInPerson = createServerFn({ method: "POST" })
       signature_data: data.signatureDataUrl,
       signed_at: new Date().toISOString(),
     } as never);
-    await supabaseAdmin.from("demo_orders" as never).update({ status: "signed" } as never).eq("id", data.orderId);
+    await supabaseAdmin
+      .from("demo_orders" as never)
+      .update({ status: "signed" } as never)
+      .eq("id", data.orderId);
     await logEvent({
       orderId: data.orderId,
       type: "signed_in_person",
@@ -758,11 +1044,13 @@ export const signOrderInPerson = createServerFn({ method: "POST" })
 export const saveSellerSignature = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({
-      orderId: z.string().uuid(),
-      signatureDataUrl: z.string().min(20),
-      signerName: z.string().trim().min(1).max(200),
-    }).parse(d),
+    z
+      .object({
+        orderId: z.string().uuid(),
+        signatureDataUrl: z.string().min(20),
+        signerName: z.string().trim().min(1).max(200),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
@@ -809,9 +1097,17 @@ export const createRemoteSignatureLink = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: order } = await context.supabase.from("demo_orders" as never).select("client_id,order_number,model_verze").eq("id", data.orderId).maybeSingle();
+    const { data: order } = await context.supabase
+      .from("demo_orders" as never)
+      .select("client_id,order_number,model_verze")
+      .eq("id", data.orderId)
+      .maybeSingle();
     if (!order) throw new Error("Objednávka nenalezena");
-    const { data: client } = await context.supabase.from("clients" as never).select("full_name,email").eq("id", (order as any).client_id).maybeSingle();
+    const { data: client } = await context.supabase
+      .from("clients" as never)
+      .select("full_name,email")
+      .eq("id", (order as any).client_id)
+      .maybeSingle();
     if (!(client as any)?.email) throw new Error("Klient nemá vyplněn e-mail");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -823,7 +1119,10 @@ export const createRemoteSignatureLink = createServerFn({ method: "POST" })
       token,
       token_expires_at: expires,
     } as never);
-    await supabaseAdmin.from("demo_orders" as never).update({ status: "sent_for_signature" } as never).eq("id", data.orderId);
+    await supabaseAdmin
+      .from("demo_orders" as never)
+      .update({ status: "sent_for_signature" } as never)
+      .eq("id", data.orderId);
 
     const link = `https://www.autoport-app.cz/sign/${token}`;
     const { enqueueTransactionalEmail } = await import("@/lib/email/notify.server");
@@ -862,13 +1161,27 @@ export const getOrderByToken = createServerFn({ method: "GET" })
       .maybeSingle();
     if (!sig) throw new Error("Neplatný odkaz");
     if ((sig as any).consumed_at) throw new Error("Tento odkaz již byl použit");
-    if (new Date((sig as any).token_expires_at).getTime() < Date.now()) throw new Error("Platnost odkazu vypršela");
-    const { data: order } = await supabaseAdmin.from("demo_orders" as never).select("*").eq("id", (sig as any).order_id).maybeSingle();
-    const { data: client } = await supabaseAdmin.from("clients" as never).select("full_name,company,email").eq("id", (order as any).client_id).maybeSingle();
+    if (new Date((sig as any).token_expires_at).getTime() < Date.now())
+      throw new Error("Platnost odkazu vypršela");
+    const { data: order } = await supabaseAdmin
+      .from("demo_orders" as never)
+      .select("*")
+      .eq("id", (sig as any).order_id)
+      .maybeSingle();
+    const { data: client } = await supabaseAdmin
+      .from("clients" as never)
+      .select("full_name,company,email")
+      .eq("id", (order as any).client_id)
+      .maybeSingle();
     // Latest order PDF
     const base = await fetchLatestDoc((order as any).id, "order");
     return {
-      order: { id: (order as any).id, order_number: (order as any).order_number, model_verze: (order as any).model_verze, cena_celkem_s_dph: (order as any).cena_celkem_s_dph },
+      order: {
+        id: (order as any).id,
+        order_number: (order as any).order_number,
+        model_verze: (order as any).model_verze,
+        cena_celkem_s_dph: (order as any).cena_celkem_s_dph,
+      },
       client: client as any,
       pdfBase64: base ? bytesToBase64(base.bytes) : null,
     };
@@ -876,24 +1189,35 @@ export const getOrderByToken = createServerFn({ method: "GET" })
 
 export const signOrderRemote = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
-    z.object({
-      token: z.string().uuid(),
-      signatureDataUrl: z.string().min(20),
-      signerName: z.string().trim().min(1).max(200),
-    }).parse(d),
+    z
+      .object({
+        token: z.string().uuid(),
+        signatureDataUrl: z.string().min(20),
+        signerName: z.string().trim().min(1).max(200),
+      })
+      .parse(d),
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: sig } = await supabaseAdmin.from("demo_order_signatures" as never).select("*").eq("token", data.token).maybeSingle();
+    const { data: sig } = await supabaseAdmin
+      .from("demo_order_signatures" as never)
+      .select("*")
+      .eq("token", data.token)
+      .maybeSingle();
     if (!sig) throw new Error("Neplatný odkaz");
     if ((sig as any).consumed_at) throw new Error("Tento odkaz již byl použit");
-    if (new Date((sig as any).token_expires_at).getTime() < Date.now()) throw new Error("Platnost odkazu vypršela");
+    if (new Date((sig as any).token_expires_at).getTime() < Date.now())
+      throw new Error("Platnost odkazu vypršela");
     const orderId = (sig as any).order_id as string;
 
     const base = await fetchLatestDoc(orderId, "order");
     if (!base) throw new Error("Objednávka nemá vygenerované PDF");
     const signed = await buildSignedFromBase(base.bytes, data.signatureDataUrl, data.signerName);
-    const { data: order } = await supabaseAdmin.from("demo_orders" as never).select("client_id,order_number").eq("id", orderId).maybeSingle();
+    const { data: order } = await supabaseAdmin
+      .from("demo_orders" as never)
+      .select("client_id,order_number")
+      .eq("id", orderId)
+      .maybeSingle();
     const file = `objednavka-podepsana-${(order as any)?.order_number || orderId}.pdf`;
     await uploadAndRecord({
       clientId: (order as any).client_id,
@@ -903,13 +1227,19 @@ export const signOrderRemote = createServerFn({ method: "POST" })
       bytes: signed,
       signed: true,
     });
-    await supabaseAdmin.from("demo_order_signatures" as never).update({
-      signer_name: data.signerName,
-      signature_data: data.signatureDataUrl,
-      signed_at: new Date().toISOString(),
-      consumed_at: new Date().toISOString(),
-    } as never).eq("id", (sig as any).id);
-    await supabaseAdmin.from("demo_orders" as never).update({ status: "signed" } as never).eq("id", orderId);
+    await supabaseAdmin
+      .from("demo_order_signatures" as never)
+      .update({
+        signer_name: data.signerName,
+        signature_data: data.signatureDataUrl,
+        signed_at: new Date().toISOString(),
+        consumed_at: new Date().toISOString(),
+      } as never)
+      .eq("id", (sig as any).id);
+    await supabaseAdmin
+      .from("demo_orders" as never)
+      .update({ status: "signed" } as never)
+      .eq("id", orderId);
     await logEvent({
       orderId,
       type: "signed_remote",
@@ -923,15 +1253,24 @@ export const sendDocumentsToClient = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: order } = await context.supabase.from("demo_orders" as never).select("client_id,order_number,model_verze").eq("id", data.orderId).maybeSingle();
+    const { data: order } = await context.supabase
+      .from("demo_orders" as never)
+      .select("client_id,order_number,model_verze")
+      .eq("id", data.orderId)
+      .maybeSingle();
     if (!order) throw new Error("Objednávka nenalezena");
-    const { data: client } = await context.supabase.from("clients" as never).select("full_name,email").eq("id", (order as any).client_id).maybeSingle();
+    const { data: client } = await context.supabase
+      .from("clients" as never)
+      .select("full_name,email")
+      .eq("id", (order as any).client_id)
+      .maybeSingle();
     if (!(client as any)?.email) throw new Error("Klient nemá vyplněn e-mail");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const pickKinds = ["order_signed", "order", "invoice"];
     const picked: Record<string, { storage_path: string; file_name: string } | null> = {
-      order: null, invoice: null,
+      order: null,
+      invoice: null,
     };
     for (const kind of pickKinds) {
       const { data: rows } = await supabaseAdmin
@@ -944,14 +1283,17 @@ export const sendDocumentsToClient = createServerFn({ method: "POST" })
       const row = ((rows ?? []) as any[])[0];
       if (!row) continue;
       const target = kind === "invoice" ? "invoice" : "order";
-      if (!picked[target]) picked[target] = { storage_path: row.storage_path, file_name: row.file_name };
+      if (!picked[target])
+        picked[target] = { storage_path: row.storage_path, file_name: row.file_name };
     }
 
     if (!picked.order && !picked.invoice) throw new Error("Žádné dokumenty k odeslání");
 
     async function sign(p: { storage_path: string; file_name: string } | null) {
       if (!p) return null;
-      const { data: s } = await supabaseAdmin.storage.from("client-documents").createSignedUrl(p.storage_path, 7 * 86400);
+      const { data: s } = await supabaseAdmin.storage
+        .from("client-documents")
+        .createSignedUrl(p.storage_path, 7 * 86400);
       return s?.signedUrl || null;
     }
     const orderUrl = await sign(picked.order);
@@ -974,9 +1316,11 @@ export const sendDocumentsToClient = createServerFn({ method: "POST" })
       orderId: data.orderId,
       type: "documents_sent",
       message: `Odeslán e-mail klientovi (${(client as any).email}) s dokumenty${
-        picked.order && picked.invoice ? " (objednávka + faktura)"
-        : picked.order ? " (objednávka)"
-        : " (faktura)"
+        picked.order && picked.invoice
+          ? " (objednávka + faktura)"
+          : picked.order
+            ? " (objednávka)"
+            : " (faktura)"
       }.`,
       actorId: context.userId,
       meta: { recipient: (client as any).email },
@@ -995,7 +1339,9 @@ export const getDocumentDownloadUrl = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!row) throw new Error("Dokument nenalezen");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: s } = await supabaseAdmin.storage.from("client-documents").createSignedUrl((row as any).storage_path, 3600);
+    const { data: s } = await supabaseAdmin.storage
+      .from("client-documents")
+      .createSignedUrl((row as any).storage_path, 3600);
     if (!s?.signedUrl) throw new Error("Nelze vytvořit odkaz");
     return { url: s.signedUrl, file_name: (row as any).file_name as string };
   });

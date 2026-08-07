@@ -25,31 +25,48 @@ export const Route = createFileRoute("/api/public/hooks/weekly-report")({
           const { data: claims } = await supabaseAdmin
             .from("claims")
             .select("id, status, created_at");
-          const claimsActive = (claims ?? []).filter((c: any) => c.status !== "done" && c.status !== "closed").length;
+          const claimsActive = (claims ?? []).filter(
+            (c: any) => c.status !== "done" && c.status !== "closed",
+          ).length;
           const claimsNew = (claims ?? []).filter((c: any) => c.created_at >= fromIso).length;
 
           // Ojeté vozy
           const { data: vyk } = await supabaseAdmin
             .from("vykupy")
             .select("id, stav, prodano_za, vykoupeno_za, prodano_at");
-          const aktivni = (vyk ?? []).filter((v: any) => v.stav !== "Prodáno" && v.stav !== "Zamítnuto").length;
-          const prodanoTyden = (vyk ?? []).filter((v: any) => v.stav === "Prodáno" && v.prodano_at && v.prodano_at >= fromIso);
+          const aktivni = (vyk ?? []).filter(
+            (v: any) => v.stav !== "Prodáno" && v.stav !== "Zamítnuto",
+          ).length;
+          const prodanoTyden = (vyk ?? []).filter(
+            (v: any) => v.stav === "Prodáno" && v.prodano_at && v.prodano_at >= fromIso,
+          );
           const obrat = prodanoTyden.reduce((s: number, v: any) => s + (v.prodano_za ?? 0), 0);
-          const marze = prodanoTyden.reduce((s: number, v: any) => s + ((v.prodano_za ?? 0) - (v.vykoupeno_za ?? 0)), 0);
+          const marze = prodanoTyden.reduce(
+            (s: number, v: any) => s + ((v.prodano_za ?? 0) - (v.vykoupeno_za ?? 0)),
+            0,
+          );
 
           // Závady
           const { data: defects } = await supabaseAdmin
             .from("defects")
             .select("id, status, priority");
-          const defectsOpen = (defects ?? []).filter((d: any) => d.status === "new" || d.status === "in_progress").length;
-          const defectsCritical = (defects ?? []).filter((d: any) => d.priority === "critical" && d.status !== "closed" && d.status !== "resolved").length;
+          const defectsOpen = (defects ?? []).filter(
+            (d: any) => d.status === "new" || d.status === "in_progress",
+          ).length;
+          const defectsCritical = (defects ?? []).filter(
+            (d: any) =>
+              d.priority === "critical" && d.status !== "closed" && d.status !== "resolved",
+          ).length;
 
           // Docházka — týdně
           const { data: recs } = await supabaseAdmin
             .from("attendance_records")
             .select("hours_worked, employee_id, date")
             .gte("date", weekAgo.toISOString().slice(0, 10));
-          const dochazkaHours = (recs ?? []).reduce((s: number, r: any) => s + Number(r.hours_worked ?? 0), 0);
+          const dochazkaHours = (recs ?? []).reduce(
+            (s: number, r: any) => s + Number(r.hours_worked ?? 0),
+            0,
+          );
 
           // DPP varování — ročně
           const { data: emps } = await supabaseAdmin
@@ -62,7 +79,10 @@ export const Route = createFileRoute("/api/public/hooks/weekly-report")({
           const dpp = (emps ?? []).filter((e: any) => e.employment_type === "dpp" && e.active);
           const hoursById = new Map<string, number>();
           for (const r of yearRecs ?? []) {
-            hoursById.set(r.employee_id, (hoursById.get(r.employee_id) ?? 0) + Number(r.hours_worked ?? 0));
+            hoursById.set(
+              r.employee_id,
+              (hoursById.get(r.employee_id) ?? 0) + Number(r.hours_worked ?? 0),
+            );
           }
           const dppWarnings = dpp
             .map((e: any) => ({ name: e.name, hours: hoursById.get(e.id) ?? 0 }))

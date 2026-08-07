@@ -84,9 +84,7 @@ export function SignaturePad({ onChange, initialDataUrl }: Props) {
         <div className="pointer-events-none absolute inset-x-4 bottom-6 border-b border-dashed border-slate-300" />
       </div>
       <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">
-          Podepište se v rámečku výše, na řádku.
-        </p>
+        <p className="text-xs text-muted-foreground">Podepište se v rámečku výše, na řádku.</p>
         <Button type="button" variant="outline" size="sm" onClick={clear}>
           Vymazat
         </Button>

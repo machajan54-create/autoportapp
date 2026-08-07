@@ -1,6 +1,29 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { APP_VERSION, LAST_UPDATE_DATE } from "@/lib/version";
-import { ShieldCheck, FolderKanban, LogOut, Users, Car, Menu, LayoutDashboard, FileText, CheckSquare, Clock, Wrench, Search, History, Briefcase, BookOpen, Settings, ChevronDown, ClipboardSignature, Sparkles, HardDrive, Cloud, Tv } from "lucide-react";
+import {
+  ShieldCheck,
+  FolderKanban,
+  LogOut,
+  Users,
+  Car,
+  Menu,
+  LayoutDashboard,
+  FileText,
+  CheckSquare,
+  Clock,
+  Wrench,
+  Search,
+  History,
+  Briefcase,
+  BookOpen,
+  Settings,
+  ChevronDown,
+  ClipboardSignature,
+  Sparkles,
+  HardDrive,
+  Cloud,
+  Tv,
+} from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
@@ -16,7 +39,20 @@ import autoportLogo from "@/assets/autoport-logo.png.asset.json";
 import { NotificationsBell } from "@/components/NotificationsBell";
 import { CommandPalette } from "@/components/CommandPalette";
 
-type ModuleKey = "claims" | "vykupy" | "vykupy_external" | "users" | "approvals" | "dashboard" | "dochazka" | "defects" | "deals" | "logbook" | "tasks" | "demo_orders" | "evidence_zakazek";
+type ModuleKey =
+  | "claims"
+  | "vykupy"
+  | "vykupy_external"
+  | "users"
+  | "approvals"
+  | "dashboard"
+  | "dochazka"
+  | "defects"
+  | "deals"
+  | "logbook"
+  | "tasks"
+  | "demo_orders"
+  | "evidence_zakazek";
 
 export function AdminShell({
   children,
@@ -72,12 +108,7 @@ export function AdminShell({
     navigate({ to: "/auth", replace: true });
   }
 
-  const navItem = (
-    to: string,
-    label: string,
-    Icon: typeof FolderKanban,
-    badge?: number,
-  ) => {
+  const navItem = (to: string, label: string, Icon: typeof FolderKanban, badge?: number) => {
     const active = pathname === to || (to !== "/admin" && pathname.startsWith(to));
     return (
       <Link
@@ -116,10 +147,7 @@ export function AdminShell({
       {(access?.isAdmin || can("approvals")) &&
         navItem("/approvals", "Schvalování", CheckSquare, approvalsBadge)}
       {access?.isAdmin && (
-        <Collapsible
-          defaultOpen={pathname.startsWith("/admin/")}
-          className="pt-2"
-        >
+        <Collapsible defaultOpen={pathname.startsWith("/admin/")} className="pt-2">
           <CollapsibleTrigger className="group flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-foreground/70 hover:bg-muted hover:text-foreground">
             <Settings className="h-4 w-4" />
             <span className="flex-1 text-left">Nastavení</span>
@@ -197,7 +225,9 @@ export function AdminShell({
           >
             <Search className="h-3.5 w-3.5" />
             <span>Hledat…</span>
-            <kbd className="ml-2 rounded border bg-muted px-1.5 py-0.5 text-[10px] font-mono">⌘K</kbd>
+            <kbd className="ml-2 rounded border bg-muted px-1.5 py-0.5 text-[10px] font-mono">
+              ⌘K
+            </kbd>
           </button>
           <NotificationsBell isAdmin={isAdmin} />
         </header>
@@ -212,12 +242,21 @@ export function AdminShell({
               <SheetContent side="left" className="w-64 p-0">
                 <SheetTitle className="sr-only">Navigace</SheetTitle>
                 <div className="flex h-16 items-center border-b px-4">
-                  <img src={autoportLogo.url} alt="Autoport APP" className="h-8 w-auto object-contain" />
+                  <img
+                    src={autoportLogo.url}
+                    alt="Autoport APP"
+                    className="h-8 w-auto object-contain"
+                  />
                 </div>
                 {navList}
                 <div className="border-t p-3">
                   <div className="truncate px-2 pb-2 text-xs text-muted-foreground">{email}</div>
-                  <Button variant="ghost" size="sm" className="w-full justify-start" onClick={logout}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={logout}
+                  >
                     <LogOut className="mr-2 h-4 w-4" />
                     Odhlásit
                   </Button>
@@ -228,7 +267,11 @@ export function AdminShell({
               </SheetContent>
             </Sheet>
             <Link to="/admin" className="flex items-center" aria-label="Autoport APP">
-              <img src={autoportLogo.url} alt="Autoport APP" className="h-7 w-auto object-contain" />
+              <img
+                src={autoportLogo.url}
+                alt="Autoport APP"
+                className="h-7 w-auto object-contain"
+              />
             </Link>
           </div>
           <div className="flex items-center gap-1">

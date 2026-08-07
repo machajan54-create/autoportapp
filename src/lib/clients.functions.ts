@@ -45,7 +45,11 @@ export const getClient = createServerFn({ method: "GET" })
       .select("id,order_id,kind,file_name,storage_path,signed_at,created_at")
       .eq("client_id", data.id)
       .order("created_at", { ascending: false });
-    return { client: row as any, orders: (orders ?? []) as any[], documents: (docs ?? []) as any[] };
+    return {
+      client: row as any,
+      orders: (orders ?? []) as any[],
+      documents: (docs ?? []) as any[],
+    };
   });
 
 export const createClient = createServerFn({ method: "POST" })

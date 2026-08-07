@@ -75,7 +75,10 @@ export const getStorageSavings = createServerFn({ method: "GET" })
     let grandTotalSize = 0;
     let grandTotalCount = 0;
 
-    async function measure(bucket: string, prefix: string): Promise<{ size: number; count: number }> {
+    async function measure(
+      bucket: string,
+      prefix: string,
+    ): Promise<{ size: number; count: number }> {
       let size = 0;
       let count = 0;
       let offset = 0;

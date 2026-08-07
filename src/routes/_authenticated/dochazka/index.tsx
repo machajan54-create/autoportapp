@@ -12,44 +12,105 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Tabs, TabsContent, TabsList, TabsTrigger,
-} from "@/components/ui/tabs";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import {
-  Clock, Plus, Pencil, Download, Check, X, BellOff, BellRing,
-  ExternalLink, Users as UsersIcon, CalendarClock, BarChart3, PalmtreeIcon, Bell,
-  CalendarDays, ChevronLeft, ChevronRight, Send, ShieldCheck, AlertTriangle, FileSpreadsheet, Sparkles,
+  Clock,
+  Plus,
+  Pencil,
+  Download,
+  Check,
+  X,
+  BellOff,
+  BellRing,
+  ExternalLink,
+  Users as UsersIcon,
+  CalendarClock,
+  BarChart3,
+  PalmtreeIcon,
+  Bell,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Send,
+  ShieldCheck,
+  AlertTriangle,
+  FileSpreadsheet,
+  Sparkles,
 } from "lucide-react";
 import {
-  listEmployees, upsertEmployee,
-  listShifts, upsertShift,
-  listRecords, upsertRecord,
-  listAbsences, upsertAbsence, resolveAbsence,
-  listNotifications, markNotificationRead, markAllNotificationsRead,
-  getDochazkaSettings, updateDochazkaSettings,
-  getMonthCalendar, listResolvers,
-  submitRecord, decideRecord, bulkDecideRecords, autoFillMonth,
-  listEmployeeReports, getEmployeeReportUrl,
+  listEmployees,
+  upsertEmployee,
+  listShifts,
+  upsertShift,
+  listRecords,
+  upsertRecord,
+  listAbsences,
+  upsertAbsence,
+  resolveAbsence,
+  listNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  getDochazkaSettings,
+  updateDochazkaSettings,
+  getMonthCalendar,
+  listResolvers,
+  submitRecord,
+  decideRecord,
+  bulkDecideRecords,
+  autoFillMonth,
+  listEmployeeReports,
+  getEmployeeReportUrl,
 } from "@/lib/dochazka.functions";
 import { getMyAccess } from "@/lib/claims.functions";
 import { RequestDeleteButton } from "@/components/RequestDeleteButton";
 import {
-  ABSENCE_TYPES, ABSENCE_TYPE_LABEL, SHIFT_COLORS, AVATAR_COLORS,
-  avatarClasses, shiftClasses, initials, formatTime, formatDate, formatHours, todayISODate, expectedHoursWorked,
+  ABSENCE_TYPES,
+  ABSENCE_TYPE_LABEL,
+  SHIFT_COLORS,
+  AVATAR_COLORS,
+  avatarClasses,
+  shiftClasses,
+  initials,
+  formatTime,
+  formatDate,
+  formatHours,
+  todayISODate,
+  expectedHoursWorked,
 } from "@/lib/dochazka";
 
-
 import { cn } from "@/lib/utils";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RTooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 export const Route = createFileRoute("/_authenticated/dochazka/")({
   component: DochazkaPage,
@@ -67,12 +128,20 @@ function DochazkaPage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "attendance_records" }, () => {
         qc.invalidateQueries({ queryKey: ["dochazka"] });
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "attendance_absences" }, () => {
-        qc.invalidateQueries({ queryKey: ["dochazka"] });
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "attendance_notifications" }, () => {
-        qc.invalidateQueries({ queryKey: ["dochazka", "notifications"] });
-      })
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "attendance_absences" },
+        () => {
+          qc.invalidateQueries({ queryKey: ["dochazka"] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "attendance_notifications" },
+        () => {
+          qc.invalidateQueries({ queryKey: ["dochazka", "notifications"] });
+        },
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
@@ -101,40 +170,101 @@ function DochazkaPage() {
           <Tabs defaultValue="stats" className="mt-6">
             <div className="-mx-4 overflow-x-auto px-4 lg:mx-0 lg:overflow-visible lg:px-0">
               <TabsList className="inline-flex h-auto w-max flex-nowrap gap-1 lg:grid lg:w-full lg:grid-cols-11">
-                <TabsTrigger value="stats" className="whitespace-nowrap"><BarChart3 className="mr-1 h-4 w-4" />Statistiky</TabsTrigger>
-                <TabsTrigger value="calendar" className="whitespace-nowrap"><CalendarDays className="mr-1 h-4 w-4" />Kalendář</TabsTrigger>
-                <TabsTrigger value="employees" className="whitespace-nowrap"><UsersIcon className="mr-1 h-4 w-4" />Zaměstnanci</TabsTrigger>
-                <TabsTrigger value="shifts" className="whitespace-nowrap"><CalendarClock className="mr-1 h-4 w-4" />Směny</TabsTrigger>
-                <TabsTrigger value="records" className="whitespace-nowrap">Záznamy</TabsTrigger>
-                <TabsTrigger value="absences" className="whitespace-nowrap"><PalmtreeIcon className="mr-1 h-4 w-4" />Absence</TabsTrigger>
-                <TabsTrigger value="alerts" className="whitespace-nowrap"><Bell className="mr-1 h-4 w-4" />Upozornění</TabsTrigger>
-                <TabsTrigger value="export" className="whitespace-nowrap"><Download className="mr-1 h-4 w-4" />Export</TabsTrigger>
-                <TabsTrigger value="generate" className="whitespace-nowrap"><Sparkles className="mr-1 h-4 w-4" />Generování</TabsTrigger>
-                <TabsTrigger value="generate-dpp" className="whitespace-nowrap"><Sparkles className="mr-1 h-4 w-4" />DPP generování</TabsTrigger>
-                <TabsTrigger value="files" className="whitespace-nowrap"><FileSpreadsheet className="mr-1 h-4 w-4" />Soubory</TabsTrigger>
+                <TabsTrigger value="stats" className="whitespace-nowrap">
+                  <BarChart3 className="mr-1 h-4 w-4" />
+                  Statistiky
+                </TabsTrigger>
+                <TabsTrigger value="calendar" className="whitespace-nowrap">
+                  <CalendarDays className="mr-1 h-4 w-4" />
+                  Kalendář
+                </TabsTrigger>
+                <TabsTrigger value="employees" className="whitespace-nowrap">
+                  <UsersIcon className="mr-1 h-4 w-4" />
+                  Zaměstnanci
+                </TabsTrigger>
+                <TabsTrigger value="shifts" className="whitespace-nowrap">
+                  <CalendarClock className="mr-1 h-4 w-4" />
+                  Směny
+                </TabsTrigger>
+                <TabsTrigger value="records" className="whitespace-nowrap">
+                  Záznamy
+                </TabsTrigger>
+                <TabsTrigger value="absences" className="whitespace-nowrap">
+                  <PalmtreeIcon className="mr-1 h-4 w-4" />
+                  Absence
+                </TabsTrigger>
+                <TabsTrigger value="alerts" className="whitespace-nowrap">
+                  <Bell className="mr-1 h-4 w-4" />
+                  Upozornění
+                </TabsTrigger>
+                <TabsTrigger value="export" className="whitespace-nowrap">
+                  <Download className="mr-1 h-4 w-4" />
+                  Export
+                </TabsTrigger>
+                <TabsTrigger value="generate" className="whitespace-nowrap">
+                  <Sparkles className="mr-1 h-4 w-4" />
+                  Generování
+                </TabsTrigger>
+                <TabsTrigger value="generate-dpp" className="whitespace-nowrap">
+                  <Sparkles className="mr-1 h-4 w-4" />
+                  DPP generování
+                </TabsTrigger>
+                <TabsTrigger value="files" className="whitespace-nowrap">
+                  <FileSpreadsheet className="mr-1 h-4 w-4" />
+                  Soubory
+                </TabsTrigger>
               </TabsList>
             </div>
 
-            <TabsContent value="stats"><StatsTab /></TabsContent>
-            <TabsContent value="calendar"><CalendarTab /></TabsContent>
-            <TabsContent value="employees"><EmployeesTab /></TabsContent>
-            <TabsContent value="shifts"><ShiftsTab /></TabsContent>
-            <TabsContent value="records"><RecordsTab /></TabsContent>
-            <TabsContent value="absences"><AbsencesTab /></TabsContent>
-            <TabsContent value="alerts"><AlertsTab /></TabsContent>
-            <TabsContent value="export"><ExportTab /></TabsContent>
-            <TabsContent value="generate"><GenerateTab /></TabsContent>
-            <TabsContent value="generate-dpp"><GenerateDppTab /></TabsContent>
-            <TabsContent value="files"><FilesTab /></TabsContent>
+            <TabsContent value="stats">
+              <StatsTab />
+            </TabsContent>
+            <TabsContent value="calendar">
+              <CalendarTab />
+            </TabsContent>
+            <TabsContent value="employees">
+              <EmployeesTab />
+            </TabsContent>
+            <TabsContent value="shifts">
+              <ShiftsTab />
+            </TabsContent>
+            <TabsContent value="records">
+              <RecordsTab />
+            </TabsContent>
+            <TabsContent value="absences">
+              <AbsencesTab />
+            </TabsContent>
+            <TabsContent value="alerts">
+              <AlertsTab />
+            </TabsContent>
+            <TabsContent value="export">
+              <ExportTab />
+            </TabsContent>
+            <TabsContent value="generate">
+              <GenerateTab />
+            </TabsContent>
+            <TabsContent value="generate-dpp">
+              <GenerateDppTab />
+            </TabsContent>
+            <TabsContent value="files">
+              <FilesTab />
+            </TabsContent>
           </Tabs>
         ) : (
           <Tabs defaultValue="records" className="mt-6">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="records">Moje docházka</TabsTrigger>
-              <TabsTrigger value="absences"><PalmtreeIcon className="mr-1 h-4 w-4" />Absence</TabsTrigger>
+              <TabsTrigger value="absences">
+                <PalmtreeIcon className="mr-1 h-4 w-4" />
+                Absence
+              </TabsTrigger>
             </TabsList>
-            <TabsContent value="records"><RecordsTab /></TabsContent>
-            <TabsContent value="absences"><AbsencesTab /></TabsContent>
+            <TabsContent value="records">
+              <RecordsTab />
+            </TabsContent>
+            <TabsContent value="absences">
+              <AbsencesTab />
+            </TabsContent>
           </Tabs>
         )}
       </div>
@@ -147,14 +277,20 @@ function StatsTab() {
   const fetchEmp = useServerFn(listEmployees);
   const fetchRec = useServerFn(listRecords);
   const fetchAbs = useServerFn(listAbsences);
-  const { data: employees } = useQuery({ queryKey: ["dochazka", "employees"], queryFn: () => fetchEmp({}) });
+  const { data: employees } = useQuery({
+    queryKey: ["dochazka", "employees"],
+    queryFn: () => fetchEmp({}),
+  });
   const { data: records } = useQuery({
     queryKey: ["dochazka", "records"],
     queryFn: () => fetchRec({}),
     refetchInterval: 30_000,
     refetchOnWindowFocus: true,
   });
-  const { data: absences } = useQuery({ queryKey: ["dochazka", "absences"], queryFn: () => fetchAbs({}) });
+  const { data: absences } = useQuery({
+    queryKey: ["dochazka", "absences"],
+    queryFn: () => fetchAbs({}),
+  });
 
   const today = todayISODate();
   const monthPrefix = today.slice(0, 7);
@@ -173,7 +309,10 @@ function StatsTab() {
     const pendingAbs = (absences ?? []).filter((a) => a.status === "pending").length;
     const hoursByEmp = new Map<string, number>();
     monthly.forEach((r) => {
-      hoursByEmp.set(r.employee_id, (hoursByEmp.get(r.employee_id) ?? 0) + Number(r.hours_worked ?? 0));
+      hoursByEmp.set(
+        r.employee_id,
+        (hoursByEmp.get(r.employee_id) ?? 0) + Number(r.hours_worked ?? 0),
+      );
     });
     const ranking = Array.from(hoursByEmp.entries())
       .map(([id, hours]) => {
@@ -202,12 +341,15 @@ function StatsTab() {
       .filter((e: any) => e.active)
       .map((e: any) => {
         const empRecs = recs.filter((r) => r.employee_id === e.id);
-        const sum = (arr: typeof empRecs) => arr.reduce((s, r) => s + Number(r.hours_worked ?? 0), 0);
+        const sum = (arr: typeof empRecs) =>
+          arr.reduce((s, r) => s + Number(r.hours_worked ?? 0), 0);
         const todayH = sum(empRecs.filter((r) => isToday(r.date)));
         const weekH = sum(empRecs.filter((r) => r.date >= weekStart));
         const monthH = sum(empRecs.filter((r) => r.date.startsWith(monthPrefix)));
         const yearH = sum(empRecs.filter((r) => r.date.startsWith(yearPrefix)));
-        const shiftsMonth = empRecs.filter((r) => r.date.startsWith(monthPrefix) && r.check_out).length;
+        const shiftsMonth = empRecs.filter(
+          (r) => r.date.startsWith(monthPrefix) && r.check_out,
+        ).length;
         return {
           id: e.id,
           name: e.name,
@@ -238,7 +380,11 @@ function StatsTab() {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard label="Aktuálně v práci" value={stats.openToday} accent="text-emerald-600" />
         <StatCard label="Dokončeno dnes" value={stats.closedToday} accent="text-sky-600" />
-        <StatCard label="Odpracováno (měsíc)" value={`${stats.totalHours.toFixed(1)} h`} accent="text-purple-600" />
+        <StatCard
+          label="Odpracováno (měsíc)"
+          value={`${stats.totalHours.toFixed(1)} h`}
+          accent="text-purple-600"
+        />
         <StatCard label="Čekající absence" value={stats.pendingAbs} accent="text-amber-600" />
       </div>
       <Card className="p-4">
@@ -259,9 +405,13 @@ function StatsTab() {
         )}
       </Card>
       <Card className="p-4">
-        <h3 className="text-sm font-semibold">Top 10 zaměstnanců — odpracované hodiny ({monthPrefix})</h3>
+        <h3 className="text-sm font-semibold">
+          Top 10 zaměstnanců — odpracované hodiny ({monthPrefix})
+        </h3>
         {stats.ranking.length === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">Zatím žádné záznamy v aktuálním měsíci.</p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Zatím žádné záznamy v aktuálním měsíci.
+          </p>
         ) : (
           <div className="mt-3 space-y-2">
             {stats.ranking.map((r, i) => (
@@ -271,10 +421,14 @@ function StatsTab() {
                 <div className="h-2 w-32 overflow-hidden rounded-full bg-muted">
                   <div
                     className="h-full bg-sky-500"
-                    style={{ width: `${Math.min(100, (r.hours / Math.max(...stats.ranking.map((x) => x.hours))) * 100)}%` }}
+                    style={{
+                      width: `${Math.min(100, (r.hours / Math.max(...stats.ranking.map((x) => x.hours))) * 100)}%`,
+                    }}
                   />
                 </div>
-                <span className="w-20 text-right font-mono text-sm tabular-nums">{r.hours.toFixed(1)} h</span>
+                <span className="w-20 text-right font-mono text-sm tabular-nums">
+                  {r.hours.toFixed(1)} h
+                </span>
               </div>
             ))}
           </div>
@@ -283,7 +437,9 @@ function StatsTab() {
       <Card className="p-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold">Odpracované hodiny podle zaměstnance</h3>
-          <span className="text-xs text-muted-foreground">Dnes · Týden · Měsíc ({monthPrefix}) · Rok</span>
+          <span className="text-xs text-muted-foreground">
+            Dnes · Týden · Měsíc ({monthPrefix}) · Rok
+          </span>
         </div>
         {stats.perEmployee.length === 0 ? (
           <p className="mt-3 text-sm text-muted-foreground">Žádní aktivní zaměstnanci.</p>
@@ -306,7 +462,12 @@ function StatsTab() {
                   <TableRow key={e.id}>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <span className={cn("inline-flex h-8 w-8 items-center justify-center rounded-full border text-xs font-semibold", avatarClasses(e.avatar_color))}>
+                        <span
+                          className={cn(
+                            "inline-flex h-8 w-8 items-center justify-center rounded-full border text-xs font-semibold",
+                            avatarClasses(e.avatar_color),
+                          )}
+                        >
                           {initials(e.name)}
                         </span>
                         <span className="font-medium">{e.name}</span>
@@ -315,18 +476,38 @@ function StatsTab() {
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {e.employment_types.includes("HPP") && (
-                          <Badge variant="outline" className="border-sky-300 bg-sky-50 text-sky-700">HPP</Badge>
+                          <Badge
+                            variant="outline"
+                            className="border-sky-300 bg-sky-50 text-sky-700"
+                          >
+                            HPP
+                          </Badge>
                         )}
                         {e.employment_types.includes("DPP") && (
-                          <Badge variant="outline" className="border-violet-300 bg-violet-50 text-violet-700">DPP</Badge>
+                          <Badge
+                            variant="outline"
+                            className="border-violet-300 bg-violet-50 text-violet-700"
+                          >
+                            DPP
+                          </Badge>
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="text-right font-mono tabular-nums">{e.todayH.toFixed(1)} h</TableCell>
-                    <TableCell className="text-right font-mono tabular-nums">{e.weekH.toFixed(1)} h</TableCell>
-                    <TableCell className="text-right font-mono font-semibold tabular-nums">{e.monthH.toFixed(1)} h</TableCell>
-                    <TableCell className="text-right font-mono tabular-nums">{e.shiftsMonth}</TableCell>
-                    <TableCell className="text-right font-mono tabular-nums text-muted-foreground">{e.yearH.toFixed(1)} h</TableCell>
+                    <TableCell className="text-right font-mono tabular-nums">
+                      {e.todayH.toFixed(1)} h
+                    </TableCell>
+                    <TableCell className="text-right font-mono tabular-nums">
+                      {e.weekH.toFixed(1)} h
+                    </TableCell>
+                    <TableCell className="text-right font-mono font-semibold tabular-nums">
+                      {e.monthH.toFixed(1)} h
+                    </TableCell>
+                    <TableCell className="text-right font-mono tabular-nums">
+                      {e.shiftsMonth}
+                    </TableCell>
+                    <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
+                      {e.yearH.toFixed(1)} h
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -347,7 +528,12 @@ function StatsTab() {
 }
 
 function DailyHoursChart({
-  employees, records, empId, setEmpId, month, setMonth,
+  employees,
+  records,
+  empId,
+  setEmpId,
+  month,
+  setMonth,
 }: {
   employees: any[];
   records: any[];
@@ -391,10 +577,14 @@ function DailyHoursChart({
         <h3 className="text-sm font-semibold">Odpracované hodiny po dnech</h3>
         <div className="flex flex-wrap items-center gap-2">
           <Select value={effectiveEmpId} onValueChange={setEmpId}>
-            <SelectTrigger className="h-9 w-[220px]"><SelectValue placeholder="Vyberte zaměstnance" /></SelectTrigger>
+            <SelectTrigger className="h-9 w-[220px]">
+              <SelectValue placeholder="Vyberte zaměstnance" />
+            </SelectTrigger>
             <SelectContent>
               {active.map((e: any) => (
-                <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+                <SelectItem key={e.id} value={e.id}>
+                  {e.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -411,9 +601,16 @@ function DailyHoursChart({
       ) : (
         <>
           <div className="mt-2 flex flex-wrap gap-4 text-xs text-muted-foreground">
-            <span>Zaměstnanec: <span className="font-medium text-foreground">{selected?.name}</span></span>
-            <span>Celkem: <span className="font-mono font-semibold text-foreground">{total.toFixed(1)} h</span></span>
-            <span>Max/den: <span className="font-mono text-foreground">{maxDay.toFixed(1)} h</span></span>
+            <span>
+              Zaměstnanec: <span className="font-medium text-foreground">{selected?.name}</span>
+            </span>
+            <span>
+              Celkem:{" "}
+              <span className="font-mono font-semibold text-foreground">{total.toFixed(1)} h</span>
+            </span>
+            <span>
+              Max/den: <span className="font-mono text-foreground">{maxDay.toFixed(1)} h</span>
+            </span>
           </div>
           <div className="mt-4 h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -435,7 +632,15 @@ function DailyHoursChart({
   );
 }
 
-function StatCard({ label, value, accent }: { label: string; value: number | string; accent: string }) {
+function StatCard({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: number | string;
+  accent: string;
+}) {
   return (
     <Card className="p-4">
       <p className="text-xs uppercase tracking-wider text-muted-foreground">{label}</p>
@@ -450,17 +655,37 @@ function EmployeesTab() {
   const fetchEmp = useServerFn(listEmployees);
   const upsert = useServerFn(upsertEmployee);
   const fetchResolvers = useServerFn(listResolvers);
-  const { data, isLoading } = useQuery({ queryKey: ["dochazka", "employees"], queryFn: () => fetchEmp({}) });
-  const { data: users } = useQuery({ queryKey: ["dochazka", "users"], queryFn: () => fetchResolvers({}) });
+  const { data, isLoading } = useQuery({
+    queryKey: ["dochazka", "employees"],
+    queryFn: () => fetchEmp({}),
+  });
+  const { data: users } = useQuery({
+    queryKey: ["dochazka", "users"],
+    queryFn: () => fetchResolvers({}),
+  });
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState<any>(null);
 
   function openNew() {
-    setEdit({ name: "", role: "", pin: "", avatar_color: "slate", active: true, can_approve_absences: false, user_id: null, employment_types: ["HPP"] });
+    setEdit({
+      name: "",
+      role: "",
+      pin: "",
+      avatar_color: "slate",
+      active: true,
+      can_approve_absences: false,
+      user_id: null,
+      employment_types: ["HPP"],
+    });
     setOpen(true);
   }
   function openEdit(emp: any) {
-    setEdit({ ...emp, pin: "", user_id: emp.user_id ?? null, employment_types: emp.employment_types?.length ? emp.employment_types : ["HPP"] });
+    setEdit({
+      ...emp,
+      pin: "",
+      user_id: emp.user_id ?? null,
+      employment_types: emp.employment_types?.length ? emp.employment_types : ["HPP"],
+    });
     setOpen(true);
   }
   async function save() {
@@ -476,7 +701,9 @@ function EmployeesTab() {
   return (
     <div className="mt-4 space-y-3">
       <div className="flex justify-end">
-        <Button onClick={openNew}><Plus className="mr-1 h-4 w-4" /> Nový zaměstnanec</Button>
+        <Button onClick={openNew}>
+          <Plus className="mr-1 h-4 w-4" /> Nový zaměstnanec
+        </Button>
       </div>
       <Card>
         <Table>
@@ -494,58 +721,118 @@ function EmployeesTab() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground">Načítám…</TableCell></TableRow>
-            ) : (data ?? []).length === 0 ? (
-              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground">Žádní zaměstnanci.</TableCell></TableRow>
-            ) : (data ?? []).map((e) => (
-              <TableRow key={e.id}>
-                <TableCell>
-                  <span className={cn("inline-flex h-9 w-9 items-center justify-center rounded-full border font-semibold", avatarClasses(e.avatar_color))}>
-                    {initials(e.name)}
-                  </span>
-                </TableCell>
-                <TableCell className="font-medium">{e.name}</TableCell>
-                <TableCell className="text-muted-foreground">{e.role || "—"}</TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap gap-1">
-                    {((e as any).employment_types ?? []).includes("HPP") && (
-                      <Badge variant="outline" className="border-sky-300 bg-sky-50 text-sky-700">HPP</Badge>
-                    )}
-                    {((e as any).employment_types ?? []).includes("DPP") && (
-                      <Badge variant="outline" className="border-violet-300 bg-violet-50 text-violet-700">DPP</Badge>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="font-mono text-xs">••••</TableCell>
-                <TableCell>{e.can_approve_absences ? <Check className="h-4 w-4 text-emerald-600" /> : <X className="h-4 w-4 text-muted-foreground" />}</TableCell>
-                <TableCell>{e.active ? <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">Aktivní</Badge> : <Badge variant="outline">Neaktivní</Badge>}</TableCell>
-                <TableCell>
-                  <div className="flex justify-end gap-1">
-                    <Button size="icon" variant="ghost" onClick={() => openEdit(e)}><Pencil className="h-4 w-4" /></Button>
-                    <RequestDeleteButton
-                      entityType="attendance_employees"
-                      entityId={e.id}
-                      entityLabel={e.name}
-                      size="icon"
-                      className="text-destructive"
-                      title="Požádat o smazání zaměstnance"
-                    />
-                  </div>
+              <TableRow>
+                <TableCell colSpan={8} className="text-center text-muted-foreground">
+                  Načítám…
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (data ?? []).length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center text-muted-foreground">
+                  Žádní zaměstnanci.
+                </TableCell>
+              </TableRow>
+            ) : (
+              (data ?? []).map((e) => (
+                <TableRow key={e.id}>
+                  <TableCell>
+                    <span
+                      className={cn(
+                        "inline-flex h-9 w-9 items-center justify-center rounded-full border font-semibold",
+                        avatarClasses(e.avatar_color),
+                      )}
+                    >
+                      {initials(e.name)}
+                    </span>
+                  </TableCell>
+                  <TableCell className="font-medium">{e.name}</TableCell>
+                  <TableCell className="text-muted-foreground">{e.role || "—"}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {((e as any).employment_types ?? []).includes("HPP") && (
+                        <Badge variant="outline" className="border-sky-300 bg-sky-50 text-sky-700">
+                          HPP
+                        </Badge>
+                      )}
+                      {((e as any).employment_types ?? []).includes("DPP") && (
+                        <Badge
+                          variant="outline"
+                          className="border-violet-300 bg-violet-50 text-violet-700"
+                        >
+                          DPP
+                        </Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="font-mono text-xs">••••</TableCell>
+                  <TableCell>
+                    {e.can_approve_absences ? (
+                      <Check className="h-4 w-4 text-emerald-600" />
+                    ) : (
+                      <X className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {e.active ? (
+                      <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
+                        Aktivní
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline">Neaktivní</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-1">
+                      <Button size="icon" variant="ghost" onClick={() => openEdit(e)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <RequestDeleteButton
+                        entityType="attendance_employees"
+                        entityId={e.id}
+                        entityLabel={e.name}
+                        size="icon"
+                        className="text-destructive"
+                        title="Požádat o smazání zaměstnance"
+                      />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </Card>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{edit?.id ? "Upravit zaměstnance" : "Nový zaměstnanec"}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{edit?.id ? "Upravit zaměstnance" : "Nový zaměstnanec"}</DialogTitle>
+          </DialogHeader>
           {edit && (
             <div className="space-y-3">
-              <div className="grid gap-2"><Label>Jméno</Label><Input value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} /></div>
-              <div className="grid gap-2"><Label>Pozice</Label><Input value={edit.role} onChange={(e) => setEdit({ ...edit, role: e.target.value })} /></div>
-              <div className="grid gap-2"><Label>PIN (4–8 číslic)</Label><Input value={edit.pin} onChange={(e) => setEdit({ ...edit, pin: e.target.value.replace(/\D/g, "").slice(0, 8) })} /></div>
+              <div className="grid gap-2">
+                <Label>Jméno</Label>
+                <Input
+                  value={edit.name}
+                  onChange={(e) => setEdit({ ...edit, name: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Pozice</Label>
+                <Input
+                  value={edit.role}
+                  onChange={(e) => setEdit({ ...edit, role: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>PIN (4–8 číslic)</Label>
+                <Input
+                  value={edit.pin}
+                  onChange={(e) =>
+                    setEdit({ ...edit, pin: e.target.value.replace(/\D/g, "").slice(0, 8) })
+                  }
+                />
+              </div>
               <div className="grid gap-2">
                 <Label>Typ úvazku (lze vybrat oba)</Label>
                 <div className="flex gap-2">
@@ -571,7 +858,9 @@ function EmployeesTab() {
                         )}
                       >
                         {selected && <Check className="mr-1 inline h-3 w-3" />}
-                        {t === "HPP" ? "HPP – hlavní pracovní poměr" : "DPP – dohoda o provedení práce"}
+                        {t === "HPP"
+                          ? "HPP – hlavní pracovní poměr"
+                          : "DPP – dohoda o provedení práce"}
                       </button>
                     );
                   })}
@@ -586,21 +875,44 @@ function EmployeesTab() {
                 <Label>Barva avatara</Label>
                 <div className="flex gap-2">
                   {AVATAR_COLORS.map((c) => (
-                    <button key={c} type="button" onClick={() => setEdit({ ...edit, avatar_color: c })} className={cn("h-9 w-9 rounded-full border-2", avatarClasses(c), edit.avatar_color === c ? "ring-2 ring-primary ring-offset-2" : "")}>
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setEdit({ ...edit, avatar_color: c })}
+                      className={cn(
+                        "h-9 w-9 rounded-full border-2",
+                        avatarClasses(c),
+                        edit.avatar_color === c ? "ring-2 ring-primary ring-offset-2" : "",
+                      )}
+                    >
                       {edit.avatar_color === c && <Check className="mx-auto h-4 w-4" />}
                     </button>
                   ))}
                 </div>
               </div>
-              <div className="flex items-center justify-between"><Label>Může schvalovat absence</Label><Switch checked={edit.can_approve_absences} onCheckedChange={(v) => setEdit({ ...edit, can_approve_absences: v })} /></div>
-              <div className="flex items-center justify-between"><Label>Aktivní</Label><Switch checked={edit.active} onCheckedChange={(v) => setEdit({ ...edit, active: v })} /></div>
+              <div className="flex items-center justify-between">
+                <Label>Může schvalovat absence</Label>
+                <Switch
+                  checked={edit.can_approve_absences}
+                  onCheckedChange={(v) => setEdit({ ...edit, can_approve_absences: v })}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label>Aktivní</Label>
+                <Switch
+                  checked={edit.active}
+                  onCheckedChange={(v) => setEdit({ ...edit, active: v })}
+                />
+              </div>
               <div className="grid gap-2">
                 <Label>Přiřazený uživatel (přihlášení do aplikace)</Label>
                 <Select
                   value={edit.user_id ?? "__none"}
                   onValueChange={(v) => setEdit({ ...edit, user_id: v === "__none" ? null : v })}
                 >
-                  <SelectTrigger><SelectValue placeholder="Bez přiřazení" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Bez přiřazení" />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none">Bez přiřazení (jen kiosk)</SelectItem>
                     {(users ?? []).map((u: any) => (
@@ -616,7 +928,12 @@ function EmployeesTab() {
               </div>
             </div>
           )}
-          <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Zrušit</Button><Button onClick={save}>Uložit</Button></DialogFooter>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Zrušit
+            </Button>
+            <Button onClick={save}>Uložit</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
@@ -632,18 +949,35 @@ function ShiftsTab() {
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState<any>(null);
 
-  function openNew() { setEdit({ name: "", start_time: "08:00", end_time: "16:30", color: "sky" }); setOpen(true); }
-  function openEdit(s: any) { setEdit({ ...s, start_time: (s.start_time as string).slice(0, 5), end_time: (s.end_time as string).slice(0, 5) }); setOpen(true); }
+  function openNew() {
+    setEdit({ name: "", start_time: "08:00", end_time: "16:30", color: "sky" });
+    setOpen(true);
+  }
+  function openEdit(s: any) {
+    setEdit({
+      ...s,
+      start_time: (s.start_time as string).slice(0, 5),
+      end_time: (s.end_time as string).slice(0, 5),
+    });
+    setOpen(true);
+  }
   async function save() {
     try {
       await upsert({ data: edit });
-      toast.success("Uloženo"); setOpen(false);
+      toast.success("Uloženo");
+      setOpen(false);
       qc.invalidateQueries({ queryKey: ["dochazka", "shifts"] });
-    } catch (e: any) { toast.error(e?.message ?? "Chyba"); }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Chyba");
+    }
   }
   return (
     <div className="mt-4 space-y-3">
-      <div className="flex justify-end"><Button onClick={openNew}><Plus className="mr-1 h-4 w-4" /> Nová směna</Button></div>
+      <div className="flex justify-end">
+        <Button onClick={openNew}>
+          <Plus className="mr-1 h-4 w-4" /> Nová směna
+        </Button>
+      </div>
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {(data ?? []).map((s) => (
           <Card key={s.id} className="p-4">
@@ -655,7 +989,9 @@ function ShiftsTab() {
                 </p>
               </div>
               <div className="flex gap-1">
-                <Button size="icon" variant="ghost" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => openEdit(s)}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
                 <RequestDeleteButton
                   entityType="attendance_shifts"
                   entityId={s.id}
@@ -668,24 +1004,57 @@ function ShiftsTab() {
             </div>
           </Card>
         ))}
-        {(data ?? []).length === 0 && <p className="text-sm text-muted-foreground">Zatím žádné směny.</p>}
+        {(data ?? []).length === 0 && (
+          <p className="text-sm text-muted-foreground">Zatím žádné směny.</p>
+        )}
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{edit?.id ? "Upravit směnu" : "Nová směna"}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{edit?.id ? "Upravit směnu" : "Nová směna"}</DialogTitle>
+          </DialogHeader>
           {edit && (
             <div className="space-y-3">
-              <div className="grid gap-2"><Label>Název</Label><Input value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} /></div>
+              <div className="grid gap-2">
+                <Label>Název</Label>
+                <Input
+                  value={edit.name}
+                  onChange={(e) => setEdit({ ...edit, name: e.target.value })}
+                />
+              </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="grid gap-2"><Label>Od</Label><Input type="time" value={edit.start_time} onChange={(e) => setEdit({ ...edit, start_time: e.target.value })} /></div>
-                <div className="grid gap-2"><Label>Do</Label><Input type="time" value={edit.end_time} onChange={(e) => setEdit({ ...edit, end_time: e.target.value })} /></div>
+                <div className="grid gap-2">
+                  <Label>Od</Label>
+                  <Input
+                    type="time"
+                    value={edit.start_time}
+                    onChange={(e) => setEdit({ ...edit, start_time: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Do</Label>
+                  <Input
+                    type="time"
+                    value={edit.end_time}
+                    onChange={(e) => setEdit({ ...edit, end_time: e.target.value })}
+                  />
+                </div>
               </div>
               <div className="grid gap-2">
                 <Label>Barva</Label>
                 <div className="flex gap-2">
                   {SHIFT_COLORS.map((c) => (
-                    <button key={c.value} type="button" onClick={() => setEdit({ ...edit, color: c.value })} className={cn("rounded-full border-2 px-3 py-1 text-xs font-medium", c.className, edit.color === c.value ? "ring-2 ring-primary ring-offset-2" : "")}>
+                    <button
+                      key={c.value}
+                      type="button"
+                      onClick={() => setEdit({ ...edit, color: c.value })}
+                      className={cn(
+                        "rounded-full border-2 px-3 py-1 text-xs font-medium",
+                        c.className,
+                        edit.color === c.value ? "ring-2 ring-primary ring-offset-2" : "",
+                      )}
+                    >
                       {c.label}
                     </button>
                   ))}
@@ -693,7 +1062,12 @@ function ShiftsTab() {
               </div>
             </div>
           )}
-          <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Zrušit</Button><Button onClick={save}>Uložit</Button></DialogFooter>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Zrušit
+            </Button>
+            <Button onClick={save}>Uložit</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
@@ -710,7 +1084,17 @@ async function exportMyRecords(
   format: "csv" | "xlsx",
   opts?: { monthLabel?: string },
 ) {
-  const header = ["Datum", "Zaměstnanec", "Směna", "Příchod", "Odchod", "Pauza (min)", "Hodiny", "Stav", "Poznámka"];
+  const header = [
+    "Datum",
+    "Zaměstnanec",
+    "Směna",
+    "Příchod",
+    "Odchod",
+    "Pauza (min)",
+    "Hodiny",
+    "Stav",
+    "Poznámka",
+  ];
   const rows = records.map((r) => {
     const emp = empMap.get(r.employee_id) as any;
     const sh = r.shift_id ? (shiftMap.get(r.shift_id) as any) : null;
@@ -783,9 +1167,10 @@ function MyStatsPanel({
     for (const r of monthRecords) {
       if (!r.check_out) continue;
       const sh = r.shift_id ? (shiftMap.get(r.shift_id) as any) : null;
-      const expected = sh?.start_time && sh?.end_time
-        ? expectedHoursWorked(sh.start_time, sh.end_time, Number(r.break_duration ?? 0))
-        : dailyThr;
+      const expected =
+        sh?.start_time && sh?.end_time
+          ? expectedHoursWorked(sh.start_time, sh.end_time, Number(r.break_duration ?? 0))
+          : dailyThr;
       const diff = Number(r.hours_worked ?? 0) - expected;
       if (diff > 0) over += diff;
       else if (diff < 0) under += -diff;
@@ -828,7 +1213,9 @@ function MyStatsPanel({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-semibold">Moje statistiky docházky</h3>
-            <p className="text-xs text-muted-foreground">Přehled za vybraný měsíc, roční součet a export.</p>
+            <p className="text-xs text-muted-foreground">
+              Přehled za vybraný měsíc, roční součet a export.
+            </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Input
@@ -840,14 +1227,18 @@ function MyStatsPanel({
             <Button
               size="sm"
               variant="outline"
-              onClick={() => exportMyRecords(monthRecords, empMap, shiftMap, "csv", { monthLabel: month })}
+              onClick={() =>
+                exportMyRecords(monthRecords, empMap, shiftMap, "csv", { monthLabel: month })
+              }
               disabled={!hasData}
             >
               <Download className="mr-1 h-4 w-4" /> CSV {month}
             </Button>
             <Button
               size="sm"
-              onClick={() => exportMyRecords(monthRecords, empMap, shiftMap, "xlsx", { monthLabel: month })}
+              onClick={() =>
+                exportMyRecords(monthRecords, empMap, shiftMap, "xlsx", { monthLabel: month })
+              }
               disabled={!hasData}
             >
               <FileSpreadsheet className="mr-1 h-4 w-4" /> XLSX {month}
@@ -856,14 +1247,30 @@ function MyStatsPanel({
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <StatCard label="Hodiny (měsíc)" value={`${stats.totalHours.toFixed(1)} h`} accent="text-sky-600" />
+          <StatCard
+            label="Hodiny (měsíc)"
+            value={`${stats.totalHours.toFixed(1)} h`}
+            accent="text-sky-600"
+          />
           <StatCard label="Odpracované dny" value={stats.days} accent="text-emerald-600" />
-          <StatCard label="Průměr / den" value={`${stats.avg.toFixed(1)} h`} accent="text-purple-600" />
-          <StatCard label="Hodiny (rok)" value={`${stats.yearHours.toFixed(1)} h`} accent="text-slate-700" />
+          <StatCard
+            label="Průměr / den"
+            value={`${stats.avg.toFixed(1)} h`}
+            accent="text-purple-600"
+          />
+          <StatCard
+            label="Hodiny (rok)"
+            value={`${stats.yearHours.toFixed(1)} h`}
+            accent="text-slate-700"
+          />
           <StatCard label="Přesčas" value={`+${stats.over.toFixed(1)} h`} accent="text-amber-600" />
           <StatCard label="Podčas" value={`−${stats.under.toFixed(1)} h`} accent="text-rose-600" />
           <StatCard label="Absence – čeká" value={stats.pendingAbs} accent="text-amber-600" />
-          <StatCard label="Absence – schváleno" value={stats.approvedAbs} accent="text-emerald-600" />
+          <StatCard
+            label="Absence – schváleno"
+            value={stats.approvedAbs}
+            accent="text-emerald-600"
+          />
         </div>
 
         <div className="mt-4 h-56 w-full">
@@ -899,10 +1306,22 @@ function RecordsTab() {
   const decideFn = useServerFn(decideRecord);
   const bulkDecide = useServerFn(bulkDecideRecords);
   const fetchAccess = useServerFn(getMyAccess);
-  const { data: records } = useQuery({ queryKey: ["dochazka", "records"], queryFn: () => fetchR({}) });
-  const { data: employees } = useQuery({ queryKey: ["dochazka", "employees"], queryFn: () => fetchE({}) });
-  const { data: shifts } = useQuery({ queryKey: ["dochazka", "shifts"], queryFn: () => fetchS({}) });
-  const { data: settings } = useQuery({ queryKey: ["dochazka", "settings"], queryFn: () => fetchSettings({}) });
+  const { data: records } = useQuery({
+    queryKey: ["dochazka", "records"],
+    queryFn: () => fetchR({}),
+  });
+  const { data: employees } = useQuery({
+    queryKey: ["dochazka", "employees"],
+    queryFn: () => fetchE({}),
+  });
+  const { data: shifts } = useQuery({
+    queryKey: ["dochazka", "shifts"],
+    queryFn: () => fetchS({}),
+  });
+  const { data: settings } = useQuery({
+    queryKey: ["dochazka", "settings"],
+    queryFn: () => fetchSettings({}),
+  });
   const { data: access } = useQuery({ queryKey: ["my-access"], queryFn: () => fetchAccess({}) });
   const canApprove = !!access?.isAdmin;
   const [open, setOpen] = useState(false);
@@ -962,31 +1381,49 @@ function RecordsTab() {
         payload.hours_worked = Math.max(0, Math.round(((ms - breakMs) / 3_600_000) * 100) / 100);
       }
       await upsert({ data: payload });
-      toast.success("Uloženo"); setOpen(false);
+      toast.success("Uloženo");
+      setOpen(false);
       qc.invalidateQueries({ queryKey: ["dochazka", "records"] });
-    } catch (e: any) { toast.error(e?.message ?? "Chyba"); }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Chyba");
+    }
   }
   async function submit(id: string) {
-    try { await submitFn({ data: { id } }); toast.success("Odesláno ke schválení"); qc.invalidateQueries({ queryKey: ["dochazka", "records"] }); }
-    catch (e: any) { toast.error(e?.message ?? "Chyba"); }
+    try {
+      await submitFn({ data: { id } });
+      toast.success("Odesláno ke schválení");
+      qc.invalidateQueries({ queryKey: ["dochazka", "records"] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Chyba");
+    }
   }
   async function decide(id: string, status: "approved" | "rejected") {
-    try { await decideFn({ data: { id, status } }); toast.success(status === "approved" ? "Schváleno" : "Zamítnuto"); qc.invalidateQueries({ queryKey: ["dochazka", "records"] }); }
-    catch (e: any) { toast.error(e?.message ?? "Chyba"); }
+    try {
+      await decideFn({ data: { id, status } });
+      toast.success(status === "approved" ? "Schváleno" : "Zamítnuto");
+      qc.invalidateQueries({ queryKey: ["dochazka", "records"] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Chyba");
+    }
   }
   async function bulk(status: "approved" | "rejected") {
     if (selected.size === 0) return;
     try {
       await bulkDecide({ data: { ids: Array.from(selected), status } });
-      toast.success(`Hromadně ${status === "approved" ? "schváleno" : "zamítnuto"}: ${selected.size}`);
+      toast.success(
+        `Hromadně ${status === "approved" ? "schváleno" : "zamítnuto"}: ${selected.size}`,
+      );
       setSelected(new Set());
       qc.invalidateQueries({ queryKey: ["dochazka", "records"] });
-    } catch (e: any) { toast.error(e?.message ?? "Chyba"); }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Chyba");
+    }
   }
   function toggleSelect(id: string) {
     setSelected((prev) => {
       const n = new Set(prev);
-      if (n.has(id)) n.delete(id); else n.add(id);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
       return n;
     });
   }
@@ -1016,7 +1453,9 @@ function RecordsTab() {
           )}
         </div>
         {canApprove && (
-          <Button onClick={openNew}><Plus className="mr-1 h-4 w-4" /> Nový záznam</Button>
+          <Button onClick={openNew}>
+            <Plus className="mr-1 h-4 w-4" /> Nový záznam
+          </Button>
         )}
       </div>
       <Card>
@@ -1038,160 +1477,301 @@ function RecordsTab() {
           </TableHeader>
           <TableBody>
             {visibleRecords.length === 0 ? (
-              <TableRow><TableCell colSpan={canApprove ? 11 : 10} className="text-center text-muted-foreground">Žádné záznamy.</TableCell></TableRow>
-            ) : visibleRecords.map((r) => {
-              const emp = empMap.get(r.employee_id);
-              const sh = r.shift_id ? shiftMap.get(r.shift_id) : null;
-              const h = Number(r.hours_worked ?? 0);
-              const status = (r as any).approval_status ?? "draft";
-              // Přesčas/Podčas = rozdíl oproti plánované délce směny
-              // (po odečtení pauzy) nebo oproti dennímu normálnímu úvazku,
-              // pokud směna není přiřazena. Kladná hodnota = přesčas,
-              // záporná = podčas. Formát je sjednocený, po minutách.
-              let expectedHours = dailyThr;
-              if (sh?.start_time && sh?.end_time) {
-                expectedHours = expectedHoursWorked(sh.start_time, sh.end_time, Number(r.break_duration ?? 0));
-              }
-              const hasDiff = !!r.check_out;
-              const diff = hasDiff ? h - expectedHours : 0;
-              const diffMinutes = Math.round(diff * 60);
-              // Odešel dříve? Porovnání s koncem směny (HH:MM v lokálním čase).
-              let leftEarlyMin = 0;
-              if (r.check_out && sh?.end_time) {
-                const co = new Date(r.check_out);
-                const [eh, em] = String(sh.end_time).split(":").map((x) => Number(x));
-                if (Number.isFinite(eh) && Number.isFinite(em)) {
-                  const endRef = new Date(co);
-                  endRef.setHours(eh, em, 0, 0);
-                  const diffMin = Math.round((endRef.getTime() - co.getTime()) / 60000);
-                  if (diffMin > 5) leftEarlyMin = diffMin;
+              <TableRow>
+                <TableCell
+                  colSpan={canApprove ? 11 : 10}
+                  className="text-center text-muted-foreground"
+                >
+                  Žádné záznamy.
+                </TableCell>
+              </TableRow>
+            ) : (
+              visibleRecords.map((r) => {
+                const emp = empMap.get(r.employee_id);
+                const sh = r.shift_id ? shiftMap.get(r.shift_id) : null;
+                const h = Number(r.hours_worked ?? 0);
+                const status = (r as any).approval_status ?? "draft";
+                // Přesčas/Podčas = rozdíl oproti plánované délce směny
+                // (po odečtení pauzy) nebo oproti dennímu normálnímu úvazku,
+                // pokud směna není přiřazena. Kladná hodnota = přesčas,
+                // záporná = podčas. Formát je sjednocený, po minutách.
+                let expectedHours = dailyThr;
+                if (sh?.start_time && sh?.end_time) {
+                  expectedHours = expectedHoursWorked(
+                    sh.start_time,
+                    sh.end_time,
+                    Number(r.break_duration ?? 0),
+                  );
                 }
-              }
+                const hasDiff = !!r.check_out;
+                const diff = hasDiff ? h - expectedHours : 0;
+                const diffMinutes = Math.round(diff * 60);
+                // Odešel dříve? Porovnání s koncem směny (HH:MM v lokálním čase).
+                let leftEarlyMin = 0;
+                if (r.check_out && sh?.end_time) {
+                  const co = new Date(r.check_out);
+                  const [eh, em] = String(sh.end_time)
+                    .split(":")
+                    .map((x) => Number(x));
+                  if (Number.isFinite(eh) && Number.isFinite(em)) {
+                    const endRef = new Date(co);
+                    endRef.setHours(eh, em, 0, 0);
+                    const diffMin = Math.round((endRef.getTime() - co.getTime()) / 60000);
+                    if (diffMin > 5) leftEarlyMin = diffMin;
+                  }
+                }
 
-
-              return (
-                <TableRow key={r.id}>
-                  {canApprove && (
-                    <TableCell>
-                      <input
-                        type="checkbox"
-                        checked={selected.has(r.id)}
-                        onChange={() => toggleSelect(r.id)}
-                        disabled={status === "draft"}
-                      />
-                    </TableCell>
-                  )}
-                  <TableCell className="font-mono text-xs">{formatDate(r.date)}</TableCell>
-                  <TableCell className="font-medium">{emp?.name ?? "—"}</TableCell>
-                  <TableCell>{sh ? <Badge variant="outline" className={cn("border", shiftClasses(sh.color))}>{sh.name}</Badge> : <span className="text-muted-foreground">—</span>}</TableCell>
-                  <TableCell className="font-mono">{formatTime(r.check_in)}</TableCell>
-                  <TableCell className="font-mono">
-                    {r.check_out ? (
-                      <div className="flex items-center gap-1">
-                        <span>{formatTime(r.check_out)}</span>
-                        {leftEarlyMin > 0 && (
-                          <Badge variant="outline" className="border-rose-300 bg-rose-50 text-rose-700 text-[10px]">
-                            Dříve o {leftEarlyMin >= 60 ? `${Math.floor(leftEarlyMin / 60)}h ${leftEarlyMin % 60}m` : `${leftEarlyMin}m`}
-                          </Badge>
-                        )}
-                      </div>
-                    ) : (
-                      <Badge variant="secondary" className="bg-amber-100 text-amber-700">v práci</Badge>
+                return (
+                  <TableRow key={r.id}>
+                    {canApprove && (
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          checked={selected.has(r.id)}
+                          onChange={() => toggleSelect(r.id)}
+                          disabled={status === "draft"}
+                        />
+                      </TableCell>
                     )}
-                  </TableCell>
-                  <TableCell className="text-xs">{r.break_duration} min</TableCell>
-                  <TableCell className="font-mono font-semibold">{formatHours(h)}</TableCell>
-                  <TableCell>
-                    {hasDiff ? (
-                      diffMinutes > 0 ? (
-                        <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-700 text-[10px]">
-                          +{formatHours(diffMinutes / 60)}
-                        </Badge>
-                      ) : diffMinutes < 0 ? (
-                        <Badge variant="outline" className="border-rose-300 bg-rose-50 text-rose-700 text-[10px]">
-                          −{formatHours(Math.abs(diffMinutes) / 60)}
+                    <TableCell className="font-mono text-xs">{formatDate(r.date)}</TableCell>
+                    <TableCell className="font-medium">{emp?.name ?? "—"}</TableCell>
+                    <TableCell>
+                      {sh ? (
+                        <Badge variant="outline" className={cn("border", shiftClasses(sh.color))}>
+                          {sh.name}
                         </Badge>
                       ) : (
-                        <span className="text-xs text-emerald-600">0h 0m</span>
-                      )
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-
-                    {status === "draft" && <Badge variant="outline">Koncept</Badge>}
-                    {status === "submitted" && <Badge variant="secondary" className="bg-sky-100 text-sky-700">Ke schválení</Badge>}
-                    {status === "approved" && <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">Schváleno</Badge>}
-                    {status === "rejected" && <Badge variant="secondary" className="bg-rose-100 text-rose-700">Zamítnuto</Badge>}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end gap-1">
-                      {status === "draft" && (
-                        <Button size="icon" variant="ghost" onClick={() => submit(r.id)} title="Odeslat ke schválení">
-                          <Send className="h-4 w-4 text-sky-600" />
-                        </Button>
+                        <span className="text-muted-foreground">—</span>
                       )}
-                      {canApprove && status === "submitted" && (
-                        <>
-                          <Button size="icon" variant="ghost" onClick={() => decide(r.id, "approved")} title="Schválit"><Check className="h-4 w-4 text-emerald-600" /></Button>
-                          <Button size="icon" variant="ghost" onClick={() => decide(r.id, "rejected")} title="Zamítnout"><X className="h-4 w-4 text-rose-600" /></Button>
-                        </>
+                    </TableCell>
+                    <TableCell className="font-mono">{formatTime(r.check_in)}</TableCell>
+                    <TableCell className="font-mono">
+                      {r.check_out ? (
+                        <div className="flex items-center gap-1">
+                          <span>{formatTime(r.check_out)}</span>
+                          {leftEarlyMin > 0 && (
+                            <Badge
+                              variant="outline"
+                              className="border-rose-300 bg-rose-50 text-rose-700 text-[10px]"
+                            >
+                              Dříve o{" "}
+                              {leftEarlyMin >= 60
+                                ? `${Math.floor(leftEarlyMin / 60)}h ${leftEarlyMin % 60}m`
+                                : `${leftEarlyMin}m`}
+                            </Badge>
+                          )}
+                        </div>
+                      ) : (
+                        <Badge variant="secondary" className="bg-amber-100 text-amber-700">
+                          v práci
+                        </Badge>
                       )}
-                      {canApprove && (
-                        <Button size="icon" variant="ghost" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></Button>
+                    </TableCell>
+                    <TableCell className="text-xs">{r.break_duration} min</TableCell>
+                    <TableCell className="font-mono font-semibold">{formatHours(h)}</TableCell>
+                    <TableCell>
+                      {hasDiff ? (
+                        diffMinutes > 0 ? (
+                          <Badge
+                            variant="outline"
+                            className="border-amber-300 bg-amber-50 text-amber-700 text-[10px]"
+                          >
+                            +{formatHours(diffMinutes / 60)}
+                          </Badge>
+                        ) : diffMinutes < 0 ? (
+                          <Badge
+                            variant="outline"
+                            className="border-rose-300 bg-rose-50 text-rose-700 text-[10px]"
+                          >
+                            −{formatHours(Math.abs(diffMinutes) / 60)}
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-emerald-600">0h 0m</span>
+                        )
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
                       )}
-                      {canApprove && (
-                      <RequestDeleteButton
-                        entityType="attendance_records"
-                        entityId={r.id}
-                        entityLabel={`Docházka ${formatDate(r.date)} – ${empMap.get(r.employee_id)?.name ?? ""}`}
-                        size="icon"
-                        className="text-destructive"
-                        title="Požádat o smazání záznamu"
-                      />
+                    </TableCell>
+                    <TableCell>
+                      {status === "draft" && <Badge variant="outline">Koncept</Badge>}
+                      {status === "submitted" && (
+                        <Badge variant="secondary" className="bg-sky-100 text-sky-700">
+                          Ke schválení
+                        </Badge>
                       )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+                      {status === "approved" && (
+                        <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
+                          Schváleno
+                        </Badge>
+                      )}
+                      {status === "rejected" && (
+                        <Badge variant="secondary" className="bg-rose-100 text-rose-700">
+                          Zamítnuto
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-end gap-1">
+                        {status === "draft" && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => submit(r.id)}
+                            title="Odeslat ke schválení"
+                          >
+                            <Send className="h-4 w-4 text-sky-600" />
+                          </Button>
+                        )}
+                        {canApprove && status === "submitted" && (
+                          <>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => decide(r.id, "approved")}
+                              title="Schválit"
+                            >
+                              <Check className="h-4 w-4 text-emerald-600" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => decide(r.id, "rejected")}
+                              title="Zamítnout"
+                            >
+                              <X className="h-4 w-4 text-rose-600" />
+                            </Button>
+                          </>
+                        )}
+                        {canApprove && (
+                          <Button size="icon" variant="ghost" onClick={() => openEdit(r)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {canApprove && (
+                          <RequestDeleteButton
+                            entityType="attendance_records"
+                            entityId={r.id}
+                            entityLabel={`Docházka ${formatDate(r.date)} – ${empMap.get(r.employee_id)?.name ?? ""}`}
+                            size="icon"
+                            className="text-destructive"
+                            title="Požádat o smazání záznamu"
+                          />
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
           </TableBody>
         </Table>
       </Card>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{edit?.id ? "Upravit záznam" : "Nový záznam"}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{edit?.id ? "Upravit záznam" : "Nový záznam"}</DialogTitle>
+          </DialogHeader>
           {edit && (
             <div className="space-y-3">
               <div className="grid gap-2">
                 <Label>Zaměstnanec</Label>
-                <Select value={edit.employee_id} onValueChange={(v) => setEdit({ ...edit, employee_id: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{(employees ?? []).map((e) => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}</SelectContent>
+                <Select
+                  value={edit.employee_id}
+                  onValueChange={(v) => setEdit({ ...edit, employee_id: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(employees ?? []).map((e) => (
+                      <SelectItem key={e.id} value={e.id}>
+                        {e.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-2">
                 <Label>Směna</Label>
-                <Select value={edit.shift_id ?? "_none"} onValueChange={(v) => setEdit({ ...edit, shift_id: v === "_none" ? null : v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="_none">Bez směny</SelectItem>{(shifts ?? []).map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                <Select
+                  value={edit.shift_id ?? "_none"}
+                  onValueChange={(v) => setEdit({ ...edit, shift_id: v === "_none" ? null : v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">Bez směny</SelectItem>
+                    {(shifts ?? []).map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
-              <div className="grid gap-2"><Label>Datum</Label><Input type="date" value={edit.date} onChange={(e) => setEdit({ ...edit, date: e.target.value })} /></div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="grid gap-2"><Label>Příchod</Label><Input type="datetime-local" value={edit.check_in} onChange={(e) => setEdit({ ...edit, check_in: e.target.value })} /></div>
-                <div className="grid gap-2"><Label>Odchod</Label><Input type="datetime-local" value={edit.check_out} onChange={(e) => setEdit({ ...edit, check_out: e.target.value })} /></div>
+              <div className="grid gap-2">
+                <Label>Datum</Label>
+                <Input
+                  type="date"
+                  value={edit.date}
+                  onChange={(e) => setEdit({ ...edit, date: e.target.value })}
+                />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="grid gap-2"><Label>Pauza (min)</Label><Input type="number" min={0} value={edit.break_duration} onChange={(e) => setEdit({ ...edit, break_duration: e.target.value })} /></div>
-                <div className="grid gap-2"><Label>Hodiny (auto)</Label><Input type="number" step="0.01" value={edit.hours_worked} onChange={(e) => setEdit({ ...edit, hours_worked: e.target.value })} /></div>
+                <div className="grid gap-2">
+                  <Label>Příchod</Label>
+                  <Input
+                    type="datetime-local"
+                    value={edit.check_in}
+                    onChange={(e) => setEdit({ ...edit, check_in: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Odchod</Label>
+                  <Input
+                    type="datetime-local"
+                    value={edit.check_out}
+                    onChange={(e) => setEdit({ ...edit, check_out: e.target.value })}
+                  />
+                </div>
               </div>
-              <div className="grid gap-2"><Label>Poznámka</Label><Textarea value={edit.note} onChange={(e) => setEdit({ ...edit, note: e.target.value })} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-2">
+                  <Label>Pauza (min)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={edit.break_duration}
+                    onChange={(e) => setEdit({ ...edit, break_duration: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Hodiny (auto)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={edit.hours_worked}
+                    onChange={(e) => setEdit({ ...edit, hours_worked: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label>Poznámka</Label>
+                <Textarea
+                  value={edit.note}
+                  onChange={(e) => setEdit({ ...edit, note: e.target.value })}
+                />
+              </div>
             </div>
           )}
-          <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Zrušit</Button><Button onClick={save}>Uložit</Button></DialogFooter>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Zrušit
+            </Button>
+            <Button onClick={save}>Uložit</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
@@ -1206,9 +1786,18 @@ function AbsencesTab() {
   const fetchR = useServerFn(listResolvers);
   const upsert = useServerFn(upsertAbsence);
   const resolve = useServerFn(resolveAbsence);
-  const { data: absences } = useQuery({ queryKey: ["dochazka", "absences"], queryFn: () => fetchA({}) });
-  const { data: employees } = useQuery({ queryKey: ["dochazka", "employees"], queryFn: () => fetchE({}) });
-  const { data: resolvers } = useQuery({ queryKey: ["dochazka", "resolvers"], queryFn: () => fetchR() });
+  const { data: absences } = useQuery({
+    queryKey: ["dochazka", "absences"],
+    queryFn: () => fetchA({}),
+  });
+  const { data: employees } = useQuery({
+    queryKey: ["dochazka", "employees"],
+    queryFn: () => fetchE({}),
+  });
+  const { data: resolvers } = useQuery({
+    queryKey: ["dochazka", "resolvers"],
+    queryFn: () => fetchR(),
+  });
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState<any>(null);
 
@@ -1233,20 +1822,29 @@ function AbsencesTab() {
     try {
       const payload = { ...edit, requested_resolver: edit.requested_resolver || null };
       await upsert({ data: payload });
-      toast.success("Uloženo"); setOpen(false);
+      toast.success("Uloženo");
+      setOpen(false);
       qc.invalidateQueries({ queryKey: ["dochazka", "absences"] });
-    } catch (e: any) { toast.error(e?.message ?? "Chyba"); }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Chyba");
+    }
   }
   async function decide(id: string, status: "approved" | "rejected") {
     try {
       await resolve({ data: { id, status } });
       toast.success(status === "approved" ? "Schváleno" : "Zamítnuto");
       qc.invalidateQueries({ queryKey: ["dochazka", "absences"] });
-    } catch (e: any) { toast.error(e?.message ?? "Chyba"); }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Chyba");
+    }
   }
   return (
     <div className="mt-4 space-y-3">
-      <div className="flex justify-end"><Button onClick={openNew}><Plus className="mr-1 h-4 w-4" /> Nová žádost</Button></div>
+      <div className="flex justify-end">
+        <Button onClick={openNew}>
+          <Plus className="mr-1 h-4 w-4" /> Nová žádost
+        </Button>
+      </div>
       <Card>
         <Table>
           <TableHeader>
@@ -1262,91 +1860,181 @@ function AbsencesTab() {
           </TableHeader>
           <TableBody>
             {(absences ?? []).length === 0 ? (
-              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">Žádné absence.</TableCell></TableRow>
-            ) : (absences ?? []).map((a) => (
-              <TableRow key={a.id}>
-                <TableCell className="font-medium">{empMap.get(a.employee_id)?.name ?? "—"}</TableCell>
-                <TableCell>{ABSENCE_TYPE_LABEL[a.type] ?? a.type}</TableCell>
-                <TableCell className="font-mono text-xs">{formatDate(a.start_date)}</TableCell>
-                <TableCell className="font-mono text-xs">{formatDate(a.end_date)}</TableCell>
-                <TableCell className="max-w-xs truncate text-xs text-muted-foreground">{a.note ?? "—"}</TableCell>
-                <TableCell>
-                  {a.status === "pending" && <Badge variant="secondary" className="bg-amber-100 text-amber-700">Čeká</Badge>}
-                  {a.status === "approved" && <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">Schváleno</Badge>}
-                  {a.status === "rejected" && <Badge variant="secondary" className="bg-rose-100 text-rose-700">Zamítnuto</Badge>}
-                {a.resolved_by && a.status !== "pending" && (
-                  <div className="mt-0.5 text-[10px] text-muted-foreground">
-                    {resolverMap.get(a.resolved_by) ?? "neznámý"}
-                  </div>
-                )}
-                </TableCell>
-                <TableCell>
-                  <div className="flex justify-end gap-1">
-                    {a.status === "pending" && (
-                      <>
-                        <Button size="icon" variant="ghost" onClick={() => decide(a.id, "approved")} title="Schválit"><Check className="h-4 w-4 text-emerald-600" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => decide(a.id, "rejected")} title="Zamítnout"><X className="h-4 w-4 text-rose-600" /></Button>
-                      </>
-                    )}
-                    <RequestDeleteButton
-                      entityType="attendance_absences"
-                      entityId={a.id}
-                      entityLabel={`${ABSENCE_TYPE_LABEL[a.type] ?? a.type} ${formatDate(a.start_date)}–${formatDate(a.end_date)}`}
-                      size="icon"
-                      className="text-destructive"
-                      title="Požádat o smazání absence"
-                    />
-                  </div>
+              <TableRow>
+                <TableCell colSpan={7} className="text-center text-muted-foreground">
+                  Žádné absence.
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              (absences ?? []).map((a) => (
+                <TableRow key={a.id}>
+                  <TableCell className="font-medium">
+                    {empMap.get(a.employee_id)?.name ?? "—"}
+                  </TableCell>
+                  <TableCell>{ABSENCE_TYPE_LABEL[a.type] ?? a.type}</TableCell>
+                  <TableCell className="font-mono text-xs">{formatDate(a.start_date)}</TableCell>
+                  <TableCell className="font-mono text-xs">{formatDate(a.end_date)}</TableCell>
+                  <TableCell className="max-w-xs truncate text-xs text-muted-foreground">
+                    {a.note ?? "—"}
+                  </TableCell>
+                  <TableCell>
+                    {a.status === "pending" && (
+                      <Badge variant="secondary" className="bg-amber-100 text-amber-700">
+                        Čeká
+                      </Badge>
+                    )}
+                    {a.status === "approved" && (
+                      <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
+                        Schváleno
+                      </Badge>
+                    )}
+                    {a.status === "rejected" && (
+                      <Badge variant="secondary" className="bg-rose-100 text-rose-700">
+                        Zamítnuto
+                      </Badge>
+                    )}
+                    {a.resolved_by && a.status !== "pending" && (
+                      <div className="mt-0.5 text-[10px] text-muted-foreground">
+                        {resolverMap.get(a.resolved_by) ?? "neznámý"}
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-1">
+                      {a.status === "pending" && (
+                        <>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => decide(a.id, "approved")}
+                            title="Schválit"
+                          >
+                            <Check className="h-4 w-4 text-emerald-600" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => decide(a.id, "rejected")}
+                            title="Zamítnout"
+                          >
+                            <X className="h-4 w-4 text-rose-600" />
+                          </Button>
+                        </>
+                      )}
+                      <RequestDeleteButton
+                        entityType="attendance_absences"
+                        entityId={a.id}
+                        entityLabel={`${ABSENCE_TYPE_LABEL[a.type] ?? a.type} ${formatDate(a.start_date)}–${formatDate(a.end_date)}`}
+                        size="icon"
+                        className="text-destructive"
+                        title="Požádat o smazání absence"
+                      />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </Card>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Nová žádost o volno</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Nová žádost o volno</DialogTitle>
+          </DialogHeader>
           {edit && (
             <div className="space-y-3">
               <div className="grid gap-2">
                 <Label>Zaměstnanec</Label>
-                <Select value={edit.employee_id} onValueChange={(v) => setEdit({ ...edit, employee_id: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{(employees ?? []).map((e) => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}</SelectContent>
+                <Select
+                  value={edit.employee_id}
+                  onValueChange={(v) => setEdit({ ...edit, employee_id: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(employees ?? []).map((e) => (
+                      <SelectItem key={e.id} value={e.id}>
+                        {e.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-2">
                 <Label>Typ</Label>
                 <Select value={edit.type} onValueChange={(v) => setEdit({ ...edit, type: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{ABSENCE_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ABSENCE_TYPES.map((t) => (
+                      <SelectItem key={t.value} value={t.value}>
+                        {t.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="grid gap-2"><Label>Od</Label><Input type="date" value={edit.start_date} onChange={(e) => setEdit({ ...edit, start_date: e.target.value })} /></div>
-                <div className="grid gap-2"><Label>Do</Label><Input type="date" value={edit.end_date} onChange={(e) => setEdit({ ...edit, end_date: e.target.value })} /></div>
+                <div className="grid gap-2">
+                  <Label>Od</Label>
+                  <Input
+                    type="date"
+                    value={edit.start_date}
+                    onChange={(e) => setEdit({ ...edit, start_date: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Do</Label>
+                  <Input
+                    type="date"
+                    value={edit.end_date}
+                    onChange={(e) => setEdit({ ...edit, end_date: e.target.value })}
+                  />
+                </div>
               </div>
-              <div className="grid gap-2"><Label>Poznámka</Label><Textarea value={edit.note} onChange={(e) => setEdit({ ...edit, note: e.target.value })} /></div>
+              <div className="grid gap-2">
+                <Label>Poznámka</Label>
+                <Textarea
+                  value={edit.note}
+                  onChange={(e) => setEdit({ ...edit, note: e.target.value })}
+                />
+              </div>
               <div className="grid gap-2">
                 <Label>Žádám o schválení</Label>
                 <Select
                   value={edit.requested_resolver || "__any"}
-                  onValueChange={(v) => setEdit({ ...edit, requested_resolver: v === "__any" ? "" : v })}
+                  onValueChange={(v) =>
+                    setEdit({ ...edit, requested_resolver: v === "__any" ? "" : v })
+                  }
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__any">Kteréhokoliv vedoucího</SelectItem>
                     {(resolvers ?? []).map((r: any) => (
-                      <SelectItem key={r.id} value={r.id}>{r.full_name || r.email}</SelectItem>
+                      <SelectItem key={r.id} value={r.id}>
+                        {r.full_name || r.email}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">Vybrané osobě dorazí e-mail s žádostí.</p>
+                <p className="text-xs text-muted-foreground">
+                  Vybrané osobě dorazí e-mail s žádostí.
+                </p>
               </div>
             </div>
           )}
-          <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Zrušit</Button><Button onClick={save}>Uložit</Button></DialogFooter>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Zrušit
+            </Button>
+            <Button onClick={save}>Uložit</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
@@ -1362,14 +2050,22 @@ function AlertsTab() {
   const getSettings = useServerFn(getDochazkaSettings);
   const updSettings = useServerFn(updateDochazkaSettings);
 
-  const { data: notifs } = useQuery({ queryKey: ["dochazka", "notifications"], queryFn: () => fetchN({}) });
-  const { data: settings } = useQuery({ queryKey: ["dochazka", "settings"], queryFn: () => getSettings({}) });
+  const { data: notifs } = useQuery({
+    queryKey: ["dochazka", "notifications"],
+    queryFn: () => fetchN({}),
+  });
+  const { data: settings } = useQuery({
+    queryKey: ["dochazka", "settings"],
+    queryFn: () => getSettings({}),
+  });
 
   async function setting(field: string, value: any) {
     try {
       await updSettings({ data: { [field]: value } });
       qc.invalidateQueries({ queryKey: ["dochazka", "settings"] });
-    } catch (e: any) { toast.error(e?.message ?? "Chyba"); }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Chyba");
+    }
   }
 
   return (
@@ -1377,56 +2073,115 @@ function AlertsTab() {
       <Card className="md:col-span-2 p-4">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold">Upozornění</h3>
-          <Button size="sm" variant="outline" onClick={async () => { await markAll({}); qc.invalidateQueries({ queryKey: ["dochazka", "notifications"] }); }}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={async () => {
+              await markAll({});
+              qc.invalidateQueries({ queryKey: ["dochazka", "notifications"] });
+            }}
+          >
             Označit vše jako přečtené
           </Button>
         </div>
         <div className="space-y-2">
           {(notifs ?? []).length === 0 ? (
             <p className="text-sm text-muted-foreground">Žádná upozornění.</p>
-          ) : (notifs ?? []).map((n) => (
-            <div key={n.id} className={cn("flex items-start gap-3 rounded-lg border p-3", n.read ? "bg-muted/30" : "bg-background")}>
-              {n.read ? <BellOff className="h-4 w-4 text-muted-foreground" /> : <BellRing className="h-4 w-4 text-primary" />}
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium">{n.title}</p>
-                <p className="text-xs text-muted-foreground">{n.message}</p>
-                <p className="mt-1 text-[10px] text-muted-foreground">{new Date(n.created_at).toLocaleString("cs-CZ")}</p>
+          ) : (
+            (notifs ?? []).map((n) => (
+              <div
+                key={n.id}
+                className={cn(
+                  "flex items-start gap-3 rounded-lg border p-3",
+                  n.read ? "bg-muted/30" : "bg-background",
+                )}
+              >
+                {n.read ? (
+                  <BellOff className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <BellRing className="h-4 w-4 text-primary" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">{n.title}</p>
+                  <p className="text-xs text-muted-foreground">{n.message}</p>
+                  <p className="mt-1 text-[10px] text-muted-foreground">
+                    {new Date(n.created_at).toLocaleString("cs-CZ")}
+                  </p>
+                </div>
+                {!n.read && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={async () => {
+                      await mark({ data: { id: n.id, read: true } });
+                      qc.invalidateQueries({ queryKey: ["dochazka", "notifications"] });
+                    }}
+                  >
+                    Přečteno
+                  </Button>
+                )}
               </div>
-              {!n.read && (
-                <Button size="sm" variant="ghost" onClick={async () => { await mark({ data: { id: n.id, read: true } }); qc.invalidateQueries({ queryKey: ["dochazka", "notifications"] }); }}>
-                  Přečteno
-                </Button>
-              )}
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </Card>
 
       <Card className="p-4">
         <h3 className="mb-3 text-sm font-semibold">Nastavení</h3>
-        {!settings ? <p className="text-xs text-muted-foreground">Načítám…</p> : (
+        {!settings ? (
+          <p className="text-xs text-muted-foreground">Načítám…</p>
+        ) : (
           <div className="space-y-3 text-sm">
-            <Row label="Upozorňovat na pozdní příchod" checked={settings.notify_employee_late} onChange={(v) => setting("notify_employee_late", v)} />
-            <Row label="Upozorňovat manažera na absenci" checked={settings.notify_manager_no_show} onChange={(v) => setting("notify_manager_no_show", v)} />
-            <Row label="Žádosti o absenci – schvalování" checked={settings.notify_manager_absence_pending} onChange={(v) => setting("notify_manager_absence_pending", v)} />
-            <Row label="Informovat zaměstnance o vyřešení" checked={settings.notify_employee_absence_resolved} onChange={(v) => setting("notify_employee_absence_resolved", v)} />
+            <Row
+              label="Upozorňovat na pozdní příchod"
+              checked={settings.notify_employee_late}
+              onChange={(v) => setting("notify_employee_late", v)}
+            />
+            <Row
+              label="Upozorňovat manažera na absenci"
+              checked={settings.notify_manager_no_show}
+              onChange={(v) => setting("notify_manager_no_show", v)}
+            />
+            <Row
+              label="Žádosti o absenci – schvalování"
+              checked={settings.notify_manager_absence_pending}
+              onChange={(v) => setting("notify_manager_absence_pending", v)}
+            />
+            <Row
+              label="Informovat zaměstnance o vyřešení"
+              checked={settings.notify_employee_absence_resolved}
+              onChange={(v) => setting("notify_employee_absence_resolved", v)}
+            />
             <div className="grid gap-1">
               <Label className="text-xs">Tolerance pozdního příchodu (min)</Label>
-              <Input type="number" value={settings.late_arrival_buffer_minutes} onChange={(e) => setting("late_arrival_buffer_minutes", Number(e.target.value))} />
+              <Input
+                type="number"
+                value={settings.late_arrival_buffer_minutes}
+                onChange={(e) => setting("late_arrival_buffer_minutes", Number(e.target.value))}
+              />
             </div>
             <div className="grid gap-1">
               <Label className="text-xs">Prefix zpráv</Label>
-              <Input value={settings.custom_message_prefix} onChange={(e) => setting("custom_message_prefix", e.target.value)} />
+              <Input
+                value={settings.custom_message_prefix}
+                onChange={(e) => setting("custom_message_prefix", e.target.value)}
+              />
             </div>
             <div className="mt-2 border-t pt-3">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Zaokrouhlování & přesčasy</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Zaokrouhlování & přesčasy
+              </p>
               <div className="grid gap-1">
-                <Label className="text-xs">Zaokrouhlení odpracovaných hodin (min, 0 = vypnuto)</Label>
+                <Label className="text-xs">
+                  Zaokrouhlení odpracovaných hodin (min, 0 = vypnuto)
+                </Label>
                 <Select
                   value={String((settings as any).rounding_minutes ?? 0)}
                   onValueChange={(v) => setting("rounding_minutes", Number(v))}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="0">Vypnuto (přesně)</SelectItem>
                     <SelectItem value="5">5 min</SelectItem>
@@ -1439,17 +2194,25 @@ function AlertsTab() {
               <div className="mt-2 grid gap-1">
                 <Label className="text-xs">Práh denního přesčasu (h)</Label>
                 <Input
-                  type="number" step="0.5" min="0"
+                  type="number"
+                  step="0.5"
+                  min="0"
                   value={(settings as any).daily_overtime_threshold_hours ?? 8}
-                  onChange={(e) => setting("daily_overtime_threshold_hours", Number(e.target.value))}
+                  onChange={(e) =>
+                    setting("daily_overtime_threshold_hours", Number(e.target.value))
+                  }
                 />
               </div>
               <div className="mt-2 grid gap-1">
                 <Label className="text-xs">Práh týdenního přesčasu (h)</Label>
                 <Input
-                  type="number" step="1" min="0"
+                  type="number"
+                  step="1"
+                  min="0"
                   value={(settings as any).weekly_overtime_threshold_hours ?? 40}
-                  onChange={(e) => setting("weekly_overtime_threshold_hours", Number(e.target.value))}
+                  onChange={(e) =>
+                    setting("weekly_overtime_threshold_hours", Number(e.target.value))
+                  }
                 />
               </div>
               <div className="mt-3 flex items-center justify-between">
@@ -1467,7 +2230,15 @@ function AlertsTab() {
   );
 }
 
-function Row({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+function Row({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
   return (
     <div className="flex items-center justify-between gap-2">
       <span>{label}</span>
@@ -1482,32 +2253,51 @@ function ExportTab() {
   const fetchE = useServerFn(listEmployees);
   const fetchS = useServerFn(listShifts);
   const fetchSettings = useServerFn(getDochazkaSettings);
-  const { data: records } = useQuery({ queryKey: ["dochazka", "records"], queryFn: () => fetchR({}) });
-  const { data: employees } = useQuery({ queryKey: ["dochazka", "employees"], queryFn: () => fetchE({}) });
-  const { data: shifts } = useQuery({ queryKey: ["dochazka", "shifts"], queryFn: () => fetchS({}) });
-  const { data: settings } = useQuery({ queryKey: ["dochazka", "settings"], queryFn: () => fetchSettings({}) });
+  const { data: records } = useQuery({
+    queryKey: ["dochazka", "records"],
+    queryFn: () => fetchR({}),
+  });
+  const { data: employees } = useQuery({
+    queryKey: ["dochazka", "employees"],
+    queryFn: () => fetchE({}),
+  });
+  const { data: shifts } = useQuery({
+    queryKey: ["dochazka", "shifts"],
+    queryFn: () => fetchS({}),
+  });
+  const { data: settings } = useQuery({
+    queryKey: ["dochazka", "settings"],
+    queryFn: () => fetchSettings({}),
+  });
   const [month, setMonth] = useState(() => todayISODate().slice(0, 7));
   const [selectedEmpId, setSelectedEmpId] = useState<string>("");
 
   const empMap = useMemo(() => new Map((employees ?? []).map((e) => [e.id, e])), [employees]);
-  const filtered = useMemo(() => (records ?? []).filter((r) => r.date.startsWith(month)), [records, month]);
+  const filtered = useMemo(
+    () => (records ?? []).filter((r) => r.date.startsWith(month)),
+    [records, month],
+  );
   const filteredHpp = useMemo(
-    () => filtered.filter((r) => {
-      const types = (empMap.get(r.employee_id) as any)?.employment_types ?? ["HPP"];
-      return types.includes("HPP");
-    }),
+    () =>
+      filtered.filter((r) => {
+        const types = (empMap.get(r.employee_id) as any)?.employment_types ?? ["HPP"];
+        return types.includes("HPP");
+      }),
     [filtered, empMap],
   );
   const filteredDpp = useMemo(
-    () => filtered.filter((r) => {
-      const types = (empMap.get(r.employee_id) as any)?.employment_types ?? [];
-      return types.includes("DPP");
-    }),
+    () =>
+      filtered.filter((r) => {
+        const types = (empMap.get(r.employee_id) as any)?.employment_types ?? [];
+        return types.includes("DPP");
+      }),
     [filtered, empMap],
   );
 
   function downloadCsv(filename: string, rows: string[][]) {
-    const csv = rows.map((r) => r.map((x) => `"${String(x ?? "").replace(/"/g, '""')}"`).join(";")).join("\n");
+    const csv = rows
+      .map((r) => r.map((x) => `"${String(x ?? "").replace(/"/g, '""')}"`).join(";"))
+      .join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -1531,7 +2321,10 @@ function ExportTab() {
 
   function buildPayrollRows(list: typeof filtered) {
     // Souhrn pro mzdovou účtárnu: po zaměstnancích — odpracované hodiny, počet dní, přesčasy
-    const byEmp = new Map<string, { name: string; type: string; days: Set<string>; hours: number; overtime: number }>();
+    const byEmp = new Map<
+      string,
+      { name: string; type: string; days: Set<string>; hours: number; overtime: number }
+    >();
     for (const r of list) {
       const e: any = empMap.get(r.employee_id);
       const key = r.employee_id;
@@ -1548,17 +2341,39 @@ function ExportTab() {
       if (h > dailyThr) cur.overtime += h - dailyThr;
       byEmp.set(key, cur);
     }
-    const header = ["Zaměstnanec", "Úvazek", "Odpracované dny", "Hodiny celkem", "Z toho přesčas (h)"];
+    const header = [
+      "Zaměstnanec",
+      "Úvazek",
+      "Odpracované dny",
+      "Hodiny celkem",
+      "Z toho přesčas (h)",
+    ];
     const rows: any[][] = [header];
     for (const v of byEmp.values()) {
-      rows.push([v.name, v.type, v.days.size, Math.round(v.hours * 100) / 100, Math.round(v.overtime * 100) / 100]);
+      rows.push([
+        v.name,
+        v.type,
+        v.days.size,
+        Math.round(v.hours * 100) / 100,
+        Math.round(v.overtime * 100) / 100,
+      ]);
     }
     return rows;
   }
 
   function buildRows(list: typeof filtered, includeType: boolean) {
     const shiftMap = new Map((shifts ?? []).map((s) => [s.id, s.name]));
-    const header = ["Datum", "Zaměstnanec", ...(includeType ? ["Úvazek"] : []), "Směna", "Příchod", "Odchod", "Pauza (min)", "Hodiny", "Poznámka"];
+    const header = [
+      "Datum",
+      "Zaměstnanec",
+      ...(includeType ? ["Úvazek"] : []),
+      "Směna",
+      "Příchod",
+      "Odchod",
+      "Pauza (min)",
+      "Hodiny",
+      "Poznámka",
+    ];
     const rows = list.map((r) => {
       const e = empMap.get(r.employee_id) as any;
       return [
@@ -1576,8 +2391,12 @@ function ExportTab() {
     return [header, ...rows];
   }
 
-  function exportAll() { downloadCsv(`dochazka-${month}.csv`, buildRows(filtered, true)); }
-  function exportHpp() { downloadCsv(`dochazka-HPP-${month}.csv`, buildRows(filteredHpp, false)); }
+  function exportAll() {
+    downloadCsv(`dochazka-${month}.csv`, buildRows(filtered, true));
+  }
+  function exportHpp() {
+    downloadCsv(`dochazka-HPP-${month}.csv`, buildRows(filteredHpp, false));
+  }
   function exportDpp() {
     downloadCsv(`dochazka-DPP-${month}.csv`, buildRows(filteredDpp, false));
   }
@@ -1625,12 +2444,16 @@ function ExportTab() {
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="p-4">
-          <Badge variant="outline" className="border-slate-300">Univerzální</Badge>
+          <Badge variant="outline" className="border-slate-300">
+            Univerzální
+          </Badge>
           <h3 className="mt-2 text-sm font-semibold">Všichni zaměstnanci</h3>
-          <p className="mt-1 text-xs text-muted-foreground">Jeden soubor se sloupcem typu úvazku.</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Jeden soubor se sloupcem typu úvazku.
+          </p>
           <div className="mt-3 text-sm text-muted-foreground">
-            Záznamů: <span className="font-semibold text-foreground">{filtered.length}</span> · Hodin:{" "}
-            <span className="font-semibold text-foreground">{totalHours.toFixed(1)}</span>
+            Záznamů: <span className="font-semibold text-foreground">{filtered.length}</span> ·
+            Hodin: <span className="font-semibold text-foreground">{totalHours.toFixed(1)}</span>
           </div>
           <Button className="mt-3 w-full" onClick={exportAll} disabled={filtered.length === 0}>
             <Download className="mr-2 h-4 w-4" /> Stáhnout CSV
@@ -1638,27 +2461,43 @@ function ExportTab() {
         </Card>
 
         <Card className="p-4">
-          <Badge variant="outline" className="border-sky-300 bg-sky-50 text-sky-700">HPP</Badge>
+          <Badge variant="outline" className="border-sky-300 bg-sky-50 text-sky-700">
+            HPP
+          </Badge>
           <h3 className="mt-2 text-sm font-semibold">Měsíční výkaz HPP</h3>
           <p className="mt-1 text-xs text-muted-foreground">Hlavní pracovní poměr.</p>
           <div className="mt-3 text-sm text-muted-foreground">
-            Záznamů: <span className="font-semibold text-foreground">{filteredHpp.length}</span> · Hodin:{" "}
-            <span className="font-semibold text-foreground">{totalHppHours.toFixed(1)}</span>
+            Záznamů: <span className="font-semibold text-foreground">{filteredHpp.length}</span> ·
+            Hodin: <span className="font-semibold text-foreground">{totalHppHours.toFixed(1)}</span>
           </div>
-          <Button className="mt-3 w-full" variant="outline" onClick={exportHpp} disabled={filteredHpp.length === 0}>
+          <Button
+            className="mt-3 w-full"
+            variant="outline"
+            onClick={exportHpp}
+            disabled={filteredHpp.length === 0}
+          >
             <Download className="mr-2 h-4 w-4" /> Stáhnout CSV
           </Button>
         </Card>
 
         <Card className="p-4">
-          <Badge variant="outline" className="border-violet-300 bg-violet-50 text-violet-700">DPP</Badge>
+          <Badge variant="outline" className="border-violet-300 bg-violet-50 text-violet-700">
+            DPP
+          </Badge>
           <h3 className="mt-2 text-sm font-semibold">Měsíční výkaz DPP</h3>
-          <p className="mt-1 text-xs text-muted-foreground">Docházka DPP se vyplňuje automaticky.</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Docházka DPP se vyplňuje automaticky.
+          </p>
           <div className="mt-3 text-sm text-muted-foreground">
-            Záznamů: <span className="font-semibold text-foreground">{filteredDpp.length}</span> · Hodin:{" "}
-            <span className="font-semibold text-foreground">{totalDppHours.toFixed(1)}</span>
+            Záznamů: <span className="font-semibold text-foreground">{filteredDpp.length}</span> ·
+            Hodin: <span className="font-semibold text-foreground">{totalDppHours.toFixed(1)}</span>
           </div>
-          <Button className="mt-3 w-full" variant="outline" onClick={exportDpp} disabled={filteredDpp.length === 0}>
+          <Button
+            className="mt-3 w-full"
+            variant="outline"
+            onClick={exportDpp}
+            disabled={filteredDpp.length === 0}
+          >
             <Download className="mr-2 h-4 w-4" /> Stáhnout CSV
           </Button>
         </Card>
@@ -1667,11 +2506,13 @@ function ExportTab() {
       <Card className="p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <Badge variant="outline" className="border-emerald-300 bg-emerald-50 text-emerald-700">XLSX</Badge>
+            <Badge variant="outline" className="border-emerald-300 bg-emerald-50 text-emerald-700">
+              XLSX
+            </Badge>
             <h3 className="mt-2 text-sm font-semibold">Měsíční přehled pro mzdovou účtárnu</h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Excel sešit se 4 listy: Souhrn (osoba / dny / hodiny / přesčas), Detail, HPP, DPP. Přesčas se počítá nad
-              {" "}{dailyThr.toFixed(1)} h/den dle nastavení.
+              Excel sešit se 4 listy: Souhrn (osoba / dny / hodiny / přesčas), Detail, HPP, DPP.
+              Přesčas se počítá nad {dailyThr.toFixed(1)} h/den dle nastavení.
             </p>
           </div>
           <Button onClick={exportXlsx} disabled={filtered.length === 0}>
@@ -1681,7 +2522,9 @@ function ExportTab() {
       </Card>
 
       <Card className="p-4">
-        <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-700">Zaměstnanec</Badge>
+        <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-700">
+          Zaměstnanec
+        </Badge>
         <h3 className="mt-2 text-sm font-semibold">Měsíční export pro konkrétního zaměstnance</h3>
         <p className="mt-1 text-xs text-muted-foreground">
           Vyberte zaměstnance a stáhněte jeho docházku za zvolený měsíc ({month}).
@@ -1690,20 +2533,28 @@ function ExportTab() {
           <div className="grid gap-2">
             <Label>Zaměstnanec</Label>
             <Select value={selectedEmpId} onValueChange={setSelectedEmpId}>
-              <SelectTrigger className="h-9 w-[260px]"><SelectValue placeholder="Vyberte zaměstnance" /></SelectTrigger>
+              <SelectTrigger className="h-9 w-[260px]">
+                <SelectValue placeholder="Vyberte zaměstnance" />
+              </SelectTrigger>
               <SelectContent>
                 {(employees ?? []).map((e) => (
-                  <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+                  <SelectItem key={e.id} value={e.id}>
+                    {e.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="text-sm text-muted-foreground">
-            Záznamů: <span className="font-semibold text-foreground">{filteredEmp.length}</span> · Hodin:{" "}
-            <span className="font-semibold text-foreground">{empTotalHours.toFixed(1)}</span>
+            Záznamů: <span className="font-semibold text-foreground">{filteredEmp.length}</span> ·
+            Hodin: <span className="font-semibold text-foreground">{empTotalHours.toFixed(1)}</span>
           </div>
           <div className="ml-auto flex gap-2">
-            <Button variant="outline" onClick={exportEmpCsv} disabled={!selectedEmpId || filteredEmp.length === 0}>
+            <Button
+              variant="outline"
+              onClick={exportEmpCsv}
+              disabled={!selectedEmpId || filteredEmp.length === 0}
+            >
               <Download className="mr-2 h-4 w-4" /> CSV
             </Button>
             <Button onClick={exportEmpXlsx} disabled={!selectedEmpId || filteredEmp.length === 0}>
@@ -1719,7 +2570,10 @@ function ExportTab() {
           <li>Export obsahuje BOM, otevře se správně v Excelu.</li>
           <li>Oddělovač je středník (cs-CZ standard).</li>
           <li>DPP docházku vyplňte hromadně přes „Auto-vyplnit měsíc“ na záložce Záznamy.</li>
-          <li>XLSX export obsahuje samostatný list „Souhrn“ pro mzdovou účtárnu se zaokrouhleními a přesčasy.</li>
+          <li>
+            XLSX export obsahuje samostatný list „Souhrn“ pro mzdovou účtárnu se zaokrouhleními a
+            přesčasy.
+          </li>
         </ul>
       </Card>
     </div>
@@ -1742,10 +2596,16 @@ function CalendarTab() {
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   function prev() {
-    if (month === 1) { setYear(year - 1); setMonth(12); } else setMonth(month - 1);
+    if (month === 1) {
+      setYear(year - 1);
+      setMonth(12);
+    } else setMonth(month - 1);
   }
   function next() {
-    if (month === 12) { setYear(year + 1); setMonth(1); } else setMonth(month + 1);
+    if (month === 12) {
+      setYear(year + 1);
+      setMonth(1);
+    } else setMonth(month + 1);
   }
 
   // Map[empId][day] = { state, hours }
@@ -1771,7 +2631,12 @@ function CalendarTab() {
         const day = d.getDate();
         const emp = m.get(a.employee_id);
         if (!emp) continue;
-        const stateName = a.status === "pending" ? "abs_pending" : a.status === "rejected" ? "abs_rejected" : `abs_${a.type}`;
+        const stateName =
+          a.status === "pending"
+            ? "abs_pending"
+            : a.status === "rejected"
+              ? "abs_rejected"
+              : `abs_${a.type}`;
         if (!emp.has(day)) emp.set(day, { state: stateName, type: a.type });
       }
     });
@@ -1800,15 +2665,22 @@ function CalendarTab() {
     return "•";
   }
 
-  const monthName = new Date(year, month - 1, 1).toLocaleDateString("cs-CZ", { month: "long", year: "numeric" });
+  const monthName = new Date(year, month - 1, 1).toLocaleDateString("cs-CZ", {
+    month: "long",
+    year: "numeric",
+  });
 
   return (
     <div className="mt-4 space-y-3">
       <Card className="p-3">
         <div className="flex items-center justify-between">
-          <Button size="icon" variant="outline" onClick={prev}><ChevronLeft className="h-4 w-4" /></Button>
+          <Button size="icon" variant="outline" onClick={prev}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
           <div className="text-sm font-semibold capitalize">{monthName}</div>
-          <Button size="icon" variant="outline" onClick={next}><ChevronRight className="h-4 w-4" /></Button>
+          <Button size="icon" variant="outline" onClick={next}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
       </Card>
 
@@ -1821,12 +2693,17 @@ function CalendarTab() {
           <table className="w-full border-collapse text-xs">
             <thead>
               <tr>
-                <th className="sticky left-0 z-10 bg-background p-2 text-left font-semibold">Zaměstnanec</th>
+                <th className="sticky left-0 z-10 bg-background p-2 text-left font-semibold">
+                  Zaměstnanec
+                </th>
                 {days.map((d) => {
                   const dow = new Date(year, month - 1, d).getDay();
                   const weekend = dow === 0 || dow === 6;
                   return (
-                    <th key={d} className={cn("w-7 p-1 text-center font-mono", weekend && "text-rose-400")}>
+                    <th
+                      key={d}
+                      className={cn("w-7 p-1 text-center font-mono", weekend && "text-rose-400")}
+                    >
                       {d}
                     </th>
                   );
@@ -1838,7 +2715,12 @@ function CalendarTab() {
                 <tr key={e.id} className="border-t">
                   <td className="sticky left-0 z-10 bg-background p-2">
                     <div className="flex items-center gap-2">
-                      <span className={cn("inline-flex h-6 w-6 items-center justify-center rounded-full border text-[10px] font-semibold", avatarClasses(e.avatar_color))}>
+                      <span
+                        className={cn(
+                          "inline-flex h-6 w-6 items-center justify-center rounded-full border text-[10px] font-semibold",
+                          avatarClasses(e.avatar_color),
+                        )}
+                      >
                         {initials(e.name)}
                       </span>
                       <span className="truncate font-medium">{e.name}</span>
@@ -1851,7 +2733,7 @@ function CalendarTab() {
                     return (
                       <td key={d} className="p-0.5">
                         <div
-                          title={cell?.hours ? `${cell.hours.toFixed(1)} h` : cell?.state ?? ""}
+                          title={cell?.hours ? `${cell.hours.toFixed(1)} h` : (cell?.state ?? "")}
                           className={cn(
                             "flex h-7 w-7 items-center justify-center rounded text-[10px] font-semibold",
                             cellClasses(cell?.state),
@@ -1899,8 +2781,14 @@ function GenerateTab() {
   const fetchE = useServerFn(listEmployees);
   const fetchS = useServerFn(listShifts);
   const fill = useServerFn(autoFillMonth);
-  const { data: employees } = useQuery({ queryKey: ["dochazka", "employees"], queryFn: () => fetchE({}) });
-  const { data: shifts } = useQuery({ queryKey: ["dochazka", "shifts"], queryFn: () => fetchS({}) });
+  const { data: employees } = useQuery({
+    queryKey: ["dochazka", "employees"],
+    queryFn: () => fetchE({}),
+  });
+  const { data: shifts } = useQuery({
+    queryKey: ["dochazka", "shifts"],
+    queryFn: () => fetchS({}),
+  });
 
   const today = new Date();
   const defaultMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
@@ -1922,12 +2810,21 @@ function GenerateTab() {
   const shs = shifts ?? [];
 
   async function submit() {
-    if (!form.employee_id) { toast.error("Vyberte zaměstnance"); return; }
+    if (!form.employee_id) {
+      toast.error("Vyberte zaměstnance");
+      return;
+    }
     const [y, m] = form.month.split("-").map(Number);
     const hpd = Number(form.hours_per_day);
     const brk = Number(form.break_minutes);
-    if (!Number.isFinite(hpd) || hpd <= 0) { toast.error("Zadejte počet hodin na den"); return; }
-    if (!Number.isFinite(brk) || brk < 0) { toast.error("Zadejte pauzu v minutách"); return; }
+    if (!Number.isFinite(hpd) || hpd <= 0) {
+      toast.error("Zadejte počet hodin na den");
+      return;
+    }
+    if (!Number.isFinite(brk) || brk < 0) {
+      toast.error("Zadejte pauzu v minutách");
+      return;
+    }
     setBusy(true);
     try {
       const r = await fill({
@@ -1947,7 +2844,9 @@ function GenerateTab() {
         toast.warning((r as any).message ?? "Nic k vygenerování");
         return;
       }
-      toast.success(`Vygenerováno ${r.created} dní · celkem ${r.total_hours} h${r.skipped ? ` (přeskočeno ${r.skipped})` : ""}`);
+      toast.success(
+        `Vygenerováno ${r.created} dní · celkem ${r.total_hours} h${r.skipped ? ` (přeskočeno ${r.skipped})` : ""}`,
+      );
       // Auto-download CSV
       if (r.csv) {
         const blob = new Blob([r.csv], { type: "text/csv;charset=utf-8" });
@@ -1971,14 +2870,17 @@ function GenerateTab() {
   return (
     <Card className="mt-4 max-w-3xl space-y-3 p-5">
       <div className="flex items-center gap-2">
-        <Badge variant="outline" className="border-sky-300 bg-sky-50 text-sky-700">HPP</Badge>
+        <Badge variant="outline" className="border-sky-300 bg-sky-50 text-sky-700">
+          HPP
+        </Badge>
         <h2 className="flex items-center gap-2 text-lg font-semibold">
           <Sparkles className="h-5 w-5 text-sky-500" />
           Generování docházky pro HPP
         </h2>
       </div>
       <p className="text-sm text-muted-foreground">
-        Hromadné vygenerování docházky za měsíc pro zaměstnance s hlavním pracovním poměrem. Výstup je CSV výkaz.
+        Hromadné vygenerování docházky za měsíc pro zaměstnance s hlavním pracovním poměrem. Výstup
+        je CSV výkaz.
       </p>
 
       <div className="grid gap-2">
@@ -1987,10 +2889,14 @@ function GenerateTab() {
           value={form.employee_id}
           onValueChange={(v) => setForm({ ...form, employee_id: v })}
         >
-          <SelectTrigger><SelectValue placeholder={emps.length ? "Vyberte…" : "Žádný zaměstnanec s HPP"} /></SelectTrigger>
+          <SelectTrigger>
+            <SelectValue placeholder={emps.length ? "Vyberte…" : "Žádný zaměstnanec s HPP"} />
+          </SelectTrigger>
           <SelectContent>
             {emps.map((e: any) => (
-              <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+              <SelectItem key={e.id} value={e.id}>
+                {e.name}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -1999,12 +2905,20 @@ function GenerateTab() {
       <div className="grid grid-cols-2 gap-3">
         <div className="grid gap-2">
           <Label>Měsíc</Label>
-          <Input type="month" value={form.month} onChange={(e) => setForm({ ...form, month: e.target.value })} />
+          <Input
+            type="month"
+            value={form.month}
+            onChange={(e) => setForm({ ...form, month: e.target.value })}
+          />
         </div>
         <div className="grid gap-2">
           <Label>Hodin na pracovní den</Label>
           <Input
-            type="number" inputMode="decimal" step="0.25" min="0.25" max="24"
+            type="number"
+            inputMode="decimal"
+            step="0.25"
+            min="0.25"
+            max="24"
             value={form.hours_per_day}
             onChange={(e) => setForm({ ...form, hours_per_day: e.target.value })}
           />
@@ -2022,17 +2936,30 @@ function GenerateTab() {
         </div>
         <div className="grid gap-2">
           <Label>Pauza (min)</Label>
-          <Input type="number" inputMode="numeric" min="0" max="240" value={form.break_minutes}
-            onChange={(e) => setForm({ ...form, break_minutes: e.target.value })} />
+          <Input
+            type="number"
+            inputMode="numeric"
+            min="0"
+            max="240"
+            value={form.break_minutes}
+            onChange={(e) => setForm({ ...form, break_minutes: e.target.value })}
+          />
         </div>
         <div className="grid gap-2">
           <Label>Směna</Label>
-          <Select value={form.shift_id || "__none"} onValueChange={(v) => setForm({ ...form, shift_id: v === "__none" ? "" : v })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+          <Select
+            value={form.shift_id || "__none"}
+            onValueChange={(v) => setForm({ ...form, shift_id: v === "__none" ? "" : v })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="__none">Bez směny</SelectItem>
               {shs.map((s: any) => (
-                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                <SelectItem key={s.id} value={s.id}>
+                  {s.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -2051,8 +2978,8 @@ function GenerateTab() {
           onChange={(e) => setForm({ ...form, overwrite: e.target.checked })}
         />
         <span>
-          <strong>Přepsat stávající koncepty</strong> — smaže rozpracované (neschválené)
-          záznamy v měsíci a vygeneruje znovu. Schválené záznamy zůstanou.
+          <strong>Přepsat stávající koncepty</strong> — smaže rozpracované (neschválené) záznamy v
+          měsíci a vygeneruje znovu. Schválené záznamy zůstanou.
         </span>
       </label>
 
@@ -2072,8 +2999,14 @@ function GenerateDppTab() {
   const fetchE = useServerFn(listEmployees);
   const fetchS = useServerFn(listShifts);
   const fill = useServerFn(autoFillMonth);
-  const { data: employees } = useQuery({ queryKey: ["dochazka", "employees"], queryFn: () => fetchE({}) });
-  const { data: shifts } = useQuery({ queryKey: ["dochazka", "shifts"], queryFn: () => fetchS({}) });
+  const { data: employees } = useQuery({
+    queryKey: ["dochazka", "employees"],
+    queryFn: () => fetchE({}),
+  });
+  const { data: shifts } = useQuery({
+    queryKey: ["dochazka", "shifts"],
+    queryFn: () => fetchS({}),
+  });
 
   const today = new Date();
   const defaultMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
@@ -2094,12 +3027,21 @@ function GenerateDppTab() {
   const shs = shifts ?? [];
 
   async function submit() {
-    if (!form.employee_id) { toast.error("Vyberte DPP zaměstnance"); return; }
+    if (!form.employee_id) {
+      toast.error("Vyberte DPP zaměstnance");
+      return;
+    }
     const [y, m] = form.month.split("-").map(Number);
     const total = Number(form.total_hours);
     const brk = Number(form.break_minutes);
-    if (!Number.isFinite(total) || total <= 0) { toast.error("Zadejte celkový počet hodin"); return; }
-    if (!Number.isFinite(brk) || brk < 0) { toast.error("Zadejte pauzu v minutách"); return; }
+    if (!Number.isFinite(total) || total <= 0) {
+      toast.error("Zadejte celkový počet hodin");
+      return;
+    }
+    if (!Number.isFinite(brk) || brk < 0) {
+      toast.error("Zadejte pauzu v minutách");
+      return;
+    }
     setBusy(true);
     try {
       const r = await fill({
@@ -2120,7 +3062,9 @@ function GenerateDppTab() {
         toast.warning((r as any).message ?? "Nic k vygenerování");
         return;
       }
-      toast.success(`Vygenerováno ${r.created} dní · celkem ${r.total_hours} h${r.skipped ? ` (přeskočeno ${r.skipped})` : ""}`);
+      toast.success(
+        `Vygenerováno ${r.created} dní · celkem ${r.total_hours} h${r.skipped ? ` (přeskočeno ${r.skipped})` : ""}`,
+      );
       if ((r as any).xlsx_base64) {
         const b64 = (r as any).xlsx_base64 as string;
         const bin = atob(b64);
@@ -2149,14 +3093,17 @@ function GenerateDppTab() {
   return (
     <Card className="mt-4 max-w-3xl space-y-3 p-5">
       <div className="flex items-center gap-2">
-        <Badge variant="outline" className="border-violet-300 bg-violet-50 text-violet-700">DPP</Badge>
+        <Badge variant="outline" className="border-violet-300 bg-violet-50 text-violet-700">
+          DPP
+        </Badge>
         <h2 className="flex items-center gap-2 text-lg font-semibold">
           <Sparkles className="h-5 w-5 text-violet-500" />
           Generování docházky pro DPP
         </h2>
       </div>
       <p className="text-sm text-muted-foreground">
-        Samostatný generátor pro zaměstnance s dohodou o provedení práce. Výstupem je XLSX docházkový list dle šablony.
+        Samostatný generátor pro zaměstnance s dohodou o provedení práce. Výstupem je XLSX
+        docházkový list dle šablony.
       </p>
 
       <div className="grid gap-2">
@@ -2165,10 +3112,14 @@ function GenerateDppTab() {
           value={form.employee_id}
           onValueChange={(v) => setForm({ ...form, employee_id: v })}
         >
-          <SelectTrigger><SelectValue placeholder={emps.length ? "Vyberte…" : "Žádný zaměstnanec s DPP"} /></SelectTrigger>
+          <SelectTrigger>
+            <SelectValue placeholder={emps.length ? "Vyberte…" : "Žádný zaměstnanec s DPP"} />
+          </SelectTrigger>
           <SelectContent>
             {emps.map((e: any) => (
-              <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+              <SelectItem key={e.id} value={e.id}>
+                {e.name}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -2177,12 +3128,20 @@ function GenerateDppTab() {
       <div className="grid grid-cols-2 gap-3">
         <div className="grid gap-2">
           <Label>Měsíc</Label>
-          <Input type="month" value={form.month} onChange={(e) => setForm({ ...form, month: e.target.value })} />
+          <Input
+            type="month"
+            value={form.month}
+            onChange={(e) => setForm({ ...form, month: e.target.value })}
+          />
         </div>
         <div className="grid gap-2">
           <Label>Celkem hodin za měsíc</Label>
           <Input
-            type="number" inputMode="decimal" step="0.25" min="0.25" max="744"
+            type="number"
+            inputMode="decimal"
+            step="0.25"
+            min="0.25"
+            max="744"
             value={form.total_hours}
             onChange={(e) => setForm({ ...form, total_hours: e.target.value })}
           />
@@ -2200,17 +3159,30 @@ function GenerateDppTab() {
         </div>
         <div className="grid gap-2">
           <Label>Pauza (min)</Label>
-          <Input type="number" inputMode="numeric" min="0" max="240" value={form.break_minutes}
-            onChange={(e) => setForm({ ...form, break_minutes: e.target.value })} />
+          <Input
+            type="number"
+            inputMode="numeric"
+            min="0"
+            max="240"
+            value={form.break_minutes}
+            onChange={(e) => setForm({ ...form, break_minutes: e.target.value })}
+          />
         </div>
         <div className="grid gap-2">
           <Label>Směna</Label>
-          <Select value={form.shift_id || "__none"} onValueChange={(v) => setForm({ ...form, shift_id: v === "__none" ? "" : v })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+          <Select
+            value={form.shift_id || "__none"}
+            onValueChange={(v) => setForm({ ...form, shift_id: v === "__none" ? "" : v })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="__none">Bez směny</SelectItem>
               {shs.map((s: any) => (
-                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                <SelectItem key={s.id} value={s.id}>
+                  {s.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -2218,7 +3190,8 @@ function GenerateDppTab() {
       </div>
 
       <p className="rounded bg-amber-50 p-2 text-xs text-amber-800">
-        Hodiny se rovnoměrně rozprostřou mezi pracovní dny (krok 0,25 h). Dny s existujícím záznamem nebo absencí budou přeskočeny.
+        Hodiny se rovnoměrně rozprostřou mezi pracovní dny (krok 0,25 h). Dny s existujícím záznamem
+        nebo absencí budou přeskočeny.
       </p>
 
       <label className="flex items-start gap-2 rounded bg-rose-50 p-2 text-xs text-rose-900">
@@ -2229,7 +3202,8 @@ function GenerateDppTab() {
           onChange={(e) => setForm({ ...form, overwrite: e.target.checked })}
         />
         <span>
-          <strong>Přepsat stávající koncepty</strong> — smaže rozpracované (neschválené) DPP záznamy v měsíci a vygeneruje znovu.
+          <strong>Přepsat stávající koncepty</strong> — smaže rozpracované (neschválené) DPP záznamy
+          v měsíci a vygeneruje znovu.
         </span>
       </label>
 
@@ -2248,11 +3222,19 @@ function FilesTab() {
   const fetchE = useServerFn(listEmployees);
   const listFiles = useServerFn(listEmployeeReports);
   const getUrl = useServerFn(getEmployeeReportUrl);
-  const { data: employees } = useQuery({ queryKey: ["dochazka", "employees"], queryFn: () => fetchE({}) });
+  const { data: employees } = useQuery({
+    queryKey: ["dochazka", "employees"],
+    queryFn: () => fetchE({}),
+  });
   const [employeeId, setEmployeeId] = useState<string>("");
-  const { data: files, refetch, isFetching } = useQuery({
+  const {
+    data: files,
+    refetch,
+    isFetching,
+  } = useQuery({
     queryKey: ["dochazka", "files", employeeId],
-    queryFn: () => (employeeId ? listFiles({ data: { employee_id: employeeId } }) : Promise.resolve([])),
+    queryFn: () =>
+      employeeId ? listFiles({ data: { employee_id: employeeId } }) : Promise.resolve([]),
     enabled: !!employeeId,
   });
 
@@ -2277,10 +3259,14 @@ function FilesTab() {
       <div className="grid gap-2">
         <Label>Zaměstnanec</Label>
         <Select value={employeeId} onValueChange={setEmployeeId}>
-          <SelectTrigger><SelectValue placeholder="Vyberte…" /></SelectTrigger>
+          <SelectTrigger>
+            <SelectValue placeholder="Vyberte…" />
+          </SelectTrigger>
           <SelectContent>
             {(employees ?? []).map((e: any) => (
-              <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+              <SelectItem key={e.id} value={e.id}>
+                {e.name}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -2318,7 +3304,9 @@ function FilesTab() {
         )
       ) : null}
       <div>
-        <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={!employeeId}>Obnovit</Button>
+        <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={!employeeId}>
+          Obnovit
+        </Button>
       </div>
     </Card>
   );

@@ -59,8 +59,8 @@ function TemplatesPage() {
           <code className="mx-1 rounded bg-muted px-1">{`{{email}}`}</code>,
           <code className="mx-1 rounded bg-muted px-1">{`{{company}}`}</code>,
           <code className="mx-1 rounded bg-muted px-1">{`{{ico}}`}</code>,
-          <code className="mx-1 rounded bg-muted px-1">{`{{address}}`}</code>.
-          První řádek je nadpis dokumentu.
+          <code className="mx-1 rounded bg-muted px-1">{`{{address}}`}</code>. První řádek je nadpis
+          dokumentu.
         </p>
 
         <div className="mt-6 space-y-6">

@@ -1,43 +1,43 @@
-import React from 'react'
-import { Head, Heading, Html, Preview, Section, Text } from '@react-email/components'
-import type { TemplateEntry } from './registry'
-import { Body, Container, Footer, Header, Hr, PrimaryButton, styles } from './_layout'
+import React from "react";
+import { Head, Heading, Html, Preview, Section, Text } from "@react-email/components";
+import type { TemplateEntry } from "./registry";
+import { Body, Container, Footer, Header, Hr, PrimaryButton, styles } from "./_layout";
 
 export interface TaskDigestItem {
-  title: string
-  priorityLabel?: string
-  dueDate?: string | null
-  overdue?: boolean
+  title: string;
+  priorityLabel?: string;
+  dueDate?: string | null;
+  overdue?: boolean;
 }
 
 export interface TaskDailyDigestProps {
-  assigneeName?: string
-  todayDate?: string
-  overdueTasks?: TaskDigestItem[]
-  todayTasks?: TaskDigestItem[]
-  upcomingTasks?: TaskDigestItem[]
-  actionUrl?: string
+  assigneeName?: string;
+  todayDate?: string;
+  overdueTasks?: TaskDigestItem[];
+  todayTasks?: TaskDigestItem[];
+  upcomingTasks?: TaskDigestItem[];
+  actionUrl?: string;
 }
 
 function row(t: TaskDigestItem) {
-  const bits = [t.priorityLabel, t.dueDate ? `termín ${t.dueDate}` : null].filter(Boolean)
+  const bits = [t.priorityLabel, t.dueDate ? `termín ${t.dueDate}` : null].filter(Boolean);
   return (
-    <Text style={styles.metaRow} key={t.title + (t.dueDate ?? '')}>
+    <Text style={styles.metaRow} key={t.title + (t.dueDate ?? "")}>
       • <strong>{t.title}</strong>
-      {bits.length ? <span style={{ color: '#64748b' }}> — {bits.join(' · ')}</span> : null}
+      {bits.length ? <span style={{ color: "#64748b" }}> — {bits.join(" · ")}</span> : null}
     </Text>
-  )
+  );
 }
 
 const Email = ({
-  assigneeName = '',
-  todayDate = '',
+  assigneeName = "",
+  todayDate = "",
   overdueTasks = [],
   todayTasks = [],
   upcomingTasks = [],
-  actionUrl = 'https://www.autoport-app.cz/ukoly',
+  actionUrl = "https://www.autoport-app.cz/ukoly",
 }: TaskDailyDigestProps) => {
-  const total = overdueTasks.length + todayTasks.length + upcomingTasks.length
+  const total = overdueTasks.length + todayTasks.length + upcomingTasks.length;
   return (
     <Html lang="cs" dir="ltr">
       <Head />
@@ -48,13 +48,13 @@ const Email = ({
           <Section style={styles.content}>
             <Heading style={styles.h1}>Souhrn úkolů na dnešek</Heading>
             <Text style={styles.lead}>
-              {assigneeName ? `Dobrý den ${assigneeName}, ` : 'Dobrý den, '}
-              tady je přehled vašich úkolů{todayDate ? ` (${todayDate})` : ''}.
+              {assigneeName ? `Dobrý den ${assigneeName}, ` : "Dobrý den, "}
+              tady je přehled vašich úkolů{todayDate ? ` (${todayDate})` : ""}.
             </Text>
 
             {overdueTasks.length > 0 && (
-              <Section style={{ ...styles.metaBox, background: '#fef2f2', borderColor: '#fecaca' }}>
-                <Text style={{ ...styles.metaRow, color: '#b91c1c', fontWeight: 700 }}>
+              <Section style={{ ...styles.metaBox, background: "#fef2f2", borderColor: "#fecaca" }}>
+                <Text style={{ ...styles.metaRow, color: "#b91c1c", fontWeight: 700 }}>
                   Po termínu ({overdueTasks.length})
                 </Text>
                 {overdueTasks.map(row)}
@@ -79,9 +79,7 @@ const Email = ({
               </Section>
             )}
 
-            {total === 0 && (
-              <Text style={styles.lead}>Žádné otevřené úkoly. Krásný den!</Text>
-            )}
+            {total === 0 && <Text style={styles.lead}>Žádné otevřené úkoly. Krásný den!</Text>}
 
             <Hr style={styles.hr} />
             <PrimaryButton href={actionUrl}>Otevřít úkoly</PrimaryButton>
@@ -90,8 +88,8 @@ const Email = ({
         </Container>
       </Body>
     </Html>
-  )
-}
+  );
+};
 
 export const template = {
   component: Email,
@@ -99,16 +97,18 @@ export const template = {
     const n =
       (d?.overdueTasks?.length ?? 0) +
       (d?.todayTasks?.length ?? 0) +
-      (d?.upcomingTasks?.length ?? 0)
-    return `Dnešní úkoly v Autoport App (${n})`
+      (d?.upcomingTasks?.length ?? 0);
+    return `Dnešní úkoly v Autoport App (${n})`;
   },
-  displayName: 'Denní souhrn úkolů',
+  displayName: "Denní souhrn úkolů",
   previewData: {
-    assigneeName: 'Jan Novák',
-    todayDate: '15. 6. 2026',
-    overdueTasks: [{ title: 'Nahrát fotky vozu', priorityLabel: 'Vysoká', dueDate: '14. 6.' }],
-    todayTasks: [{ title: 'Volat zákazníkovi', priorityLabel: 'Střední', dueDate: '15. 6.' }],
-    upcomingTasks: [{ title: 'Příprava výkupní smlouvy', priorityLabel: 'Nízká', dueDate: '18. 6.' }],
-    actionUrl: 'https://www.autoport-app.cz/ukoly',
+    assigneeName: "Jan Novák",
+    todayDate: "15. 6. 2026",
+    overdueTasks: [{ title: "Nahrát fotky vozu", priorityLabel: "Vysoká", dueDate: "14. 6." }],
+    todayTasks: [{ title: "Volat zákazníkovi", priorityLabel: "Střední", dueDate: "15. 6." }],
+    upcomingTasks: [
+      { title: "Příprava výkupní smlouvy", priorityLabel: "Nízká", dueDate: "18. 6." },
+    ],
+    actionUrl: "https://www.autoport-app.cz/ukoly",
   },
-} satisfies TemplateEntry
+} satisfies TemplateEntry;

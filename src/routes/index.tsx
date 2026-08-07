@@ -94,11 +94,7 @@ function IndexAuthPage() {
         {/* Brand header */}
         <div className="mb-6 flex flex-col items-center gap-3 text-center">
           <div className="rounded-2xl bg-white px-6 py-3 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.15)]">
-            <img
-              src={autoportLogo.url}
-              alt="Autoport APP"
-              className="h-10 w-auto object-contain"
-            />
+            <img src={autoportLogo.url} alt="Autoport APP" className="h-10 w-auto object-contain" />
           </div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
             Interní systém 2026

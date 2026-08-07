@@ -71,7 +71,8 @@ function AdminList() {
     if (filter === "done" && c.status !== "done" && c.status !== "closed") return false;
     if (q.trim()) {
       const term = q.toLowerCase();
-      const hay = `${c.first_name} ${c.last_name} ${c.insurer ?? ""} ${c.claim_number ?? ""} ${c.pu_number ?? ""}`.toLowerCase();
+      const hay =
+        `${c.first_name} ${c.last_name} ${c.insurer ?? ""} ${c.claim_number ?? ""} ${c.pu_number ?? ""}`.toLowerCase();
       if (!hay.includes(term)) return false;
     }
     return true;
@@ -192,22 +193,32 @@ function AdminList() {
                   className="flex flex-1 items-center gap-3 text-left"
                 >
                   <div className="flex-1 space-y-1">
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                    <span className="rounded bg-muted px-2 py-0.5 font-mono">
-                      {c.pu_number ?? "—"}
-                    </span>
-                    <span>{new Date(c.created_at).toLocaleDateString("cs-CZ")}</span>
-                    <span className={cn("ml-auto rounded-md border px-2 py-0.5 text-xs font-medium", meta.cls)}>
-                      {meta.label}
-                    </span>
-                  </div>
-                  <div className="font-semibold">{c.insurer || "—"}</div>
-                  <div className="text-sm text-muted-foreground">
-                    Majitel: <span className="text-foreground">{c.first_name} {c.last_name}</span>
-                  </div>
-                  {c.claim_number && (
-                    <div className="text-xs text-muted-foreground">Číslo škodní: {c.claim_number}</div>
-                  )}
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <span className="rounded bg-muted px-2 py-0.5 font-mono">
+                        {c.pu_number ?? "—"}
+                      </span>
+                      <span>{new Date(c.created_at).toLocaleDateString("cs-CZ")}</span>
+                      <span
+                        className={cn(
+                          "ml-auto rounded-md border px-2 py-0.5 text-xs font-medium",
+                          meta.cls,
+                        )}
+                      >
+                        {meta.label}
+                      </span>
+                    </div>
+                    <div className="font-semibold">{c.insurer || "—"}</div>
+                    <div className="text-sm text-muted-foreground">
+                      Majitel:{" "}
+                      <span className="text-foreground">
+                        {c.first_name} {c.last_name}
+                      </span>
+                    </div>
+                    {c.claim_number && (
+                      <div className="text-xs text-muted-foreground">
+                        Číslo škodní: {c.claim_number}
+                      </div>
+                    )}
                   </div>
                   <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary" />
                 </button>
@@ -248,9 +259,7 @@ function exportCsv(rows: Array<Record<string, unknown>>) {
     const s = v == null ? "" : String(v);
     return /[",;\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
-  const lines = [cols.join(";")].concat(
-    rows.map((r) => cols.map((c) => esc(r[c])).join(";")),
-  );
+  const lines = [cols.join(";")].concat(rows.map((r) => cols.map((c) => esc(r[c])).join(";")));
   const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -279,7 +288,9 @@ function StatCard({
         </p>
         <p className="mt-1 text-3xl font-bold">{value}</p>
       </div>
-      <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg", tint)}>{icon}</div>
+      <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg", tint)}>
+        {icon}
+      </div>
     </div>
   );
 }

@@ -81,10 +81,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Autoport APP — Interní systém" },
-      { name: "description", content: "Interní systém Autoport APP 2026 pro správu pojistných událostí, výkupů a schvalování." },
+      {
+        name: "description",
+        content:
+          "Interní systém Autoport APP 2026 pro správu pojistných událostí, výkupů a schvalování.",
+      },
       { name: "author", content: "Autoport" },
       { property: "og:title", content: "Autoport APP — Interní systém" },
-      { property: "og:description", content: "Interní systém Autoport APP 2026 pro správu pojistných událostí." },
+      {
+        property: "og:description",
+        content: "Interní systém Autoport APP 2026 pro správu pojistných událostí.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "theme-color", content: "#0f172a" },

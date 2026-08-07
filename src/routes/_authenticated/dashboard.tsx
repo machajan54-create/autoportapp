@@ -17,10 +17,23 @@ import {
   listAbsences as listDochazkaAbsences,
 } from "@/lib/dochazka.functions";
 import {
-  FolderOpen, AlertCircle, AlertTriangle, LogIn, Timer,
-  PalmtreeIcon, Trophy, Wrench, FileWarning, ArrowRight,
-  Briefcase, BookOpen, CheckSquare, Car as CarIcon, Fuel,
-  Plus, ClipboardList,
+  FolderOpen,
+  AlertCircle,
+  AlertTriangle,
+  LogIn,
+  Timer,
+  PalmtreeIcon,
+  Trophy,
+  Wrench,
+  FileWarning,
+  ArrowRight,
+  Briefcase,
+  BookOpen,
+  CheckSquare,
+  Car as CarIcon,
+  Fuel,
+  Plus,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -149,7 +162,8 @@ function DashboardPage() {
   }, [dochRecs, dochAbs, dochEmps, today]);
 
   const dppWarnings = useMemo(() => {
-    if (!dochEmps || !dochYearRecs) return [] as { id: string; name: string; hours: number; over: boolean }[];
+    if (!dochEmps || !dochYearRecs)
+      return [] as { id: string; name: string; hours: number; over: boolean }[];
     const dpp = (dochEmps as any[]).filter((e) => e.employment_type === "dpp" && e.active);
     const map = new Map<string, number>();
     for (const r of dochYearRecs as any[]) {
@@ -166,7 +180,9 @@ function DashboardPage() {
     const rows = (defects?.rows ?? []) as any[];
     return {
       open: rows.filter((d) => d.status === "new" || d.status === "in_progress").length,
-      critical: rows.filter((d) => d.priority === "critical" && d.status !== "closed" && d.status !== "resolved").length,
+      critical: rows.filter(
+        (d) => d.priority === "critical" && d.status !== "closed" && d.status !== "resolved",
+      ).length,
       resolved: rows.filter((d) => d.status === "resolved" || d.status === "closed").length,
     };
   }, [defects]);
@@ -184,7 +200,10 @@ function DashboardPage() {
       cur.value += v;
       byStage.set(d.stage, cur);
       if (d.stage !== "won" && d.stage !== "lost") pipeline += v;
-      if (d.stage === "won") { won += v; wonCount += 1; }
+      if (d.stage === "won") {
+        won += v;
+        wonCount += 1;
+      }
     }
     return { total: rows.length, byStage, pipeline, won, wonCount };
   }, [dealsData]);
@@ -193,7 +212,10 @@ function DashboardPage() {
     const vehicles = ((logVehiclesData as any)?.rows ?? []) as any[];
     const entries = ((logEntriesData as any)?.rows ?? []) as any[];
     const monthPrefix = today.slice(0, 7);
-    let km = 0, liters = 0, cost = 0, refuels = 0;
+    let km = 0,
+      liters = 0,
+      cost = 0,
+      refuels = 0;
     for (const e of entries) {
       if (!String(e.entry_date ?? "").startsWith(monthPrefix)) continue;
       km += Number(e.km_driven ?? 0);
@@ -205,7 +227,10 @@ function DashboardPage() {
     return {
       vehiclesActive: vehicles.filter((v) => v.active).length,
       vehiclesTotal: vehicles.length,
-      km, liters, cost, refuels,
+      km,
+      liters,
+      cost,
+      refuels,
     };
   }, [logVehiclesData, logEntriesData, today]);
 
@@ -217,7 +242,12 @@ function DashboardPage() {
     const pendingValue = pur
       .filter((p) => p.status === "pending")
       .reduce((s, p) => s + Number(p.amount ?? 0), 0);
-    return { pendingSuppliers: pSup, pendingPurchases: pPur, totalSuppliers: sup.length, pendingValue };
+    return {
+      pendingSuppliers: pSup,
+      pendingPurchases: pPur,
+      totalSuppliers: sup.length,
+      pendingValue,
+    };
   }, [suppliersData, purchasesData]);
 
   if (aLoad) {
@@ -232,8 +262,12 @@ function DashboardPage() {
     return <UserDashboard modules={(access?.modules ?? []) as string[]} />;
   }
 
-  const activeClaims = (claims ?? []).filter((c) => c.status !== "done" && c.status !== "closed").length;
-  const unpaidVat = (claims ?? []).filter((c) => !c.vat_paid && c.status !== "done" && c.status !== "closed").length;
+  const activeClaims = (claims ?? []).filter(
+    (c) => c.status !== "done" && c.status !== "closed",
+  ).length;
+  const unpaidVat = (claims ?? []).filter(
+    (c) => !c.vat_paid && c.status !== "done" && c.status !== "closed",
+  ).length;
   const totalClaims = claims?.length ?? 0;
 
   const vyk = vykupy ?? [];
@@ -341,9 +375,7 @@ function DashboardPage() {
 
               <div className="flex justify-between border-t border-slate-100 pt-2">
                 <span className="text-xs text-slate-500">Celkový počet zakázek</span>
-                <span className="text-xs font-bold tabular-nums text-slate-700">
-                  {totalClaims}
-                </span>
+                <span className="text-xs font-bold tabular-nums text-slate-700">{totalClaims}</span>
               </div>
             </div>
           </div>
@@ -376,11 +408,7 @@ function DashboardPage() {
 
           {/* Docházka */}
           <div className="flex flex-col space-y-4 md:col-span-8">
-            <SectionHeader
-              stripe="bg-amber-500"
-              title="Docházka & personálie"
-              to="/dochazka"
-            />
+            <SectionHeader stripe="bg-amber-500" title="Docházka & personálie" to="/dochazka" />
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2">
@@ -600,7 +628,9 @@ function DashboardPage() {
                   <p className="text-lg font-bold tabular-nums text-slate-800">
                     {logbookStats.liters.toFixed(1)} l
                   </p>
-                  <p className="text-[11px] tabular-nums text-slate-500">{formatKc(logbookStats.cost)}</p>
+                  <p className="text-[11px] tabular-nums text-slate-500">
+                    {formatKc(logbookStats.cost)}
+                  </p>
                 </div>
                 <div className="rounded-xl border border-slate-100 bg-slate-50 p-2.5">
                   <p className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1">
@@ -632,29 +662,35 @@ function DashboardPage() {
               >
                 <div className="flex items-center justify-between">
                   <div className="min-w-0">
-                    <p className={cn(
-                      "text-xs font-bold uppercase tracking-wide",
-                      approvalsStats.pendingPurchases + approvalsStats.pendingSuppliers > 0
-                        ? "text-purple-700"
-                        : "text-emerald-700",
-                    )}>
+                    <p
+                      className={cn(
+                        "text-xs font-bold uppercase tracking-wide",
+                        approvalsStats.pendingPurchases + approvalsStats.pendingSuppliers > 0
+                          ? "text-purple-700"
+                          : "text-emerald-700",
+                      )}
+                    >
                       Čeká na schválení
                     </p>
-                    <p className={cn(
-                      "text-3xl font-bold tabular-nums",
-                      approvalsStats.pendingPurchases + approvalsStats.pendingSuppliers > 0
-                        ? "text-purple-800"
-                        : "text-emerald-800",
-                    )}>
+                    <p
+                      className={cn(
+                        "text-3xl font-bold tabular-nums",
+                        approvalsStats.pendingPurchases + approvalsStats.pendingSuppliers > 0
+                          ? "text-purple-800"
+                          : "text-emerald-800",
+                      )}
+                    >
                       {approvalsStats.pendingPurchases + approvalsStats.pendingSuppliers}
                     </p>
                   </div>
-                  <div className={cn(
-                    "flex h-10 w-10 items-center justify-center rounded-full",
-                    approvalsStats.pendingPurchases + approvalsStats.pendingSuppliers > 0
-                      ? "bg-purple-100 text-purple-600"
-                      : "bg-emerald-100 text-emerald-600",
-                  )}>
+                  <div
+                    className={cn(
+                      "flex h-10 w-10 items-center justify-center rounded-full",
+                      approvalsStats.pendingPurchases + approvalsStats.pendingSuppliers > 0
+                        ? "bg-purple-100 text-purple-600"
+                        : "bg-emerald-100 text-emerald-600",
+                    )}
+                  >
                     <CheckSquare className="h-5 w-5" />
                   </div>
                 </div>
@@ -687,15 +723,7 @@ function DashboardPage() {
   );
 }
 
-function SectionHeader({
-  stripe,
-  title,
-  to,
-}: {
-  stripe: string;
-  title: string;
-  to: string;
-}) {
+function SectionHeader({ stripe, title, to }: { stripe: string; title: string; to: string }) {
   return (
     <div className="flex items-center justify-between">
       <h2 className="flex items-center gap-2 text-base font-bold text-slate-800">
@@ -756,12 +784,14 @@ function SideStat({
 }
 
 function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? "")
-    .join("") || "?";
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase() ?? "")
+      .join("") || "?"
+  );
 }
 
 function PricerLeaderboard({
@@ -807,7 +837,9 @@ function PricerLeaderboard({
           <span className="flex shrink-0 items-center gap-4 tabular-nums text-slate-500">
             <span>{r.deals} obchodů</span>
             <span className="hidden sm:inline">obrat {formatKc(r.obrat)}</span>
-            <span className={cn("font-semibold", r.marze >= 0 ? "text-emerald-600" : "text-rose-600")}>
+            <span
+              className={cn("font-semibold", r.marze >= 0 ? "text-emerald-600" : "text-rose-600")}
+            >
               {formatKc(r.marze)}
             </span>
           </span>
@@ -827,17 +859,83 @@ const MODULE_META: Record<
   string,
   { label: string; to: string; description: string; color: string; icon: any }
 > = {
-  claims: { label: "Pojistné zakázky", to: "/admin", description: "Spravujte pojistné události.", color: "bg-blue-500", icon: FolderOpen },
-  vykupy: { label: "Ojeté vozy", to: "/vykupy", description: "Výkupy a prodeje vozidel.", color: "bg-emerald-500", icon: CarIcon },
-  vykupy_external: { label: "Ojeté vozy – externí", to: "/vykupy", description: "Externí nacenění výkupů.", color: "bg-emerald-400", icon: CarIcon },
-  dochazka: { label: "Docházka", to: "/dochazka", description: "Vaše příchody, odchody a dovolené.", color: "bg-amber-500", icon: Timer },
-  defects: { label: "Závady", to: "/zavady", description: "Hlášení a řešení závad.", color: "bg-rose-500", icon: AlertTriangle },
-  deals: { label: "Obchodní případy", to: "/deals", description: "Příležitosti a obchody.", color: "bg-indigo-500", icon: Briefcase },
-  logbook: { label: "Kniha jízd", to: "/logbook", description: "Záznamy o jízdách a tankování.", color: "bg-cyan-500", icon: BookOpen },
-  tasks: { label: "Úkoly", to: "/ukoly", description: "Vaše úkoly a deadliny.", color: "bg-violet-500", icon: CheckSquare },
-  approvals: { label: "Schvalování", to: "/approvals", description: "Vaše žádosti a nákupy.", color: "bg-orange-500", icon: ClipboardList },
-  users: { label: "Uživatelé", to: "/admin/users", description: "Správa uživatelů.", color: "bg-slate-500", icon: Trophy },
-  dashboard: { label: "Dashboard", to: "/dashboard", description: "Přehled.", color: "bg-slate-500", icon: FolderOpen },
+  claims: {
+    label: "Pojistné zakázky",
+    to: "/admin",
+    description: "Spravujte pojistné události.",
+    color: "bg-blue-500",
+    icon: FolderOpen,
+  },
+  vykupy: {
+    label: "Ojeté vozy",
+    to: "/vykupy",
+    description: "Výkupy a prodeje vozidel.",
+    color: "bg-emerald-500",
+    icon: CarIcon,
+  },
+  vykupy_external: {
+    label: "Ojeté vozy – externí",
+    to: "/vykupy",
+    description: "Externí nacenění výkupů.",
+    color: "bg-emerald-400",
+    icon: CarIcon,
+  },
+  dochazka: {
+    label: "Docházka",
+    to: "/dochazka",
+    description: "Vaše příchody, odchody a dovolené.",
+    color: "bg-amber-500",
+    icon: Timer,
+  },
+  defects: {
+    label: "Závady",
+    to: "/zavady",
+    description: "Hlášení a řešení závad.",
+    color: "bg-rose-500",
+    icon: AlertTriangle,
+  },
+  deals: {
+    label: "Obchodní případy",
+    to: "/deals",
+    description: "Příležitosti a obchody.",
+    color: "bg-indigo-500",
+    icon: Briefcase,
+  },
+  logbook: {
+    label: "Kniha jízd",
+    to: "/logbook",
+    description: "Záznamy o jízdách a tankování.",
+    color: "bg-cyan-500",
+    icon: BookOpen,
+  },
+  tasks: {
+    label: "Úkoly",
+    to: "/ukoly",
+    description: "Vaše úkoly a deadliny.",
+    color: "bg-violet-500",
+    icon: CheckSquare,
+  },
+  approvals: {
+    label: "Schvalování",
+    to: "/approvals",
+    description: "Vaše žádosti a nákupy.",
+    color: "bg-orange-500",
+    icon: ClipboardList,
+  },
+  users: {
+    label: "Uživatelé",
+    to: "/admin/users",
+    description: "Správa uživatelů.",
+    color: "bg-slate-500",
+    icon: Trophy,
+  },
+  dashboard: {
+    label: "Dashboard",
+    to: "/dashboard",
+    description: "Přehled.",
+    color: "bg-slate-500",
+    icon: FolderOpen,
+  },
 };
 
 function UserDashboard({ modules }: { modules: string[] }) {
@@ -928,9 +1026,7 @@ function UserDashboard({ modules }: { modules: string[] }) {
     <AdminShell>
       <div className="mx-auto max-w-5xl p-4 md:p-8">
         <header>
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            Vítejte zpět
-          </p>
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Vítejte zpět</p>
           <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-slate-900 md:text-3xl">
             {fullName || email || "Můj přehled"}
           </h1>
@@ -996,9 +1092,7 @@ function UserDashboard({ modules }: { modules: string[] }) {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <h3 className="truncate text-base font-bold text-slate-900">
-                        {meta.label}
-                      </h3>
+                      <h3 className="truncate text-base font-bold text-slate-900">{meta.label}</h3>
                       <p className="mt-1 text-xs text-slate-500">{meta.description}</p>
                     </div>
                     <div
@@ -1038,9 +1132,7 @@ function UserStat({
       <div className={cn("text-lg font-bold tabular-nums text-slate-900", valueClassName)}>
         {value}
       </div>
-      <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
-        {label}
-      </div>
+      <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400">{label}</div>
     </div>
   );
 }

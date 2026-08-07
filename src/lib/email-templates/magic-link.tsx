@@ -1,4 +1,4 @@
-import * as React from 'react'
+import * as React from "react";
 
 import {
   Body,
@@ -9,17 +9,14 @@ import {
   Html,
   Preview,
   Text,
-} from '@react-email/components'
+} from "@react-email/components";
 
 interface MagicLinkEmailProps {
-  siteName: string
-  confirmationUrl: string
+  siteName: string;
+  confirmationUrl: string;
 }
 
-export const MagicLinkEmail = ({
-  siteName,
-  confirmationUrl,
-}: MagicLinkEmailProps) => (
+export const MagicLinkEmail = ({ siteName, confirmationUrl }: MagicLinkEmailProps) => (
   <Html lang="cs" dir="ltr">
     <Head />
     <Preview>Přihlašovací odkaz pro {siteName}</Preview>
@@ -27,42 +24,39 @@ export const MagicLinkEmail = ({
       <Container style={container}>
         <Heading style={h1}>Přihlašovací odkaz</Heading>
         <Text style={text}>
-          Pro přihlášení do {siteName} klikněte na tlačítko níže. Odkaz brzy
-          vyprší.
+          Pro přihlášení do {siteName} klikněte na tlačítko níže. Odkaz brzy vyprší.
         </Text>
         <Button style={button} href={confirmationUrl}>
           Přihlásit se
         </Button>
-        <Text style={footer}>
-          Pokud jste o odkaz nežádali, tento e-mail můžete ignorovat.
-        </Text>
+        <Text style={footer}>Pokud jste o odkaz nežádali, tento e-mail můžete ignorovat.</Text>
       </Container>
     </Body>
   </Html>
-)
+);
 
-export default MagicLinkEmail
+export default MagicLinkEmail;
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
+const main = { backgroundColor: "#ffffff", fontFamily: "Arial, sans-serif" };
+const container = { padding: "20px 25px" };
 const h1 = {
-  fontSize: '22px',
-  fontWeight: 'bold' as const,
-  color: '#000000',
-  margin: '0 0 20px',
-}
+  fontSize: "22px",
+  fontWeight: "bold" as const,
+  color: "#000000",
+  margin: "0 0 20px",
+};
 const text = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
-}
+  fontSize: "14px",
+  color: "#55575d",
+  lineHeight: "1.5",
+  margin: "0 0 25px",
+};
 const button = {
-  backgroundColor: '#000000',
-  color: '#ffffff',
-  fontSize: '14px',
-  borderRadius: '8px',
-  padding: '12px 20px',
-  textDecoration: 'none',
-}
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
+  backgroundColor: "#000000",
+  color: "#ffffff",
+  fontSize: "14px",
+  borderRadius: "8px",
+  padding: "12px 20px",
+  textDecoration: "none",
+};
+const footer = { fontSize: "12px", color: "#999999", margin: "30px 0 0" };
