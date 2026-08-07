@@ -43,6 +43,8 @@ import {
   listBackupRuns,
   listBackupFiles,
   restoreBackupFromDrive,
+  listStorageBackupFiles,
+  restoreStorageFromDrive,
 } from "@/lib/google-drive.functions";
 import {
   getGithubSnapshotStatus,
@@ -215,6 +217,42 @@ function GoogleDrivePage() {
 
   const listFiles = useServerFn(listBackupFiles);
   const restoreFn = useServerFn(restoreBackupFromDrive);
+  const listStorageFiles = useServerFn(listStorageBackupFiles);
+  const restoreStorageFn = useServerFn(restoreStorageFromDrive);
+
+  const storageFiles = useQuery({
+    queryKey: ["gdrive-storage-files"],
+    queryFn: () => listStorageFiles({}),
+    enabled: !!status.data?.connected && !!status.data?.settings?.drive_folder_id,
+  });
+
+  const [selectedStorageFile, setSelectedStorageFile] = useState<null | {
+    id: string;
+    name: string;
+  }>(null);
+  const [storageConfirm, setStorageConfirm] = useState("");
+  const [storageOverwrite, setStorageOverwrite] = useState(false);
+
+  const restoreStorageM = useMutation({
+    mutationFn: (input: {
+      fileId: string;
+      fileName: string;
+      overwrite: boolean;
+      confirm: string;
+    }) => restoreStorageFn({ data: input }),
+    onSuccess: (data: any) => {
+      if (data.ok) {
+        toast.success(
+          `Soubory obnoveny – bucket ${data.bucket}: ${data.restored} souborů (přeskočeno ${data.skipped}).`,
+        );
+      } else {
+        toast.error(`Obnova souborů dokončena s chybami (${data.errors?.length ?? 0}).`);
+      }
+      setSelectedStorageFile(null);
+      setStorageConfirm("");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Obnova souborů selhala"),
+  });
 
   const files = useQuery({
     queryKey: ["gdrive-backup-files"],
@@ -822,6 +860,117 @@ function GoogleDrivePage() {
             ) : (
               <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
                 Ve vybrané složce nejsou žádné zálohy Autoportu.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Obnova souborů (storage) */}
+        <Card className="border-destructive/40">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <RotateCcw className="h-5 w-5" />
+              Obnova souborů (fotky, PDF)
+            </CardTitle>
+            <CardDescription>
+              Obnoví soubory z archivu <code>autoport-storage-&lt;bucket&gt;.tar.gz</code> zpět do
+              úložiště aplikace. Bez přepisu se existující soubory přeskočí.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={storageOverwrite}
+                  onChange={(e) => setStorageOverwrite(e.target.checked)}
+                />
+                Přepsat existující soubory
+              </label>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => storageFiles.refetch()}
+                disabled={storageFiles.isFetching}
+              >
+                <RefreshCw className={`h-4 w-4 ${storageFiles.isFetching ? "animate-spin" : ""}`} />
+              </Button>
+            </div>
+
+            {storageFiles.isLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Načítám archivy souborů…
+              </div>
+            ) : storageFiles.data?.files?.length ? (
+              <ul className="divide-y rounded-md border">
+                {storageFiles.data.files.map((f) => (
+                  <li key={f.id} className="flex flex-wrap items-center gap-3 p-3 text-sm">
+                    <HardDrive className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">{f.name}</span>
+                    {f.modifiedTime && (
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(f.modifiedTime).toLocaleString("cs-CZ")}
+                      </span>
+                    )}
+                    {f.size && (
+                      <span className="text-xs text-muted-foreground">{formatBytes(f.size)}</span>
+                    )}
+                    <div className="ml-auto">
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => {
+                          setSelectedStorageFile({ id: f.id, name: f.name });
+                          setStorageConfirm("");
+                        }}
+                        disabled={restoreStorageM.isPending}
+                      >
+                        <Download className="h-4 w-4" /> Obnovit soubory
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
+                Zatím žádné archivy souborů. Spusťte zálohu – vytvoří se automaticky.
+              </div>
+            )}
+
+            {selectedStorageFile && (
+              <div className="space-y-2 rounded-md border border-destructive/50 p-3">
+                <p className="text-sm">
+                  Obnovit soubory z <strong>{selectedStorageFile.name}</strong>? Napište
+                  <strong> OBNOVIT</strong> pro potvrzení.
+                </p>
+                <Input
+                  value={storageConfirm}
+                  onChange={(e) => setStorageConfirm(e.target.value)}
+                  placeholder="OBNOVIT"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    disabled={storageConfirm !== "OBNOVIT" || restoreStorageM.isPending}
+                    onClick={() =>
+                      restoreStorageM.mutate({
+                        fileId: selectedStorageFile.id,
+                        fileName: selectedStorageFile.name,
+                        overwrite: storageOverwrite,
+                        confirm: storageConfirm,
+                      })
+                    }
+                  >
+                    {restoreStorageM.isPending && (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    )}
+                    Obnovit
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedStorageFile(null)}>
+                    Zrušit
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>
