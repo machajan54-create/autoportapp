@@ -341,9 +341,8 @@ export const listBackupFiles = createServerFn({ method: "GET" })
       throw new Error("Není zvolena složka pro zálohy.");
     }
 
-    const q = encodeURIComponent(
-      `'${settings.drive_folder_id}' in parents and trashed = false and name contains 'autoport-backup'`,
-    );
+    // Zálohy jsou nově v datovaných podsložkách, proto hledáme podle názvu souboru.
+    const q = encodeURIComponent(`trashed = false and name contains 'autoport-backup'`);
     const res = await driveFetch(
       `/drive/v3/files?q=${q}&orderBy=modifiedTime desc&pageSize=50&fields=files(id,name,size,modifiedTime,webViewLink)`,
     );
@@ -547,9 +546,7 @@ export const listStorageBackupFiles = createServerFn({ method: "GET" })
       .maybeSingle();
     if (!settings?.drive_folder_id) throw new Error("Není zvolena složka pro zálohy.");
 
-    const q = encodeURIComponent(
-      `'${settings.drive_folder_id}' in parents and trashed = false and name contains 'autoport-storage-'`,
-    );
+    const q = encodeURIComponent(`trashed = false and name contains 'autoport-storage-'`);
     const res = await driveFetch(
       `/drive/v3/files?q=${q}&orderBy=modifiedTime desc&pageSize=100&fields=files(id,name,size,modifiedTime,webViewLink)`,
     );
