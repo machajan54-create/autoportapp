@@ -2,7 +2,7 @@
  * Jádro záloh a obnovy na Google Disk (server-only).
  * Používá se ze server funkcí i z cron endpointu.
  */
-import { BACKUP_TABLES, BACKUP_BUCKETS } from "@/lib/backup-tables";
+import { BACKUP_TABLES, BACKUP_BUCKETS, MIRRORED_BUCKETS } from "@/lib/backup-tables";
 
 const GATEWAY_BASE = "https://connector-gateway.lovable.dev/google_drive";
 
@@ -32,15 +32,24 @@ export async function uploadGzipToDrive(
   name: string,
   content: Buffer,
 ): Promise<{ id: string; name: string; webViewLink?: string; size?: number }> {
+  return uploadBinaryToDrive(folderId, name, content, "application/gzip");
+}
+
+export async function uploadBinaryToDrive(
+  folderId: string,
+  name: string,
+  content: Buffer,
+  mimeType = "application/octet-stream",
+): Promise<{ id: string; name: string; webViewLink?: string; size?: number }> {
   const { lovableKey, connKey } = requireDriveEnv();
   const boundary = `-------lovable${Date.now()}`;
-  const metadata = { name, parents: [folderId], mimeType: "application/gzip" };
+  const metadata = { name, parents: [folderId], mimeType };
   const preamble =
     `--${boundary}\r\n` +
     `Content-Type: application/json; charset=UTF-8\r\n\r\n` +
     `${JSON.stringify(metadata)}\r\n` +
     `--${boundary}\r\n` +
-    `Content-Type: application/gzip\r\n` +
+    `Content-Type: ${mimeType}\r\n` +
     `Content-Transfer-Encoding: binary\r\n\r\n`;
   const closing = `\r\n--${boundary}--`;
   const body = Buffer.concat([Buffer.from(preamble, "utf8"), content, Buffer.from(closing, "utf8")]);
@@ -61,6 +70,72 @@ export async function uploadGzipToDrive(
   if (!res.ok) throw new Error(`Nahrání zálohy selhalo (${res.status}): ${text.slice(0, 300)}`);
   const parsed = JSON.parse(text);
   return { ...parsed, size: parsed.size ? Number(parsed.size) : undefined };
+}
+
+// ---------------- SLOŽKY NA DISKU ----------------
+
+/** Najde nebo vytvoří podsložku daného jména. Výsledky se cachují v rámci jednoho běhu. */
+export async function ensureFolder(
+  parentId: string,
+  name: string,
+  cache?: Map<string, string>,
+): Promise<string> {
+  const key = `${parentId}/${name}`;
+  const cached = cache?.get(key);
+  if (cached) return cached;
+
+  const safe = name.replace(/'/g, "\\'");
+  const q = encodeURIComponent(
+    `'${parentId}' in parents and trashed = false and mimeType = 'application/vnd.google-apps.folder' and name = '${safe}'`,
+  );
+  const found = await driveFetchCore(`/drive/v3/files?q=${q}&pageSize=1&fields=files(id,name)`);
+  let id: string | undefined = found?.files?.[0]?.id;
+  if (!id) {
+    const created = await driveFetchCore(`/drive/v3/files?fields=id,name`, {
+      method: "POST",
+      body: JSON.stringify({
+        name,
+        parents: [parentId],
+        mimeType: "application/vnd.google-apps.folder",
+      }),
+    });
+    id = created.id as string;
+  }
+  cache?.set(key, id!);
+  return id!;
+}
+
+/** Vytvoří (nebo najde) celou cestu složek, např. "vykup-photos/2026/03". */
+export async function ensureFolderPath(
+  rootId: string,
+  segments: string[],
+  cache?: Map<string, string>,
+): Promise<string> {
+  let current = rootId;
+  for (const seg of segments) {
+    if (!seg) continue;
+    current = await ensureFolder(current, seg, cache);
+  }
+  return current;
+}
+
+function guessMime(path: string): string {
+  const ext = path.toLowerCase().split(".").pop() ?? "";
+  const map: Record<string, string> = {
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    webp: "image/webp",
+    gif: "image/gif",
+    heic: "image/heic",
+    pdf: "application/pdf",
+    csv: "text/csv",
+    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    json: "application/json",
+    txt: "text/plain",
+    mp4: "video/mp4",
+  };
+  return map[ext] ?? "application/octet-stream";
 }
 
 export async function downloadDriveFileCore(fileId: string): Promise<Buffer> {
