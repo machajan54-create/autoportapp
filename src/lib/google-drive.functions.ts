@@ -541,6 +541,10 @@ export const runBackupNow = createServerFn({ method: "POST" })
 
       const uploaded = await uploadJsonGzipToDrive(settings.drive_folder_id, filename, gz);
 
+      // Záloha storage bucketů (fotky, PDF, soubory)
+      const storage = await backupStorageBuckets(supabaseAdmin, settings.drive_folder_id);
+      const totalSize = (uploaded.size ?? gz.byteLength) + storage.sizeBytes;
+
       const duration = Date.now() - startedAt;
       await context.supabase
         .from("backup_runs")
@@ -548,7 +552,7 @@ export const runBackupNow = createServerFn({ method: "POST" })
           status: "success",
           finished_at: new Date().toISOString(),
           duration_ms: duration,
-          size_bytes: uploaded.size ?? gz.byteLength,
+          size_bytes: totalSize,
           tables_count: tablesCount,
           rows_count: totalRows,
           drive_file_id: uploaded.id,
@@ -568,7 +572,9 @@ export const runBackupNow = createServerFn({ method: "POST" })
         durationMs: duration,
         tables: tablesCount,
         rows: totalRows,
-        sizeBytes: uploaded.size ?? gz.byteLength,
+        sizeBytes: totalSize,
+        storageBuckets: storage.bucketsCount,
+        storageFiles: storage.filesCount,
         driveFileName: uploaded.name,
         driveWebViewLink: uploaded.webViewLink ?? null,
       };
