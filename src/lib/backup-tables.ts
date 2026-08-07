@@ -56,3 +56,13 @@ export const BACKUP_BUCKETS = [
   "task-attachments",
   "claim-files",
 ] as const;
+
+/** Buckety, které se na Disk zrcadlí 1:1 (soubor po souboru do složek). */
+export const MIRRORED_BUCKETS = [
+  "defect-photos",
+  "logbook-receipts",
+  "slides",
+  "vykup-photos",
+  "task-attachments",
+  "claim-files",
+] as const;
