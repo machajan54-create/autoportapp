@@ -474,3 +474,60 @@ export const restoreBackupFromDrive = createServerFn({ method: "POST" })
       throw new Error(msg);
     }
   });
+
+// ---------------- OBNOVA STORAGE SOUBORŮ ----------------
+
+export const listStorageBackupFiles = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await requireAdmin(context);
+    const { data: settings } = await context.supabase
+      .from("backup_settings")
+      .select("drive_folder_id, drive_folder_name")
+      .eq("singleton", true)
+      .maybeSingle();
+    if (!settings?.drive_folder_id) throw new Error("Není zvolena složka pro zálohy.");
+
+    const q = encodeURIComponent(
+      `'${settings.drive_folder_id}' in parents and trashed = false and name contains 'autoport-storage-'`,
+    );
+    const res = await driveFetch(
+      `/drive/v3/files?q=${q}&orderBy=modifiedTime desc&pageSize=100&fields=files(id,name,size,modifiedTime,webViewLink)`,
+    );
+    return {
+      folder: settings.drive_folder_name ?? null,
+      files: (res?.files ?? []) as Array<{
+        id: string;
+        name: string;
+        size?: string;
+        modifiedTime?: string;
+        webViewLink?: string;
+      }>,
+    };
+  });
+
+export const restoreStorageFromDrive = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { fileId: string; fileName: string; overwrite?: boolean; confirm: string }) =>
+    z
+      .object({
+        fileId: z.string().min(1),
+        fileName: z.string().min(1),
+        overwrite: z.boolean().optional(),
+        confirm: z.string(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    await requireAdmin(context);
+    if (data.confirm !== "OBNOVIT") {
+      throw new Error("Pro obnovu je nutné potvrdit napsáním slova OBNOVIT.");
+    }
+    const { restoreStorageArchive } = await import("@/lib/backup-core.server");
+    const result = await restoreStorageArchive({
+      fileId: data.fileId,
+      fileName: data.fileName,
+      overwrite: data.overwrite ?? false,
+    });
+    return { ok: result.errors.length === 0, ...result };
+  });
