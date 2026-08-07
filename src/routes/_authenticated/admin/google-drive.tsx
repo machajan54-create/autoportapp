@@ -1220,6 +1220,8 @@ function GoogleDrivePage() {
         </Card>
       </div>
 
+      <BackupHistoryCard />
+
       <AlertDialog
         open={!!selectedFile}
         onOpenChange={(open) => {
