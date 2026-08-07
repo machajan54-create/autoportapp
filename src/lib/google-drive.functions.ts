@@ -378,6 +378,17 @@ async function downloadDriveFile(fileId: string): Promise<Buffer> {
   return Buffer.from(ab);
 }
 
+export const validateBackupArchive = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { fileId: string; fileName: string }) =>
+    z.object({ fileId: z.string().min(1), fileName: z.string().min(1) }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    await requireAdmin(context);
+    const { validateArchive } = await import("@/lib/backup-core.server");
+    return await validateArchive({ fileId: data.fileId, fileName: data.fileName });
+  });
+
 export const restoreBackupFromDrive = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { fileId: string; fileName?: string; confirm: string }) =>
@@ -394,6 +405,18 @@ export const restoreBackupFromDrive = createServerFn({ method: "POST" })
 
     if (data.confirm !== "OBNOVIT") {
       throw new Error("Pro obnovu je nutné potvrdit napsáním slova OBNOVIT.");
+    }
+
+    // Validace archivu před jakýmkoli zápisem
+    if (data.fileName) {
+      const { validateArchive } = await import("@/lib/backup-core.server");
+      const check = await validateArchive({ fileId: data.fileId, fileName: data.fileName });
+      if (!check.ok) {
+        throw new Error(`Archiv neprošel kontrolou: ${check.errors.join(" ")}`);
+      }
+      if (check.type !== "database") {
+        throw new Error("Zvolený archiv není zálohou databáze.");
+      }
     }
 
     const startedAt = Date.now();
@@ -559,6 +582,12 @@ export const restoreStorageFromDrive = createServerFn({ method: "POST" })
     if (data.confirm !== "OBNOVIT") {
       throw new Error("Pro obnovu je nutné potvrdit napsáním slova OBNOVIT.");
     }
+
+    const { validateArchive } = await import("@/lib/backup-core.server");
+    const check = await validateArchive({ fileId: data.fileId, fileName: data.fileName });
+    if (!check.ok) throw new Error(`Archiv neprošel kontrolou: ${check.errors.join(" ")}`);
+    if (check.type !== "storage") throw new Error("Zvolený archiv není zálohou souborů (bucketu).");
+
     const startedAt = Date.now();
     const { data: run } = await context.supabase
       .from("backup_runs")

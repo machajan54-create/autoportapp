@@ -45,6 +45,7 @@ import {
   restoreBackupFromDrive,
   listStorageBackupFiles,
   restoreStorageFromDrive,
+  validateBackupArchive,
 } from "@/lib/google-drive.functions";
 import {
   getGithubSnapshotStatus,
@@ -236,6 +237,18 @@ function GoogleDrivePage() {
   const restoreFn = useServerFn(restoreBackupFromDrive);
   const listStorageFiles = useServerFn(listStorageBackupFiles);
   const restoreStorageFn = useServerFn(restoreStorageFromDrive);
+  const validateFn = useServerFn(validateBackupArchive);
+
+  const [validation, setValidation] = useState<null | { fileId: string; result: any }>(null);
+  const validateM = useMutation({
+    mutationFn: (input: { fileId: string; fileName: string }) => validateFn({ data: input }),
+    onSuccess: (result: any, vars) => {
+      setValidation({ fileId: vars.fileId, result });
+      if (result.ok) toast.success("Kontrola archivu proběhla v pořádku (bez zápisu).");
+      else toast.error("Archiv neprošel kontrolou – obnova by selhala.");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Kontrola archivu selhala"),
+  });
 
   const storageFiles = useQuery({
     queryKey: ["gdrive-storage-files"],
@@ -856,6 +869,17 @@ function GoogleDrivePage() {
                       )}
                       <Button
                         size="sm"
+                        variant="outline"
+                        onClick={() => validateM.mutate({ fileId: f.id, fileName: f.name })}
+                        disabled={validateM.isPending}
+                      >
+                        {validateM.isPending && validateM.variables?.fileId === f.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : null}
+                        Zkontrolovat (dry-run)
+                      </Button>
+                      <Button
+                        size="sm"
                         variant="destructive"
                         onClick={() => {
                           setSelectedFile({
@@ -871,6 +895,11 @@ function GoogleDrivePage() {
                         <Download className="h-4 w-4" /> Obnovit
                       </Button>
                     </div>
+                    {validation?.fileId === f.id && (
+                      <div className="w-full">
+                        <ValidationReport result={validation.result} />
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -935,6 +964,18 @@ function GoogleDrivePage() {
                     <div className="ml-auto">
                       <Button
                         size="sm"
+                        variant="outline"
+                        className="mr-2"
+                        onClick={() => validateM.mutate({ fileId: f.id, fileName: f.name })}
+                        disabled={validateM.isPending}
+                      >
+                        {validateM.isPending && validateM.variables?.fileId === f.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : null}
+                        Zkontrolovat (dry-run)
+                      </Button>
+                      <Button
+                        size="sm"
                         variant="destructive"
                         onClick={() => {
                           setSelectedStorageFile({ id: f.id, name: f.name });
@@ -945,6 +986,11 @@ function GoogleDrivePage() {
                         <Download className="h-4 w-4" /> Obnovit soubory
                       </Button>
                     </div>
+                    {validation?.fileId === f.id && (
+                      <div className="w-full">
+                        <ValidationReport result={validation.result} />
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -1318,6 +1364,52 @@ function GoogleDrivePage() {
         </AlertDialogContent>
       </AlertDialog>
     </AdminShell>
+  );
+}
+
+function ValidationReport({ result }: { result: any }) {
+  if (!result) return null;
+  const ok = !!result.ok;
+  return (
+    <div
+      className={`mt-2 space-y-1 rounded-md border p-3 text-xs ${
+        ok ? "border-emerald-500/40 bg-emerald-500/5" : "border-destructive/50 bg-destructive/5"
+      }`}
+    >
+      <p className="font-medium">
+        {ok ? "Archiv je v pořádku (dry-run, nic se nezapsalo)" : "Archiv neprošel kontrolou"}
+        {" · "}
+        {result.type === "storage"
+          ? `soubory${result.bucket ? ` – bucket ${result.bucket}` : ""}`
+          : result.type === "database"
+            ? "databáze"
+            : "neznámý typ"}
+      </p>
+      {result.type === "storage" ? (
+        <p className="text-muted-foreground">
+          Souborů v archivu: {result.filesCount} · velikost {formatBytes(result.totalBytes)}
+        </p>
+      ) : (
+        <p className="text-muted-foreground">
+          Tabulek: {result.tables?.length ?? 0} · řádků{" "}
+          {(result.tables ?? []).reduce((s: number, t: any) => s + t.rows, 0)}
+        </p>
+      )}
+      {result.errors?.length > 0 && (
+        <ul className="list-disc space-y-0.5 pl-4 text-destructive">
+          {result.errors.map((e: string, i: number) => (
+            <li key={i}>{e}</li>
+          ))}
+        </ul>
+      )}
+      {result.warnings?.length > 0 && (
+        <ul className="list-disc space-y-0.5 pl-4 text-amber-600">
+          {result.warnings.map((w: string, i: number) => (
+            <li key={i}>{w}</li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

@@ -211,6 +211,132 @@ export async function backupStorageBuckets(
   return { bucketsCount, filesCount, sizeBytes };
 }
 
+export type ArchiveValidation = {
+  ok: boolean;
+  type: "database" | "storage" | "unknown";
+  bucket: string | null;
+  tables: Array<{ table: string; rows: number; known: boolean }>;
+  files: Array<{ path: string; size: number }>;
+  filesCount: number;
+  totalBytes: number;
+  errors: string[];
+  warnings: string[];
+};
+
+/**
+ * Ověří archiv na Disku bez jakéhokoli zápisu (dry-run).
+ * Zkontroluje gzip formát, typ archivu, název bucketu a obsah.
+ */
+export async function validateArchive(params: {
+  fileId: string;
+  fileName: string;
+}): Promise<ArchiveValidation> {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  const out: ArchiveValidation = {
+    ok: false,
+    type: "unknown",
+    bucket: null,
+    tables: [],
+    files: [],
+    filesCount: 0,
+    totalBytes: 0,
+    errors,
+    warnings,
+  };
+
+  const isStorage = /^autoport-storage-/.test(params.fileName);
+  const isDb = /^autoport-(backup|db)-/.test(params.fileName) || params.fileName.endsWith(".json.gz");
+  out.type = isStorage ? "storage" : isDb ? "database" : "unknown";
+
+  let raw: Buffer;
+  try {
+    raw = await downloadDriveFileCore(params.fileId);
+  } catch (e) {
+    errors.push(`Soubor se nepodařilo stáhnout: ${e instanceof Error ? e.message : String(e)}`);
+    return out;
+  }
+  if (raw.byteLength < 3 || raw[0] !== 0x1f || raw[1] !== 0x8b) {
+    errors.push("Soubor není platný gzip archiv (.gz).");
+    return out;
+  }
+
+  let plain: Buffer;
+  try {
+    const { gunzipSync } = await import("node:zlib");
+    plain = gunzipSync(raw);
+  } catch (e) {
+    errors.push(`Archiv se nepodařilo rozbalit: ${e instanceof Error ? e.message : String(e)}`);
+    return out;
+  }
+
+  if (isStorage) {
+    const match = /^autoport-storage-(.+?)-\d{4}-\d{2}-\d{2}_/.exec(params.fileName);
+    const bucket = match?.[1] ?? null;
+    out.bucket = bucket;
+    if (!bucket) {
+      errors.push(
+        `Z názvu souboru nelze určit bucket (očekáváno autoport-storage-<bucket>-<datum>.tar.gz).`,
+      );
+    } else if (!(BACKUP_BUCKETS as readonly string[]).includes(bucket)) {
+      errors.push(
+        `Bucket "${bucket}" není mezi zálohovanými buckety (${BACKUP_BUCKETS.join(", ")}).`,
+      );
+    }
+    let entries: { name: string; data: Buffer }[] = [];
+    try {
+      entries = parseTar(plain);
+    } catch (e) {
+      errors.push(`Obsah archivu není platný TAR: ${e instanceof Error ? e.message : String(e)}`);
+      return out;
+    }
+    if (entries.length === 0) errors.push("Archiv neobsahuje žádné soubory.");
+    out.filesCount = entries.length;
+    out.totalBytes = entries.reduce((s, e) => s + e.data.byteLength, 0);
+    out.files = entries.slice(0, 25).map((e) => ({ path: e.name, size: e.data.byteLength }));
+    const empty = entries.filter((e) => e.data.byteLength === 0).length;
+    if (empty > 0) warnings.push(`${empty} souborů v archivu má nulovou velikost.`);
+
+    if (bucket && errors.length === 0) {
+      try {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { error } = await supabaseAdmin.storage.from(bucket).list("", { limit: 1 });
+        if (error) errors.push(`Bucket "${bucket}" není v aplikaci dostupný: ${error.message}`);
+      } catch (e) {
+        warnings.push(`Bucket se nepodařilo ověřit: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+  } else {
+    let dump: Record<string, unknown>;
+    try {
+      dump = JSON.parse(plain.toString("utf8")) as Record<string, unknown>;
+    } catch (e) {
+      errors.push(`Archiv neobsahuje platný JSON dump: ${e instanceof Error ? e.message : String(e)}`);
+      return out;
+    }
+    if (!dump || typeof dump !== "object" || Array.isArray(dump)) {
+      errors.push("Struktura dumpu není očekávaný objekt tabulek.");
+      return out;
+    }
+    out.type = "database";
+    const keys = Object.keys(dump).filter((k) => Array.isArray((dump as any)[k]));
+    if (keys.length === 0) errors.push("Dump neobsahuje žádné tabulky.");
+    out.tables = keys.map((k) => ({
+      table: k,
+      rows: ((dump as any)[k] as unknown[]).length,
+      known: (BACKUP_TABLES as readonly string[]).includes(k),
+    }));
+    out.totalBytes = plain.byteLength;
+    const unknown = out.tables.filter((t) => !t.known).map((t) => t.table);
+    if (unknown.length) warnings.push(`Neznámé tabulky (přeskočí se): ${unknown.join(", ")}`);
+    const missing = (BACKUP_TABLES as readonly string[]).filter((t) => !keys.includes(t));
+    if (missing.length) warnings.push(`V záloze chybí tabulky: ${missing.join(", ")}`);
+  }
+
+  out.ok = errors.length === 0;
+  return out;
+}
+
 /** Obnoví soubory jednoho bucketu z .tar.gz archivu na Disku. */
 export async function restoreStorageArchive(params: {
   fileId: string;
