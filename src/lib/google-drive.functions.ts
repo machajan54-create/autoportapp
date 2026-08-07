@@ -53,6 +53,17 @@ const BACKUP_TABLES = [
   "washers",
 ] as const;
 
+// Storage buckety (soubory, fotky, PDF), které se zálohují na Disk.
+const BACKUP_BUCKETS = [
+  "attendance-reports",
+  "defect-photos",
+  "logbook-receipts",
+  "slides",
+  "vykup-photos",
+  "task-attachments",
+  "claim-files",
+] as const;
+
 function requireEnv() {
   const lovableKey = process.env.LOVABLE_API_KEY;
   const connKey = process.env.GOOGLE_DRIVE_API_KEY;
