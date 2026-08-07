@@ -355,243 +355,28 @@ async function uploadJsonGzipToDrive(
   return { ...parsed, size: parsed.size ? Number(parsed.size) : undefined };
 }
 
-// ---------------- ZÁLOHA STORAGE BUCKETŮ ----------------
-
-function tarHeader(name: string, size: number): Buffer {
-  const buf = Buffer.alloc(512, 0);
-  buf.write(name.slice(0, 100), 0, "utf8");
-  buf.write("0000644\0", 100, "ascii");
-  buf.write("0000000\0", 108, "ascii");
-  buf.write("0000000\0", 116, "ascii");
-  buf.write(size.toString(8).padStart(11, "0") + "\0", 124, "ascii");
-  buf.write(Math.floor(Date.now() / 1000).toString(8).padStart(11, "0") + "\0", 136, "ascii");
-  buf.write("0", 156, "ascii"); // typeflag: regular file
-  buf.write("ustar\0", 257, "ascii");
-  buf.write("00", 263, "ascii");
-  // checksum: fill with spaces first
-  buf.write("        ", 148, "ascii");
-  let chk = 0;
-  for (let i = 0; i < 512; i++) chk += buf[i];
-  buf.write(chk.toString(8).padStart(6, "0") + "\0 ", 148, "ascii");
-  return buf;
-}
-
-function buildTar(entries: { name: string; data: Buffer }[]): Buffer {
-  const parts: Buffer[] = [];
-  for (const e of entries) {
-    parts.push(tarHeader(e.name, e.data.length));
-    parts.push(e.data);
-    const rem = e.data.length % 512;
-    if (rem > 0) parts.push(Buffer.alloc(512 - rem, 0));
-  }
-  parts.push(Buffer.alloc(1024, 0)); // end-of-archive
-  return Buffer.concat(parts);
-}
-
-async function listAllObjects(
-  supabaseAdmin: any,
-  bucket: string,
-  prefix = "",
-): Promise<{ path: string }[]> {
-  const results: { path: string }[] = [];
-  const limit = 1000;
-  let offset = 0;
-  while (true) {
-    const { data, error } = await supabaseAdmin.storage
-      .from(bucket)
-      .list(prefix, { limit, offset, sortBy: { column: "name", order: "asc" } });
-    if (error) {
-      console.warn(`[backup] bucket ${bucket} prefix "${prefix}" list error:`, error.message);
-      break;
-    }
-    if (!data || data.length === 0) break;
-    for (const item of data) {
-      const fullPath = prefix ? `${prefix}/${item.name}` : item.name;
-      // Složka = položka bez metadat; rekurzivně projdeme.
-      if (!item.metadata) {
-        const sub = await listAllObjects(supabaseAdmin, bucket, fullPath);
-        results.push(...sub);
-      } else {
-        results.push({ path: fullPath });
-      }
-    }
-    if (data.length < limit) break;
-    offset += limit;
-  }
-  return results;
-}
-
-async function downloadStorageFile(supabaseAdmin: any, bucket: string, path: string): Promise<Buffer | null> {
-  const { data, error } = await supabaseAdmin.storage.from(bucket).download(path);
-  if (error || !data) {
-    console.warn(`[backup] bucket ${bucket} file ${path} download error:`, error?.message);
-    return null;
-  }
-  const ab = await (data as Blob).arrayBuffer();
-  return Buffer.from(ab);
-}
-
-async function backupStorageBuckets(
-  supabaseAdmin: any,
-  folderId: string,
-): Promise<{ bucketsCount: number; filesCount: number; sizeBytes: number }> {
-  const { gzipSync } = await import("node:zlib");
-  const stamp = new Date().toISOString().replace(/[:.]/g, "-").replace("T", "_").slice(0, 19);
-  let bucketsCount = 0;
-  let filesCount = 0;
-  let sizeBytes = 0;
-
-  for (const bucket of BACKUP_BUCKETS) {
-    try {
-      const objects = await listAllObjects(supabaseAdmin, bucket);
-      if (objects.length === 0) continue;
-      const entries: { name: string; data: Buffer }[] = [];
-      for (const obj of objects) {
-        const buf = await downloadStorageFile(supabaseAdmin, bucket, obj.path);
-        if (buf) entries.push({ name: obj.path, data: buf });
-      }
-      if (entries.length === 0) continue;
-      const tar = buildTar(entries);
-      const gz = gzipSync(tar, { level: 9 });
-      const filename = `autoport-storage-${bucket}-${stamp}.tar.gz`;
-      const uploaded = await uploadJsonGzipToDrive(folderId, filename, gz);
-      bucketsCount += 1;
-      filesCount += entries.length;
-      sizeBytes += uploaded.size ?? gz.byteLength;
-    } catch (e) {
-      console.warn(`[backup] bucket ${bucket} selhal:`, e instanceof Error ? e.message : e);
-    }
-  }
-  return { bucketsCount, filesCount, sizeBytes };
-}
+// ---------------- ZÁLOHA (deleguje do backup-core.server) ----------------
 
 export const runBackupNow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await requireAdmin(context);
-
-    const { data: settings } = await context.supabase
-      .from("backup_settings")
-      .select("drive_folder_id, drive_folder_name")
-      .eq("singleton", true)
-      .maybeSingle();
-
-    if (!settings?.drive_folder_id) {
-      throw new Error("Nejprve zvolte cílovou složku pro zálohy.");
-    }
-
-    const startedAt = Date.now();
-    const { data: run, error: runErr } = await context.supabase
-      .from("backup_runs")
-      .insert({
-        status: "running",
-        trigger: "manual",
-        started_by: context.userId,
-      })
-      .select("id")
-      .single();
-    if (runErr) throw new Error(runErr.message);
-    const runId = run.id as string;
-
-    try {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-      const dump: Record<string, unknown> = {
-        __meta: {
-          generated_at: new Date().toISOString(),
-          app: "autoport",
-          version: 1,
-        },
-      };
-      let totalRows = 0;
-      let tablesCount = 0;
-
-      for (const table of BACKUP_TABLES) {
-        const rows: any[] = [];
-        const pageSize = 1000;
-        let from = 0;
-        // pagination loop
-
-        while (true) {
-          const { data, error } = await supabaseAdmin
-            .from(table as any)
-            .select("*")
-            .range(from, from + pageSize - 1);
-          if (error) {
-            // Přeskočíme tabulky, které neexistují nebo nejdou přečíst
-            console.warn(`[backup] tabulka ${table} přeskočena:`, error.message);
-            break;
-          }
-          if (!data || data.length === 0) break;
-          rows.push(...data);
-          if (data.length < pageSize) break;
-          from += pageSize;
-        }
-        dump[table] = rows;
-        totalRows += rows.length;
-        tablesCount += 1;
-      }
-
-      const json = JSON.stringify(dump);
-      const { gzipSync } = await import("node:zlib");
-      const gz = gzipSync(Buffer.from(json, "utf8"), { level: 9 });
-
-      const stamp = new Date().toISOString().replace(/[:.]/g, "-").replace("T", "_").slice(0, 19);
-      const filename = `autoport-backup-${stamp}.json.gz`;
-
-      const uploaded = await uploadJsonGzipToDrive(settings.drive_folder_id, filename, gz);
-
-      // Záloha storage bucketů (fotky, PDF, soubory)
-      const storage = await backupStorageBuckets(supabaseAdmin, settings.drive_folder_id);
-      const totalSize = (uploaded.size ?? gz.byteLength) + storage.sizeBytes;
-
-      const duration = Date.now() - startedAt;
-      await context.supabase
-        .from("backup_runs")
-        .update({
-          status: "success",
-          finished_at: new Date().toISOString(),
-          duration_ms: duration,
-          size_bytes: totalSize,
-          tables_count: tablesCount,
-          rows_count: totalRows,
-          drive_file_id: uploaded.id,
-          drive_file_name: uploaded.name,
-          drive_web_view_link: uploaded.webViewLink ?? null,
-        })
-        .eq("id", runId);
-
-      await context.supabase
-        .from("backup_settings")
-        .update({ last_backup_at: new Date().toISOString() })
-        .eq("singleton", true);
-
-      return {
-        ok: true,
-        runId,
-        durationMs: duration,
-        tables: tablesCount,
-        rows: totalRows,
-        sizeBytes: totalSize,
-        storageBuckets: storage.bucketsCount,
-        storageFiles: storage.filesCount,
-        driveFileName: uploaded.name,
-        driveWebViewLink: uploaded.webViewLink ?? null,
-      };
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      await context.supabase
-        .from("backup_runs")
-        .update({
-          status: "error",
-          finished_at: new Date().toISOString(),
-          duration_ms: Date.now() - startedAt,
-          error: msg.slice(0, 2000),
-        })
-        .eq("id", runId);
-      throw new Error(msg);
-    }
+    const { performBackup } = await import("@/lib/backup-core.server");
+    const res = await performBackup({ trigger: "manual", startedBy: context.userId });
+    return {
+      ok: true,
+      runId: res.runId,
+      durationMs: res.durationMs,
+      tables: res.tables,
+      rows: res.rows,
+      sizeBytes: res.sizeBytes,
+      storageBuckets: res.buckets,
+      storageFiles: res.files,
+      driveFileName: res.fileName,
+      driveWebViewLink: res.webViewLink ?? null,
+    };
   });
+
 
 export const listBackupRuns = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
