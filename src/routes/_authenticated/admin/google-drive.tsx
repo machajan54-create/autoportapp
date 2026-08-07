@@ -63,6 +63,23 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { RotateCcw, Download, ShieldAlert } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { listBackupHistory } from "@/lib/google-drive.functions";
+import { FileText, History } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/google-drive")({
   component: GoogleDrivePage,
@@ -1220,6 +1237,8 @@ function GoogleDrivePage() {
         </Card>
       </div>
 
+      <BackupHistoryCard />
+
       <AlertDialog
         open={!!selectedFile}
         onOpenChange={(open) => {
@@ -1299,5 +1318,259 @@ function GoogleDrivePage() {
         </AlertDialogContent>
       </AlertDialog>
     </AdminShell>
+  );
+}
+
+type HistoryRun = {
+  id: string;
+  kind: string | null;
+  status: string;
+  trigger: string;
+  started_at: string;
+  finished_at: string | null;
+  duration_ms: number | null;
+  size_bytes: number | null;
+  tables_count: number | null;
+  rows_count: number | null;
+  drive_file_id: string | null;
+  drive_file_name: string | null;
+  drive_web_view_link: string | null;
+  error: string | null;
+  started_by_name: string | null;
+};
+
+const KIND_LABEL: Record<string, string> = {
+  database: "Záloha databáze + soubory",
+  storage: "Záloha souborů",
+  github: "Snapshot zdrojového kódu",
+  database_restore: "Obnova databáze",
+  storage_restore: "Obnova souborů",
+};
+
+const TRIGGER_LABEL: Record<string, string> = {
+  manual: "ručně",
+  scheduled: "plán",
+  restore: "obnova",
+  github_manual: "ručně",
+  github_scheduled: "plán",
+};
+
+function describeScope(r: HistoryRun): string {
+  const parts: string[] = [];
+  if (r.tables_count != null && r.kind !== "storage_restore")
+    parts.push(`${r.tables_count} tabulek`);
+  if (r.rows_count != null)
+    parts.push(
+      r.kind === "storage_restore" ? `${r.rows_count} souborů` : `${r.rows_count} záznamů`,
+    );
+  if (r.size_bytes != null) parts.push(formatBytes(r.size_bytes));
+  return parts.length ? parts.join(" · ") : "—";
+}
+
+function BackupHistoryCard() {
+  const fetchHistory = useServerFn(listBackupHistory);
+  const [detail, setDetail] = useState<HistoryRun | null>(null);
+  const [onlyErrors, setOnlyErrors] = useState(false);
+
+  const history = useQuery({
+    queryKey: ["gdrive-history"],
+    queryFn: () => fetchHistory({}),
+  });
+
+  const rows: HistoryRun[] = ((history.data?.runs ?? []) as HistoryRun[]).filter((r) =>
+    onlyErrors ? r.status === "error" : true,
+  );
+
+  return (
+    <Card className="mt-6">
+      <CardHeader>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" /> Historie záloh a obnov
+            </CardTitle>
+            <CardDescription>
+              Přehled všech běhů – čas, rozsah, stav, chyby a odkaz na soubor v Google Disku.
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Switch id="only-errors" checked={onlyErrors} onCheckedChange={setOnlyErrors} />
+              <Label htmlFor="only-errors" className="text-xs">
+                Jen chyby
+              </Label>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => history.refetch()}
+              disabled={history.isFetching}
+            >
+              <RefreshCw className={`h-4 w-4 ${history.isFetching ? "animate-spin" : ""}`} />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {history.isLoading ? (
+          <div className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Načítám historii…
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="rounded-md border bg-muted/30 p-4 text-sm text-muted-foreground">
+            Zatím tu nejsou žádné záznamy o zálohách ani obnovách.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Stav</TableHead>
+                  <TableHead>Čas</TableHead>
+                  <TableHead>Typ</TableHead>
+                  <TableHead>Spuštění</TableHead>
+                  <TableHead>Rozsah</TableHead>
+                  <TableHead>Trvání</TableHead>
+                  <TableHead>Kdo</TableHead>
+                  <TableHead className="text-right">Soubor / log</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((r) => (
+                  <TableRow key={r.id} className={r.status === "error" ? "bg-destructive/5" : ""}>
+                    <TableCell>
+                      {r.status === "success" ? (
+                        <Badge variant="outline" className="gap-1 text-emerald-600">
+                          <CheckCircle2 className="h-3 w-3" /> OK
+                        </Badge>
+                      ) : r.status === "error" ? (
+                        <Badge variant="destructive" className="gap-1">
+                          <XCircle className="h-3 w-3" /> Chyba
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="gap-1">
+                          <Loader2 className="h-3 w-3 animate-spin" /> Běží
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-xs">
+                      {new Date(r.started_at).toLocaleString("cs-CZ")}
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      {KIND_LABEL[r.kind ?? "database"] ?? r.kind ?? "—"}
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      <Badge variant="outline" className="text-xs">
+                        {TRIGGER_LABEL[r.trigger] ?? r.trigger}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {describeScope(r)}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                      {r.duration_ms != null ? `${(r.duration_ms / 1000).toFixed(1)} s` : "—"}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {r.started_by_name ?? "systém"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {r.drive_web_view_link && (
+                          <a
+                            href={r.drive_web_view_link}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                          >
+                            <ExternalLink className="h-3 w-3" /> Disk
+                          </a>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 gap-1 px-2 text-xs"
+                          onClick={() => setDetail(r)}
+                        >
+                          <FileText className="h-3 w-3" /> Log
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+
+      <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              {KIND_LABEL[detail?.kind ?? "database"] ?? "Detail běhu"}
+            </DialogTitle>
+            <DialogDescription>
+              {detail ? new Date(detail.started_at).toLocaleString("cs-CZ") : ""}
+            </DialogDescription>
+          </DialogHeader>
+          {detail && (
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span className="text-muted-foreground">Stav: </span>
+                  {detail.status}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Spuštění: </span>
+                  {TRIGGER_LABEL[detail.trigger] ?? detail.trigger}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Dokončeno: </span>
+                  {detail.finished_at
+                    ? new Date(detail.finished_at).toLocaleString("cs-CZ")
+                    : "neběží / nedokončeno"}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Trvání: </span>
+                  {detail.duration_ms != null
+                    ? `${(detail.duration_ms / 1000).toFixed(1)} s`
+                    : "—"}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Rozsah: </span>
+                  {describeScope(detail)}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Kdo: </span>
+                  {detail.started_by_name ?? "systém"}
+                </div>
+                <div className="col-span-2 break-all">
+                  <span className="text-muted-foreground">Soubor: </span>
+                  {detail.drive_file_name ?? "—"}
+                </div>
+              </div>
+              <Separator />
+              <div>
+                <Label className="text-xs">Log / chybová hlášení</Label>
+                <pre className="mt-1 max-h-72 overflow-auto whitespace-pre-wrap rounded-md border bg-muted/40 p-3 text-xs">
+                  {detail.error?.trim() || "Běh proběhl bez chyb."}
+                </pre>
+              </div>
+              {detail.drive_web_view_link && (
+                <a
+                  href={detail.drive_web_view_link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                >
+                  <ExternalLink className="h-3 w-3" /> Otevřít soubor na Google Disku
+                </a>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </Card>
   );
 }
