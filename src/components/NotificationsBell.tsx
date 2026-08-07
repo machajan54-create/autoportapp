@@ -300,7 +300,12 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
 
     // DPP limit (300 h/rok)
     if (isAdmin && emps && recs) {
-      const dpp = emps.filter((e: any) => e.employment_type === "dpp" && e.active);
+      const dpp = emps.filter(
+        (e: any) =>
+          ((e.employment_types as string[]) ?? []).some(
+            (t) => String(t).toUpperCase() === "DPP",
+          ) && e.active,
+      );
       const hoursById = new Map<string, number>();
       for (const r of recs as any[]) {
         hoursById.set(
@@ -350,19 +355,28 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
   const count = visibleItems.length;
 
   function dismissOne(key: string) {
-    const next = { ...dismissed, [key]: true as const };
+    const next = prune({ ...dismissed, [key]: true as const }, key);
     setDismissed(next);
     writeDismissed(userId, next);
   }
   function dismissAll() {
     const next: Record<string, true> = { ...dismissed };
     for (const it of items) next[it.key] = true;
-    setDismissed(next);
-    writeDismissed(userId, next);
+    const pruned = prune(next);
+    setDismissed(pruned);
+    writeDismissed(userId, pruned);
     const now = new Date().toISOString();
     const seen: LastSeen = { purchases: now, defects: now, absences: now, tasks: now };
     writeLastSeen(userId, seen);
     setLastSeen(seen);
+  }
+
+  /** Nechá jen klíče, které stále existují (jinak localStorage roste donekonečna). */
+  function prune(map: Record<string, true>, ...keep: string[]) {
+    const alive = new Set([...items.map((i) => i.key), ...keep]);
+    const out: Record<string, true> = {};
+    for (const k of Object.keys(map)) if (alive.has(k)) out[k] = true;
+    return out;
   }
 
   return (

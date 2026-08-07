@@ -71,12 +71,17 @@ export const Route = createFileRoute("/api/public/hooks/weekly-report")({
           // DPP varování — ročně
           const { data: emps } = await supabaseAdmin
             .from("attendance_employees")
-            .select("id, name, employment_type, active");
+            .select("id, name, employment_types, active");
           const { data: yearRecs } = await supabaseAdmin
             .from("attendance_records")
             .select("hours_worked, employee_id")
             .gte("date", yearStart);
-          const dpp = (emps ?? []).filter((e: any) => e.employment_type === "dpp" && e.active);
+          const dpp = (emps ?? []).filter(
+            (e: any) =>
+              ((e.employment_types as string[]) ?? []).some(
+                (t) => String(t).toUpperCase() === "DPP",
+              ) && e.active,
+          );
           const hoursById = new Map<string, number>();
           for (const r of yearRecs ?? []) {
             hoursById.set(

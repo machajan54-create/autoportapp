@@ -164,7 +164,11 @@ function DashboardPage() {
   const dppWarnings = useMemo(() => {
     if (!dochEmps || !dochYearRecs)
       return [] as { id: string; name: string; hours: number; over: boolean }[];
-    const dpp = (dochEmps as any[]).filter((e) => e.employment_type === "dpp" && e.active);
+    const dpp = (dochEmps as any[]).filter(
+      (e) =>
+        ((e.employment_types as string[]) ?? []).some((t) => String(t).toUpperCase() === "DPP") &&
+        e.active,
+    );
     const map = new Map<string, number>();
     for (const r of dochYearRecs as any[]) {
       map.set(r.employee_id, (map.get(r.employee_id) ?? 0) + Number(r.hours_worked ?? 0));
