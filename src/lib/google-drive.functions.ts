@@ -281,12 +281,47 @@ export const listBackupRuns = createServerFn({ method: "GET" })
     const { data, error } = await context.supabase
       .from("backup_runs")
       .select(
-        "id,status,trigger,started_at,finished_at,duration_ms,size_bytes,tables_count,rows_count,drive_file_name,drive_web_view_link,error",
+        "id,kind,status,trigger,started_at,finished_at,duration_ms,size_bytes,tables_count,rows_count,drive_file_id,drive_file_name,drive_web_view_link,error,started_by",
       )
       .order("started_at", { ascending: false })
       .limit(20);
     if (error) throw new Error(error.message);
     return { runs: data ?? [] };
+  });
+
+/** Kompletní historie záloh i obnov (databáze, soubory, zdrojový kód). */
+export const listBackupHistory = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await requireAdmin(context);
+    const { data, error } = await context.supabase
+      .from("backup_runs")
+      .select(
+        "id,kind,status,trigger,started_at,finished_at,duration_ms,size_bytes,tables_count,rows_count,drive_file_id,drive_file_name,drive_web_view_link,error,started_by",
+      )
+      .order("started_at", { ascending: false })
+      .limit(100);
+    if (error) throw new Error(error.message);
+
+    const runs = data ?? [];
+    const userIds = [...new Set(runs.map((r) => r.started_by).filter(Boolean))] as string[];
+    let names: Record<string, string> = {};
+    if (userIds.length) {
+      const { data: profs } = await context.supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .in("id", userIds);
+      names = Object.fromEntries(
+        (profs ?? []).map((p) => [p.id, p.full_name || p.email || "—"]),
+      );
+    }
+
+    return {
+      runs: runs.map((r) => ({
+        ...r,
+        started_by_name: r.started_by ? (names[r.started_by] ?? null) : null,
+      })),
+    };
   });
 
 // ---------------- OBNOVA ZE ZÁLOHY ----------------
@@ -367,6 +402,7 @@ export const restoreBackupFromDrive = createServerFn({ method: "POST" })
       .insert({
         status: "running",
         trigger: "restore",
+        kind: "database_restore",
         started_by: context.userId,
         drive_file_id: data.fileId,
         drive_file_name: data.fileName ?? null,
