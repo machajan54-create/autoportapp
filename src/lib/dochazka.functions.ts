@@ -787,20 +787,25 @@ export const resolveAbsence = createServerFn({ method: "POST" })
       if (emp?.user_id) {
         const notify = await import("@/lib/email/notify.server");
         const u = await notify.getUserEmail(emp.user_id);
+        const { data: resolverProfile } = await context.supabase
+          .from("attendance_employees")
+          .select("name")
+          .eq("user_id", context.userId)
+          .maybeSingle();
         if (u.email) {
           await notify.enqueueTransactionalEmail({
-            templateName: "approval-decision",
+            templateName: "absence-notification",
             recipientEmail: u.email,
             idempotencyKey: `absence-${data.id}-${data.status}`,
             templateData: {
-              kind: "vacation",
-              status: data.status,
+              event: data.status,
               recipientName: u.name ?? emp.name ?? "",
-              title: ABSENCE_TYPE_LABEL[absRow.type] ?? absRow.type,
-              meta: [
-                { label: "Od", value: absRow.start_date },
-                { label: "Do", value: absRow.end_date },
-              ],
+              employeeName: emp.name ?? "",
+              resolverName: resolverProfile?.name ?? "",
+              typeLabel: ABSENCE_TYPE_LABEL[absRow.type] ?? absRow.type,
+              startDate: absRow.start_date,
+              endDate: absRow.end_date,
+              note: absRow.note ?? "",
               actionUrl: "https://www.autoport-app.cz/dochazka",
             },
           });
