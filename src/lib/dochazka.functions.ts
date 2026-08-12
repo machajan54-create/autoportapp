@@ -663,42 +663,72 @@ export const upsertAbsence = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
-    // Notify super admin about new absence request
-    const { data: emp } = await context.supabase
-      .from("attendance_employees")
-      .select("name")
-      .eq("id", data.employee_id)
-      .maybeSingle();
-    const notify = await import("@/lib/email/notify.server");
-    const mail = {
-      templateName: "approval-request" as const,
-      templateData: {
-        kind: "vacation",
-        requesterName: emp?.name ?? "Zaměstnanec",
-        title: ABSENCE_TYPE_LABEL[data.type] ?? data.type,
-        details: data.note ?? "",
-        meta: [
-          { label: "Od", value: data.start_date },
-          { label: "Do", value: data.end_date },
-        ],
+    // E-mail schvalovateli o nové žádosti + potvrzení žadateli
+    try {
+      const { data: emp } = await context.supabase
+        .from("attendance_employees")
+        .select("name,user_id")
+        .eq("id", data.employee_id)
+        .maybeSingle();
+      const notify = await import("@/lib/email/notify.server");
+      const dayCount = Math.max(
+        1,
+        Math.round(
+          (new Date(data.end_date).getTime() - new Date(data.start_date).getTime()) / 86_400_000,
+        ) + 1,
+      );
+      const baseData = {
+        employeeName: emp?.name ?? "Zaměstnanec",
+        typeLabel: ABSENCE_TYPE_LABEL[data.type] ?? data.type,
+        startDate: data.start_date,
+        endDate: data.end_date,
+        days: String(dayCount),
+        note: data.note ?? "",
         actionUrl: "https://www.autoport-app.cz/dochazka",
-      },
-    };
-    if (data.requested_resolver) {
-      const r = await notify.getUserEmail(data.requested_resolver);
-      if (r.email) {
-        await notify.enqueueTransactionalEmail({ ...mail, recipientEmail: r.email });
+      };
+      const mail = {
+        templateName: "absence-notification" as const,
+        idempotencyKey: `absence-${row.id}-requested`,
+        templateData: { ...baseData, event: "requested" },
+      };
+      if (data.requested_resolver) {
+        const r = await notify.getUserEmail(data.requested_resolver);
+        if (r.email) {
+          await notify.enqueueTransactionalEmail({
+            ...mail,
+            recipientEmail: r.email,
+            templateData: { ...mail.templateData, recipientName: r.name ?? "" },
+          });
+        } else {
+          await notify.notifyAdmins(mail);
+        }
       } else {
-        await notify.notifyAdmins(mail);
+        // Pošli vedoucímu oddělení žadatele, jinak fallback na super adminy.
+        const head = await getDeptHeadEmailForEmployee(context.supabase, data.employee_id);
+        if (head?.email) {
+          await notify.enqueueTransactionalEmail({ ...mail, recipientEmail: head.email });
+        } else {
+          await notify.notifyAdmins(mail);
+        }
       }
-    } else {
-      // Pošli vedoucímu oddělení žadatele, jinak fallback na super adminy.
-      const head = await getDeptHeadEmailForEmployee(context.supabase, data.employee_id);
-      if (head?.email) {
-        await notify.enqueueTransactionalEmail({ ...mail, recipientEmail: head.email });
-      } else {
-        await notify.notifyAdmins(mail);
+      // Potvrzení žadateli, že žádost odešla
+      if (emp?.user_id) {
+        const u = await notify.getUserEmail(emp.user_id);
+        if (u.email) {
+          await notify.enqueueTransactionalEmail({
+            templateName: "absence-notification",
+            recipientEmail: u.email,
+            idempotencyKey: `absence-${row.id}-submitted`,
+            templateData: {
+              ...baseData,
+              event: "submitted",
+              recipientName: u.name ?? emp.name ?? "",
+            },
+          });
+        }
       }
+    } catch (e) {
+      console.error("[dochazka] e-mail o žádosti o absenci selhal", e);
     }
     return { id: row.id };
   });
