@@ -1639,24 +1639,28 @@ function RecordsTab() {
                             <Send className="h-4 w-4 text-sky-600" />
                           </Button>
                         )}
-                        {canApprove && status === "submitted" && (
+                        {canApprove && status !== "draft" && (
                           <>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => decide(r.id, "approved")}
-                              title="Schválit"
-                            >
-                              <Check className="h-4 w-4 text-emerald-600" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => decide(r.id, "rejected")}
-                              title="Zamítnout"
-                            >
-                              <X className="h-4 w-4 text-rose-600" />
-                            </Button>
+                            {status !== "approved" && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => decide(r.id, "approved")}
+                                title={status === "rejected" ? "Změnit na schváleno" : "Schválit"}
+                              >
+                                <Check className="h-4 w-4 text-emerald-600" />
+                              </Button>
+                            )}
+                            {status !== "rejected" && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => decide(r.id, "rejected")}
+                                title={status === "approved" ? "Změnit na zamítnuto" : "Zamítnout"}
+                              >
+                                <X className="h-4 w-4 text-rose-600" />
+                              </Button>
+                            )}
                           </>
                         )}
                         {canApprove && (
