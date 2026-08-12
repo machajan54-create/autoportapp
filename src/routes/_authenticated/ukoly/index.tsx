@@ -386,11 +386,6 @@ function TasksPage() {
                         activityByOther &&
                         (!seenAt || new Date(lastActivityAt) > seenAt);
                       const isNew = newComment || newActivity;
-                      const unreadComments =
-                        seenAt && last && new Date(last.created_at) > seenAt
-                          ? null
-                          : null;
-                      void unreadComments;
                       const replies = Math.max(0, s.comments - 1);
                       return (
                         <div className="mt-2 space-y-1">
