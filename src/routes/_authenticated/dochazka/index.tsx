@@ -1695,24 +1695,30 @@ function RecordsTab() {
           </DialogHeader>
           {edit && (
             <div className="space-y-3">
-              <div className="grid gap-2">
-                <Label>Zaměstnanec</Label>
-                <Select
-                  value={edit.employee_id}
-                  onValueChange={(v) => setEdit({ ...edit, employee_id: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(employees ?? []).map((e) => (
-                      <SelectItem key={e.id} value={e.id}>
-                        {e.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {canApprove ? (
+                <div className="grid gap-2">
+                  <Label>Zaměstnanec</Label>
+                  <Select
+                    value={edit.employee_id}
+                    onValueChange={(v) => setEdit({ ...edit, employee_id: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(employees ?? []).map((e) => (
+                        <SelectItem key={e.id} value={e.id}>
+                          {e.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <p className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
+                  Záznam se zapíše na váš účet a odešle se ke schválení super adminovi.
+                </p>
+              )}
               <div className="grid gap-2">
                 <Label>Směna</Label>
                 <Select
