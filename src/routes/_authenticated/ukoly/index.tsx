@@ -177,6 +177,15 @@ function TasksPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
 
+  // Automatické označení úkolu jako přečteného při otevření detailu
+  // (a znovu při zavření, aby se pokryly komentáře přidané během čtení).
+  useEffect(() => {
+    if (!detailId) return;
+    markSeen(detailId);
+    return () => markSeen(detailId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detailId]);
+
   async function handleStatus(id: string, status: (typeof TASK_STATUS)[number]) {
     try {
       await updateFn({ data: { id, status } });
@@ -312,7 +321,6 @@ function TasksPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      markSeen(r.id);
                       setDetailId(r.id);
                     }}
                     className="min-w-0 flex-1 text-left"
@@ -414,7 +422,6 @@ function TasksPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          markSeen(r.id);
                           setDetailId(r.id);
                         }}
                       >
