@@ -13,6 +13,7 @@ import {
   Download,
   Repeat,
   Filter as FilterIcon,
+  CornerDownRight,
   X,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -353,19 +354,62 @@ function TasksPage() {
                     )}
                     {(() => {
                       const s = summary[r.id];
-                      if (!s || (s.comments === 0 && s.attachments === 0)) return null;
+                      const lastActivityAt = r.last_activity_at as string | null;
+                      const activityByOther =
+                        !!r.last_activity_by && r.last_activity_by !== userId;
+                      if (!s || (s.comments === 0 && s.attachments === 0)) {
+                        const isNewActivity =
+                          !!lastActivityAt &&
+                          activityByOther &&
+                          (!seen[r.id] || new Date(lastActivityAt) > new Date(seen[r.id]));
+                        if (!isNewActivity) return null;
+                        return (
+                          <div className="mt-2">
+                            <Badge className="border-transparent bg-amber-100 text-amber-800">
+                              Nová aktivita
+                            </Badge>
+                          </div>
+                        );
+                      }
                       const last = s.last_comment;
-                      const isNew =
+                      const seenAt = seen[r.id] ? new Date(seen[r.id]) : null;
+                      const newestAt = [last?.created_at, lastActivityAt]
+                        .filter(Boolean)
+                        .map((d) => new Date(d as string))
+                        .sort((a, b) => b.getTime() - a.getTime())[0];
+                      const newComment =
                         !!last &&
                         last.author_id !== userId &&
-                        (!seen[r.id] || new Date(last.created_at) > new Date(seen[r.id]));
+                        (!seenAt || new Date(last.created_at) > seenAt);
+                      const newActivity =
+                        !!lastActivityAt &&
+                        activityByOther &&
+                        (!seenAt || new Date(lastActivityAt) > seenAt);
+                      const isNew = newComment || newActivity;
+                      const replies = Math.max(0, s.comments - 1);
                       return (
                         <div className="mt-2 space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
                             {s.comments > 0 && (
                               <Badge variant="outline" className="gap-1">
                                 <MessageSquare className="h-3 w-3" />
-                                {s.comments}
+                                {s.comments}{" "}
+                                {s.comments === 1
+                                  ? "komentář"
+                                  : s.comments < 5
+                                    ? "komentáře"
+                                    : "komentářů"}
+                              </Badge>
+                            )}
+                            {replies > 0 && (
+                              <Badge variant="outline" className="gap-1">
+                                <CornerDownRight className="h-3 w-3" />
+                                {replies}{" "}
+                                {replies === 1
+                                  ? "odpověď"
+                                  : replies < 5
+                                    ? "odpovědi"
+                                    : "odpovědí"}
                               </Badge>
                             )}
                             {s.attachments > 0 && (
@@ -375,8 +419,15 @@ function TasksPage() {
                               </Badge>
                             )}
                             {isNew && (
-                              <Badge className="border-transparent bg-rose-100 text-rose-700">
-                                Nový komentář
+                              <Badge
+                                className={cn(
+                                  "border-transparent",
+                                  newComment
+                                    ? "bg-rose-100 text-rose-700"
+                                    : "bg-amber-100 text-amber-800",
+                                )}
+                              >
+                                {newComment ? "Nový komentář" : "Nová aktivita"}
                               </Badge>
                             )}
                           </div>
@@ -390,6 +441,17 @@ function TasksPage() {
                               <span className="font-medium">{last.author_name ?? "Kolega"}:</span>{" "}
                               {last.body} ·{" "}
                               {new Date(last.created_at).toLocaleString("cs-CZ", {
+                                day: "numeric",
+                                month: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                          )}
+                          {newestAt && (
+                            <p className="text-[11px] text-muted-foreground">
+                              Poslední aktivita:{" "}
+                              {newestAt.toLocaleString("cs-CZ", {
                                 day: "numeric",
                                 month: "numeric",
                                 hour: "2-digit",
