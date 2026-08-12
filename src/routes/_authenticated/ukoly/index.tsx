@@ -57,6 +57,7 @@ import {
   listTaskAttachments,
   recordTaskAttachment,
   getTaskAttachmentUrl,
+  listTaskActivitySummary,
 } from "@/lib/task-extras.functions";
 import { cn } from "@/lib/utils";
 import { RequestDeleteButton } from "@/components/RequestDeleteButton";
@@ -82,6 +83,7 @@ function TasksPage() {
   const fetchUsers = useServerFn(listResolvers);
   const createFn = useServerFn(createTask);
   const updateFn = useServerFn(updateTask);
+  const fetchActivity = useServerFn(listTaskActivitySummary);
 
   const [userId, setUserId] = useState<string | null>(null);
   useEffect(() => {
@@ -94,6 +96,44 @@ function TasksPage() {
     queryFn: () => fetchUsers({}),
   });
   const rows = data?.rows ?? [];
+  const { data: activity } = useQuery({
+    queryKey: ["task-activity-summary"],
+    queryFn: () => fetchActivity({}),
+    refetchInterval: 60_000,
+  });
+  const summary = (activity?.summary ?? {}) as Record<
+    string,
+    {
+      comments: number;
+      attachments: number;
+      last_comment?: {
+        author_id: string | null;
+        author_name: string | null;
+        body: string;
+        created_at: string;
+      };
+    }
+  >;
+  const [seen, setSeen] = useState<Record<string, string>>({});
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("tasks-seen-activity");
+      if (raw) setSeen(JSON.parse(raw));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  function markSeen(taskId: string) {
+    setSeen((prev) => {
+      const next = { ...prev, [taskId]: new Date().toISOString() };
+      try {
+        localStorage.setItem("tasks-seen-activity", JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }
 
   const [filter, setFilter] = useState<"open" | "mine" | "all">("open");
   const [assigneeFilter, setAssigneeFilter] = useState<string>("__all");
@@ -271,7 +311,10 @@ function TasksPage() {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <button
                     type="button"
-                    onClick={() => setDetailId(r.id)}
+                    onClick={() => {
+                      markSeen(r.id);
+                      setDetailId(r.id);
+                    }}
                     className="min-w-0 flex-1 text-left"
                   >
                     <div className="flex flex-wrap items-center gap-2">
@@ -300,6 +343,55 @@ function TasksPage() {
                     {r.description && (
                       <p className="mt-2 whitespace-pre-wrap text-sm">{r.description}</p>
                     )}
+                    {(() => {
+                      const s = summary[r.id];
+                      if (!s || (s.comments === 0 && s.attachments === 0)) return null;
+                      const last = s.last_comment;
+                      const isNew =
+                        !!last &&
+                        last.author_id !== userId &&
+                        (!seen[r.id] || new Date(last.created_at) > new Date(seen[r.id]));
+                      return (
+                        <div className="mt-2 space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {s.comments > 0 && (
+                              <Badge variant="outline" className="gap-1">
+                                <MessageSquare className="h-3 w-3" />
+                                {s.comments}
+                              </Badge>
+                            )}
+                            {s.attachments > 0 && (
+                              <Badge variant="outline" className="gap-1">
+                                <Paperclip className="h-3 w-3" />
+                                {s.attachments}
+                              </Badge>
+                            )}
+                            {isNew && (
+                              <Badge className="border-transparent bg-rose-100 text-rose-700">
+                                Nový komentář
+                              </Badge>
+                            )}
+                          </div>
+                          {last && (
+                            <p
+                              className={cn(
+                                "line-clamp-2 rounded-md bg-muted/60 px-2 py-1 text-xs",
+                                isNew ? "font-medium text-foreground" : "text-muted-foreground",
+                              )}
+                            >
+                              <span className="font-medium">{last.author_name ?? "Kolega"}:</span>{" "}
+                              {last.body} ·{" "}
+                              {new Date(last.created_at).toLocaleString("cs-CZ", {
+                                day: "numeric",
+                                month: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </button>
                   <div className="flex flex-col items-end gap-2">
                     <Select
@@ -318,7 +410,14 @@ function TasksPage() {
                       </SelectContent>
                     </Select>
                     <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => setDetailId(r.id)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          markSeen(r.id);
+                          setDetailId(r.id);
+                        }}
+                      >
                         <MessageSquare className="mr-1 h-4 w-4" /> Detail
                       </Button>
                       <RequestDeleteButton
@@ -544,6 +643,7 @@ function TaskDetailDialog({ taskId, onClose }: { taskId: string | null; onClose:
       await addComment({ data: { taskId, body: body.trim() } });
       setBody("");
       qc.invalidateQueries({ queryKey: ["task-comments", taskId] });
+      qc.invalidateQueries({ queryKey: ["task-activity-summary"] });
     } catch (e: any) {
       toast.error(e?.message || "Nepodařilo se uložit komentář");
     } finally {

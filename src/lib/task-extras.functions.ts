@@ -93,6 +93,50 @@ export const addTaskComment = createServerFn({ method: "POST" })
     return { id: row.id };
   });
 
+/** Souhrn aktivity (komentáře + přílohy) pro náhled v seznamu úkolů. */
+export const listTaskActivitySummary = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase } = context;
+    const [{ data: comments, error: cErr }, { data: attachments, error: aErr }] = await Promise.all([
+      supabase
+        .from("task_comments")
+        .select("task_id,author_id,author_name,body,created_at")
+        .order("created_at", { ascending: true }),
+      supabase.from("task_attachments").select("task_id,file_name,created_at"),
+    ]);
+    if (cErr) throw new Error(cErr.message);
+    if (aErr) throw new Error(aErr.message);
+    const map: Record<
+      string,
+      {
+        comments: number;
+        attachments: number;
+        last_comment?: {
+          author_id: string | null;
+          author_name: string | null;
+          body: string;
+          created_at: string;
+        };
+      }
+    > = {};
+    for (const c of comments ?? []) {
+      const e = (map[c.task_id] ??= { comments: 0, attachments: 0 });
+      e.comments += 1;
+      e.last_comment = {
+        author_id: c.author_id ?? null,
+        author_name: c.author_name ?? null,
+        body: c.body,
+        created_at: c.created_at,
+      };
+    }
+    for (const a of attachments ?? []) {
+      const e = (map[a.task_id] ??= { comments: 0, attachments: 0 });
+      e.attachments += 1;
+    }
+    return { summary: map };
+  });
+
 export const deleteTaskComment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
