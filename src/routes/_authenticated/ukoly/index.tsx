@@ -643,6 +643,7 @@ function TaskDetailDialog({ taskId, onClose }: { taskId: string | null; onClose:
       await addComment({ data: { taskId, body: body.trim() } });
       setBody("");
       qc.invalidateQueries({ queryKey: ["task-comments", taskId] });
+      qc.invalidateQueries({ queryKey: ["task-activity-summary"] });
     } catch (e: any) {
       toast.error(e?.message || "Nepodařilo se uložit komentář");
     } finally {
