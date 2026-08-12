@@ -74,6 +74,26 @@ export const createDefect = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
+
+    // E-mailová notifikace super adminům o nové závadě
+    try {
+      const notify = await import("@/lib/email/notify.server");
+      await notify.notifyAdmins({
+        templateName: "defect-notification",
+        idempotencyKey: `defect-reported-${row.id}`,
+        templateData: {
+          event: "reported",
+          title: data.title,
+          description: data.description || "",
+          reporterName: reporter_name || "",
+          priorityLabel: DEFECT_PRIORITY_LABEL[data.priority] ?? data.priority,
+          statusLabel: DEFECT_STATUS_LABEL["new"],
+          actionUrl: "https://www.autoport-app.cz/zavady",
+        },
+      });
+    } catch (e) {
+      console.error("[defects] e-mail o nové závadě selhal", e);
+    }
     return { id: row.id };
   });
 
@@ -116,9 +136,40 @@ export const updateDefect = createServerFn({ method: "POST" })
       const { logEvent } = await import("@/lib/audit.server");
       const { data: defect } = await supabase
         .from("defects")
-        .select("title")
+        .select("title, description, priority, reported_by, reporter_name, resolution_note")
         .eq("id", data.id)
         .maybeSingle();
+
+      // E-mail nahlašovateli o změně stavu jeho závady
+      try {
+        if (defect?.reported_by && defect.reported_by !== userId) {
+          const notify = await import("@/lib/email/notify.server");
+          const recipient = await notify.getUserEmail(defect.reported_by);
+          if (recipient.email) {
+            await notify.enqueueTransactionalEmail({
+              templateName: "defect-notification",
+              recipientEmail: recipient.email,
+              idempotencyKey: `defect-${data.id}-${data.status}`,
+              templateData: {
+                event: data.status,
+                title: defect.title ?? "",
+                description: defect.description ?? "",
+                recipientName: recipient.name ?? "",
+                reporterName: defect.reporter_name ?? "",
+                resolverName: patch.resolver_name ?? "",
+                priorityLabel:
+                  DEFECT_PRIORITY_LABEL[(data.priority ?? defect.priority) as string] ?? "",
+                statusLabel: DEFECT_STATUS_LABEL[data.status] ?? data.status,
+                resolutionNote: data.resolution_note ?? defect.resolution_note ?? "",
+                actionUrl: "https://www.autoport-app.cz/zavady",
+              },
+            });
+          }
+        }
+      } catch (e) {
+        console.error("[defects] e-mail o změně stavu selhal", e);
+      }
+
       await logEvent({
         actorId: userId,
         actorEmail: context.claims?.email ?? null,
