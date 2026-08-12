@@ -1303,6 +1303,7 @@ function RecordsTab() {
   const fetchS = useServerFn(listShifts);
   const fetchSettings = useServerFn(getDochazkaSettings);
   const upsert = useServerFn(upsertRecord);
+  const requestFn = useServerFn(requestRecord);
   const submitFn = useServerFn(submitRecord);
   const decideFn = useServerFn(decideRecord);
   const bulkDecide = useServerFn(bulkDecideRecords);
@@ -1347,6 +1348,7 @@ function RecordsTab() {
     const iso = now.toISOString().slice(0, 16);
     setEdit({
       employee_id: employees?.[0]?.id ?? "",
+      isNew: true,
       shift_id: shifts?.[0]?.id ?? null,
       date: todayISODate(),
       check_in: iso,
@@ -1381,8 +1383,23 @@ function RecordsTab() {
         const breakMs = payload.break_duration * 60_000;
         payload.hours_worked = Math.max(0, Math.round(((ms - breakMs) / 3_600_000) * 100) / 100);
       }
-      await upsert({ data: payload });
-      toast.success("Uloženo");
+      if (canApprove) {
+        const { isNew: _isNew, ...clean } = payload as any;
+        await upsert({ data: clean });
+        toast.success("Uloženo");
+      } else {
+        await requestFn({
+          data: {
+            shift_id: payload.shift_id,
+            date: payload.date,
+            check_in: payload.check_in,
+            check_out: payload.check_out,
+            note: payload.note || null,
+            break_duration: payload.break_duration,
+          },
+        });
+        toast.success("Odesláno ke schválení super adminovi");
+      }
       setOpen(false);
       qc.invalidateQueries({ queryKey: ["dochazka", "records"] });
     } catch (e: any) {
@@ -1453,11 +1470,10 @@ function RecordsTab() {
             </>
           )}
         </div>
-        {canApprove && (
-          <Button onClick={openNew}>
-            <Plus className="mr-1 h-4 w-4" /> Nový záznam
-          </Button>
-        )}
+        <Button onClick={openNew}>
+          <Plus className="mr-1 h-4 w-4" />
+          {canApprove ? "Nový záznam" : "Nový záznam ke schválení"}
+        </Button>
       </div>
       <Card>
         <Table>
