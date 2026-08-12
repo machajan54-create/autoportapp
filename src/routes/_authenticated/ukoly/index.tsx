@@ -57,6 +57,7 @@ import {
   listTaskAttachments,
   recordTaskAttachment,
   getTaskAttachmentUrl,
+  listTaskActivitySummary,
 } from "@/lib/task-extras.functions";
 import { cn } from "@/lib/utils";
 import { RequestDeleteButton } from "@/components/RequestDeleteButton";
@@ -82,6 +83,7 @@ function TasksPage() {
   const fetchUsers = useServerFn(listResolvers);
   const createFn = useServerFn(createTask);
   const updateFn = useServerFn(updateTask);
+  const fetchActivity = useServerFn(listTaskActivitySummary);
 
   const [userId, setUserId] = useState<string | null>(null);
   useEffect(() => {
@@ -94,6 +96,44 @@ function TasksPage() {
     queryFn: () => fetchUsers({}),
   });
   const rows = data?.rows ?? [];
+  const { data: activity } = useQuery({
+    queryKey: ["task-activity-summary"],
+    queryFn: () => fetchActivity({}),
+    refetchInterval: 60_000,
+  });
+  const summary = (activity?.summary ?? {}) as Record<
+    string,
+    {
+      comments: number;
+      attachments: number;
+      last_comment?: {
+        author_id: string | null;
+        author_name: string | null;
+        body: string;
+        created_at: string;
+      };
+    }
+  >;
+  const [seen, setSeen] = useState<Record<string, string>>({});
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("tasks-seen-activity");
+      if (raw) setSeen(JSON.parse(raw));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  function markSeen(taskId: string) {
+    setSeen((prev) => {
+      const next = { ...prev, [taskId]: new Date().toISOString() };
+      try {
+        localStorage.setItem("tasks-seen-activity", JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }
 
   const [filter, setFilter] = useState<"open" | "mine" | "all">("open");
   const [assigneeFilter, setAssigneeFilter] = useState<string>("__all");
