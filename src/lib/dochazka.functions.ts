@@ -396,6 +396,85 @@ export const deleteRecord = createServerFn({ method: "POST" })
     throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
   });
 
+/**
+ * Kterýkoli přihlášený uživatel může požádat o zapsání docházky.
+ * Záznam se založí rovnou ve stavu "submitted" a super adminovi
+ * přijde upozornění do schvalování.
+ */
+export const requestRecord = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        employee_id: z.string().uuid().optional(),
+        shift_id: z.string().uuid().nullable().optional(),
+        date: z.string(),
+        check_in: z.string(),
+        check_out: z.string().nullable().optional(),
+        note: z.string().max(500).nullable().optional(),
+        break_duration: z.number().int().min(0).default(0),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const access = await getDochazkaAccess(context.supabase, context.userId);
+    const employeeId = access.isAdmin
+      ? (data.employee_id ?? access.myEmployeeId)
+      : access.myEmployeeId;
+    if (!employeeId) {
+      throw new Error("Váš účet není spárován se zaměstnancem docházky.");
+    }
+    if (!access.isAdmin && data.employee_id && data.employee_id !== access.myEmployeeId) {
+      throw new Error("Můžete zadat pouze vlastní docházku.");
+    }
+
+    let hours = 0;
+    if (data.check_out) {
+      const ms = new Date(data.check_out).getTime() - new Date(data.check_in).getTime();
+      const breakMs = (data.break_duration ?? 0) * 60_000;
+      const stepMin = await getRoundingMinutes(context.supabase);
+      hours = roundHours(Math.max(0, (ms - breakMs) / 3_600_000), stepMin);
+    }
+
+    const { data: row, error } = await context.supabase
+      .from("attendance_records")
+      .insert({
+        employee_id: employeeId,
+        shift_id: data.shift_id ?? null,
+        date: data.date,
+        check_in: data.check_in,
+        check_out: data.check_out ?? null,
+        note: data.note ?? null,
+        break_duration: data.break_duration ?? 0,
+        hours_worked: hours,
+        approval_status: "submitted",
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+
+    // Upozornění pro schvalovatele (super admin) – zapisuje se přes admin klienta,
+    // protože běžný uživatel nemá právo vkládat notifikace.
+    try {
+      const { data: emp } = await context.supabase
+        .from("attendance_employees")
+        .select("name")
+        .eq("id", employeeId)
+        .maybeSingle();
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await supabaseAdmin.from("attendance_notifications").insert({
+        type: "custom",
+        title: "Nový záznam docházky ke schválení",
+        message: `${emp?.name ?? "Zaměstnanec"} zapsal docházku ${data.date} a čeká na schválení.`,
+        is_for_manager: true,
+        meta: { record_id: row.id, employee_id: employeeId, date: data.date },
+      });
+    } catch (e) {
+      console.error("[dochazka] notifikace o novém záznamu selhala", e);
+    }
+    return { id: row.id };
+  });
+
 // Terminal check-in: PUBLIC endpoint authenticated by PIN; uses admin client
 export const terminalCheckIn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
