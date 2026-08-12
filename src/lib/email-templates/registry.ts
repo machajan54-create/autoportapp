@@ -17,6 +17,7 @@ import { template as demoOrderSignatureRequest } from "./demo-order-signature-re
 import { template as demoOrderDocuments } from "./demo-order-documents";
 import { template as washAssignment } from "./wash-assignment";
 import { template as washReminder } from "./wash-reminder";
+import { template as defectNotification } from "./defect-notification";
 
 export interface TemplateEntry {
   component: ComponentType<any>;
@@ -54,4 +55,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   "demo-order-documents": demoOrderDocuments,
   "wash-assignment": washAssignment,
   "wash-reminder": washReminder,
+  "defect-notification": defectNotification,
 };
