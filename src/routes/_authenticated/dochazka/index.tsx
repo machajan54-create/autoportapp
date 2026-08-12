@@ -80,6 +80,7 @@ import {
   submitRecord,
   decideRecord,
   bulkDecideRecords,
+  requestRecord,
   autoFillMonth,
   listEmployeeReports,
   getEmployeeReportUrl,
