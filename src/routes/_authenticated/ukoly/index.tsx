@@ -54,6 +54,7 @@ import {
 } from "@/lib/tasks.functions";
 import {
   listTaskComments,
+  listTaskParticipants,
   addTaskComment,
   listTaskAttachments,
   recordTaskAttachment,
