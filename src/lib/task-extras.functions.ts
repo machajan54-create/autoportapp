@@ -13,6 +13,19 @@ async function lookupName(supabase: any, userId: string) {
 
 /* ---------- Comments ---------- */
 
+export const listTaskParticipants = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ taskId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("task_participants")
+      .select("user_id,user_name,role,created_at")
+      .eq("task_id", data.taskId)
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+    return { rows: rows ?? [] };
+  });
+
 export const listTaskComments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ taskId: z.string().uuid() }).parse(d))

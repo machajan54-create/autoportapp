@@ -2033,6 +2033,41 @@ export type Database = {
           },
         ]
       }
+      task_participants: {
+        Row: {
+          created_at: string
+          id: string
+          role: string
+          task_id: string
+          user_id: string
+          user_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: string
+          task_id: string
+          user_id: string
+          user_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: string
+          task_id?: string
+          user_id?: string
+          user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_participants_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           assignee_id: string | null
@@ -2413,6 +2448,10 @@ export type Database = {
       is_approved_user: { Args: { _uid: string }; Returns: boolean }
       is_dept_head_of: {
         Args: { _head: string; _requester: string }
+        Returns: boolean
+      }
+      is_task_participant: {
+        Args: { _task_id: string; _uid: string }
         Returns: boolean
       }
       move_to_dlq: {
