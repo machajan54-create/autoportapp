@@ -683,6 +683,7 @@ function TaskDetailDialog({ taskId, onClose }: { taskId: string | null; onClose:
   const fetchAttachments = useServerFn(listTaskAttachments);
   const recordAttachment = useServerFn(recordTaskAttachment);
   const getUrl = useServerFn(getTaskAttachmentUrl);
+  const fetchParticipants = useServerFn(listTaskParticipants);
 
   const { data: commentsData, isLoading: cLoading } = useQuery({
     queryKey: ["task-comments", taskId],
@@ -692,6 +693,11 @@ function TaskDetailDialog({ taskId, onClose }: { taskId: string | null; onClose:
   const { data: attachmentsData, isLoading: aLoading } = useQuery({
     queryKey: ["task-attachments", taskId],
     queryFn: () => fetchAttachments({ data: { taskId: taskId! } }),
+    enabled: open,
+  });
+  const { data: participantsData } = useQuery({
+    queryKey: ["task-participants", taskId],
+    queryFn: () => fetchParticipants({ data: { taskId: taskId! } }),
     enabled: open,
   });
 
@@ -713,6 +719,7 @@ function TaskDetailDialog({ taskId, onClose }: { taskId: string | null; onClose:
       await addComment({ data: { taskId, body: body.trim() } });
       setBody("");
       qc.invalidateQueries({ queryKey: ["task-comments", taskId] });
+      qc.invalidateQueries({ queryKey: ["task-participants", taskId] });
       qc.invalidateQueries({ queryKey: ["task-activity-summary"] });
     } catch (e: any) {
       toast.error(e?.message || "Nepodařilo se uložit komentář");
@@ -775,6 +782,29 @@ function TaskDetailDialog({ taskId, onClose }: { taskId: string | null; onClose:
           <DialogTitle>Detail úkolu</DialogTitle>
         </DialogHeader>
         <div className="space-y-6">
+          <section className="space-y-2">
+            <div className="text-sm font-semibold">Účastníci úkolu</div>
+            <div className="flex flex-wrap gap-1.5">
+              {(participantsData?.rows ?? []).length === 0 ? (
+                <span className="text-xs text-muted-foreground">Zatím žádní účastníci</span>
+              ) : (
+                (participantsData?.rows ?? []).map((p: any) => (
+                  <Badge key={p.user_id} variant="secondary" className="text-xs">
+                    {p.user_name || "Uživatel"}
+                    <span className="ml-1 opacity-60">
+                      {p.role === "creator"
+                        ? "zadavatel"
+                        : p.role === "assignee"
+                          ? "řešitel"
+                          : p.role === "uploader"
+                            ? "přílohy"
+                            : "komentář"}
+                    </span>
+                  </Badge>
+                ))
+              )}
+            </div>
+          </section>
           <section className="space-y-2">
             <div className="flex items-center gap-2 text-sm font-semibold">
               <Paperclip className="h-4 w-4" /> Přílohy
