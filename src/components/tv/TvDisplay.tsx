@@ -11,6 +11,28 @@ import { getTvWidgetData } from "@/lib/tv-widgets.functions";
 
 type Slide = TvSlide;
 
+// Návrhová plocha TV displeje (Full HD 16:9 – 75" televize).
+// Celá scéna se proporcionálně přeškáluje na jakoukoli velikost okna/obrazovky.
+const TV_W = 1920;
+const TV_H = 1080;
+
+function useTvScale() {
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const compute = () =>
+      setScale(Math.min(window.innerWidth / TV_W, window.innerHeight / TV_H));
+    compute();
+    window.addEventListener("resize", compute);
+    window.addEventListener("orientationchange", compute);
+    return () => {
+      window.removeEventListener("resize", compute);
+      window.removeEventListener("orientationchange", compute);
+    };
+  }, []);
+  return scale;
+}
+
+
 type DisplayConfig = {
   id: string;
   name: string;
@@ -101,6 +123,8 @@ export function TvDisplay({ token }: { token: string }) {
   const [slides, setSlides] = useState<Slide[]>([]);
   const [index, setIndex] = useState(0);
   const [now, setNow] = useState(() => new Date());
+  const tvScale = useTvScale();
+
   const [error, setError] = useState<string | null>(null);
 
   // Load config + slides
@@ -240,18 +264,32 @@ export function TvDisplay({ token }: { token: string }) {
 
   return (
     <div
-      className="tv-root"
       style={{
         position: "fixed",
         inset: 0,
-        width: "100vw",
-        height: "100vh",
-        background: "hsl(220 60% 6%)",
-        color: "white",
+        background: "#000",
         overflow: "hidden",
-        fontFamily: "'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
       }}
     >
+      <div
+        className="tv-root"
+        style={{
+          position: "relative",
+          width: TV_W,
+          height: TV_H,
+          flex: "0 0 auto",
+          transform: `scale(${tvScale})`,
+          transformOrigin: "center center",
+          background: "hsl(220 60% 6%)",
+          color: "white",
+          overflow: "hidden",
+          fontFamily: "'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif",
+        }}
+      >
+
       {/* Ambient background glow */}
       <div
         style={{
@@ -308,7 +346,7 @@ export function TvDisplay({ token }: { token: string }) {
           left: 0,
           right: 0,
           height: 128,
-          padding: "0 4vw",
+          padding: "0 76px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -533,7 +571,7 @@ export function TvDisplay({ token }: { token: string }) {
           </div>
           <div
             className="tv-ticker"
-            style={{ whiteSpace: "nowrap", fontSize: 26, fontWeight: 500, paddingLeft: "100vw" }}
+            style={{ whiteSpace: "nowrap", fontSize: 26, fontWeight: 500, paddingLeft: TV_W }}
           >
             {Array.from({ length: 3 }).map((_, i) => (
               <span key={i} style={{ marginRight: 120 }}>
@@ -653,12 +691,14 @@ export function TvDisplay({ token }: { token: string }) {
         .tv-avatar { width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0; }
         .tv-live-dot { margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 12px #22c55e; }
       `}</style>
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=DM+Sans:wght@400;500;700&display=swap"
-      />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=DM+Sans:wght@400;500;700&display=swap"
+        />
+      </div>
     </div>
   );
+
 }
 
 function BrandingSlide() {
