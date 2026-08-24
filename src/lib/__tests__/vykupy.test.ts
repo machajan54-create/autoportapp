@@ -23,7 +23,7 @@ describe("formatKc", () => {
   });
 
   it("formats negative number", () => {
-    expect(formatKc(-1000)).toBe("-1 000 Kč");
+    expect(formatKc(-1000)).toBe("-1\u00A0000 Kč");
   });
 });
 
