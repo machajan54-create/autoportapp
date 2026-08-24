@@ -310,6 +310,37 @@ export function TvDisplay({ token }: { token: string }) {
         justifyContent: "center",
       }}
     >
+      <button
+        type="button"
+        onClick={toggleFullscreen}
+        aria-label={isFullscreen ? "Ukončit celoobrazovkový režim" : "Celoobrazovkový režim"}
+        title={isFullscreen ? "Ukončit celoobrazovkový režim" : "Celoobrazovkový režim"}
+        style={{
+          position: "fixed",
+          top: 16,
+          right: 16,
+          zIndex: 100,
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "10px 14px",
+          borderRadius: 999,
+          border: "1px solid rgba(255,255,255,0.25)",
+          background: "rgba(10,14,26,0.55)",
+          backdropFilter: "blur(10px)",
+          color: "white",
+          fontSize: 14,
+          fontWeight: 600,
+          cursor: "pointer",
+          opacity: 0.35,
+          transition: "opacity 160ms ease",
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+        onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.35")}
+      >
+        {isFullscreen ? "⤡ Ukončit" : "⤢ Celá obrazovka"}
+      </button>
+
       <div
         className="tv-root"
         style={{
