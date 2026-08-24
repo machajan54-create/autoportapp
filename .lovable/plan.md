@@ -68,7 +68,13 @@ a potvrdím, že každý job name existuje přesně jednou.
    - Label maps — `TASK_STATUS_LABEL`, `TASK_PRIORITY_LABEL`, `TASK_RECURRENCE_LABEL` klíče existují
 
 3. **`src/lib/dochazka.ts`** — `src/lib/__tests__/dochazka.test.ts`
-   - Čistěné helpery pokud existují (př. výpočet hodin z check-in/check-out, formátování). Pokud `dochazka.ts` obsahuje jen typy, přeskočím a otestuji `computeNextDueDate` důkladněji.
+   - `initials` — jedno slovo (2 písmena), dvě slova (iniciály), prázdný vstup
+   - `formatTime` / `formatDate` — null, neplatný ISO, platný ISO
+   - `formatHours` — null, celé hodiny, desetinné (např. 7.5 → "7h 30m")
+   - `calculateHoursWorked` — normální směna, s pauzou, check-out před check-in → 0, pauza delší než směna → 0
+   - `shiftDurationHours` — denní směna, noční směna (přechod přes půlnoc), neplatný vstup → 0
+   - `expectedHoursWorked` — směna s pauzou, záporný výsledek → 0
+   - `underTime` — odpracováno méně (kladný podčas), odpracováno více (0), přesně (0)
 
 **Návrhový princip:** Testují se jen funkce bez side-efektů (žádné supabase volání, žádné `createServerFn` handlery). Server-funkce s DB se netestují (vyžadovalo by to mock infrastrukturu nad rámec tohoto kroku).
 
