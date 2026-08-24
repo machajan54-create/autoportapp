@@ -158,6 +158,8 @@ export function TvDisplay({ token }: { token: string }) {
   const [index, setIndex] = useState(0);
   const [now, setNow] = useState(() => new Date());
   const tvScale = useTvScale();
+  const { isFullscreen, toggle: toggleFullscreen } = useFullscreen();
+
 
   const [error, setError] = useState<string | null>(null);
 
