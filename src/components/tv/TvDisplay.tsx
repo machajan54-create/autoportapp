@@ -24,13 +24,47 @@ function useTvScale() {
     compute();
     window.addEventListener("resize", compute);
     window.addEventListener("orientationchange", compute);
+    document.addEventListener("fullscreenchange", compute);
+    // Safari
+    document.addEventListener("webkitfullscreenchange", compute as EventListener);
     return () => {
       window.removeEventListener("resize", compute);
       window.removeEventListener("orientationchange", compute);
+      document.removeEventListener("fullscreenchange", compute);
+      document.removeEventListener("webkitfullscreenchange", compute as EventListener);
     };
   }, []);
   return scale;
 }
+
+function useFullscreen() {
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
+    onChange();
+    document.addEventListener("fullscreenchange", onChange);
+    document.addEventListener("webkitfullscreenchange", onChange as EventListener);
+    return () => {
+      document.removeEventListener("fullscreenchange", onChange);
+      document.removeEventListener("webkitfullscreenchange", onChange as EventListener);
+    };
+  }, []);
+  const toggle = async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        const el: any = document.documentElement;
+        if (el.requestFullscreen) await el.requestFullscreen({ navigationUI: "hide" } as any);
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      }
+    } catch {
+      // fullscreen může být zablokován prohlížečem
+    }
+  };
+  return { isFullscreen, toggle };
+}
+
 
 
 type DisplayConfig = {
@@ -124,6 +158,8 @@ export function TvDisplay({ token }: { token: string }) {
   const [index, setIndex] = useState(0);
   const [now, setNow] = useState(() => new Date());
   const tvScale = useTvScale();
+  const { isFullscreen, toggle: toggleFullscreen } = useFullscreen();
+
 
   const [error, setError] = useState<string | null>(null);
 
@@ -274,6 +310,37 @@ export function TvDisplay({ token }: { token: string }) {
         justifyContent: "center",
       }}
     >
+      <button
+        type="button"
+        onClick={toggleFullscreen}
+        aria-label={isFullscreen ? "Ukončit celoobrazovkový režim" : "Celoobrazovkový režim"}
+        title={isFullscreen ? "Ukončit celoobrazovkový režim" : "Celoobrazovkový režim"}
+        style={{
+          position: "fixed",
+          top: 16,
+          right: 16,
+          zIndex: 100,
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "10px 14px",
+          borderRadius: 999,
+          border: "1px solid rgba(255,255,255,0.25)",
+          background: "rgba(10,14,26,0.55)",
+          backdropFilter: "blur(10px)",
+          color: "white",
+          fontSize: 14,
+          fontWeight: 600,
+          cursor: "pointer",
+          opacity: 0.35,
+          transition: "opacity 160ms ease",
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+        onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.35")}
+      >
+        {isFullscreen ? "⤡ Ukončit" : "⤢ Celá obrazovka"}
+      </button>
+
       <div
         className="tv-root"
         style={{
