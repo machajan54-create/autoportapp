@@ -346,7 +346,7 @@ export function TvDisplay({ token }: { token: string }) {
           left: 0,
           right: 0,
           height: 128,
-          padding: "0 4vw",
+          padding: "0 76px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -571,7 +571,7 @@ export function TvDisplay({ token }: { token: string }) {
           </div>
           <div
             className="tv-ticker"
-            style={{ whiteSpace: "nowrap", fontSize: 26, fontWeight: 500, paddingLeft: "100vw" }}
+            style={{ whiteSpace: "nowrap", fontSize: 26, fontWeight: 500, paddingLeft: TV_W }}
           >
             {Array.from({ length: 3 }).map((_, i) => (
               <span key={i} style={{ marginRight: 120 }}>
