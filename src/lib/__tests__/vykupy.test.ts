@@ -33,7 +33,7 @@ describe("formatDate", () => {
   });
 
   it("returns dash for empty string", () => {
-    expect(formatDate("").toBe("—");
+    expect(formatDate("")).toBe("—");
   });
 
   it("returns dash for invalid date string", () => {
