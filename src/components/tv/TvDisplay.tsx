@@ -11,6 +11,28 @@ import { getTvWidgetData } from "@/lib/tv-widgets.functions";
 
 type Slide = TvSlide;
 
+// Návrhová plocha TV displeje (Full HD 16:9 – 75" televize).
+// Celá scéna se proporcionálně přeškáluje na jakoukoli velikost okna/obrazovky.
+const TV_W = 1920;
+const TV_H = 1080;
+
+function useTvScale() {
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const compute = () =>
+      setScale(Math.min(window.innerWidth / TV_W, window.innerHeight / TV_H));
+    compute();
+    window.addEventListener("resize", compute);
+    window.addEventListener("orientationchange", compute);
+    return () => {
+      window.removeEventListener("resize", compute);
+      window.removeEventListener("orientationchange", compute);
+    };
+  }, []);
+  return scale;
+}
+
+
 type DisplayConfig = {
   id: string;
   name: string;
