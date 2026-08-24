@@ -667,12 +667,14 @@ export function TvDisplay({ token }: { token: string }) {
         .tv-avatar { width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0; }
         .tv-live-dot { margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 12px #22c55e; }
       `}</style>
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=DM+Sans:wght@400;500;700&display=swap"
-      />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=DM+Sans:wght@400;500;700&display=swap"
+        />
+      </div>
     </div>
   );
+
 }
 
 function BrandingSlide() {
