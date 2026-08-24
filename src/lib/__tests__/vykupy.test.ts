@@ -3,7 +3,7 @@ import { formatKc, formatDate, marze } from "@/lib/vykupy";
 
 describe("formatKc", () => {
   it("formats a positive number with Czech locale and Kč suffix", () => {
-    expect(formatKc(123456)).toBe("123 456 Kč");
+    expect(formatKc(123456)).toBe("123\u00A0456 Kč");
   });
 
   it("returns dash for null", () => {
