@@ -24,13 +24,47 @@ function useTvScale() {
     compute();
     window.addEventListener("resize", compute);
     window.addEventListener("orientationchange", compute);
+    document.addEventListener("fullscreenchange", compute);
+    // Safari
+    document.addEventListener("webkitfullscreenchange", compute as EventListener);
     return () => {
       window.removeEventListener("resize", compute);
       window.removeEventListener("orientationchange", compute);
+      document.removeEventListener("fullscreenchange", compute);
+      document.removeEventListener("webkitfullscreenchange", compute as EventListener);
     };
   }, []);
   return scale;
 }
+
+function useFullscreen() {
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
+    onChange();
+    document.addEventListener("fullscreenchange", onChange);
+    document.addEventListener("webkitfullscreenchange", onChange as EventListener);
+    return () => {
+      document.removeEventListener("fullscreenchange", onChange);
+      document.removeEventListener("webkitfullscreenchange", onChange as EventListener);
+    };
+  }, []);
+  const toggle = async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        const el: any = document.documentElement;
+        if (el.requestFullscreen) await el.requestFullscreen({ navigationUI: "hide" } as any);
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      }
+    } catch {
+      // fullscreen může být zablokován prohlížečem
+    }
+  };
+  return { isFullscreen, toggle };
+}
+
 
 
 type DisplayConfig = {
