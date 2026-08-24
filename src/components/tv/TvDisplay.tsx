@@ -123,6 +123,8 @@ export function TvDisplay({ token }: { token: string }) {
   const [slides, setSlides] = useState<Slide[]>([]);
   const [index, setIndex] = useState(0);
   const [now, setNow] = useState(() => new Date());
+  const tvScale = useTvScale();
+
   const [error, setError] = useState<string | null>(null);
 
   // Load config + slides
