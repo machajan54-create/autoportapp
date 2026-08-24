@@ -240,18 +240,32 @@ export function TvDisplay({ token }: { token: string }) {
 
   return (
     <div
-      className="tv-root"
       style={{
         position: "fixed",
         inset: 0,
-        width: "100vw",
-        height: "100vh",
-        background: "hsl(220 60% 6%)",
-        color: "white",
+        background: "#000",
         overflow: "hidden",
-        fontFamily: "'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
       }}
     >
+      <div
+        className="tv-root"
+        style={{
+          position: "relative",
+          width: TV_W,
+          height: TV_H,
+          flex: "0 0 auto",
+          transform: `scale(${tvScale})`,
+          transformOrigin: "center center",
+          background: "hsl(220 60% 6%)",
+          color: "white",
+          overflow: "hidden",
+          fontFamily: "'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif",
+        }}
+      >
+
       {/* Ambient background glow */}
       <div
         style={{
