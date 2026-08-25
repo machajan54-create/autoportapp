@@ -259,7 +259,7 @@ function BuyoutSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
                 >
                   {b.title}
                 </div>
-                <div style={{ fontSize: 16, opacity: 0.7, lineHeight: 1.25 }}>{b.desc}</div>
+                <div style={{ fontSize: 22, opacity: 0.85, lineHeight: 1.25 }}>{b.desc}</div>
               </div>
             </div>
           ))}
