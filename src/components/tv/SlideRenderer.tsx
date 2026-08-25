@@ -443,7 +443,7 @@ function LoungeSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
                 >
                   {b.title}
                 </div>
-                <div style={{ fontSize: 18, opacity: 0.7, lineHeight: 1.25 }}>{b.desc}</div>
+                <div style={{ fontSize: 24, opacity: 0.85, lineHeight: 1.25 }}>{b.desc}</div>
               </div>
             </div>
           ))}
