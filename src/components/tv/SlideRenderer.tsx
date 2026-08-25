@@ -581,7 +581,7 @@ function ImageSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
         className="tv-vignette"
         style={{
           background: url
-            ? "linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.78) 100%)"
+            ? "linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.3) 35%, rgba(0,0,0,0.92) 100%), linear-gradient(90deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0) 70%)"
             : "radial-gradient(ellipse at center, hsl(220 40% 18%) 0%, hsl(220 45% 8%) 100%)",
         }}
       />
