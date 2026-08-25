@@ -259,7 +259,7 @@ function BuyoutSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
                 >
                   {b.title}
                 </div>
-                <div style={{ fontSize: 16, opacity: 0.7, lineHeight: 1.25 }}>{b.desc}</div>
+                <div style={{ fontSize: 22, opacity: 0.85, lineHeight: 1.25 }}>{b.desc}</div>
               </div>
             </div>
           ))}
@@ -443,7 +443,7 @@ function LoungeSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
                 >
                   {b.title}
                 </div>
-                <div style={{ fontSize: 18, opacity: 0.7, lineHeight: 1.25 }}>{b.desc}</div>
+                <div style={{ fontSize: 24, opacity: 0.85, lineHeight: 1.25 }}>{b.desc}</div>
               </div>
             </div>
           ))}
@@ -581,7 +581,7 @@ function ImageSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
         className="tv-vignette"
         style={{
           background: url
-            ? "linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.78) 100%)"
+            ? "linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.3) 35%, rgba(0,0,0,0.92) 100%), linear-gradient(90deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0) 70%)"
             : "radial-gradient(ellipse at center, hsl(220 40% 18%) 0%, hsl(220 45% 8%) 100%)",
         }}
       />
@@ -672,7 +672,7 @@ function VideoSlide({
         className="tv-vignette"
         style={{
           background:
-            "linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.6) 100%)",
+            "linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.85) 100%), linear-gradient(90deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 45%, rgba(0,0,0,0) 70%)",
         }}
       />
       <SlideText slide={slide} />
