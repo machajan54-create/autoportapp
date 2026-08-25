@@ -814,10 +814,10 @@ function KindPayloadEditor({
         <Label>YouTube video ID nebo odkaz</Label>
         <Input
           value={payload.video_id ?? ""}
-          placeholder="např. dQw4w9WgXcQ"
+          placeholder="např. dQw4w9WgXcQ nebo https://youtu.be/dQw4w9WgXcQ"
           onChange={(e) => {
             const v = e.target.value.trim();
-            const m = v.match(/(?:v=|youtu\.be\/|embed\/)([\w-]{6,})/);
+            const m = v.match(/(?:v=|youtu\.be\/|embed\/|shorts\/|live\/)([\w-]{6,})/);
             patch({ video_id: m ? m[1] : v });
           }}
         />
