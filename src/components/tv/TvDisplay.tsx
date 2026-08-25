@@ -604,8 +604,8 @@ export function TvDisplay({ token }: { token: string }) {
             left: 0,
             right: 0,
             bottom: 0,
-            height: 80,
-            background: "rgba(0,0,0,0.55)",
+            height: 96,
+            background: "rgba(0,0,0,0.7)",
             borderTop: "1px solid rgba(255,255,255,0.08)",
             backdropFilter: "blur(12px)",
             color: "white",
@@ -627,7 +627,7 @@ export function TvDisplay({ token }: { token: string }) {
               fontWeight: 800,
               fontStyle: "italic",
               letterSpacing: "-0.02em",
-              fontSize: 26,
+              fontSize: 34,
               textTransform: "uppercase",
               boxShadow: "10px 0 30px rgba(0,0,0,0.5)",
               zIndex: 2,
@@ -638,7 +638,7 @@ export function TvDisplay({ token }: { token: string }) {
           </div>
           <div
             className="tv-ticker"
-            style={{ whiteSpace: "nowrap", fontSize: 26, fontWeight: 500, paddingLeft: TV_W }}
+            style={{ whiteSpace: "nowrap", fontSize: 34, fontWeight: 700, paddingLeft: TV_W }}
           >
             {Array.from({ length: 3 }).map((_, i) => (
               <span key={i} style={{ marginRight: 120 }}>
@@ -656,7 +656,7 @@ export function TvDisplay({ token }: { token: string }) {
             position: "absolute",
             left: 0,
             right: 0,
-            bottom: config?.ticker_text ? 80 : 0,
+            bottom: config?.ticker_text ? 96 : 0,
             height: 3,
             background: "rgba(255,255,255,0.15)",
             zIndex: 11,
@@ -691,6 +691,7 @@ export function TvDisplay({ token }: { token: string }) {
       )}
 
       <style>{`
+        :root { --tv-fs-sm: 18px; --tv-fs-md: 20px; --tv-fs-lg: 30px; --tv-fs-xl: 32px; }
         @keyframes tv-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
         @keyframes tv-fadein { from { opacity: 0; } to { opacity: 1; } }
         @keyframes tv-fadeout { from { opacity: 1; } to { opacity: 0; } }
@@ -700,7 +701,7 @@ export function TvDisplay({ token }: { token: string }) {
           from { transform: translateX(0); }
           to { transform: translateX(-100%); }
         }
-        .tv-ticker { animation: tv-ticker-scroll 45s linear infinite; }
+        .tv-ticker { animation: tv-ticker-scroll 32s linear infinite; }
         ::-webkit-scrollbar { display: none; }
         .tv-layer { position: absolute; inset: 0; opacity: 0; transition: opacity 1200ms cubic-bezier(0.4, 0, 0.2, 1); pointer-events: none; z-index: 1; will-change: opacity; }
         .tv-layer[data-active="true"] { opacity: 1; z-index: 2; }
@@ -733,8 +734,8 @@ export function TvDisplay({ token }: { token: string }) {
           -webkit-background-clip: text; background-clip: text;
           -webkit-text-fill-color: transparent; color: transparent;
         }
-        .tv-subtitle { font-size: 44px; font-weight: 500; margin-top: 20px; opacity: 0.85; text-shadow: 0 2px 16px rgba(0,0,0,0.55); }
-        .tv-body { font-size: 30px; font-weight: 400; margin-top: 24px; line-height: 1.35; opacity: 0.75; max-width: 900px; text-shadow: 0 2px 12px rgba(0,0,0,0.55); }
+        .tv-subtitle { font-size: 46px; font-weight: 500; margin-top: 20px; opacity: 0.95; text-shadow: 0 2px 16px rgba(0,0,0,0.55); }
+        .tv-body { font-size: var(--tv-fs-lg); font-weight: 400; margin-top: 24px; line-height: 1.35; opacity: 0.9; max-width: 900px; text-shadow: 0 2px 12px rgba(0,0,0,0.55); }
         .tv-bullets { list-style: none; margin: 32px 0 0; padding: 0; display: flex; flex-direction: column; gap: 22px; }
         .tv-bullets li { display: flex; align-items: center; gap: 24px; font-size: 36px; }
         .tv-bullet-dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; background: linear-gradient(135deg, #ff6b35, #e84393); }
@@ -751,11 +752,11 @@ export function TvDisplay({ token }: { token: string }) {
           z-index: 11; overflow: hidden;
         }
         .tv-side-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 22px 24px; }
-        .tv-side-label { color: rgba(255,255,255,0.4); font-size: 12px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 14px; }
-        .tv-stat-val { font-family: 'Space Grotesk', system-ui; font-size: 40px; font-weight: 700; line-height: 1; }
-        .tv-stat-lbl { font-size: 12px; opacity: 0.5; margin-top: 6px; }
+        .tv-side-label { color: rgba(255,255,255,0.78); font-size: var(--tv-fs-sm); font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 14px; }
+        .tv-stat-val { font-family: 'Space Grotesk', system-ui; font-size: 52px; font-weight: 700; line-height: 1; }
+        .tv-stat-lbl { font-size: var(--tv-fs-md); opacity: 0.85; margin-top: 8px; line-height: 1.2; }
         .tv-person-row { display: flex; align-items: center; gap: 14px; padding: 12px 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 14px; }
-        .tv-avatar { width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0; }
+        .tv-avatar { width: 56px; height: 56px; border-radius: 50%; flex-shrink: 0; }
         .tv-live-dot { margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 12px #22c55e; }
       `}</style>
         <link
@@ -817,8 +818,8 @@ function WeatherPill({ token, enabled }: { token: string; enabled: boolean }) {
       <div style={{ textAlign: "right", lineHeight: 1.05 }}>
         <div
           style={{
-            fontSize: 11,
-            opacity: 0.4,
+            fontSize: 18,
+            opacity: 0.75,
             fontWeight: 700,
             letterSpacing: "0.16em",
             textTransform: "uppercase",
@@ -915,7 +916,7 @@ function TvSidebar({ token }: { token: string }) {
                   <div
                     style={{
                       fontWeight: 700,
-                      fontSize: 16,
+                      fontSize: 30,
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
@@ -923,13 +924,13 @@ function TvSidebar({ token }: { token: string }) {
                   >
                     {p.name}
                   </div>
-                  <div style={{ fontSize: 12, opacity: 0.5 }}>Online</div>
+                  <div style={{ fontSize: 20, opacity: 0.8 }}>Online</div>
                 </div>
                 <div className="tv-live-dot" />
               </div>
             ))
           ) : (
-            <div style={{ fontSize: 14, opacity: 0.5, padding: "8px 0" }}>
+            <div style={{ fontSize: 22, opacity: 0.8, padding: "8px 0" }}>
               Nikdo aktuálně nepracuje
             </div>
           )}
@@ -947,9 +948,9 @@ function TvSidebar({ token }: { token: string }) {
       >
         <div
           style={{
-            color: "rgba(255,255,255,0.6)",
+            color: "rgba(255,255,255,0.85)",
             fontWeight: 700,
-            fontSize: 11,
+            fontSize: 18,
             letterSpacing: "0.16em",
             textTransform: "uppercase",
             marginBottom: 8,
@@ -962,7 +963,7 @@ function TvSidebar({ token }: { token: string }) {
             <div
               style={{
                 fontFamily: "'Space Grotesk', system-ui",
-                fontSize: 22,
+                fontSize: 32,
                 fontWeight: 700,
                 lineHeight: 1.2,
               }}
@@ -970,11 +971,11 @@ function TvSidebar({ token }: { token: string }) {
               {news[0].title}
             </div>
             {news[0].body && (
-              <div style={{ fontSize: 14, opacity: 0.7, marginTop: 6 }}>{news[0].body}</div>
+              <div style={{ fontSize: 22, opacity: 0.88, marginTop: 8 }}>{news[0].body}</div>
             )}
           </>
         ) : (
-          <div style={{ fontSize: 14, opacity: 0.6 }}>Zatím žádné novinky</div>
+          <div style={{ fontSize: 22, opacity: 0.8 }}>Zatím žádné novinky</div>
         )}
       </div>
     </aside>
