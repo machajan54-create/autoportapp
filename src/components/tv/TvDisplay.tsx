@@ -317,7 +317,7 @@ export function TvDisplay({ token }: { token: string }) {
         title={isFullscreen ? "Ukončit celoobrazovkový režim" : "Celoobrazovkový režim"}
         style={{
           position: "fixed",
-          bottom: 16,
+          top: 140,
           left: 16,
           zIndex: 100,
           display: "flex",
