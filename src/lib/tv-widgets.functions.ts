@@ -212,7 +212,11 @@ export const getTvWidgetData = createServerFn({ method: "POST" })
         const json: any = await res.json();
         const results: any[] = Array.isArray(json?.results) ? json.results : [];
         const ads: TvSautoAd[] = results.slice(0, 12).map((r) => {
-          const img = r?.images?.[0]?.url as string | undefined;
+          const rawImg = r?.images?.[0]?.url as string | undefined;
+          // Sauto CDN vyžaduje transformační parametry, jinak vrací 401
+          const img = rawImg
+            ? `${rawImg}?fl=exf|res,1024,768,1|wrm,/watermark/sauto.png,10,10|jpg,80,,1`
+            : undefined;
           const yearSrc = r?.manufacturing_date ?? r?.in_operation_date;
           return {
             id: r.id,

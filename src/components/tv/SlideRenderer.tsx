@@ -972,7 +972,17 @@ function SautoView({ d }: { d: Extract<TvWidgetResult, { widget: "sauto" }> }) {
       </div>
     );
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 26, width: "100%" }}>
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(3, 1fr)",
+        gridAutoRows: "1fr",
+        gap: 28,
+        width: "100%",
+        flex: 1,
+        minHeight: 0,
+      }}
+    >
       {d.ads.slice(0, 6).map((a) => (
         <div
           key={a.id}
@@ -983,20 +993,55 @@ function SautoView({ d }: { d: Extract<TvWidgetResult, { widget: "sauto" }> }) {
             border: "1px solid rgba(255,255,255,0.1)",
             display: "flex",
             flexDirection: "column",
+            minHeight: 0,
           }}
         >
           <div
             style={{
-              aspectRatio: "16/10",
-              backgroundImage: a.photo_url ? `url(${a.photo_url})` : undefined,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              background: a.photo_url ? undefined : "rgba(255,255,255,0.05)",
+              flex: "1 1 auto",
+              minHeight: 0,
+              position: "relative",
+              background: "rgba(255,255,255,0.05)",
             }}
-          />
-          <div style={{ padding: "16px 20px" }}>
-            <div style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.15 }}>{a.name}</div>
-            <div style={{ fontSize: 22, opacity: 0.82, marginTop: 6 }}>
+          >
+            {a.photo_url && (
+              <img
+                src={a.photo_url}
+                alt=""
+                loading="eager"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
+            )}
+          </div>
+          <div style={{ padding: "14px 20px 18px", flex: "0 0 auto" }}>
+            <div
+              style={{
+                fontSize: 28,
+                fontWeight: 700,
+                lineHeight: 1.15,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {a.name}
+            </div>
+            <div
+              style={{
+                fontSize: 22,
+                opacity: 0.85,
+                marginTop: 6,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
               {[
                 a.year,
                 a.km != null ? `${a.km.toLocaleString("cs-CZ")} km` : null,
@@ -1008,9 +1053,9 @@ function SautoView({ d }: { d: Extract<TvWidgetResult, { widget: "sauto" }> }) {
             </div>
             <div
               style={{
-                fontSize: 30,
+                fontSize: 32,
                 fontWeight: 800,
-                marginTop: 10,
+                marginTop: 8,
                 color: "hsl(35 95% 65%)",
               }}
             >
