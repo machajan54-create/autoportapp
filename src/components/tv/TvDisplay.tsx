@@ -412,31 +412,32 @@ export function TvDisplay({ token }: { token: string }) {
           top: 0,
           left: 0,
           right: 0,
-          height: 128,
-          padding: "0 76px",
+          height: 152,
+          padding: "0 64px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          background: "linear-gradient(180deg, rgba(5,10,20,0.85), rgba(5,10,20,0))",
-          borderBottom: "1px solid rgba(255,255,255,0.05)",
+          background:
+            "linear-gradient(180deg, rgba(4,8,16,0.95) 0%, rgba(4,8,16,0.82) 60%, rgba(4,8,16,0))",
+          borderBottom: "1px solid rgba(255,255,255,0.12)",
           zIndex: 12,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 22 }}>
           <img
             src={citroenAutoportLogo.url}
             alt="Citroën Autoport"
             style={{
-              height: 78,
+              height: 88,
               width: "auto",
               objectFit: "contain",
-              filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.4))",
+              filter: "drop-shadow(0 4px 14px rgba(0,0,0,0.55))",
             }}
           />
           <div
             style={{
-              width: 1,
-              height: 50,
+              width: 2,
+              height: 72,
               background:
                 "linear-gradient(180deg, transparent, rgba(255,255,255,0.25), transparent)",
               animation: "fade-in 0.6s ease-out both",
