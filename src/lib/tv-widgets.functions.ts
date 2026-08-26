@@ -28,7 +28,23 @@ export type TvWidgetResult =
   | { widget: "at_work"; people: { name: string }[] }
   | { widget: "vehicles"; vehicles: TvVehicleCard[] }
   | { widget: "news"; items: { id: string; title: string; body: string | null }[] }
-  | { widget: "weather"; temp_c: number | null; code: number | null; city: string };
+  | { widget: "weather"; temp_c: number | null; code: number | null; city: string }
+  | { widget: "sauto"; ads: TvSautoAd[] };
+
+export type TvSautoAd = {
+  id: number;
+  name: string;
+  price: number | null;
+  price_by_agreement: boolean;
+  year: number | null;
+  km: number | null;
+  fuel: string | null;
+  gearbox: string | null;
+  photo_url: string | null;
+};
+
+// Veřejný profil prodejce na Sauto.cz (Autoport s.r.o.)
+const SAUTO_PREMISE_ID = 161030;
 
 export const getTvWidgetData = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => InputSchema.parse(d))
