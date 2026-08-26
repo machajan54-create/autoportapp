@@ -111,7 +111,16 @@ export const getTvWidgetData = createServerFn({ method: "POST" })
         .from("attendance_employees")
         .select("id, name")
         .in("id", ids);
-      return { widget: "at_work", people: (emps ?? []).map((e: any) => ({ name: e.name })) };
+      const fmt = (fullName: string) => {
+        const parts = fullName.trim().split(/\s+/);
+        if (parts.length < 2) return parts[0] ?? "";
+        const last = parts[parts.length - 1];
+        return `${parts[0]} ${last[0]}.`;
+      };
+      return {
+        widget: "at_work",
+        people: (emps ?? []).map((e: any) => ({ name: fmt(e.name) })),
+      };
     }
 
     if (data.widget === "vehicles") {
