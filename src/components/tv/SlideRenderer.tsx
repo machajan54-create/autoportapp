@@ -972,13 +972,32 @@ function VehiclesView({ d }: { d: Extract<TvWidgetResult, { widget: "vehicles" }
   );
 }
 
+const SAUTO_PER_PAGE = 6;
+
 function SautoView({ d }: { d: Extract<TvWidgetResult, { widget: "sauto" }> }) {
-  if (!d.ads.length)
+  const total = d.ads.length;
+  const pages = Math.max(1, Math.ceil(total / SAUTO_PER_PAGE));
+  const [page, setPage] = useState(0);
+
+  useEffect(() => {
+    setPage(0);
+  }, [total]);
+
+  useEffect(() => {
+    if (pages <= 1) return;
+    const t = setInterval(() => setPage((p) => (p + 1) % pages), 9000);
+    return () => clearInterval(t);
+  }, [pages]);
+
+  if (!total)
     return (
       <div className="tv-body" style={{ opacity: 0.7 }}>
         Inzeráty se nepodařilo načíst.
       </div>
     );
+
+  const visible = d.ads.slice(page * SAUTO_PER_PAGE, page * SAUTO_PER_PAGE + SAUTO_PER_PAGE);
+
   return (
     <div
       style={{
@@ -989,9 +1008,42 @@ function SautoView({ d }: { d: Extract<TvWidgetResult, { widget: "sauto" }> }) {
         width: "100%",
         flex: 1,
         minHeight: 0,
+        position: "relative",
       }}
     >
-      {d.ads.slice(0, 6).map((a) => (
+      {pages > 1 && (
+        <div
+          style={{
+            position: "absolute",
+            top: -52,
+            right: 0,
+            fontSize: 26,
+            fontWeight: 700,
+            opacity: 0.85,
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+          }}
+        >
+          <span>
+            {page + 1}/{pages}
+          </span>
+          <span style={{ display: "flex", gap: 8 }}>
+            {Array.from({ length: pages }).map((_, i) => (
+              <span
+                key={i}
+                style={{
+                  width: 14,
+                  height: 14,
+                  borderRadius: 999,
+                  background: i === page ? "hsl(35 95% 65%)" : "rgba(255,255,255,0.3)",
+                }}
+              />
+            ))}
+          </span>
+        </div>
+      )}
+      {visible.map((a) => (
         <div
           key={a.id}
           style={{
