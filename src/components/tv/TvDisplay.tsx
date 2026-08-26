@@ -673,8 +673,8 @@ export function TvDisplay({ token }: { token: string }) {
         .tv-layer[data-active="true"] { opacity: 1; z-index: 2; }
         .tv-bg { position: absolute; inset: 0; background-size: cover; background-position: center; }
         .tv-vignette { position: absolute; inset: 0; }
-        /* Content area: left 4%, top 160px, right 37% (sidebar 33% + gap), bottom 100px */
-        .tv-content { position: absolute; left: 4%; right: 34%; top: 160px; bottom: 100px; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; }
+        /* Content area: left 4%, top 184px (top bar 152), right 34%, bottom 100px */
+        .tv-content { position: absolute; left: 4%; right: 34%; top: 184px; bottom: 100px; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; }
         .tv-badge {
           display: inline-flex; align-items: center; gap: 12px;
           align-self: flex-start; padding: 10px 24px;
