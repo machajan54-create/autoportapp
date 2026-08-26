@@ -657,7 +657,7 @@ export function TvDisplay({ token }: { token: string }) {
       )}
 
       <style>{`
-        :root { --tv-fs-sm: 24px; --tv-fs-md: 26px; --tv-fs-lg: 34px; --tv-fs-xl: 40px; }
+        :root { --tv-fs-sm: 26px; --tv-fs-md: 30px; --tv-fs-lg: 38px; --tv-fs-xl: 44px; }
         @keyframes tv-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
         @keyframes tv-fadein { from { opacity: 0; } to { opacity: 1; } }
         @keyframes tv-fadeout { from { opacity: 1; } to { opacity: 0; } }
