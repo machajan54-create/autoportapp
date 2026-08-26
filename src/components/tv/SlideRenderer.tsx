@@ -799,6 +799,7 @@ function DataWidgetSlide({
         {data?.widget === "stats" && <StatsView d={data} />}
         {data?.widget === "at_work" && <AtWorkView d={data} />}
         {data?.widget === "vehicles" && <VehiclesView d={data} />}
+        {data?.widget === "sauto" && <SautoView d={data} />}
         {data?.widget === "news" && <NewsView d={data} />}
         {data?.widget === "weather" && <WeatherView d={data} />}
       </div>
