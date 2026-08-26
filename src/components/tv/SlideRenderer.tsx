@@ -739,7 +739,9 @@ function DataWidgetSlide({
   token: string;
   active: boolean;
 }) {
-  const p = slide.payload as { widget?: "stats" | "at_work" | "vehicles" | "news" | "weather" };
+  const p = slide.payload as {
+    widget?: "stats" | "at_work" | "vehicles" | "news" | "weather" | "sauto";
+  };
   const widget = p.widget ?? "stats";
   const [data, setData] = useState<TvWidgetResult | null>(null);
   const [err, setErr] = useState<string | null>(null);
