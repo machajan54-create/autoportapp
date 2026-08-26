@@ -203,5 +203,34 @@ export const getTvWidgetData = createServerFn({ method: "POST" })
       }
     }
 
+    if (data.widget === "sauto") {
+      try {
+        const res = await fetch(
+          `https://www.sauto.cz/api/v1/items/search?premise_id=${SAUTO_PREMISE_ID}&per_page=30`,
+          { headers: { "User-Agent": "Mozilla/5.0 (AutoportTV)" } },
+        );
+        const json: any = await res.json();
+        const results: any[] = Array.isArray(json?.results) ? json.results : [];
+        const ads: TvSautoAd[] = results.slice(0, 12).map((r) => {
+          const img = r?.images?.[0]?.url as string | undefined;
+          const yearSrc = r?.manufacturing_date ?? r?.in_operation_date;
+          return {
+            id: r.id,
+            name: r.name ?? "",
+            price: typeof r.price === "number" ? r.price : null,
+            price_by_agreement: !!r.price_by_agreement,
+            year: yearSrc ? Number(String(yearSrc).slice(0, 4)) : null,
+            km: typeof r.tachometer === "number" ? r.tachometer : null,
+            fuel: r?.fuel_cb?.name ?? null,
+            gearbox: r?.gearbox_cb?.name ?? null,
+            photo_url: img ? (img.startsWith("//") ? `https:${img}` : img) : null,
+          };
+        });
+        return { widget: "sauto", ads };
+      } catch {
+        return { widget: "sauto", ads: [] };
+      }
+    }
+
     throw new Error("Unknown widget");
   });
