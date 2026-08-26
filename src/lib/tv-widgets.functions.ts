@@ -6,7 +6,7 @@ import { z } from "zod";
 
 const InputSchema = z.object({
   token: z.string().min(4).max(200),
-  widget: z.enum(["stats", "at_work", "vehicles", "news", "weather"]),
+  widget: z.enum(["stats", "at_work", "vehicles", "news", "weather", "sauto"]),
 });
 
 export type TvVehicleCard = {
@@ -28,7 +28,23 @@ export type TvWidgetResult =
   | { widget: "at_work"; people: { name: string }[] }
   | { widget: "vehicles"; vehicles: TvVehicleCard[] }
   | { widget: "news"; items: { id: string; title: string; body: string | null }[] }
-  | { widget: "weather"; temp_c: number | null; code: number | null; city: string };
+  | { widget: "weather"; temp_c: number | null; code: number | null; city: string }
+  | { widget: "sauto"; ads: TvSautoAd[] };
+
+export type TvSautoAd = {
+  id: number;
+  name: string;
+  price: number | null;
+  price_by_agreement: boolean;
+  year: number | null;
+  km: number | null;
+  fuel: string | null;
+  gearbox: string | null;
+  photo_url: string | null;
+};
+
+// Veřejný profil prodejce na Sauto.cz (Autoport s.r.o.)
+const SAUTO_PREMISE_ID = 161030;
 
 export const getTvWidgetData = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => InputSchema.parse(d))
@@ -184,6 +200,35 @@ export const getTvWidgetData = createServerFn({ method: "POST" })
         };
       } catch {
         return { widget: "weather", temp_c: null, code: null, city };
+      }
+    }
+
+    if (data.widget === "sauto") {
+      try {
+        const res = await fetch(
+          `https://www.sauto.cz/api/v1/items/search?premise_id=${SAUTO_PREMISE_ID}&per_page=30`,
+          { headers: { "User-Agent": "Mozilla/5.0 (AutoportTV)" } },
+        );
+        const json: any = await res.json();
+        const results: any[] = Array.isArray(json?.results) ? json.results : [];
+        const ads: TvSautoAd[] = results.slice(0, 12).map((r) => {
+          const img = r?.images?.[0]?.url as string | undefined;
+          const yearSrc = r?.manufacturing_date ?? r?.in_operation_date;
+          return {
+            id: r.id,
+            name: r.name ?? "",
+            price: typeof r.price === "number" ? r.price : null,
+            price_by_agreement: !!r.price_by_agreement,
+            year: yearSrc ? Number(String(yearSrc).slice(0, 4)) : null,
+            km: typeof r.tachometer === "number" ? r.tachometer : null,
+            fuel: r?.fuel_cb?.name ?? null,
+            gearbox: r?.gearbox_cb?.name ?? null,
+            photo_url: img ? (img.startsWith("//") ? `https:${img}` : img) : null,
+          };
+        });
+        return { widget: "sauto", ads };
+      } catch {
+        return { widget: "sauto", ads: [] };
       }
     }
 
