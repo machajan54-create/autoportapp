@@ -206,12 +206,12 @@ export const getTvWidgetData = createServerFn({ method: "POST" })
     if (data.widget === "sauto") {
       try {
         const res = await fetch(
-          `https://www.sauto.cz/api/v1/items/search?premise_id=${SAUTO_PREMISE_ID}&per_page=30`,
+          `https://www.sauto.cz/api/v1/items/search?premise_id=${SAUTO_PREMISE_ID}&per_page=60`,
           { headers: { "User-Agent": "Mozilla/5.0 (AutoportTV)" } },
         );
         const json: any = await res.json();
         const results: any[] = Array.isArray(json?.results) ? json.results : [];
-        const ads: TvSautoAd[] = results.slice(0, 12).map((r) => {
+        const ads: TvSautoAd[] = results.slice(0, 36).map((r) => {
           const rawImg = r?.images?.[0]?.url as string | undefined;
           // Sauto CDN vyžaduje transformační parametry, jinak vrací 401
           const img = rawImg
