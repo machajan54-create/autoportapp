@@ -558,8 +558,8 @@ export function TvDisplay({ token }: { token: string }) {
             <div style={{ textAlign: "right", lineHeight: 1.05 }}>
               <div
                 style={{
-                  fontSize: 11,
-                  opacity: 0.4,
+                  fontSize: 18,
+                  opacity: 0.75,
                   fontWeight: 700,
                   letterSpacing: "0.16em",
                   textTransform: "uppercase",
@@ -579,7 +579,7 @@ export function TvDisplay({ token }: { token: string }) {
               >
                 {now.toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" })}
               </div>
-              <div style={{ fontSize: 14, opacity: 0.55 }}>
+              <div style={{ fontSize: 22, opacity: 0.85 }}>
                 {now.toLocaleDateString("cs-CZ", {
                   weekday: "long",
                   day: "numeric",
@@ -691,7 +691,7 @@ export function TvDisplay({ token }: { token: string }) {
       )}
 
       <style>{`
-        :root { --tv-fs-sm: 18px; --tv-fs-md: 20px; --tv-fs-lg: 30px; --tv-fs-xl: 32px; }
+        :root { --tv-fs-sm: 24px; --tv-fs-md: 26px; --tv-fs-lg: 34px; --tv-fs-xl: 40px; }
         @keyframes tv-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
         @keyframes tv-fadein { from { opacity: 0; } to { opacity: 1; } }
         @keyframes tv-fadeout { from { opacity: 1; } to { opacity: 0; } }
@@ -708,7 +708,7 @@ export function TvDisplay({ token }: { token: string }) {
         .tv-bg { position: absolute; inset: 0; background-size: cover; background-position: center; }
         .tv-vignette { position: absolute; inset: 0; }
         /* Content area: left 4%, top 160px, right 37% (sidebar 33% + gap), bottom 100px */
-        .tv-content { position: absolute; left: 4%; right: 37%; top: 160px; bottom: 100px; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; }
+        .tv-content { position: absolute; left: 4%; right: 34%; top: 160px; bottom: 100px; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; }
         .tv-badge {
           display: inline-flex; align-items: center; gap: 12px;
           align-self: flex-start; padding: 10px 24px;
@@ -734,30 +734,30 @@ export function TvDisplay({ token }: { token: string }) {
           -webkit-background-clip: text; background-clip: text;
           -webkit-text-fill-color: transparent; color: transparent;
         }
-        .tv-subtitle { font-size: 46px; font-weight: 500; margin-top: 20px; opacity: 0.95; text-shadow: 0 2px 16px rgba(0,0,0,0.55); }
-        .tv-body { font-size: var(--tv-fs-lg); font-weight: 400; margin-top: 24px; line-height: 1.35; opacity: 0.9; max-width: 900px; text-shadow: 0 2px 12px rgba(0,0,0,0.55); }
-        .tv-bullets { list-style: none; margin: 32px 0 0; padding: 0; display: flex; flex-direction: column; gap: 22px; }
-        .tv-bullets li { display: flex; align-items: center; gap: 24px; font-size: 36px; }
+        .tv-subtitle { font-size: 52px; font-weight: 500; margin-top: 20px; opacity: 1; text-shadow: 0 2px 16px rgba(0,0,0,0.7); }
+        .tv-body { font-size: var(--tv-fs-lg); font-weight: 400; margin-top: 24px; line-height: 1.35; opacity: 0.96; max-width: 900px; text-shadow: 0 2px 12px rgba(0,0,0,0.7); }
+        .tv-bullets { list-style: none; margin: 32px 0 0; padding: 0; display: flex; flex-direction: column; gap: 24px; }
+        .tv-bullets li { display: flex; align-items: center; gap: 24px; font-size: 40px; text-shadow: 0 2px 12px rgba(0,0,0,0.7); }
         .tv-bullet-dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; background: linear-gradient(135deg, #ff6b35, #e84393); }
 
         /* Sidebar */
         .tv-sidebar {
-          position: absolute; right: 0; top: 160px; bottom: 100px; width: 33%;
-          background: rgba(255,255,255,0.03);
+          position: absolute; right: 0; top: 160px; bottom: 100px; width: 30%;
+          background: rgba(6,10,20,0.55);
           backdrop-filter: blur(24px);
           -webkit-backdrop-filter: blur(24px);
-          border-left: 1px solid rgba(255,255,255,0.08);
-          padding: 32px 36px 32px 32px;
-          display: flex; flex-direction: column; gap: 24px;
+          border-left: 1px solid rgba(255,255,255,0.14);
+          padding: 36px 36px 36px 32px;
+          display: flex; flex-direction: column; gap: 28px;
           z-index: 11; overflow: hidden;
         }
-        .tv-side-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 22px 24px; }
-        .tv-side-label { color: rgba(255,255,255,0.78); font-size: var(--tv-fs-sm); font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 14px; }
-        .tv-stat-val { font-family: 'Space Grotesk', system-ui; font-size: 52px; font-weight: 700; line-height: 1; }
-        .tv-stat-lbl { font-size: var(--tv-fs-md); opacity: 0.85; margin-top: 8px; line-height: 1.2; }
-        .tv-person-row { display: flex; align-items: center; gap: 14px; padding: 12px 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 14px; }
-        .tv-avatar { width: 56px; height: 56px; border-radius: 50%; flex-shrink: 0; }
-        .tv-live-dot { margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 12px #22c55e; }
+        .tv-side-card { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.14); border-radius: 20px; padding: 22px 24px; }
+        .tv-side-label { color: rgba(255,255,255,0.9); font-size: var(--tv-fs-sm); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 18px; }
+        .tv-stat-val { font-family: 'Space Grotesk', system-ui; font-size: 56px; font-weight: 700; line-height: 1; }
+        .tv-stat-lbl { font-size: var(--tv-fs-md); opacity: 0.9; margin-top: 8px; line-height: 1.2; }
+        .tv-person-row { display: flex; align-items: center; gap: 18px; padding: 16px 18px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; }
+        .tv-avatar { width: 64px; height: 64px; border-radius: 50%; flex-shrink: 0; }
+        .tv-live-dot { margin-left: auto; width: 12px; height: 12px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 14px #22c55e; }
       `}</style>
         <link
           rel="stylesheet"
@@ -845,11 +845,6 @@ function WeatherPill({ token, enabled }: { token: string; enabled: boolean }) {
 
 function TvSidebar({ token }: { token: string }) {
   const fn = useServerFn(getTvWidgetData);
-  const statsQ = useQuery({
-    queryKey: ["tv-widget", token, "stats"],
-    queryFn: () => fn({ data: { token, widget: "stats" } }),
-    refetchInterval: 60 * 1000,
-  });
   const atWorkQ = useQuery({
     queryKey: ["tv-widget", token, "at_work"],
     queryFn: () => fn({ data: { token, widget: "at_work" } }),
@@ -861,7 +856,7 @@ function TvSidebar({ token }: { token: string }) {
     refetchInterval: 5 * 60 * 1000,
   });
 
-  const stats = statsQ.data && statsQ.data.widget === "stats" ? statsQ.data : null;
+  
   const people = atWorkQ.data && atWorkQ.data.widget === "at_work" ? atWorkQ.data.people : [];
   const news = newsQ.data && newsQ.data.widget === "news" ? newsQ.data.items : [];
 
@@ -874,39 +869,11 @@ function TvSidebar({ token }: { token: string }) {
 
   return (
     <aside className="tv-sidebar">
-      <div>
-        <div className="tv-side-label">V showroomu dnes</div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <div className="tv-side-card">
-            <div className="tv-stat-val" style={{ color: "#f7931e" }}>
-              {stats?.day.vykupy ?? 0}
-            </div>
-            <div className="tv-stat-lbl">Nové výkupy dnes</div>
-          </div>
-          <div className="tv-side-card">
-            <div className="tv-stat-val">{stats?.day.ukoly_done ?? 0}</div>
-            <div className="tv-stat-lbl">Hotové úkoly</div>
-          </div>
-          <div className="tv-side-card">
-            <div className="tv-stat-val" style={{ color: "#e84393" }}>
-              {stats?.week.vykupy ?? 0}
-            </div>
-            <div className="tv-stat-lbl">Výkupy / týden</div>
-          </div>
-          <div className="tv-side-card">
-            <div className="tv-stat-val" style={{ color: "#6c5ce7" }}>
-              {stats?.week.prodano ?? 0}
-            </div>
-            <div className="tv-stat-lbl">Prodáno / týden</div>
-          </div>
-        </div>
-      </div>
-
       <div style={{ minHeight: 0, display: "flex", flexDirection: "column" }}>
         <div className="tv-side-label">Kdo je právě v práci</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, overflow: "hidden" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14, overflow: "hidden" }}>
           {people.length ? (
-            people.slice(0, 4).map((p, i) => (
+            people.slice(0, 6).map((p, i) => (
               <div key={i} className="tv-person-row">
                 <div
                   className="tv-avatar"
@@ -916,7 +883,8 @@ function TvSidebar({ token }: { token: string }) {
                   <div
                     style={{
                       fontWeight: 700,
-                      fontSize: 30,
+                      fontSize: 38,
+                      lineHeight: 1.1,
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
@@ -924,13 +892,13 @@ function TvSidebar({ token }: { token: string }) {
                   >
                     {p.name}
                   </div>
-                  <div style={{ fontSize: 20, opacity: 0.8 }}>Online</div>
+                  <div style={{ fontSize: 24, opacity: 0.85 }}>Online</div>
                 </div>
                 <div className="tv-live-dot" />
               </div>
             ))
           ) : (
-            <div style={{ fontSize: 22, opacity: 0.8, padding: "8px 0" }}>
+            <div style={{ fontSize: 30, opacity: 0.85, padding: "10px 0" }}>
               Nikdo aktuálně nepracuje
             </div>
           )}
@@ -940,20 +908,20 @@ function TvSidebar({ token }: { token: string }) {
       <div
         style={{
           marginTop: "auto",
-          padding: 24,
-          background: "linear-gradient(135deg, rgba(255,107,53,0.2), rgba(232,67,147,0.15))",
-          border: "1px solid rgba(255,255,255,0.1)",
+          padding: 28,
+          background: "linear-gradient(135deg, rgba(255,107,53,0.28), rgba(232,67,147,0.22))",
+          border: "1px solid rgba(255,255,255,0.16)",
           borderRadius: 24,
         }}
       >
         <div
           style={{
-            color: "rgba(255,255,255,0.85)",
+            color: "rgba(255,255,255,0.9)",
             fontWeight: 700,
-            fontSize: 18,
-            letterSpacing: "0.16em",
+            fontSize: 24,
+            letterSpacing: "0.14em",
             textTransform: "uppercase",
-            marginBottom: 8,
+            marginBottom: 12,
           }}
         >
           Aktuality
@@ -963,19 +931,21 @@ function TvSidebar({ token }: { token: string }) {
             <div
               style={{
                 fontFamily: "'Space Grotesk', system-ui",
-                fontSize: 32,
+                fontSize: 40,
                 fontWeight: 700,
-                lineHeight: 1.2,
+                lineHeight: 1.15,
               }}
             >
               {news[0].title}
             </div>
             {news[0].body && (
-              <div style={{ fontSize: 22, opacity: 0.88, marginTop: 8 }}>{news[0].body}</div>
+              <div style={{ fontSize: 28, opacity: 0.95, marginTop: 10, lineHeight: 1.3 }}>
+                {news[0].body}
+              </div>
             )}
           </>
         ) : (
-          <div style={{ fontSize: 22, opacity: 0.8 }}>Zatím žádné novinky</div>
+          <div style={{ fontSize: 28, opacity: 0.85 }}>Zatím žádné novinky</div>
         )}
       </div>
     </aside>

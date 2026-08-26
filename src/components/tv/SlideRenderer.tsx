@@ -780,9 +780,17 @@ function DataWidgetSlide({
         className="tv-bg"
         style={{ background: "linear-gradient(135deg, hsl(220 55% 12%), hsl(220 60% 6%))" }}
       />
-      <div className="tv-content" style={{ padding: "6% 5% 8%", justifyContent: "flex-start" }}>
+      <div
+        className="tv-content"
+        style={{
+          padding: "24px 40px 24px 0",
+          justifyContent: "flex-start",
+          gap: 20,
+          overflow: "hidden",
+        }}
+      >
         {slide.title && (
-          <h1 className="tv-title" style={{ marginBottom: 32 }}>
+          <h1 className="tv-title" style={{ fontSize: 64, marginBottom: 8, flex: "0 0 auto" }}>
             {slide.title}
           </h1>
         )}
@@ -976,7 +984,7 @@ function SautoView({ d }: { d: Extract<TvWidgetResult, { widget: "sauto" }> }) {
       style={{
         display: "grid",
         gridTemplateColumns: "repeat(3, 1fr)",
-        gridAutoRows: "1fr",
+        gridTemplateRows: "repeat(2, minmax(0, 1fr))",
         gap: 28,
         width: "100%",
         flex: 1,
@@ -991,14 +999,14 @@ function SautoView({ d }: { d: Extract<TvWidgetResult, { widget: "sauto" }> }) {
             overflow: "hidden",
             background: "rgba(255,255,255,0.06)",
             border: "1px solid rgba(255,255,255,0.1)",
-            display: "flex",
-            flexDirection: "column",
+            display: "grid",
+            gridTemplateRows: "minmax(0, 1fr) 138px",
             minHeight: 0,
           }}
         >
           <div
             style={{
-              flex: "1 1 auto",
+              width: "100%",
               minHeight: 0,
               position: "relative",
               background: "rgba(255,255,255,0.05)",
@@ -1019,7 +1027,7 @@ function SautoView({ d }: { d: Extract<TvWidgetResult, { widget: "sauto" }> }) {
               />
             )}
           </div>
-          <div style={{ padding: "14px 20px 18px", flex: "0 0 auto" }}>
+          <div style={{ padding: "12px 20px 14px", overflow: "hidden" }}>
             <div
               style={{
                 fontSize: 28,
