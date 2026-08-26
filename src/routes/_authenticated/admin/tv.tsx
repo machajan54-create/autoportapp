@@ -90,6 +90,7 @@ const WIDGET_LABELS: Record<string, string> = {
   vehicles: "Nabídka ojetých vozů",
   news: "Novinky / aktuality",
   weather: "Počasí",
+  sauto: "Inzeráty ze Sauto.cz",
 };
 
 function toDatetimeLocal(v: string | null) {
