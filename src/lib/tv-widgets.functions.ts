@@ -6,7 +6,7 @@ import { z } from "zod";
 
 const InputSchema = z.object({
   token: z.string().min(4).max(200),
-  widget: z.enum(["stats", "at_work", "vehicles", "news", "weather"]),
+  widget: z.enum(["stats", "at_work", "vehicles", "news", "weather", "sauto"]),
 });
 
 export type TvVehicleCard = {
