@@ -524,8 +524,8 @@ export function TvDisplay({ token }: { token: string }) {
             <div style={{ textAlign: "right", lineHeight: 1.05 }}>
               <div
                 style={{
-                  fontSize: 18,
-                  opacity: 0.75,
+                  fontSize: 22,
+                  opacity: 0.9,
                   fontWeight: 700,
                   letterSpacing: "0.16em",
                   textTransform: "uppercase",
@@ -571,7 +571,7 @@ export function TvDisplay({ token }: { token: string }) {
             right: 0,
             bottom: 0,
             height: 96,
-            background: "rgba(0,0,0,0.7)",
+            background: "rgba(0,0,0,0.88)",
             borderTop: "1px solid rgba(255,255,255,0.08)",
             backdropFilter: "blur(12px)",
             color: "white",
@@ -593,7 +593,7 @@ export function TvDisplay({ token }: { token: string }) {
               fontWeight: 800,
               fontStyle: "italic",
               letterSpacing: "-0.02em",
-              fontSize: 34,
+              fontSize: 40,
               textTransform: "uppercase",
               boxShadow: "10px 0 30px rgba(0,0,0,0.5)",
               zIndex: 2,
@@ -604,7 +604,7 @@ export function TvDisplay({ token }: { token: string }) {
           </div>
           <div
             className="tv-ticker"
-            style={{ whiteSpace: "nowrap", fontSize: 34, fontWeight: 700, paddingLeft: TV_W }}
+            style={{ whiteSpace: "nowrap", fontSize: 40, fontWeight: 700, paddingLeft: TV_W }}
           >
             {Array.from({ length: 3 }).map((_, i) => (
               <span key={i} style={{ marginRight: 120 }}>
@@ -784,8 +784,8 @@ function WeatherPill({ token, enabled }: { token: string; enabled: boolean }) {
       <div style={{ textAlign: "right", lineHeight: 1.05 }}>
         <div
           style={{
-            fontSize: 18,
-            opacity: 0.75,
+            fontSize: 22,
+            opacity: 0.9,
             fontWeight: 700,
             letterSpacing: "0.16em",
             textTransform: "uppercase",
