@@ -964,6 +964,67 @@ function VehiclesView({ d }: { d: Extract<TvWidgetResult, { widget: "vehicles" }
   );
 }
 
+function SautoView({ d }: { d: Extract<TvWidgetResult, { widget: "sauto" }> }) {
+  if (!d.ads.length)
+    return (
+      <div className="tv-body" style={{ opacity: 0.7 }}>
+        Inzeráty se nepodařilo načíst.
+      </div>
+    );
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 26, width: "100%" }}>
+      {d.ads.slice(0, 6).map((a) => (
+        <div
+          key={a.id}
+          style={{
+            borderRadius: 20,
+            overflow: "hidden",
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <div
+            style={{
+              aspectRatio: "16/10",
+              backgroundImage: a.photo_url ? `url(${a.photo_url})` : undefined,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              background: a.photo_url ? undefined : "rgba(255,255,255,0.05)",
+            }}
+          />
+          <div style={{ padding: "16px 20px" }}>
+            <div style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.15 }}>{a.name}</div>
+            <div style={{ fontSize: 22, opacity: 0.82, marginTop: 6 }}>
+              {[
+                a.year,
+                a.km != null ? `${a.km.toLocaleString("cs-CZ")} km` : null,
+                a.fuel,
+                a.gearbox,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </div>
+            <div
+              style={{
+                fontSize: 30,
+                fontWeight: 800,
+                marginTop: 10,
+                color: "hsl(35 95% 65%)",
+              }}
+            >
+              {a.price_by_agreement || a.price == null
+                ? "Cena dohodou"
+                : `${a.price.toLocaleString("cs-CZ")} Kč`}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function NewsView({ d }: { d: Extract<TvWidgetResult, { widget: "news" }> }) {
   if (!d.items.length)
     return (
