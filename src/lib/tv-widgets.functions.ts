@@ -102,9 +102,9 @@ export const getTvWidgetData = createServerFn({ method: "POST" })
     if (data.widget === "at_work") {
       const { data: rows } = await supabaseAdmin
         .from("attendance_records")
-        .select("employee_id, check_in_at, check_out_at")
-        .gte("check_in_at", startOfDay.toISOString())
-        .is("check_out_at", null);
+        .select("employee_id, check_in, check_out")
+        .gte("check_in", startOfDay.toISOString())
+        .is("check_out", null);
       const ids = Array.from(new Set((rows ?? []).map((r: any) => r.employee_id).filter(Boolean)));
       if (!ids.length) return { widget: "at_work", people: [] };
       const { data: emps } = await supabaseAdmin
