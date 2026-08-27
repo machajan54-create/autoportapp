@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Briefcase, Plus, Pencil, Upload, History } from "lucide-react";
@@ -47,7 +47,21 @@ import {
 } from "@/lib/deals.functions";
 import { cn } from "@/lib/utils";
 
+const dealsListOptions = queryOptions({
+  queryKey: ["deals"],
+  queryFn: () => listDeals({}),
+});
+
 export const Route = createFileRoute("/_authenticated/deals/")({
+  loader: ({ context }) => context.queryClient.ensureQueryData(dealsListOptions),
+  pendingComponent: () => (
+    <div className="p-8 text-sm text-muted-foreground">Načítám případy…</div>
+  ),
+  errorComponent: ({ error }: { error: Error }) => (
+    <div role="alert" className="p-8 text-red-600">
+      {error instanceof Error ? error.message : "Načítání selhalo"}
+    </div>
+  ),
   component: DealsPage,
 });
 
@@ -97,16 +111,12 @@ function formatCzk(v: number | string | null) {
 
 function DealsPage() {
   const qc = useQueryClient();
-  const fetchList = useServerFn(listDeals);
   const createFn = useServerFn(createDeal);
   const updateFn = useServerFn(updateDeal);
   const importFn = useServerFn(importDeals);
   const historyFn = useServerFn(listDealStageHistory);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["deals"],
-    queryFn: () => fetchList({}),
-  });
+  const { data } = useSuspenseQuery(dealsListOptions);
   const rows = (data?.rows ?? []) as DealRow[];
 
   const [filter, setFilter] = useState<string>("all");
@@ -185,7 +195,8 @@ function DealsPage() {
     setSaving(true);
     try {
       if (editing) {
-        await updateFn({ data: { id: editing.id, ...payload } });
+        const res = await updateFn({ data: { id: editing.id, ...payload } });
+        res.warnings?.forEach((w) => toast.warning(w));
         toast.success("Uloženo");
       } else {
         await createFn({ data: payload });
@@ -202,7 +213,8 @@ function DealsPage() {
 
   async function quickStage(r: DealRow, stage: string) {
     try {
-      await updateFn({ data: { id: r.id, stage: stage as (typeof DEAL_STAGES)[number] } });
+      const res = await updateFn({ data: { id: r.id, stage: stage as (typeof DEAL_STAGES)[number] } });
+      res.warnings?.forEach((w) => toast.warning(w));
       toast.success(`Fáze: ${DEAL_STAGE_LABEL[stage]}`);
       qc.invalidateQueries({ queryKey: ["deals"] });
     } catch (e) {
@@ -349,14 +361,7 @@ function DealsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading && (
-                <TableRow>
-                  <TableCell colSpan={9} className="py-8 text-center text-sm text-muted-foreground">
-                    Načítám…
-                  </TableCell>
-                </TableRow>
-              )}
-              {!isLoading && filtered.length === 0 && (
+              {filtered.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={9} className="py-8 text-center text-sm text-muted-foreground">
                     Žádné případy

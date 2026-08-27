@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient, useSuspenseQuery, queryOptions } from "@tanstack/react-query";
+
 import { useState } from "react";
 import { toast } from "sonner";
 import { AdminShell } from "@/components/AdminShell";
@@ -20,7 +20,29 @@ import { listDemoOrders } from "@/lib/demo-orders.functions";
 import { getMyAccess } from "@/lib/claims.functions";
 import { cn } from "@/lib/utils";
 
+const demoOrdersListOptions = queryOptions({
+  queryKey: ["demo-orders"],
+  queryFn: () => listDemoOrders({}),
+});
+const demoAccessOptions = queryOptions({
+  queryKey: ["my-access"],
+  queryFn: () => getMyAccess({}),
+});
+
 export const Route = createFileRoute("/_authenticated/demo-orders/")({
+  loader: ({ context }) =>
+    Promise.all([
+      context.queryClient.ensureQueryData(demoOrdersListOptions),
+      context.queryClient.ensureQueryData(demoAccessOptions),
+    ]),
+  pendingComponent: () => (
+    <div className="p-8 text-sm text-muted-foreground">Načítám objednávky…</div>
+  ),
+  errorComponent: ({ error }: { error: Error }) => (
+    <div role="alert" className="p-8 text-red-600">
+      {error instanceof Error ? error.message : "Načítání selhalo"}
+    </div>
+  ),
   component: DemoOrdersList,
 });
 
@@ -49,11 +71,9 @@ function fmtKc(n: number | null | undefined) {
 function DemoOrdersList() {
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const fetchList = useServerFn(listDemoOrders);
-  const fetchAccess = useServerFn(getMyAccess);
-  const { data: access } = useQuery({ queryKey: ["my-access"], queryFn: () => fetchAccess({}) });
+  const { data: access } = useSuspenseQuery(demoAccessOptions);
   const isAdmin = !!access?.isAdmin;
-  const { data, isLoading } = useQuery({ queryKey: ["demo-orders"], queryFn: () => fetchList({}) });
+  const { data } = useSuspenseQuery(demoOrdersListOptions);
   const [q, setQ] = useState("");
 
   const rows = (data?.rows ?? []).filter((r: any) => {
@@ -113,14 +133,7 @@ function DemoOrdersList() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading && (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center text-sm text-muted-foreground">
-                    Načítám…
-                  </TableCell>
-                </TableRow>
-              )}
-              {!isLoading && rows.length === 0 && (
+              {rows.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center text-sm text-muted-foreground">
                     Žádné objednávky.

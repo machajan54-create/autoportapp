@@ -102,8 +102,9 @@ export const addTaskComment = createServerFn({ method: "POST" })
       }
     } catch (e) {
       console.error("[tasks] notify on comment failed", e);
+      return { id: row.id, warnings: ["Nebylo možné odeslat e-mailové oznámení o novém komentáři."] };
     }
-    return { id: row.id };
+    return { id: row.id, warnings: [] as string[] };
   });
 
 /** Souhrn aktivity (komentáře + přílohy) pro náhled v seznamu úkolů. */

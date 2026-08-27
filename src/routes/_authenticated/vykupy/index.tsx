@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { AdminShell } from "@/components/AdminShell";
@@ -17,7 +17,7 @@ import { Plus, Search, Pencil, Car, BarChart3 } from "lucide-react";
 import { RequestDeleteButton } from "@/components/RequestDeleteButton";
 import { listVykupy, formatKc, formatDate, marze, stavBadge } from "@/lib/vykupy";
 import { getMyAccess } from "@/lib/claims.functions";
-import { useServerFn } from "@tanstack/react-start";
+
 import { cn } from "@/lib/utils";
 
 function daysInStav(iso: string): number {
@@ -26,7 +26,29 @@ function daysInStav(iso: string): number {
   return Math.max(0, Math.floor((Date.now() - t) / 86_400_000));
 }
 
+const vykupyListOptions = queryOptions({
+  queryKey: ["vykupy"],
+  queryFn: listVykupy,
+});
+const myAccessOptions = queryOptions({
+  queryKey: ["my-access"],
+  queryFn: () => getMyAccess({}),
+});
+
 export const Route = createFileRoute("/_authenticated/vykupy/")({
+  loader: ({ context }) =>
+    Promise.all([
+      context.queryClient.ensureQueryData(vykupyListOptions),
+      context.queryClient.ensureQueryData(myAccessOptions),
+    ]),
+  pendingComponent: () => (
+    <div className="p-8 text-sm text-muted-foreground">Načítám výkupy…</div>
+  ),
+  errorComponent: ({ error }: { error: Error }) => (
+    <div role="alert" className="p-8 text-red-600">
+      {error instanceof Error ? error.message : "Načítání selhalo"}
+    </div>
+  ),
   component: VykupyList,
 });
 
@@ -34,9 +56,8 @@ function VykupyList() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [q, setQ] = useState("");
-  const { data, isLoading } = useQuery({ queryKey: ["vykupy"], queryFn: listVykupy });
-  const fetchAccess = useServerFn(getMyAccess);
-  const { data: access } = useQuery({ queryKey: ["my-access"], queryFn: () => fetchAccess({}) });
+  const { data } = useSuspenseQuery(vykupyListOptions);
+  const { data: access } = useSuspenseQuery(myAccessOptions);
   const modules = (access?.modules ?? []) as string[];
   const canFull = !!access?.isAdmin || modules.includes("vykupy");
 
@@ -90,12 +111,7 @@ function VykupyList() {
 
         {/* Mobile: card list */}
         <div className="mt-4 space-y-2 md:hidden">
-          {isLoading && (
-            <div className="rounded-xl border bg-card p-4 text-center text-sm text-muted-foreground">
-              Načítám…
-            </div>
-          )}
-          {!isLoading && rows.length === 0 && (
+          {rows.length === 0 && (
             <div className="rounded-xl border bg-card p-4 text-center text-sm text-muted-foreground">
               Žádné záznamy.
             </div>
@@ -174,14 +190,7 @@ function VykupyList() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading && (
-                <TableRow>
-                  <TableCell colSpan={9} className="text-center text-sm text-muted-foreground">
-                    Načítám…
-                  </TableCell>
-                </TableRow>
-              )}
-              {!isLoading && rows.length === 0 && (
+              {rows.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={9} className="text-center text-sm text-muted-foreground">
                     Žádné záznamy.

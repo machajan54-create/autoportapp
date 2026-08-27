@@ -93,11 +93,11 @@ async function notifyAssignee(opts: {
   priority?: (typeof TASK_PRIORITY)[number];
   dueDate?: string | null;
   taskId: string;
-}) {
+}): Promise<string | null> {
   try {
     const { getUserEmail, enqueueTransactionalEmail } = await import("@/lib/email/notify.server");
     const { email, name } = await getUserEmail(opts.assigneeId);
-    if (!email) return;
+    if (!email) return null;
     const dueFmt = opts.dueDate ? new Date(opts.dueDate).toLocaleDateString("cs-CZ") : null;
     await enqueueTransactionalEmail({
       templateName: "task-assigned",
@@ -114,8 +114,10 @@ async function notifyAssignee(opts: {
         context: "task",
       },
     });
+    return null;
   } catch (e) {
     console.error("[tasks] notifyAssignee failed", e);
+    return "Nebylo možné odeslat e-mailové oznámení přiřazenému uživateli.";
   }
 }
 
@@ -128,11 +130,11 @@ async function notifyCreatorStatus(opts: {
   dueDate?: string | null;
   event: "done" | "in_progress" | "todo";
   taskId: string;
-}) {
+}): Promise<string | null> {
   try {
     const { getUserEmail, enqueueTransactionalEmail } = await import("@/lib/email/notify.server");
     const { email, name } = await getUserEmail(opts.creatorId);
-    if (!email) return;
+    if (!email) return null;
     const dueFmt = opts.dueDate ? new Date(opts.dueDate).toLocaleDateString("cs-CZ") : null;
     await enqueueTransactionalEmail({
       templateName: "task-status-changed",
@@ -149,8 +151,10 @@ async function notifyCreatorStatus(opts: {
         actionUrl: "https://www.autoport-app.cz/ukoly",
       },
     });
+    return null;
   } catch (e) {
     console.error("[tasks] notifyCreatorStatus failed", e);
+    return "Nebylo možné odeslat e-mailové oznámení o změně stavu úkolu.";
   }
 }
 
@@ -163,11 +167,11 @@ async function notifyTaskUpdated(opts: {
   dueDate?: string | null;
   changes: string[];
   taskId: string;
-}) {
+}): Promise<string | null> {
   try {
     const { getUserEmail, enqueueTransactionalEmail } = await import("@/lib/email/notify.server");
     const { email, name } = await getUserEmail(opts.recipientId);
-    if (!email) return;
+    if (!email) return null;
     const dueFmt = opts.dueDate ? new Date(opts.dueDate).toLocaleDateString("cs-CZ") : null;
     await enqueueTransactionalEmail({
       templateName: "task-updated",
@@ -184,8 +188,10 @@ async function notifyTaskUpdated(opts: {
         actionUrl: "https://www.autoport-app.cz/ukoly",
       },
     });
+    return null;
   } catch (e) {
     console.error("[tasks] notifyTaskUpdated failed", e);
+    return "Nebylo možné odeslat e-mailové oznámení o úpravě úkolu.";
   }
 }
 
@@ -226,8 +232,9 @@ export const createTask = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
+    const warnings: string[] = [];
     if (data.assignee_id && data.assignee_id !== userId) {
-      await notifyAssignee({
+      const w = await notifyAssignee({
         assigneeId: data.assignee_id,
         assignerName: creator_name,
         title: data.title,
@@ -236,8 +243,9 @@ export const createTask = createServerFn({ method: "POST" })
         dueDate: data.due_date ?? null,
         taskId: row.id,
       });
+      if (w) warnings.push(w);
     }
-    return { id: row.id };
+    return { id: row.id, warnings };
   });
 
 export const updateTask = createServerFn({ method: "POST" })
@@ -317,10 +325,11 @@ export const updateTask = createServerFn({ method: "POST" })
         });
       }
     }
+    const warnings: string[] = [];
     const newAssignee = patch.assignee_id;
     if (newAssignee && newAssignee !== userId && newAssignee !== prev?.assignee_id) {
       const assignerName = await lookupName(supabase, userId);
-      await notifyAssignee({
+      const w = await notifyAssignee({
         assigneeId: newAssignee,
         assignerName,
         title: patch.title ?? prev?.title ?? "Úkol",
@@ -329,6 +338,7 @@ export const updateTask = createServerFn({ method: "POST" })
         dueDate: patch.due_date ?? prev?.due_date ?? null,
         taskId: data.id,
       });
+      if (w) warnings.push(w);
     }
     // Notify creator about status change made by someone else (typically assignee)
     if (
@@ -339,7 +349,7 @@ export const updateTask = createServerFn({ method: "POST" })
       prev.created_by !== userId
     ) {
       const actorName = await lookupName(supabase, userId);
-      await notifyCreatorStatus({
+      const w = await notifyCreatorStatus({
         creatorId: prev.created_by,
         assigneeName: actorName || prev.assignee_name,
         title: patch.title ?? prev.title,
@@ -349,6 +359,7 @@ export const updateTask = createServerFn({ method: "POST" })
         event: patch.status,
         taskId: data.id,
       });
+      if (w) warnings.push(w);
     }
     // Notify participants about non-status edits (title, description, priority, due_date, assignee).
     // Only between creator and assignee, never the actor themselves.
@@ -388,7 +399,7 @@ export const updateTask = createServerFn({ method: "POST" })
           recipients.delete(patch.assignee_id);
         }
         for (const rid of recipients) {
-          await notifyTaskUpdated({
+          const w = await notifyTaskUpdated({
             recipientId: rid,
             actorName,
             title: patch.title ?? prev.title,
@@ -398,10 +409,11 @@ export const updateTask = createServerFn({ method: "POST" })
             changes,
             taskId: data.id,
           });
+          if (w) warnings.push(w);
         }
       }
     }
-    return { ok: true };
+    return { ok: true, warnings };
   });
 
 export const deleteTask = createServerFn({ method: "POST" })

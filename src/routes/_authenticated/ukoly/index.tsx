@@ -190,7 +190,8 @@ function TasksPage() {
 
   async function handleStatus(id: string, status: (typeof TASK_STATUS)[number]) {
     try {
-      await updateFn({ data: { id, status } });
+      const res = await updateFn({ data: { id, status } });
+      res.warnings?.forEach((w) => toast.warning(w));
       qc.invalidateQueries({ queryKey: ["tasks"] });
     } catch (e: any) {
       toast.error(e?.message || "Nepodařilo se uložit");
@@ -538,7 +539,7 @@ function CreateTaskDialog({
     }
     setSubmitting(true);
     try {
-      await createFn({
+      const res = await createFn({
         data: {
           title: title.trim(),
           description: description.trim() || null,
@@ -549,6 +550,7 @@ function CreateTaskDialog({
           recurrence_until: recurrence === "__none" ? null : recurrenceUntil || null,
         },
       });
+      (res as { warnings?: string[] }).warnings?.forEach((w: string) => toast.warning(w));
       toast.success("Úkol vytvořen");
       onCreated();
     } catch (e: any) {
@@ -716,7 +718,8 @@ function TaskDetailDialog({ taskId, onClose }: { taskId: string | null; onClose:
     if (!body.trim() || !taskId) return;
     setPosting(true);
     try {
-      await addComment({ data: { taskId, body: body.trim() } });
+      const res = await addComment({ data: { taskId, body: body.trim() } });
+      res.warnings?.forEach((w) => toast.warning(w));
       setBody("");
       qc.invalidateQueries({ queryKey: ["task-comments", taskId] });
       qc.invalidateQueries({ queryKey: ["task-participants", taskId] });
