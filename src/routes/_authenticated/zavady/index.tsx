@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Wrench, Plus, Trash2, ImageIcon, Loader2, X } from "lucide-react";
@@ -42,7 +42,29 @@ import {
 } from "@/lib/defects.functions";
 import { cn } from "@/lib/utils";
 
+const defectsAccessOptions = queryOptions({
+  queryKey: ["my-access"],
+  queryFn: () => getMyAccess({}),
+});
+const defectsListOptions = queryOptions({
+  queryKey: ["defects"],
+  queryFn: () => listDefects({}),
+});
+
 export const Route = createFileRoute("/_authenticated/zavady/")({
+  loader: ({ context }) =>
+    Promise.all([
+      context.queryClient.ensureQueryData(defectsAccessOptions),
+      context.queryClient.ensureQueryData(defectsListOptions),
+    ]),
+  pendingComponent: () => (
+    <div className="p-8 text-sm text-muted-foreground">Načítám závady…</div>
+  ),
+  errorComponent: ({ error }: { error: Error }) => (
+    <div role="alert" className="p-8 text-red-600">
+      {error instanceof Error ? error.message : "Načítání selhalo"}
+    </div>
+  ),
   component: DefectsPage,
 });
 
@@ -64,8 +86,6 @@ const STATUS_STYLE: Record<string, string> = {
 
 function DefectsPage() {
   const qc = useQueryClient();
-  const fetchList = useServerFn(listDefects);
-  const fetchAccess = useServerFn(getMyAccess);
   const createFn = useServerFn(createDefect);
   const updateFn = useServerFn(updateDefect);
   const signFn = useServerFn(getDefectPhotoUrls);
@@ -75,13 +95,10 @@ function DefectsPage() {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
   }, []);
 
-  const { data: access } = useQuery({ queryKey: ["my-access"], queryFn: () => fetchAccess({}) });
+  const { data: access } = useSuspenseQuery(defectsAccessOptions);
   const isAdmin = !!access?.isAdmin;
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["defects"],
-    queryFn: () => fetchList({}),
-  });
+  const { data } = useSuspenseQuery(defectsListOptions);
   const rows = data?.rows ?? [];
 
   const [filter, setFilter] = useState<"all" | "open" | "mine">("all");
@@ -165,11 +182,7 @@ function DefectsPage() {
           </TabsList>
         </Tabs>
 
-        {isLoading ? (
-          <div className="flex justify-center py-16 text-muted-foreground">
-            <Loader2 className="h-6 w-6 animate-spin" />
-          </div>
-        ) : visible.length === 0 ? (
+        {visible.length === 0 ? (
           <Card className="p-12 text-center text-muted-foreground">Žádné závady k zobrazení.</Card>
         ) : (
           <div className="grid gap-4">
