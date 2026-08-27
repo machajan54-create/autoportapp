@@ -1,6 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQueryClient, useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AdminShell } from "@/components/AdminShell";
 import { getMyAccess } from "@/lib/claims.functions";
@@ -44,7 +44,39 @@ import {
 import { RequestDeleteButton } from "@/components/RequestDeleteButton";
 import { ForwardAsTaskDialog } from "@/components/ForwardAsTaskDialog";
 
+const approvalsAccessOptions = queryOptions({
+  queryKey: ["my-access"],
+  queryFn: () => getMyAccess({}),
+});
+const suppliersOptions = queryOptions({
+  queryKey: ["suppliers"],
+  queryFn: () => listSuppliers(),
+});
+const deletionRequestsOptions = queryOptions({
+  queryKey: ["deletion-requests"],
+  queryFn: () => listDeletionRequests({}),
+});
+const purchasesOptions = queryOptions({
+  queryKey: ["purchases"],
+  queryFn: () => listPurchases(),
+});
+
 export const Route = createFileRoute("/_authenticated/approvals")({
+  loader: ({ context }) =>
+    Promise.all([
+      context.queryClient.ensureQueryData(approvalsAccessOptions),
+      context.queryClient.ensureQueryData(suppliersOptions),
+      context.queryClient.ensureQueryData(deletionRequestsOptions),
+      context.queryClient.ensureQueryData(purchasesOptions),
+    ]),
+  pendingComponent: () => (
+    <div className="p-8 text-sm text-muted-foreground">Načítám schválení…</div>
+  ),
+  errorComponent: ({ error }: { error: Error }) => (
+    <div role="alert" className="p-8 text-red-600">
+      {error instanceof Error ? error.message : "Načítání selhalo"}
+    </div>
+  ),
   component: ApprovalsPage,
 });
 
@@ -56,11 +88,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function ApprovalsPage() {
-  const fetchAccess = useServerFn(getMyAccess);
-  const { data: access } = useQuery({
-    queryKey: ["my-access"],
-    queryFn: () => fetchAccess({}),
-  });
+  const { data: access } = useSuspenseQuery(approvalsAccessOptions);
   const isAdmin = !!access?.isAdmin;
   return (
     <AdminShell>
@@ -102,13 +130,11 @@ function ApprovalsPage() {
 
 function SuppliersTab({ isAdmin }: { isAdmin: boolean }) {
   const router = useRouter();
-  const fetchList = useServerFn(listSuppliers);
+  const qc = useQueryClient();
   const create = useServerFn(createSupplier);
   const decide = useServerFn(decideSupplier);
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ["suppliers"],
-    queryFn: () => fetchList(),
-  });
+  const { data } = useSuspenseQuery(suppliersOptions);
+  const refetch = () => qc.invalidateQueries({ queryKey: ["suppliers"] });
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -237,9 +263,7 @@ function SuppliersTab({ isAdmin }: { isAdmin: boolean }) {
         </Dialog>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground">Načítám…</p>
-        ) : !data?.length ? (
+        {!data?.length ? (
           <p className="text-sm text-muted-foreground">Žádní dodavatelé.</p>
         ) : (
           <div className="space-y-2">
@@ -305,13 +329,11 @@ function SuppliersTab({ isAdmin }: { isAdmin: boolean }) {
 }
 
 function DeletionsTab({ isAdmin }: { isAdmin: boolean }) {
-  const fetchList = useServerFn(listDeletionRequests);
+  const qc = useQueryClient();
   const decide = useServerFn(decideDeletionRequest);
   const cancel = useServerFn(cancelDeletionRequest);
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ["deletion-requests"],
-    queryFn: () => fetchList({}),
-  });
+  const { data } = useSuspenseQuery(deletionRequestsOptions);
+  const refetch = () => qc.invalidateQueries({ queryKey: ["deletion-requests"] });
   const [statusFilter, setStatusFilter] = useState<"pending" | "all" | "decided">("pending");
   const [noteOpen, setNoteOpen] = useState<{ id: string; status: "approved" | "rejected" } | null>(
     null,
@@ -367,9 +389,7 @@ function DeletionsTab({ isAdmin }: { isAdmin: boolean }) {
         </Select>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground">Načítám…</p>
-        ) : !rows.length ? (
+        {!rows.length ? (
           <p className="text-sm text-muted-foreground">Žádné žádosti.</p>
         ) : (
           <div className="space-y-2">
@@ -474,18 +494,12 @@ function DeletionsTab({ isAdmin }: { isAdmin: boolean }) {
 }
 
 function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
-  const fetchList = useServerFn(listPurchases);
-  const fetchSuppliers = useServerFn(listSuppliers);
+  const qc = useQueryClient();
   const create = useServerFn(createPurchase);
   const decide = useServerFn(decidePurchase);
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ["purchases"],
-    queryFn: () => fetchList(),
-  });
-  const { data: suppliers } = useQuery({
-    queryKey: ["suppliers"],
-    queryFn: () => fetchSuppliers(),
-  });
+  const { data } = useSuspenseQuery(purchasesOptions);
+  const { data: suppliers } = useSuspenseQuery(suppliersOptions);
+  const refetch = () => qc.invalidateQueries({ queryKey: ["purchases"] });
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     title: "",
@@ -669,9 +683,7 @@ function PurchasesTab({ isAdmin }: { isAdmin: boolean }) {
         </Dialog>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground">Načítám…</p>
-        ) : !data?.length ? (
+        {!data?.length ? (
           <p className="text-sm text-muted-foreground">Žádné nákupy.</p>
         ) : (
           <div className="space-y-2">
