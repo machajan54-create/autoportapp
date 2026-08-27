@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
@@ -64,7 +64,29 @@ import {
 import { cn } from "@/lib/utils";
 import { RequestDeleteButton } from "@/components/RequestDeleteButton";
 
+const tasksListOptions = queryOptions({
+  queryKey: ["tasks"],
+  queryFn: () => listTasks({}),
+});
+const resolversOptions = queryOptions({
+  queryKey: ["dochazka", "users"],
+  queryFn: () => listResolvers({}),
+});
+
 export const Route = createFileRoute("/_authenticated/ukoly/")({
+  loader: ({ context }) =>
+    Promise.all([
+      context.queryClient.ensureQueryData(tasksListOptions),
+      context.queryClient.ensureQueryData(resolversOptions),
+    ]),
+  pendingComponent: () => (
+    <div className="p-8 text-sm text-muted-foreground">Načítám úkoly…</div>
+  ),
+  errorComponent: ({ error }: { error: Error }) => (
+    <div role="alert" className="p-8 text-red-600">
+      {error instanceof Error ? error.message : "Načítání selhalo"}
+    </div>
+  ),
   component: TasksPage,
 });
 
@@ -81,8 +103,6 @@ const STATUS_STYLE: Record<string, string> = {
 
 function TasksPage() {
   const qc = useQueryClient();
-  const fetchList = useServerFn(listTasks);
-  const fetchUsers = useServerFn(listResolvers);
   const createFn = useServerFn(createTask);
   const updateFn = useServerFn(updateTask);
   const fetchActivity = useServerFn(listTaskActivitySummary);
@@ -92,11 +112,8 @@ function TasksPage() {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
   }, []);
 
-  const { data, isLoading } = useQuery({ queryKey: ["tasks"], queryFn: () => fetchList({}) });
-  const { data: users } = useQuery({
-    queryKey: ["dochazka", "users"],
-    queryFn: () => fetchUsers({}),
-  });
+  const { data } = useSuspenseQuery(tasksListOptions);
+  const { data: users } = useSuspenseQuery(resolversOptions);
   const rows = data?.rows ?? [];
   const { data: activity } = useQuery({
     queryKey: ["task-activity-summary"],
@@ -310,11 +327,7 @@ function TasksPage() {
           )}
         </Card>
 
-        {isLoading ? (
-          <div className="flex justify-center py-16 text-muted-foreground">
-            <Loader2 className="h-6 w-6 animate-spin" />
-          </div>
-        ) : visible.length === 0 ? (
+        {visible.length === 0 ? (
           <Card className="p-12 text-center text-muted-foreground">Žádné úkoly k zobrazení.</Card>
         ) : (
           <div className="grid gap-3">
