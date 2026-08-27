@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
@@ -55,7 +55,21 @@ import {
 } from "@/lib/logbook.functions";
 import { supabase } from "@/integrations/supabase/client";
 
+const logbookVehiclesOptions = queryOptions({
+  queryKey: ["logbook-vehicles"],
+  queryFn: () => listVehicles({}),
+});
+
 export const Route = createFileRoute("/_authenticated/logbook/")({
+  loader: ({ context }) => context.queryClient.ensureQueryData(logbookVehiclesOptions),
+  pendingComponent: () => (
+    <div className="p-8 text-sm text-muted-foreground">Načítám knihu jízd…</div>
+  ),
+  errorComponent: ({ error }: { error: Error }) => (
+    <div role="alert" className="p-8 text-red-600">
+      {error instanceof Error ? error.message : "Načítání selhalo"}
+    </div>
+  ),
   component: LogbookPage,
 });
 
@@ -124,7 +138,6 @@ function fmtCzk(n: number | string | null | undefined) {
 
 function LogbookPage() {
   const qc = useQueryClient();
-  const fetchVehicles = useServerFn(listVehicles);
   const fetchEntries = useServerFn(listEntries);
   const saveVehicleFn = useServerFn(upsertVehicle);
   const saveEntryFn = useServerFn(upsertEntry);
@@ -132,10 +145,7 @@ function LogbookPage() {
 
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | "all">("all");
 
-  const { data: vData, isLoading: vLoading } = useQuery({
-    queryKey: ["logbook-vehicles"],
-    queryFn: () => fetchVehicles({}),
-  });
+  const { data: vData } = useSuspenseQuery(logbookVehiclesOptions);
   const vehicles = (vData?.rows ?? []) as Vehicle[];
 
   const { data: eData, isLoading: eLoading } = useQuery({
@@ -537,7 +547,7 @@ function LogbookPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(eLoading || vLoading) && (
+              {eLoading && (
                 <TableRow>
                   <TableCell
                     colSpan={selectedVehicleId === "all" ? 10 : 9}

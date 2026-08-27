@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const CLAIM_STATUS_LABEL: Record<string, string> = {
+export const CLAIM_STATUS_LABEL: Record<string, string> = {
   new: "Nová",
   in_progress: "V řešení",
   in_repair: "V opravě",

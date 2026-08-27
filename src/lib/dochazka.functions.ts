@@ -209,9 +209,10 @@ export const upsertEmployee = createServerFn({ method: "POST" })
       }
     } catch (e) {
       console.error("[dochazka] welcome email failed", e);
+      return { id: row.id, warnings: ["Nebylo možné odeslat uvítací e-mail."] };
     }
 
-    return { id: row.id };
+    return { id: row.id, warnings: [] as string[] };
   });
 
 export const deleteEmployee = createServerFn({ method: "POST" })
@@ -471,8 +472,9 @@ export const requestRecord = createServerFn({ method: "POST" })
       });
     } catch (e) {
       console.error("[dochazka] notifikace o novém záznamu selhala", e);
+      return { id: row.id, warnings: ["Nebylo možné odeslat notifikaci o novém záznamu docházky."] };
     }
-    return { id: row.id };
+    return { id: row.id, warnings: [] as string[] };
   });
 
 // Terminal check-in: PUBLIC endpoint authenticated by PIN; uses admin client
@@ -813,6 +815,25 @@ export const resolveAbsence = createServerFn({ method: "POST" })
       }
     } catch (e) {
       console.error("[dochazka] absence decision email failed", e);
+      const emailWarning = "Nebylo možné odeslat e-mail o rozhodnutí o absenci.";
+      {
+        const { logEvent } = await import("@/lib/audit.server");
+        const { data: abs } = await context.supabase
+          .from("attendance_absences")
+          .select("type, start_date, end_date, employee_id")
+          .eq("id", data.id)
+          .maybeSingle();
+        await logEvent({
+          actorId: context.userId,
+          actorEmail: context.claims?.email ?? null,
+          module: "dochazka",
+          action: `absence_${data.status}`,
+          entityId: data.id,
+          entityLabel: abs ? `${abs.type} ${abs.start_date}–${abs.end_date}` : null,
+          details: abs ? { employee_id: abs.employee_id } : undefined,
+        });
+      }
+      return { ok: true, warnings: [emailWarning] };
     }
     {
       const { logEvent } = await import("@/lib/audit.server");
@@ -831,7 +852,7 @@ export const resolveAbsence = createServerFn({ method: "POST" })
         details: abs ? { employee_id: abs.employee_id } : undefined,
       });
     }
-    return { ok: true };
+    return { ok: true, warnings: [] as string[] };
   });
 
 export const deleteAbsence = createServerFn({ method: "POST" })

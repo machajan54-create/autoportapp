@@ -189,9 +189,10 @@ export const updateDeal = createServerFn({ method: "POST" })
       }
     } catch (e) {
       console.error("[deals.updateDeal notify]", e);
+      return { ok: true, warnings: ["Nebylo možné odeslat e-mailové oznámení o změně fáze."] };
     }
 
-    return { ok: true };
+    return { ok: true, warnings: [] as string[] };
   });
 
 export const deleteDeal = createServerFn({ method: "POST" })
@@ -228,7 +229,7 @@ export const importDeals = createServerFn({ method: "POST" })
     return { ok: true, count: payload.length };
   });
 
-function formatDuration(ms: number): string {
+export function formatDuration(ms: number): string {
   if (!Number.isFinite(ms) || ms <= 0) return "—";
   const sec = Math.floor(ms / 1000);
   const days = Math.floor(sec / 86400);
