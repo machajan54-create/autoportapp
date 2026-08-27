@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQueryClient, useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AdminShell } from "@/components/AdminShell";
@@ -40,7 +40,34 @@ import {
   removeWashAssignment,
 } from "@/lib/evidence.functions";
 
+const evidenceAccessOptions = queryOptions({
+  queryKey: ["my-access"],
+  queryFn: () => getMyAccess({}),
+});
+const evidenceOrdersOptions = queryOptions({
+  queryKey: ["evidence-orders"],
+  queryFn: () => listEvidenceOrders({}),
+});
+const evidenceWashersOptions = queryOptions({
+  queryKey: ["washers"],
+  queryFn: () => listWashers({}),
+});
+
 export const Route = createFileRoute("/_authenticated/evidence-zakazek/")({
+  loader: ({ context }) =>
+    Promise.all([
+      context.queryClient.ensureQueryData(evidenceAccessOptions),
+      context.queryClient.ensureQueryData(evidenceOrdersOptions),
+      context.queryClient.ensureQueryData(evidenceWashersOptions),
+    ]),
+  pendingComponent: () => (
+    <div className="p-8 text-sm text-muted-foreground">Načítám evidence…</div>
+  ),
+  errorComponent: ({ error }: { error: Error }) => (
+    <div role="alert" className="p-8 text-red-600">
+      {error instanceof Error ? error.message : "Načítání selhalo"}
+    </div>
+  ),
   component: EvidencePage,
 });
 
@@ -72,11 +99,7 @@ function fmtDt(v?: string | null) {
 }
 
 function EvidencePage() {
-  const fetchAccess = useServerFn(getMyAccess);
-  const { data: access } = useQuery({
-    queryKey: ["my-access"],
-    queryFn: () => fetchAccess({}),
-  });
+  const { data: access } = useSuspenseQuery(evidenceAccessOptions);
   const isAdmin = !!access?.isAdmin;
 
   return (
@@ -134,21 +157,18 @@ function EvidencePage() {
 }
 
 function OrdersTab() {
-  const fetchOrders = useServerFn(listEvidenceOrders);
-  const fetchWashers = useServerFn(listWashers);
+  const qc = useQueryClient();
   const create = useServerFn(createEvidenceOrder);
   const update = useServerFn(updateEvidenceOrder);
   const assign = useServerFn(assignWasher);
   const removeAssign = useServerFn(removeWashAssignment);
 
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ["evidence-orders"],
-    queryFn: () => fetchOrders({}),
-  });
-  const { data: washers } = useQuery({
-    queryKey: ["washers"],
-    queryFn: () => fetchWashers({}),
-  });
+  const { data } = useSuspenseQuery(evidenceOrdersOptions);
+  const { data: washers } = useSuspenseQuery(evidenceWashersOptions);
+  const refetch = () => {
+    qc.invalidateQueries({ queryKey: ["evidence-orders"] });
+    qc.invalidateQueries({ queryKey: ["washers"] });
+  };
 
   const [open, setOpen] = useState(false);
   const emptyForm = {
@@ -315,9 +335,7 @@ function OrdersTab() {
         </Dialog>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground">Načítám…</p>
-        ) : !data?.length ? (
+        {!data?.length ? (
           <p className="text-sm text-muted-foreground">Žádné zakázky.</p>
         ) : (
           <div className="overflow-x-auto">
@@ -466,14 +484,12 @@ function OrdersTab() {
 }
 
 function WashersTab({ isAdmin }: { isAdmin: boolean }) {
-  const fetchList = useServerFn(listWashers);
+  const qc = useQueryClient();
   const create = useServerFn(createWasher);
   const update = useServerFn(updateWasher);
   const remove = useServerFn(deleteWasher);
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ["washers"],
-    queryFn: () => fetchList({}),
-  });
+  const { data } = useSuspenseQuery(evidenceWashersOptions);
+  const refetch = () => qc.invalidateQueries({ queryKey: ["washers"] });
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: "", email: "" });
 
@@ -556,9 +572,7 @@ function WashersTab({ isAdmin }: { isAdmin: boolean }) {
             Seznam myčů spravuje pouze super admin.
           </p>
         )}
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground">Načítám…</p>
-        ) : !data?.length ? (
+        {!data?.length ? (
           <p className="text-sm text-muted-foreground">Žádní myči.</p>
         ) : (
           <div className="space-y-2">
