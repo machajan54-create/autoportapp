@@ -1,79 +1,33 @@
-import * as React from 'react'
-
-import {
-  Body,
-  Button,
-  Container,
-  Head,
-  Heading,
-  Html,
-  Preview,
-  Text,
-} from '@react-email/components'
+import * as React from "react";
+import { Head, Heading, Html, Preview, Text } from "@react-email/components";
+import { Body, Container, Footer, Header, PrimaryButton, styles } from "./_layout";
 
 interface MagicLinkEmailProps {
-  siteName: string
-  confirmationUrl: string
+  siteName: string;
+  confirmationUrl: string;
 }
 
-export const MagicLinkEmail = ({
-  siteName,
-  confirmationUrl,
-}: MagicLinkEmailProps) => (
-  <Html lang="en" dir="ltr">
-    <Head>
-      <style>{darkModeCss}</style>
-    </Head>
-    <Preview>Your login link for {siteName}</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <Heading style={h1}>Your login link</Heading>
-        <Text style={text}>
-          Click the button below to log in to {siteName}. This link will expire
-          shortly.
-        </Text>
-        <Button className="dm-btn" style={button} href={confirmationUrl}>
-          Log In
-        </Button>
-        <Text style={footer}>
-          If you didn't request this link, you can safely ignore this email.
-        </Text>
+export const MagicLinkEmail = ({ siteName, confirmationUrl }: MagicLinkEmailProps) => (
+  <Html lang="cs" dir="ltr">
+    <Head />
+    <Preview>Přihlašovací odkaz do aplikace {siteName}</Preview>
+    <Body style={styles.body}>
+      <Container style={styles.container}>
+        <Header />
+        <div style={styles.content}>
+          <Heading style={styles.h1}>Přihlášení do aplikace {siteName}</Heading>
+          <Text style={styles.lead}>
+            Kliknutím na tlačítko níže se přihlásíte. Odkaz je platný pouze omezenou dobu.
+          </Text>
+          <PrimaryButton href={confirmationUrl}>Přihlásit se</PrimaryButton>
+          <Text style={styles.lead}>
+            Pokud jste o přihlášení nežádali, tento e-mail můžete ignorovat.
+          </Text>
+        </div>
+        <Footer />
       </Container>
     </Body>
   </Html>
-)
+);
 
-export default MagicLinkEmail
-
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
-const h1 = {
-  fontSize: '22px',
-  fontWeight: 'bold' as const,
-  color: '#000000',
-  margin: '0 0 20px',
-}
-const text = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
-}
-const button = {
-  backgroundColor: '#000000',
-  color: '#ffffff',
-  fontSize: '14px',
-  border: '1px solid #000000',
-  borderRadius: '8px',
-  padding: '12px 20px',
-  textDecoration: 'none',
-}
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
-// Rendered as a text child, which React may HTML-escape: keep this CSS free of >, &, and quotes.
-const darkModeCss = `
-  @media (prefers-color-scheme: dark) {
-    .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
-  }
-  [data-ogsc] .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
-  [data-ogsb] .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
-`
+export default MagicLinkEmail;
