@@ -1,19 +1,6 @@
-import * as React from "react";
-import { render } from "@react-email/components";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { TEMPLATES } from "@/lib/email-templates/registry";
-
-const SITE_NAME = "Píše Citroën | Autoport s.r.o.";
-const SENDER_DOMAIN = "notify.autoport-app.cz";
-const FROM_DOMAIN = "autoport-app.cz";
-
-function generateToken(): string {
-  const bytes = new Uint8Array(32);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
+import { sendTemplateEmail } from "@/lib/email-templates/send-email";
 
 export interface NotifyArgs {
   templateName: keyof typeof TEMPLATES | string;
@@ -22,107 +9,51 @@ export interface NotifyArgs {
   idempotencyKey?: string;
 }
 
+async function logSend(
+  templateName: string,
+  recipient: string,
+  status: "sent" | "suppressed" | "failed",
+  errorMessage?: string,
+) {
+  const { error } = await supabaseAdmin.from("email_send_log").insert({
+    message_id: null,
+    template_name: templateName,
+    recipient_email: recipient,
+    status,
+    ...(errorMessage ? { error_message: errorMessage } : {}),
+  });
+  if (error) console.error("[notify] log insert failed", error.message);
+}
+
 /**
- * Server-side helper to render + enqueue a transactional email
- * directly via service role, without going through the HTTP send route.
- * Safe to call from authenticated server functions after the caller has
- * been authorized.
+ * Server-side helper to render + send a transactional email through
+ * Lovable's managed email delivery. Safe to call from authenticated
+ * server functions after the caller has been authorized.
  */
 export async function enqueueTransactionalEmail(args: NotifyArgs): Promise<void> {
+  const templateName = args.templateName as string;
+  const tpl = TEMPLATES[templateName];
+  if (!tpl) {
+    console.error("[notify] unknown template", templateName);
+    return;
+  }
+  const recipient = (tpl.to || args.recipientEmail || "").trim();
+  if (!recipient) return;
+
   try {
-    const tpl = TEMPLATES[args.templateName as string];
-    if (!tpl) {
-      console.error("[notify] unknown template", args.templateName);
-      return;
-    }
-    const recipient = (tpl.to || args.recipientEmail || "").trim();
-    if (!recipient) return;
-
-    const normalized = recipient.toLowerCase();
-    const messageId = crypto.randomUUID();
-    const idempotencyKey = args.idempotencyKey || messageId;
-    const templateData = args.templateData || {};
-
-    // suppression
-    const { data: suppressed } = await supabaseAdmin
-      .from("suppressed_emails")
-      .select("id")
-      .eq("email", normalized)
-      .maybeSingle();
-    if (suppressed) {
-      await supabaseAdmin.from("email_send_log").insert({
-        message_id: messageId,
-        template_name: args.templateName as string,
-        recipient_email: recipient,
-        status: "suppressed",
-      });
-      return;
-    }
-
-    // unsubscribe token
-    let token: string;
-    const { data: existing } = await supabaseAdmin
-      .from("email_unsubscribe_tokens")
-      .select("token, used_at")
-      .eq("email", normalized)
-      .maybeSingle();
-    if (existing && !existing.used_at) {
-      token = existing.token;
+    const result = await sendTemplateEmail(templateName, recipient, {
+      templateData: args.templateData || {},
+      idempotencyKey: args.idempotencyKey,
+    });
+    if (result.sent) {
+      await logSend(templateName, recipient, "sent");
     } else {
-      token = generateToken();
-      await supabaseAdmin
-        .from("email_unsubscribe_tokens")
-        .upsert({ token, email: normalized }, { onConflict: "email", ignoreDuplicates: true });
-      const { data: stored } = await supabaseAdmin
-        .from("email_unsubscribe_tokens")
-        .select("token")
-        .eq("email", normalized)
-        .maybeSingle();
-      token = stored?.token ?? token;
-    }
-
-    // render
-    const element = React.createElement(tpl.component as any, templateData);
-    const html = await render(element);
-    const text = await render(element, { plainText: true });
-    const subject = typeof tpl.subject === "function" ? tpl.subject(templateData) : tpl.subject;
-
-    await supabaseAdmin.from("email_send_log").insert({
-      message_id: messageId,
-      template_name: args.templateName as string,
-      recipient_email: recipient,
-      status: "pending",
-    });
-
-    const { error } = await supabaseAdmin.rpc("enqueue_email", {
-      queue_name: "transactional_emails",
-      payload: {
-        message_id: messageId,
-        to: recipient,
-        from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-        sender_domain: SENDER_DOMAIN,
-        subject,
-        html,
-        text,
-        purpose: "transactional",
-        label: args.templateName,
-        idempotency_key: idempotencyKey,
-        unsubscribe_token: token,
-        queued_at: new Date().toISOString(),
-      },
-    });
-    if (error) {
-      console.error("[notify] enqueue failed", error);
-      await supabaseAdmin.from("email_send_log").insert({
-        message_id: messageId,
-        template_name: args.templateName as string,
-        recipient_email: recipient,
-        status: "failed",
-        error_message: error.message,
-      });
+      await logSend(templateName, recipient, "suppressed");
     }
   } catch (e: any) {
-    console.error("[notify] unexpected error", e?.message ?? e);
+    const message = e?.message ?? String(e);
+    console.error("[notify] send failed", message);
+    await logSend(templateName, recipient, "failed", message);
   }
 }
 
