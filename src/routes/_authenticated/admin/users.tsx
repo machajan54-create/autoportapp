@@ -22,6 +22,7 @@ import {
   Trash2,
   Power,
   Mail,
+  AtSign,
   Search,
   Shield,
   UserCheck,
@@ -38,6 +39,7 @@ import {
   setUserApproved,
   adminCreateUser,
   adminSetUserPassword,
+  adminSetUserEmail,
   adminSetUserActive,
   adminDeleteUser,
   adminSendWelcomeEmail,
@@ -99,6 +101,7 @@ function UsersPage() {
   const setApproved = useServerFn(setUserApproved);
   const createUser = useServerFn(adminCreateUser);
   const setPwd = useServerFn(adminSetUserPassword);
+  const setEmail = useServerFn(adminSetUserEmail);
   const setActive = useServerFn(adminSetUserActive);
   const deleteUser = useServerFn(adminDeleteUser);
   const sendWelcome = useServerFn(adminSendWelcomeEmail);
@@ -107,6 +110,9 @@ function UsersPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [pwdUser, setPwdUser] = useState<{ id: string; email: string } | null>(null);
+  const [emailUser, setEmailUser] = useState<{ id: string; email: string } | null>(null);
+  const [emailValue, setEmailValue] = useState("");
+  const [emailBusy, setEmailBusy] = useState(false);
   const [pwdValue, setPwdValue] = useState("");
   const [pwdBusy, setPwdBusy] = useState(false);
   const [pwdGenerated, setPwdGenerated] = useState<string | null>(null);
@@ -261,6 +267,22 @@ function UsersPage() {
       setPwdBusy(false);
     }
   }
+
+  async function handleSetEmail() {
+    if (!emailUser) return;
+    setEmailBusy(true);
+    try {
+      await setEmail({ data: { user_id: emailUser.id, email: emailValue.trim() } });
+      toast.success("E-mailová adresa změněna");
+      setEmailUser(null);
+      qc.invalidateQueries({ queryKey: ["users"] });
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setEmailBusy(false);
+    }
+  }
+
 
   return (
     <AdminShell requireModule="users">
@@ -465,6 +487,15 @@ function UsersPage() {
                             <KeyRound className="h-4 w-4" />
                           </IconAction>
                           <IconAction
+                            label="Změnit e-mailovou adresu"
+                            onClick={() => {
+                              setEmailUser({ id: u.id, email: u.email ?? "" });
+                              setEmailValue(u.email ?? "");
+                            }}
+                          >
+                            <AtSign className="h-4 w-4" />
+                          </IconAction>
+                          <IconAction
                             label="Odeslat informační e-mail"
                             onClick={() => {
                               setWelcomeUser({ id: u.id, email: u.email ?? "" });
@@ -623,6 +654,48 @@ function UsersPage() {
             </>
           );
         })()}
+
+        <Dialog
+          open={!!emailUser}
+          onOpenChange={(o) => {
+            if (!o) setEmailUser(null);
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>E-mailová adresa · {emailUser?.email}</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              Nová adresa se použije pro přihlášení i pro všechny notifikace. Adresa bude rovnou
+              potvrzená.
+            </p>
+            <div className="space-y-2">
+              <Label>Nový e-mail</Label>
+              <Input
+                type="email"
+                maxLength={255}
+                value={emailValue}
+                onChange={(e) => setEmailValue(e.target.value)}
+                placeholder="jmeno@firma.cz"
+              />
+            </div>
+            <DialogFooter className="gap-2 sm:gap-2">
+              <Button variant="outline" onClick={() => setEmailUser(null)}>
+                Zrušit
+              </Button>
+              <Button
+                disabled={
+                  emailBusy ||
+                  !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailValue.trim()) ||
+                  emailValue.trim().toLowerCase() === (emailUser?.email ?? "").toLowerCase()
+                }
+                onClick={handleSetEmail}
+              >
+                Uložit
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <Dialog
           open={!!pwdUser}

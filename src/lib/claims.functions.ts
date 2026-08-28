@@ -610,6 +610,46 @@ export const adminSetUserPassword = createServerFn({ method: "POST" })
     return { ok: true, password };
   });
 
+export const adminSetUserEmail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        user_id: z.string().uuid(),
+        email: z.string().trim().email().max(255),
+      })
+      .parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const { data: meRoles } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    if (!meRoles?.some((r) => r.role === "admin")) throw new Error("Forbidden");
+
+    const email = data.email.toLowerCase();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(data.user_id, {
+      email,
+      email_confirm: true,
+    });
+    if (error) {
+      throw new Error(
+        /already/i.test(error.message)
+          ? "Tento e-mail už používá jiný uživatel."
+          : error.message,
+      );
+    }
+    const { error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .update({ email })
+      .eq("id", data.user_id);
+    if (profileError) throw new Error(profileError.message);
+    return { ok: true, email };
+  });
+
+
+
 export const adminSetUserActive = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
