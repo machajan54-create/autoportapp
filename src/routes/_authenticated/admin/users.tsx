@@ -107,6 +107,9 @@ function UsersPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [pwdUser, setPwdUser] = useState<{ id: string; email: string } | null>(null);
+  const [emailUser, setEmailUser] = useState<{ id: string; email: string } | null>(null);
+  const [emailValue, setEmailValue] = useState("");
+  const [emailBusy, setEmailBusy] = useState(false);
   const [pwdValue, setPwdValue] = useState("");
   const [pwdBusy, setPwdBusy] = useState(false);
   const [pwdGenerated, setPwdGenerated] = useState<string | null>(null);
