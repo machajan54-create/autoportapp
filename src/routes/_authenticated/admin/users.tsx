@@ -265,6 +265,7 @@ function UsersPage() {
       toast.error((e as Error).message);
     } finally {
       setPwdBusy(false);
+    }
   }
 
   async function handleSetEmail() {
@@ -282,8 +283,6 @@ function UsersPage() {
     }
   }
 
-
-  }
 
   return (
     <AdminShell requireModule="users">
