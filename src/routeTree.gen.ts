@@ -36,6 +36,7 @@ import { Route as AuthenticatedDealsIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as WashRespondActionTokenRouteImport } from './routes/wash-respond.$action.$token'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
 import { Route as AuthenticatedVykupyDashboardRouteImport } from './routes/_authenticated/vykupy/dashboard'
 import { Route as AuthenticatedVykupyIdRouteImport } from './routes/_authenticated/vykupy/$id'
 import { Route as AuthenticatedDemoOrdersIdRouteImport } from './routes/_authenticated/demo-orders/$id'
@@ -199,6 +200,11 @@ const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   path: '/lovable/email/suppression',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LovableEmailEventsRoute = LovableEmailEventsRouteImport.update({
+  id: '/lovable/email/events',
+  path: '/lovable/email/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedVykupyDashboardRoute =
   AuthenticatedVykupyDashboardRouteImport.update({
     id: '/vykupy/dashboard',
@@ -350,6 +356,7 @@ export interface FileRoutesByFullPath {
   '/demo-orders/$id': typeof AuthenticatedDemoOrdersIdRoute
   '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/wash-respond/$action/$token': typeof WashRespondActionTokenRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -400,6 +407,7 @@ export interface FileRoutesByTo {
   '/demo-orders/$id': typeof AuthenticatedDemoOrdersIdRoute
   '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/wash-respond/$action/$token': typeof WashRespondActionTokenRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -452,6 +460,7 @@ export interface FileRoutesById {
   '/_authenticated/demo-orders/$id': typeof AuthenticatedDemoOrdersIdRoute
   '/_authenticated/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/_authenticated/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/wash-respond/$action/$token': typeof WashRespondActionTokenRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -504,6 +513,7 @@ export interface FileRouteTypes {
     | '/demo-orders/$id'
     | '/vykupy/$id'
     | '/vykupy/dashboard'
+    | '/lovable/email/events'
     | '/lovable/email/suppression'
     | '/wash-respond/$action/$token'
     | '/admin/'
@@ -554,6 +564,7 @@ export interface FileRouteTypes {
     | '/demo-orders/$id'
     | '/vykupy/$id'
     | '/vykupy/dashboard'
+    | '/lovable/email/events'
     | '/lovable/email/suppression'
     | '/wash-respond/$action/$token'
     | '/admin'
@@ -605,6 +616,7 @@ export interface FileRouteTypes {
     | '/_authenticated/demo-orders/$id'
     | '/_authenticated/vykupy/$id'
     | '/_authenticated/vykupy/dashboard'
+    | '/lovable/email/events'
     | '/lovable/email/suppression'
     | '/wash-respond/$action/$token'
     | '/_authenticated/admin/'
@@ -645,6 +657,7 @@ export interface RootRouteChildren {
   SignTokenRoute: typeof SignTokenRoute
   TvTokenRoute: typeof TvTokenRoute
   UploadTokenRoute: typeof UploadTokenRoute
+  LovableEmailEventsRoute: typeof LovableEmailEventsRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   WashRespondActionTokenRoute: typeof WashRespondActionTokenRoute
   ApiPublicCronBackupRoute: typeof ApiPublicCronBackupRoute
@@ -850,6 +863,13 @@ declare module '@tanstack/react-router' {
       path: '/lovable/email/suppression'
       fullPath: '/lovable/email/suppression'
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/events': {
+      id: '/lovable/email/events'
+      path: '/lovable/email/events'
+      fullPath: '/lovable/email/events'
+      preLoaderRoute: typeof LovableEmailEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/vykupy/dashboard': {
@@ -1076,6 +1096,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignTokenRoute: SignTokenRoute,
   TvTokenRoute: TvTokenRoute,
   UploadTokenRoute: UploadTokenRoute,
+  LovableEmailEventsRoute: LovableEmailEventsRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   WashRespondActionTokenRoute: WashRespondActionTokenRoute,
   ApiPublicCronBackupRoute: ApiPublicCronBackupRoute,
