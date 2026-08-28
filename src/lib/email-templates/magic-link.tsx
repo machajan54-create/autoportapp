@@ -1,15 +1,6 @@
 import * as React from "react";
-
-import {
-  Body,
-  Button,
-  Container,
-  Head,
-  Heading,
-  Html,
-  Preview,
-  Text,
-} from "@react-email/components";
+import { Head, Heading, Html, Preview, Text } from "@react-email/components";
+import { Body, Container, Footer, Header, PrimaryButton, styles } from "./_layout";
 
 interface MagicLinkEmailProps {
   siteName: string;
@@ -19,44 +10,24 @@ interface MagicLinkEmailProps {
 export const MagicLinkEmail = ({ siteName, confirmationUrl }: MagicLinkEmailProps) => (
   <Html lang="cs" dir="ltr">
     <Head />
-    <Preview>Přihlašovací odkaz pro {siteName}</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <Heading style={h1}>Přihlašovací odkaz</Heading>
-        <Text style={text}>
-          Pro přihlášení do {siteName} klikněte na tlačítko níže. Odkaz brzy vyprší.
-        </Text>
-        <Button style={button} href={confirmationUrl}>
-          Přihlásit se
-        </Button>
-        <Text style={footer}>Pokud jste o odkaz nežádali, tento e-mail můžete ignorovat.</Text>
+    <Preview>Přihlašovací odkaz do aplikace {siteName}</Preview>
+    <Body style={styles.body}>
+      <Container style={styles.container}>
+        <Header />
+        <div style={styles.content}>
+          <Heading style={styles.h1}>Přihlášení do aplikace {siteName}</Heading>
+          <Text style={styles.lead}>
+            Kliknutím na tlačítko níže se přihlásíte. Odkaz je platný pouze omezenou dobu.
+          </Text>
+          <PrimaryButton href={confirmationUrl}>Přihlásit se</PrimaryButton>
+          <Text style={styles.lead}>
+            Pokud jste o přihlášení nežádali, tento e-mail můžete ignorovat.
+          </Text>
+        </div>
+        <Footer />
       </Container>
     </Body>
   </Html>
 );
 
 export default MagicLinkEmail;
-
-const main = { backgroundColor: "#ffffff", fontFamily: "Arial, sans-serif" };
-const container = { padding: "20px 25px" };
-const h1 = {
-  fontSize: "22px",
-  fontWeight: "bold" as const,
-  color: "#000000",
-  margin: "0 0 20px",
-};
-const text = {
-  fontSize: "14px",
-  color: "#55575d",
-  lineHeight: "1.5",
-  margin: "0 0 25px",
-};
-const button = {
-  backgroundColor: "#000000",
-  color: "#ffffff",
-  fontSize: "14px",
-  borderRadius: "8px",
-  padding: "12px 20px",
-  textDecoration: "none",
-};
-const footer = { fontSize: "12px", color: "#999999", margin: "30px 0 0" };
