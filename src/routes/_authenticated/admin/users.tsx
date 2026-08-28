@@ -262,7 +262,24 @@ function UsersPage() {
       toast.error((e as Error).message);
     } finally {
       setPwdBusy(false);
+  }
+
+  async function handleSetEmail() {
+    if (!emailUser) return;
+    setEmailBusy(true);
+    try {
+      await setEmail({ data: { user_id: emailUser.id, email: emailValue.trim() } });
+      toast.success("E-mailová adresa změněna");
+      setEmailUser(null);
+      qc.invalidateQueries({ queryKey: ["users"] });
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setEmailBusy(false);
     }
+  }
+
+
   }
 
   return (
