@@ -43,6 +43,7 @@ import { Route as AuthenticatedAdminTvRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAdminTemplatesRouteImport } from './routes/_authenticated/admin/templates'
 import { Route as AuthenticatedAdminStorageRouteImport } from './routes/_authenticated/admin/storage'
 import { Route as AuthenticatedAdminGoogleDriveRouteImport } from './routes/_authenticated/admin/google-drive'
+import { Route as AuthenticatedAdminEmailyRouteImport } from './routes/_authenticated/admin/emaily'
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin/audit'
 import { Route as AuthenticatedAdminIdRouteImport } from './routes/_authenticated/admin/$id'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
@@ -236,6 +237,12 @@ const AuthenticatedAdminGoogleDriveRoute =
     path: '/admin/google-drive',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminEmailyRoute =
+  AuthenticatedAdminEmailyRouteImport.update({
+    id: '/admin/emaily',
+    path: '/admin/emaily',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminAuditRoute = AuthenticatedAdminAuditRouteImport.update({
   id: '/admin/audit',
   path: '/admin/audit',
@@ -321,6 +328,7 @@ export interface FileRoutesByFullPath {
   '/upload/$token': typeof UploadTokenRoute
   '/admin/$id': typeof AuthenticatedAdminIdRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
+  '/admin/emaily': typeof AuthenticatedAdminEmailyRoute
   '/admin/google-drive': typeof AuthenticatedAdminGoogleDriveRoute
   '/admin/storage': typeof AuthenticatedAdminStorageRoute
   '/admin/templates': typeof AuthenticatedAdminTemplatesRoute
@@ -368,6 +376,7 @@ export interface FileRoutesByTo {
   '/upload/$token': typeof UploadTokenRoute
   '/admin/$id': typeof AuthenticatedAdminIdRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
+  '/admin/emaily': typeof AuthenticatedAdminEmailyRoute
   '/admin/google-drive': typeof AuthenticatedAdminGoogleDriveRoute
   '/admin/storage': typeof AuthenticatedAdminStorageRoute
   '/admin/templates': typeof AuthenticatedAdminTemplatesRoute
@@ -417,6 +426,7 @@ export interface FileRoutesById {
   '/upload/$token': typeof UploadTokenRoute
   '/_authenticated/admin/$id': typeof AuthenticatedAdminIdRoute
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
+  '/_authenticated/admin/emaily': typeof AuthenticatedAdminEmailyRoute
   '/_authenticated/admin/google-drive': typeof AuthenticatedAdminGoogleDriveRoute
   '/_authenticated/admin/storage': typeof AuthenticatedAdminStorageRoute
   '/_authenticated/admin/templates': typeof AuthenticatedAdminTemplatesRoute
@@ -466,6 +476,7 @@ export interface FileRouteTypes {
     | '/upload/$token'
     | '/admin/$id'
     | '/admin/audit'
+    | '/admin/emaily'
     | '/admin/google-drive'
     | '/admin/storage'
     | '/admin/templates'
@@ -513,6 +524,7 @@ export interface FileRouteTypes {
     | '/upload/$token'
     | '/admin/$id'
     | '/admin/audit'
+    | '/admin/emaily'
     | '/admin/google-drive'
     | '/admin/storage'
     | '/admin/templates'
@@ -561,6 +573,7 @@ export interface FileRouteTypes {
     | '/upload/$token'
     | '/_authenticated/admin/$id'
     | '/_authenticated/admin/audit'
+    | '/_authenticated/admin/emaily'
     | '/_authenticated/admin/google-drive'
     | '/_authenticated/admin/storage'
     | '/_authenticated/admin/templates'
@@ -860,6 +873,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminGoogleDriveRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/emaily': {
+      id: '/_authenticated/admin/emaily'
+      path: '/admin/emaily'
+      fullPath: '/admin/emaily'
+      preLoaderRoute: typeof AuthenticatedAdminEmailyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/audit': {
       id: '/_authenticated/admin/audit'
       path: '/admin/audit'
@@ -952,6 +972,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedAdminIdRoute: typeof AuthenticatedAdminIdRoute
   AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
+  AuthenticatedAdminEmailyRoute: typeof AuthenticatedAdminEmailyRoute
   AuthenticatedAdminGoogleDriveRoute: typeof AuthenticatedAdminGoogleDriveRoute
   AuthenticatedAdminStorageRoute: typeof AuthenticatedAdminStorageRoute
   AuthenticatedAdminTemplatesRoute: typeof AuthenticatedAdminTemplatesRoute
@@ -976,6 +997,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedAdminIdRoute: AuthenticatedAdminIdRoute,
   AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
+  AuthenticatedAdminEmailyRoute: AuthenticatedAdminEmailyRoute,
   AuthenticatedAdminGoogleDriveRoute: AuthenticatedAdminGoogleDriveRoute,
   AuthenticatedAdminStorageRoute: AuthenticatedAdminStorageRoute,
   AuthenticatedAdminTemplatesRoute: AuthenticatedAdminTemplatesRoute,

@@ -163,6 +163,7 @@ export function AdminShell({
             {navItem("/admin/templates", "Šablony dokumentů", FileText)}
             {navItem("/admin/users", "Uživatelé", Users, pendingCount)}
             {navItem("/admin/storage", "Úspora úložiště", HardDrive)}
+            {navItem("/admin/emaily", "Doručování e-mailů", Mail)}
             {navItem("/admin/google-drive", "Google Disk", Cloud)}
             {navItem("/admin/tv", "TV Display", Tv)}
           </CollapsibleContent>
