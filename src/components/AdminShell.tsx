@@ -21,6 +21,7 @@ import {
   ClipboardSignature,
   Sparkles,
   HardDrive,
+  Mail,
   Cloud,
   Tv,
 } from "lucide-react";
