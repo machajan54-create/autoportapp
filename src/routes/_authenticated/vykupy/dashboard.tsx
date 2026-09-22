@@ -214,6 +214,61 @@ function VykupyDashboard() {
               </Panel>
             </div>
 
+            {isAdmin && (
+              <div className="mt-6 space-y-3">
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+                  <Stat
+                    label="Provize celkem"
+                    value={formatKc(provizeTotal)}
+                    sub="10 % ze zisku bez DPH"
+                    icon={<Coins className="h-5 w-5 text-violet-600" />}
+                    tint="bg-violet-100"
+                  />
+                  <Stat
+                    label="Vyplaceno"
+                    value={formatKc(provizeVyplacena)}
+                    icon={<Award className="h-5 w-5 text-emerald-600" />}
+                    tint="bg-emerald-100"
+                  />
+                  <Stat
+                    label="K vyrovnání"
+                    value={formatKc(provizeKVyplate)}
+                    sub={`${nevyplacene.length} vozů`}
+                    icon={<Clock className="h-5 w-5 text-amber-600" />}
+                    tint="bg-amber-100"
+                  />
+                </div>
+                <Panel title="Nevyplacené provize">
+                  {nevyplacene.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Vše je vyrovnáno.</p>
+                  ) : (
+                    <div className="divide-y">
+                      {nevyplacene.map((v) => (
+                        <Link
+                          key={v.id}
+                          to="/vykupy/$id"
+                          params={{ id: v.id }}
+                          className="flex items-center justify-between py-2 text-sm hover:bg-muted/40"
+                        >
+                          <div className="min-w-0">
+                            <div className="truncate font-medium">
+                              {v.znacka} {v.model}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {v.klient} · {formatDate(v.datum_vykupu)}
+                            </div>
+                          </div>
+                          <div className="tabular-nums font-semibold text-violet-700">
+                            {formatKc(provize(v) ?? 0)}
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </Panel>
+              </div>
+            )}
+
             <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
               <Panel title="TOP 5 obchodů">
                 <DealList rows={topDeals} positive />
