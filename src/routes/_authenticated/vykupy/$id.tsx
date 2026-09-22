@@ -957,7 +957,7 @@ function ContractPdfButton({ vykupId }: { vykupId: string }) {
         km: v?.pocet_km != null ? `${new Intl.NumberFormat("cs-CZ").format(v.pocet_km)} km` : "",
         keys: "",
         price: v?.vykoupeno_za != null ? String(v.vykoupeno_za) : "",
-        price_words: "",
+        price_words: v?.vykoupeno_za != null ? korunySlovy(Number(v.vykoupeno_za)) : "",
         payment_account: "",
         payment_due: "",
         defects: v?.poznamka ?? "",
