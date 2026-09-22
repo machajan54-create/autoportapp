@@ -497,6 +497,7 @@ export const generateVykupContract = createServerFn({ method: "POST" })
       font,
       color: gray,
     });
+    }
 
 
     const bytes = await pdf.save();
