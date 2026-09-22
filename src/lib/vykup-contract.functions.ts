@@ -1,19 +1,29 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import robotoRegularB64 from "@/assets/fonts/Roboto-Regular.ttf.base64";
+import robotoBoldB64 from "@/assets/fonts/Roboto-Bold.ttf.base64";
 
 function fmtKc(n: number | null | undefined): string {
-  if (n == null) return "—";
+  if (n == null) return "…………………………";
   return new Intl.NumberFormat("cs-CZ").format(Number(n)) + " Kč";
 }
 function fmtDate(s: string | null | undefined): string {
-  if (!s) return "—";
+  if (!s) return "…………………";
   const d = new Date(s);
   if (Number.isNaN(d.getTime())) return s;
   return d.toLocaleDateString("cs-CZ");
 }
+function b64ToBytes(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
 
-/** Returns a base64-encoded PDF of the výkupní smlouva. */
+const DOTS = "...................................................";
+
+/** Returns a base64-encoded PDF of the kupní smlouva na ojeté motorové vozidlo. */
 export const generateVykupContract = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ vykupId: z.string().uuid() }).parse(d))
@@ -26,148 +36,356 @@ export const generateVykupContract = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!v) throw new Error("Výkup nenalezen");
 
-    const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
+    const { PDFDocument, rgb } = await import("pdf-lib");
+    const fontkit = (await import("@pdf-lib/fontkit")).default;
     const pdf = await PDFDocument.create();
-    pdf.setTitle(`Vykupni smlouva ${v.znacka} ${v.model}`);
+    pdf.registerFontkit(fontkit);
+    pdf.setTitle(`Kupní smlouva ${v.znacka ?? ""} ${v.model ?? ""}`.trim());
     pdf.setProducer("AutoPort");
     pdf.setCreator("AutoPort");
 
-    const page = pdf.addPage([595.28, 841.89]); // A4 portrait, pt
-    const { width, height } = page.getSize();
-    const font = await pdf.embedFont(StandardFonts.Helvetica);
-    const fontB = await pdf.embedFont(StandardFonts.HelveticaBold);
+    const [font, fontB] = await Promise.all([
+      pdf.embedFont(b64ToBytes(robotoRegularB64), { subset: true }),
+      pdf.embedFont(b64ToBytes(robotoBoldB64), { subset: true }),
+    ]);
 
+    const A4: [number, number] = [595.28, 841.89];
     const marginX = 56;
-    let y = height - 60;
-    const black = rgb(0, 0, 0);
-    const gray = rgb(0.4, 0.4, 0.4);
+    const topY = 800;
+    const bottomY = 60;
+    const contentW = A4[0] - marginX * 2;
+    const black = rgb(0.1, 0.1, 0.1);
+    const gray = rgb(0.42, 0.42, 0.42);
     const accent = rgb(0.96, 0.45, 0.05);
 
-    // Helper sanitize: WinAnsi doesn't cover all czech chars in StandardFonts; map basic ones.
-    const sanitize = (s: string) =>
-      s
-        .normalize("NFKD")
-        .replace(/[\u0300-\u036f]/g, "")
-        // keep ASCII; replace remaining non-ascii with '?'
-        .replace(/[^\x20-\x7e\n]/g, "?");
+    let page = pdf.addPage(A4);
+    let y = topY;
 
-    const draw = (
+    const newPage = () => {
+      page = pdf.addPage(A4);
+      y = topY;
+    };
+    const ensure = (needed: number) => {
+      if (y - needed < bottomY) newPage();
+    };
+
+    const widthOf = (t: string, size: number, bold = false) =>
+      (bold ? fontB : font).widthOfTextAtSize(t, size);
+
+    const drawAt = (
       text: string,
       x: number,
       yy: number,
       opts: { size?: number; bold?: boolean; color?: any } = {},
     ) => {
-      page.drawText(sanitize(text), {
+      page.drawText(text, {
         x,
         y: yy,
-        size: opts.size ?? 10,
+        size: opts.size ?? 9.5,
         font: opts.bold ? fontB : font,
         color: opts.color ?? black,
       });
     };
 
-    // Header bar
-    page.drawRectangle({ x: 0, y: height - 36, width, height: 36, color: accent });
-    draw("AutoPort", marginX, height - 24, { size: 14, bold: true, color: rgb(1, 1, 1) });
-    draw("Vykupni smlouva", width - marginX - 110, height - 24, {
-      size: 11,
-      bold: true,
-      color: rgb(1, 1, 1),
-    });
+    const wrap = (text: string, size: number, maxW: number, bold = false): string[] => {
+      const out: string[] = [];
+      for (const rawLine of String(text).split(/\n/)) {
+        const words = rawLine.split(/\s+/).filter(Boolean);
+        if (words.length === 0) {
+          out.push("");
+          continue;
+        }
+        let line = "";
+        for (const w of words) {
+          const next = line ? `${line} ${w}` : w;
+          if (widthOf(next, size, bold) > maxW && line) {
+            out.push(line);
+            line = w;
+          } else {
+            line = next;
+          }
+        }
+        if (line) out.push(line);
+      }
+      return out;
+    };
 
-    y = height - 70;
-    draw("SMLOUVA O KOUPI MOTOROVEHO VOZIDLA", marginX, y, { size: 14, bold: true });
-    y -= 16;
-    draw(`Cislo: ${v.id.slice(0, 8).toUpperCase()}`, marginX, y, { size: 9, color: gray });
-    draw(
-      `Datum: ${fmtDate(v.datum_vykupu ?? new Date().toISOString())}`,
-      width - marginX - 150,
-      y,
-      {
-        size: 9,
-        color: gray,
-      },
-    );
-    y -= 24;
+    const para = (
+      text: string,
+      opts: { size?: number; bold?: boolean; indent?: number; gap?: number; color?: any } = {},
+    ) => {
+      const size = opts.size ?? 9.5;
+      const indent = opts.indent ?? 0;
+      const lines = wrap(text, size, contentW - indent, opts.bold);
+      const lh = size + 3.5;
+      for (const line of lines) {
+        ensure(lh);
+        drawAt(line, marginX + indent, y, { size, bold: opts.bold, color: opts.color });
+        y -= lh;
+      }
+      y -= opts.gap ?? 4;
+    };
 
-    const section = (title: string) => {
+    const heading = (text: string) => {
+      ensure(34);
       y -= 6;
-      draw(title, marginX, y, { size: 11, bold: true, color: accent });
-      y -= 4;
+      drawAt(text, marginX, y, { size: 11, bold: true, color: accent });
+      y -= 5;
       page.drawLine({
         start: { x: marginX, y },
-        end: { x: width - marginX, y },
+        end: { x: A4[0] - marginX, y },
         thickness: 0.6,
         color: accent,
       });
       y -= 14;
     };
-    const kv = (k: string, val: string) => {
-      draw(k, marginX, y, { size: 10, color: gray });
-      draw(val, marginX + 170, y, { size: 10 });
-      y -= 14;
+
+    /** Label with a value or a dotted fill-in line. */
+    const field = (label: string, value?: string | null) => {
+      const size = 9.5;
+      ensure(15);
+      drawAt(label, marginX, y, { size, color: gray });
+      const x = marginX + Math.max(190, widthOf(label, size) + 10);
+      const val = value && String(value).trim() ? String(value).trim() : DOTS;
+      drawAt(val, x, y, { size, bold: Boolean(value && String(value).trim()) });
+      y -= 15;
     };
 
-    section("Prodavajici (klient)");
-    kv("Jmeno / firma:", v.klient ?? "—");
-    kv("Telefon:", v.telefon ?? "—");
+    // ---- Title -------------------------------------------------------------
+    page.drawRectangle({ x: 0, y: A4[1] - 36, width: A4[0], height: 36, color: accent });
+    drawAt("AUTOPORT, s.r.o.", marginX, A4[1] - 24, { size: 12, bold: true, color: rgb(1, 1, 1) });
+    drawAt(`Č. ${v.id.slice(0, 8).toUpperCase()}`, A4[0] - marginX - 90, A4[1] - 24, {
+      size: 10,
+      bold: true,
+      color: rgb(1, 1, 1),
+    });
 
-    section("Kupujici");
-    kv("AutoPort s.r.o.", "");
-    kv("Zastoupeny:", v.zpracoval ?? "—");
+    y = A4[1] - 74;
+    const title = "KUPNÍ SMLOUVA";
+    drawAt(title, (A4[0] - widthOf(title, 18, true)) / 2, y, { size: 18, bold: true });
+    y -= 18;
+    const sub = "na ojeté motorové vozidlo";
+    drawAt(sub, (A4[0] - widthOf(sub, 11)) / 2, y, { size: 11, color: gray });
+    y -= 16;
+    const law = "uzavřená podle § 2079 a násl. zákona č. 89/2012 Sb., občanský zákoník, v platném znění";
+    drawAt(law, (A4[0] - widthOf(law, 8.5)) / 2, y, { size: 8.5, color: gray });
+    y -= 22;
 
-    section("Predmet smlouvy — vozidlo");
-    kv("Znacka:", v.znacka ?? "—");
-    kv("Model:", v.model ?? "—");
-    kv("Rok vyroby:", v.rok_vyroby ? String(v.rok_vyroby) : "—");
-    kv("Pocet km:", v.pocet_km ? new Intl.NumberFormat("cs-CZ").format(v.pocet_km) : "—");
+    // ---- Smluvní strany ----------------------------------------------------
+    heading("Smluvní strany");
+    para("1. Prodávající", { bold: true, size: 10, gap: 6 });
+    field("Jméno a příjmení / obchodní firma:", v.klient);
+    field("Rodné číslo / IČO:");
+    field("Bydliště / sídlo:");
+    field("Číslo OP / zapsán v OR u:");
+    field("Telefon / e-mail:", v.telefon);
+    field("Bankovní spojení (číslo účtu):");
+    para("(dále jen „Prodávající“)", { size: 8.5, color: gray, gap: 8 });
 
-    section("Kupni cena");
-    kv("Vykoupeno za:", fmtKc(v.vykoupeno_za));
-    if (v.naceneno_od != null) kv("Naceneno od:", fmtKc(v.naceneno_od));
+    para("2. Kupující", { bold: true, size: 10, gap: 6 });
+    field("Obchodní firma:", "AUTOPORT, s.r.o.");
+    field("IČO:", "49614703");
+    field("DIČ:", "CZ49614703");
+    field("Sídlo:", "Korytná 47/3, Strašnice, 100 00 Praha 10");
+    field("Zapsaná v OR vedeném:", "Městským soudem v Praze");
+    field("Zastoupená:", "Patrikem Hrubým, jednatel");
+    para("(dále jen „Kupující“)", { size: 8.5, color: gray, gap: 6 });
+    para(
+      "(Prodávající a Kupující dále společně také jako „Smluvní strany“ a jednotlivě jako „Smluvní strana“)",
+      { size: 8.5, color: gray, gap: 8 },
+    );
 
-    if (v.poznamka) {
-      section("Poznamka");
-      const lines = String(v.poznamka).split(/\n/);
-      for (const line of lines) {
-        draw(line, marginX, y, { size: 10 });
-        y -= 12;
-      }
+    // ---- Článek I ----------------------------------------------------------
+    heading("Článek I. Předmět smlouvy");
+    para(
+      "1.1  Prodávající prohlašuje, že je výlučným vlastníkem níže specifikovaného motorového vozidla (dále jen „Vozidlo“) a že je oprávněn s Vozidlem volně nakládat.",
+    );
+    para(
+      "1.2  Prodávající touto smlouvou prodává Vozidlo Kupujícímu a zavazuje se mu jej odevzdat, a Kupující Vozidlo kupuje a zavazuje se zaplatit Prodávajícímu sjednanou kupní cenu.",
+    );
+    para("1.3  Kupující kupuje Vozidlo v rámci své podnikatelské činnosti, zejména za účelem jeho dalšího prodeje.", {
+      gap: 8,
+    });
+
+    para("Specifikace vozidla", { bold: true, size: 10, gap: 6 });
+    field(
+      "Tovární značka a model:",
+      [v.znacka, v.model].filter(Boolean).join(" ") || null,
+    );
+    field("Rok výroby:", v.rok_vyroby ? String(v.rok_vyroby) : null);
+    field("VIN (identifikační číslo vozidla):");
+    field("Registrační značka (SPZ):");
+    field("Číslo technického průkazu:");
+    field("Barva:", v.barva);
+    field("Palivo / objem a výkon motoru:");
+    field("Datum první registrace:");
+    field(
+      "Stav tachometru (km) ke dni předání:",
+      v.pocet_km != null ? `${new Intl.NumberFormat("cs-CZ").format(v.pocet_km)} km` : null,
+    );
+    field("Počet klíčů předaných Kupujícímu:");
+    y -= 4;
+
+    // ---- Článek II ---------------------------------------------------------
+    heading("Článek II. Kupní cena a platební podmínky");
+    para(
+      `2.1  Kupní cena Vozidla byla Smluvními stranami dohodou sjednána ve výši ${fmtKc(v.vykoupeno_za)} (slovy: ${DOTS}). Cena je uvedena včetně DPH.`,
+    );
+    para(
+      `2.2  Kupní cena bude uhrazena [ ] v hotovosti při podpisu této smlouvy   [ ] bezhotovostním převodem na účet Prodávajícího č. ${DOTS}, a to nejpozději do ………………… ode dne podpisu této smlouvy.`,
+    );
+    para(
+      "2.3  Prodávající svým podpisem potvrzuje přijetí kupní ceny, případně vystaví Kupujícímu doklad o zaplacení (příjmový doklad / fakturu).",
+      { gap: 8 },
+    );
+
+    // ---- Článek III --------------------------------------------------------
+    heading("Článek III. Předání vozidla a nabytí vlastnictví");
+    para(
+      "3.1  Prodávající předá Kupujícímu Vozidlo, jeho příslušenství, klíče a dále veškeré doklady náležející k Vozidlu (zejména technický průkaz, osvědčení o registraci vozidla, servisní knihu, doklad o platné technické prohlídce) při podpisu této smlouvy, nedohodnou-li se Smluvní strany jinak.",
+    );
+    para(
+      "3.2  O předání a převzetí Vozidla sepíší Smluvní strany předávací protokol, který tvoří přílohu č. 1 této smlouvy.",
+    );
+    para(
+      "3.3  Vlastnické právo k Vozidlu přechází na Kupujícího okamžikem úplného zaplacení kupní ceny. Nebezpečí škody na Vozidle přechází na Kupujícího okamžikem převzetí Vozidla.",
+    );
+    para(
+      "3.4  Kupující je povinen bez zbytečného odkladu po nabytí vlastnického práva zajistit přepis Vozidla na příslušném registru vozidel.",
+    );
+    para(
+      "3.5  Prodávající se zavazuje poskytnout Kupujícímu veškerou součinnost potřebnou k přepisu Vozidla na příslušném úřadu, včetně případné osobní účasti, vyžaduje-li to platná právní úprava.",
+      { gap: 8 },
+    );
+
+    // ---- Článek IV ---------------------------------------------------------
+    heading("Článek IV. Prohlášení a záruky prodávajícího");
+    para(
+      "4.1  Prodávající prohlašuje, že na Vozidle neváznou žádná práva třetích osob (zejména zástavní právo, věcné břemeno, výhrada vlastnického práva, leasing), že Vozidlo není předmětem exekučního ani insolvenčního řízení a že nejsou dány žádné právní vady bránící převodu vlastnického práva.",
+    );
+    para(
+      "4.2  Prodávající prohlašuje, že Vozidlo nebylo odcizeno, není a nebylo vedeno v evidenci odcizených vozidel a není předmětem trestního řízení.",
+    );
+    para(
+      "4.3  Prodávající prohlašuje, že Kupujícímu sdělil veškeré vady, škodní a nehodové události Vozidla, které mu jsou známy, a to včetně poškození nosné konstrukce (rámu, karoserie), pokud k němu došlo. Takto sdělené skutečnosti jsou uvedeny níže; neuvede-li Prodávající žádnou skutečnost, prohlašuje tím, že mu žádná vada ani škodní či nehodová událost není známa.",
+    );
+    para("Prodávajícímu známé vady / škodní či nehodová historie Vozidla:", {
+      bold: true,
+      size: 9.5,
+      gap: 4,
+    });
+    if (v.poznamka && String(v.poznamka).trim()) {
+      para(String(v.poznamka).trim(), { gap: 6 });
+    } else {
+      para(`${DOTS}${DOTS}`, { gap: 6 });
+      para(`${DOTS}${DOTS}`, { gap: 6 });
     }
+    para(
+      "4.4  Prodávající prohlašuje, že údaj o stavu tachometru uvedený v čl. I této smlouvy odpovídá skutečnému počtu ujetých kilometrů, pokud je mu známo, a že s tímto stavem nebylo manipulováno.",
+    );
+    para(
+      "4.5  Prodávající prohlašuje, že veškeré údaje o Vozidle uvedené v čl. I této smlouvy jsou pravdivé a úplné a že VIN uvedený v této smlouvě odpovídá VIN vyznačenému na Vozidle i v technickém průkazu.",
+      { gap: 8 },
+    );
 
-    // Signatures
-    y = Math.min(y, 200);
-    y -= 40;
-    page.drawLine({
-      start: { x: marginX, y },
-      end: { x: marginX + 200, y },
-      thickness: 0.5,
-    });
-    page.drawLine({
-      start: { x: width - marginX - 200, y },
-      end: { x: width - marginX, y },
-      thickness: 0.5,
-    });
-    draw("Prodavajici", marginX, y - 12, { size: 9, color: gray });
-    draw("Kupujici", width - marginX - 200, y - 12, { size: 9, color: gray });
+    // ---- Článek V ----------------------------------------------------------
+    heading("Článek V. Odpovědnost za vady");
+    para(
+      "5.1  Kupující prohlašuje, že se před podpisem této smlouvy s Vozidlem seznámil, prohlédl si je a seznámil se s jeho technickým stavem, jak byl Prodávajícím popsán a jak vyplývá z běžné vizuální prohlídky.",
+    );
+    para(
+      "5.2  Ustanovením odst. 5.1 nejsou dotčena práva Kupujícího z vad, které nebyly při běžné prohlídce zjistitelné (skryté vady), ani nároky Kupujícího vyplývající z nepravdivosti či neúplnosti prohlášení Prodávajícího dle čl. IV této smlouvy.",
+    );
+    para(
+      "5.3  Práva z vadného plnění se řídí příslušnými ustanoveními občanského zákoníku, nedohodnou-li se Smluvní strany v konkrétním případě jinak.",
+      { gap: 8 },
+    );
 
-    // Footer
-    draw("Vygenerovano systemem AutoPort — " + new Date().toLocaleString("cs-CZ"), marginX, 30, {
-      size: 8,
-      color: gray,
+    // ---- Článek VI ---------------------------------------------------------
+    heading("Článek VI. Náhrada škody a odstoupení od smlouvy");
+    para(
+      "6.1  Prokáže-li se, že kterékoli z prohlášení Prodávajícího uvedených v čl. IV této smlouvy je nepravdivé nebo neúplné, je Prodávající povinen nahradit Kupujícímu veškerou škodu tím vzniklou, a to v plné výši.",
+    );
+    para(
+      "6.2  Vyjde-li najevo, že na Vozidle vázne právo třetí osoby, že je Vozidlo vedeno jako odcizené, nebo že je předmětem exekučního či insolvenčního řízení, je Kupující oprávněn od této smlouvy odstoupit, a to i po převzetí Vozidla, písemným oznámením doručeným Prodávajícímu. V takovém případě je Prodávající povinen vrátit Kupujícímu zaplacenou kupní cenu v plné výši do 10 dnů od doručení odstoupení; tím není dotčen nárok Kupujícího na náhradu škody dle odst. 6.1.",
+      { gap: 8 },
+    );
+
+    // ---- Článek VII --------------------------------------------------------
+    heading("Článek VII. Závěrečná ustanovení");
+    para("7.1  Tato smlouva nabývá platnosti a účinnosti dnem jejího podpisu oběma Smluvními stranami.");
+    para(
+      "7.2  Právní vztahy touto smlouvou výslovně neupravené se řídí příslušnými ustanoveními zákona č. 89/2012 Sb., občanský zákoník, v platném znění.",
+    );
+    para(
+      "7.3  Tuto smlouvu lze měnit nebo doplňovat pouze formou písemných, vzestupně číslovaných dodatků podepsaných oběma Smluvními stranami.",
+    );
+    para(
+      "7.4  Smlouva je vyhotovena ve dvou stejnopisech s platností originálu, přičemž každá ze Smluvních stran obdrží po jednom vyhotovení.",
+    );
+    para(
+      "7.5  Smluvní strany prohlašují, že si tuto smlouvu před jejím podpisem přečetly, že s jejím obsahem souhlasí a že tato smlouva byla sepsána na základě jejich pravé a svobodné vůle, nikoli v tísni ani za nápadně nevýhodných podmínek, na důkaz čehož připojují své podpisy.",
+      { gap: 10 },
+    );
+
+    para("Přílohy:", { bold: true, size: 10, gap: 4 });
+    para("Příloha č. 1 – Protokol o předání a převzetí vozidla", { gap: 1 });
+    para("Příloha č. 2 – Kopie technického průkazu vozidla", { gap: 1 });
+    para("Příloha č. 3 – Kopie dokladu totožnosti Prodávajícího", { gap: 12 });
+
+    ensure(90);
+    para(
+      `V .................................... dne ${fmtDate(v.datum_vykupu ?? new Date().toISOString())}`,
+      { gap: 30 },
+    );
+
+    // ---- Podpisy -----------------------------------------------------------
+    ensure(70);
+    const colW = 200;
+    const rightX = A4[0] - marginX - colW;
+    page.drawLine({ start: { x: marginX, y }, end: { x: marginX + colW, y }, thickness: 0.6 });
+    page.drawLine({ start: { x: rightX, y }, end: { x: rightX + colW, y }, thickness: 0.6 });
+    drawAt("Prodávající", marginX, y - 13, { size: 9, bold: true });
+    drawAt("Kupující", rightX, y - 13, { size: 9, bold: true });
+    drawAt("AUTOPORT, s.r.o.", rightX, y - 25, { size: 8.5, color: gray });
+    drawAt("Patrik Hrubý, jednatel", rightX, y - 36, { size: 8.5, color: gray });
+
+    // ---- Zápatí na všech stranách -----------------------------------------
+    const pages = pdf.getPages();
+    pages.forEach((p, i) => {
+      p.drawText(`AUTOPORT, s.r.o. — kupní smlouva na ojeté motorové vozidlo`, {
+        x: marginX,
+        y: 32,
+        size: 7.5,
+        font,
+        color: gray,
+      });
+      const label = `Strana ${i + 1} / ${pages.length}`;
+      p.drawText(label, {
+        x: A4[0] - marginX - font.widthOfTextAtSize(label, 7.5),
+        y: 32,
+        size: 7.5,
+        font,
+        color: gray,
+      });
     });
 
     const bytes = await pdf.save();
-    // Convert Uint8Array -> base64 (chunked to avoid call stack issues)
     let bin = "";
     const chunk = 0x8000;
     for (let i = 0; i < bytes.length; i += chunk) {
       bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
     }
     const base64 = btoa(bin);
-    const safeName =
-      `vykupni-smlouva-${(v.znacka ?? "").toLowerCase()}-${(v.model ?? "").toLowerCase()}-${v.id.slice(0, 8)}.pdf`
+    const slug = (s: string) =>
+      s
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
         .replace(/\s+/g, "-")
-        .replace(/[^a-z0-9.-]/g, "");
+        .replace(/[^a-z0-9-]/g, "");
+    const safeName = `kupni-smlouva-${slug(v.znacka ?? "")}-${slug(v.model ?? "")}-${v.id.slice(0, 8)}.pdf`
+      .replace(/-+/g, "-")
+      .replace(/-\./g, ".");
     return { base64, file_name: safeName };
   });
