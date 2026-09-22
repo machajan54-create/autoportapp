@@ -136,6 +136,8 @@ const taskInput = z.object({
   category: z.enum(["daily", "weekly", "as_needed", "monthly"]).default("daily"),
   note: z.string().trim().max(500).optional().nullable(),
   active: z.boolean().default(true),
+  assignee_id: z.string().uuid().optional().nullable(),
+  assignee_name: z.string().trim().max(200).optional().nullable(),
 });
 
 export const saveCleaningTask = createServerFn({ method: "POST" })
