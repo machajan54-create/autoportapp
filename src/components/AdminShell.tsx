@@ -142,7 +142,7 @@ export function AdminShell({
       {can("dochazka") && navItem("/dochazka", "Docházka", Clock)}
       {navItem("/zavady", "Závady", Wrench)}
       {navItem("/ukoly", "Úkoly", CheckSquare)}
-      {navItem("/uklid", "Úklid", Sparkles)}
+      {can("cleaning") && navItem("/uklid", "Úklid", Sparkles)}
       {can("deals") && navItem("/deals", "Obchodní případy", Briefcase)}
       {can("demo_orders") && navItem("/demo-orders", "Předváděcí vozy", ClipboardSignature)}
       {can("evidence_zakazek") && navItem("/evidence-zakazek", "Evidence mytí", Sparkles)}
