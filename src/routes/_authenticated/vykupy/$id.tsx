@@ -246,6 +246,12 @@ function VykupForm() {
     naklady: toNum(form.naklady) ?? 0,
   });
 
+  const liveProvize = provize({
+    prodano_za: toNum(form.prodano_za),
+    vykoupeno_za: toNum(form.vykoupeno_za),
+    naklady: toNum(form.naklady) ?? 0,
+  });
+
   function set<K extends keyof FormState>(k: K, v: FormState[K]) {
     setForm((f) => ({ ...f, [k]: v }));
   }
@@ -273,6 +279,10 @@ function VykupForm() {
       prodano_za: toNum(form.prodano_za) ?? null,
       naklady: toNum(form.naklady) ?? 0,
       naklady_popis: form.naklady_popis.trim() || null,
+      provize_vyplacena: form.provize_vyplacena,
+      provize_vyplacena_at: form.provize_vyplacena
+        ? (existing?.provize_vyplacena_at ?? new Date().toISOString())
+        : null,
       datum_vykupu: autoDatumVykupu,
       stav: form.stav,
       poznamka: form.poznamka.trim() || null,
