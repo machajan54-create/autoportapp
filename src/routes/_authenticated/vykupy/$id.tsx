@@ -671,6 +671,25 @@ function VykupForm() {
                   </span>
                 </div>
               </div>
+              <div className="sm:col-span-2">
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-violet-200 bg-violet-50 p-3 text-sm text-violet-900">
+                  <div>
+                    <span className="font-medium">Provize (10 % ze zisku bez DPH): </span>
+                    <span className="tabular-nums font-bold">
+                      {liveProvize == null ? "—" : formatKc(liveProvize)}
+                    </span>
+                  </div>
+                  <label className="flex cursor-pointer items-center gap-2 font-medium">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 accent-violet-600"
+                      checked={form.provize_vyplacena}
+                      onChange={(e) => set("provize_vyplacena", e.target.checked)}
+                    />
+                    Vyrovnáno / vyplaceno
+                  </label>
+                </div>
+              </div>
             </Section>
           )}
 
