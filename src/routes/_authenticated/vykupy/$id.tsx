@@ -993,7 +993,7 @@ function ContractPdfButton({ vykupId }: { vykupId: string }) {
         price_words: v?.vykoupeno_za != null ? korunySlovy(Number(v.vykoupeno_za)) : "",
         payment_account: "",
         payment_due: "",
-        defects: v?.poznamka ?? "",
+        defects: "",
         place: "Praha",
         contract_date: v?.datum_vykupu ?? new Date().toISOString().slice(0, 10),
       });
