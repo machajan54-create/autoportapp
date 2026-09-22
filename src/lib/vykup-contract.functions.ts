@@ -327,12 +327,14 @@ export const generateVykupContract = createServerFn({ method: "POST" })
       size: 9.5,
       gap: 4,
     });
-    if (v.poznamka && String(v.poznamka).trim()) {
-      para(String(v.poznamka).trim(), { gap: 6 });
+    const defectsText = ov("defects", v.poznamka);
+    if (defectsText) {
+      para(defectsText, { gap: 6 });
     } else {
       para(`${DOTS}${DOTS}`, { gap: 6 });
       para(`${DOTS}${DOTS}`, { gap: 6 });
     }
+
     para(
       "4.4  Prodávající prohlašuje, že údaj o stavu tachometru uvedený v čl. I této smlouvy odpovídá skutečnému počtu ujetých kilometrů, pokud je mu známo, a že s tímto stavem nebylo manipulováno.",
     );
