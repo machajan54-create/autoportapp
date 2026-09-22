@@ -401,9 +401,9 @@ export const generateVykupContract = createServerFn({ method: "POST" })
     drawAt("AUTOPORT, s.r.o.", rightX, y - 25, { size: 8.5, color: gray });
     drawAt("Patrik Hrubý, jednatel", rightX, y - 36, { size: 8.5, color: gray });
 
-    // ---- Zápatí na všech stranách -----------------------------------------
-    const pages = pdf.getPages();
-    pages.forEach((p, i) => {
+    // ---- Zápatí smlouvy ----------------------------------------------------
+    const contractPages = pdf.getPages();
+    contractPages.forEach((p, i) => {
       p.drawText(`AUTOPORT, s.r.o. — kupní smlouva na ojeté motorové vozidlo`, {
         x: marginX,
         y: 32,
@@ -411,7 +411,7 @@ export const generateVykupContract = createServerFn({ method: "POST" })
         font,
         color: gray,
       });
-      const label = `Strana ${i + 1} / ${pages.length}`;
+      const label = `Strana ${i + 1} / ${contractPages.length}`;
       p.drawText(label, {
         x: A4[0] - marginX - font.widthOfTextAtSize(label, 7.5),
         y: 32,
@@ -420,6 +420,72 @@ export const generateVykupContract = createServerFn({ method: "POST" })
         color: gray,
       });
     });
+
+    // ---- Příloha: PLNÁ MOC -------------------------------------------------
+    newPage();
+    page.drawRectangle({ x: 0, y: A4[1] - 36, width: A4[0], height: 36, color: accent });
+    drawAt("AUTOPORT, s.r.o.", marginX, A4[1] - 24, { size: 12, bold: true, color: rgb(1, 1, 1) });
+    drawAt("Příloha ke kupní smlouvě", A4[0] - marginX - 130, A4[1] - 24, {
+      size: 10,
+      bold: true,
+      color: rgb(1, 1, 1),
+    });
+
+    y = A4[1] - 100;
+    const pmTitle = "PLNÁ MOC";
+    drawAt(pmTitle, (A4[0] - widthOf(pmTitle, 18, true)) / 2, y, { size: 18, bold: true });
+    y -= 34;
+
+    para("Patrik Hrubý, RČ: 910418/0162, bytem Malířská 609/5, Praha 7, 170 00", {
+      size: 10,
+      gap: 14,
+    });
+    para("uděluje tímto plnou moc", { size: 10, bold: true, gap: 16 });
+    para(`${DOTS}${DOTS}`, { gap: 4 });
+    para("(jméno, příjmení, rodné číslo / datum narození a bydliště zmocněnce)", {
+      size: 8.5,
+      color: gray,
+      gap: 16,
+    });
+    para(
+      "k zastupování při jednání s Magistrátem hl. m. Prahy ve věci evidence motorových vozidel, a to zejména k těmto úkonům:",
+      { size: 10, gap: 10 },
+    );
+    for (const item of [
+      "k přihlášení vozidla",
+      "k převodu vozidla",
+      "k odhlášení vozidla",
+      "k dohlášení vozidla",
+      "ke zplnomocnění další „třetí osoby“ pro shora uvedená jednání",
+    ]) {
+      para(`•  ${item}`, { size: 10, indent: 14, gap: 2 });
+    }
+    y -= 14;
+
+    field(
+      "Tovární značka a model:",
+      ov("vehicle_name", [v.znacka, v.model].filter(Boolean).join(" ")),
+    );
+    field("VIN:", ov("vin"));
+    field("RZ:", ov("spz"));
+
+    y -= 26;
+    para(
+      `V Praze dne ${fmtDate(ov("contract_date", v.datum_vykupu) ?? new Date().toISOString())}`,
+      { size: 10, gap: 56 },
+    );
+
+    page.drawLine({ start: { x: marginX, y }, end: { x: marginX + colW, y }, thickness: 0.6 });
+    drawAt("Patrik Hrubý", marginX, y - 13, { size: 9, bold: true });
+
+    page.drawText("AUTOPORT, s.r.o. — plná moc", {
+      x: marginX,
+      y: 32,
+      size: 7.5,
+      font,
+      color: gray,
+    });
+
 
     const bytes = await pdf.save();
     let bin = "";
