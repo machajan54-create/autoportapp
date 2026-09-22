@@ -103,6 +103,14 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
   const fetchPending = useServerFn(getPendingApprovalsCount);
   const fetchPurchases = useServerFn(listPurchases);
   const fetchTasks = useServerFn(listTasks);
+  const fetchCleaning = useServerFn(listCleaning);
+  const cleaningDate = pragueToday();
+  const { data: cleaning } = useQuery({
+    queryKey: ["notif", "cleaning", cleaningDate],
+    queryFn: () => fetchCleaning({ data: { date: cleaningDate } }),
+    enabled: !!userId,
+    refetchInterval: 5 * 60_000,
+  });
 
   const { data: claims } = useQuery({
     queryKey: ["notif", "claims"],
