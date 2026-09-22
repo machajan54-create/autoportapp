@@ -446,6 +446,22 @@ function TaskDialog({
             </div>
           </div>
           <div>
+            <Label>Přiřazeno</Label>
+            <Select value={assignee} onValueChange={setAssignee}>
+              <SelectTrigger>
+                <SelectValue placeholder="Bez přiřazení" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Bez přiřazení</SelectItem>
+                {users.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
             <Label>Poznámka</Label>
             <Input value={note} onChange={(e) => setNote(e.target.value)} />
           </div>
