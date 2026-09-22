@@ -382,10 +382,6 @@ export const generateVykupContract = createServerFn({ method: "POST" })
       { gap: 10 },
     );
 
-    para("Přílohy:", { bold: true, size: 10, gap: 4 });
-    para("Příloha č. 1 – Protokol o předání a převzetí vozidla", { gap: 1 });
-    para("Příloha č. 2 – Kopie technického průkazu vozidla", { gap: 1 });
-    para("Příloha č. 3 – Kopie dokladu totožnosti Prodávajícího", { gap: 12 });
 
     ensure(90);
     para(
