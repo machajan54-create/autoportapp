@@ -263,7 +263,7 @@ export const generateVykupContract = createServerFn({ method: "POST" })
     field("Palivo / objem a výkon motoru:", ov("palivo"));
     field("Datum první registrace:", ov("first_registration"));
     field(
-      "Stav tachometru (km) ke dni předání:",
+      "Stav tachometru (najeté km) ke dni předání:",
       ov("km", v.pocet_km != null ? `${new Intl.NumberFormat("cs-CZ").format(v.pocet_km)} km` : null),
     );
     field("Počet klíčů předaných Kupujícímu:", ov("keys"));
@@ -284,7 +284,7 @@ export const generateVykupContract = createServerFn({ method: "POST" })
       `2.1  Kupní cena Vozidla byla Smluvními stranami dohodou sjednána ve výši ${priceText} (slovy: ${ov("price_words") ?? DOTS}). Cena je uvedena včetně DPH.`,
     );
     para(
-      `2.2  Kupní cena bude uhrazena [ ] v hotovosti při podpisu této smlouvy   [ ] bezhotovostním převodem na účet Prodávajícího č. ${ov("payment_account") ?? DOTS}, a to nejpozději do ${ov("payment_due") ?? "…………………"} ode dne podpisu této smlouvy.`,
+      `2.2  Kupní cena bude uhrazena [ ] v hotovosti při předání Vozidla   [ ] bezhotovostním převodem na účet Prodávajícího č. ${ov("payment_account") ?? DOTS}, a to nejpozději do ${ov("payment_due") ?? "…………………"} ode dne podpisu této smlouvy, vždy však před předáním Vozidla Kupujícímu.`,
     );
 
     para(
@@ -295,13 +295,11 @@ export const generateVykupContract = createServerFn({ method: "POST" })
     // ---- Článek III --------------------------------------------------------
     heading("Článek III. Předání vozidla a nabytí vlastnictví");
     para(
-      "3.1  Prodávající předá Kupujícímu Vozidlo, jeho příslušenství, klíče a dále veškeré doklady náležející k Vozidlu (zejména technický průkaz, osvědčení o registraci vozidla, servisní knihu, doklad o platné technické prohlídce) při podpisu této smlouvy, nedohodnou-li se Smluvní strany jinak.",
+      "3.1  Prodávající předá Kupujícímu Vozidlo, jeho příslušenství, klíče a dále veškeré doklady náležející k Vozidlu (zejména technický průkaz, osvědčení o registraci vozidla, servisní knihu, doklad o platné technické prohlídce), a to až po úplném zaplacení kupní ceny dle čl. II této smlouvy, nedohodnou-li se Smluvní strany písemně jinak.",
     );
+    para("3.2  O předání a převzetí Vozidla sepíší Smluvní strany předávací protokol.");
     para(
-      "3.2  O předání a převzetí Vozidla sepíší Smluvní strany předávací protokol, který tvoří přílohu č. 1 této smlouvy.",
-    );
-    para(
-      "3.3  Vlastnické právo k Vozidlu přechází na Kupujícího okamžikem úplného zaplacení kupní ceny. Nebezpečí škody na Vozidle přechází na Kupujícího okamžikem převzetí Vozidla.",
+      "3.3  Vlastnické právo k Vozidlu i nebezpečí škody na Vozidle přechází na Kupujícího okamžikem předání Vozidla.",
     );
     para(
       "3.4  Kupující je povinen bez zbytečného odkladu po nabytí vlastnického práva zajistit přepis Vozidla na příslušném registru vozidel.",
@@ -384,10 +382,6 @@ export const generateVykupContract = createServerFn({ method: "POST" })
       { gap: 10 },
     );
 
-    para("Přílohy:", { bold: true, size: 10, gap: 4 });
-    para("Příloha č. 1 – Protokol o předání a převzetí vozidla", { gap: 1 });
-    para("Příloha č. 2 – Kopie technického průkazu vozidla", { gap: 1 });
-    para("Příloha č. 3 – Kopie dokladu totožnosti Prodávajícího", { gap: 12 });
 
     ensure(90);
     para(
