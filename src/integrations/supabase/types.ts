@@ -802,6 +802,83 @@ export type Database = {
         }
         Relationships: []
       }
+      cleaning_logs: {
+        Row: {
+          created_at: string
+          done_by: string | null
+          done_by_name: string | null
+          id: string
+          log_date: string
+          note: string | null
+          task_id: string
+        }
+        Insert: {
+          created_at?: string
+          done_by?: string | null
+          done_by_name?: string | null
+          id?: string
+          log_date?: string
+          note?: string | null
+          task_id: string
+        }
+        Update: {
+          created_at?: string
+          done_by?: string | null
+          done_by_name?: string | null
+          id?: string
+          log_date?: string
+          note?: string | null
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaning_logs_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "cleaning_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cleaning_tasks: {
+        Row: {
+          active: boolean
+          category: string
+          created_at: string
+          frequency: string
+          id: string
+          note: string | null
+          sort_order: number
+          title: string
+          updated_at: string
+          weekdays: number[]
+        }
+        Insert: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          frequency?: string
+          id?: string
+          note?: string | null
+          sort_order?: number
+          title: string
+          updated_at?: string
+          weekdays?: number[]
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          frequency?: string
+          id?: string
+          note?: string | null
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          weekdays?: number[]
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           address: string | null
