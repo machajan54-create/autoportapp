@@ -40,7 +40,8 @@ type ModuleKey =
   | "logbook"
   | "tasks"
   | "demo_orders"
-  | "evidence_zakazek";
+  | "evidence_zakazek"
+  | "cleaning";
 
 export function CommandPalette({
   isAdmin,

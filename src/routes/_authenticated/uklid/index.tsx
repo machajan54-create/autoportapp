@@ -151,7 +151,7 @@ function CleaningPage() {
   const groups = ["daily", "weekly", "as_needed", "monthly"] as const;
 
   return (
-    <AdminShell>
+    <AdminShell requireModule="cleaning">
       <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>

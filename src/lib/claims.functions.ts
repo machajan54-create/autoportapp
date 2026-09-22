@@ -490,6 +490,7 @@ export const getMyAccess = createServerFn({ method: "GET" })
           "tasks",
           "demo_orders",
           "evidence_zakazek",
+          "cleaning",
         ] as const,
       };
     }
