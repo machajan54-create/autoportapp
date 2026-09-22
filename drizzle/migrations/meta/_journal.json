@@ -15,6 +15,13 @@
       "when": 1790070251263,
       "tag": "0001_cleaning_tasks_assignee",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790071180360,
+      "tag": "0002_add_cleaning_module",
+      "breakpoints": true
     }
   ]
 }
