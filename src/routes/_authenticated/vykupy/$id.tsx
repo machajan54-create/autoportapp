@@ -1055,19 +1055,16 @@ function ContractPdfButton({ vykupId }: { vykupId: string }) {
                             <Textarea
                               value={val}
                               rows={3}
-                              onChange={(e) =>
-                                setForm({ ...form, [f.key]: e.target.value } as ContractFields)
-                              }
+                              onChange={(e) => updateField(f.key, e.target.value)}
                             />
                           ) : (
                             <Input
                               value={val}
                               className={isMissing ? "border-amber-400" : undefined}
-                              onChange={(e) =>
-                                setForm({ ...form, [f.key]: e.target.value } as ContractFields)
-                              }
+                              onChange={(e) => updateField(f.key, e.target.value)}
                             />
                           )}
+
                         </div>
                       );
                     })}
