@@ -378,6 +378,8 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
     myPurchases,
     myAbsences,
     tasksData,
+    cleaning,
+    cleaningDate,
     userId,
     lastSeen,
   ]);
