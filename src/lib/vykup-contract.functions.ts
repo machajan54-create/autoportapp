@@ -327,7 +327,8 @@ export const generateVykupContract = createServerFn({ method: "POST" })
       size: 9.5,
       gap: 4,
     });
-    const defectsText = ov("defects", v.poznamka);
+    // poznámka z DB je interní — do smlouvy se nepromítá, jen pokud se výslovně vyplní v náhledu
+    const defectsText = ov("defects");
     if (defectsText) {
       para(defectsText, { gap: 6 });
     } else {
