@@ -90,7 +90,7 @@ const MODULE_LIST: { key: ModuleKey; label: string }[] = [
   { key: "evidence_zakazek", label: "Evidence mytí" },
   { key: "logbook", label: "Kniha jízd" },
   { key: "tasks", label: "Úkoly" },
-  { key: "uklid", label: "Úklid" },
+  { key: "cleaning", label: "Úklid" },
   { key: "approvals", label: "Schvalování" },
   { key: "users", label: "Uživatelé" },
 ];
