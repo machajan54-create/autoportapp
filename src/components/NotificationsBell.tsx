@@ -210,6 +210,28 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
         });
       }
 
+      // Úklid: moje dnešní nesplněné úkoly
+      const doneCleaning = new Set(((cleaning?.logs ?? []) as any[]).map((l) => l.task_id));
+      const myCleaning = ((cleaning?.tasks ?? []) as any[]).filter(
+        (t) =>
+          t.assignee_id === userId &&
+          (t.weekdays?.length ?? 0) > 0 &&
+          isTaskDueOn(t.weekdays, cleaning?.date ?? cleaningDate) &&
+          !doneCleaning.has(t.id),
+      );
+      if (myCleaning.length > 0) {
+        out.push({
+          key: `cleaning-${cleaning?.date ?? cleaningDate}-${myCleaning.length}`,
+          title: `Úklid na dnešek: ${myCleaning.length} úkolů`,
+          detail: myCleaning
+            .slice(0, 3)
+            .map((t: any) => t.title)
+            .join(" · "),
+          to: "/uklid",
+          tone: "warn",
+        });
+      }
+
       const mine = (myPurchases ?? []).filter(
         (p: any) => p.requested_by === userId && p.status !== "pending" && p.decided_at,
       );
