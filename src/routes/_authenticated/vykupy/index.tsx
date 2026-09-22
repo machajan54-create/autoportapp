@@ -169,7 +169,19 @@ function VykupyList() {
                     )}
                   </div>
                 </div>
+                {p != null && (
+                  <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <span>Provize: </span>
+                    <span className="tabular-nums font-medium text-foreground">{formatKc(p)}</span>
+                    {v.provize_vyplacena ? (
+                      <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800">
+                        vyplaceno
+                      </span>
+                    ) : null}
+                  </div>
+                )}
               </button>
+
             );
           })}
         </div>
