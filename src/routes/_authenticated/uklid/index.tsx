@@ -358,18 +358,32 @@ function TaskDialog({
   const [category, setCategory] = useState<"daily" | "weekly" | "as_needed" | "monthly">("weekly");
   const [weekdays, setWeekdays] = useState<number[]>([]);
   const [note, setNote] = useState("");
+  const [assignee, setAssignee] = useState("none");
   const [saving, setSaving] = useState(false);
 
   async function submit() {
     if (!title.trim()) return toast.error("Zadejte název úkolu");
     setSaving(true);
     try {
-      await onSave({ data: { title, frequency, category, weekdays, note, active: true } });
+      const picked = users.find((u) => u.id === assignee);
+      await onSave({
+        data: {
+          title,
+          frequency,
+          category,
+          weekdays,
+          note,
+          active: true,
+          assignee_id: assignee === "none" ? null : assignee,
+          assignee_name: picked?.name ?? null,
+        },
+      });
       toast.success("Úkol přidán");
       setOpen(false);
       setTitle("");
       setNote("");
       setWeekdays([]);
+      setAssignee("none");
       onDone();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Uložení selhalo");
