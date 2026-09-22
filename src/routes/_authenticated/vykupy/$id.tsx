@@ -48,7 +48,15 @@ import {
 } from "@/lib/vykup-photos.functions";
 import { generateVykupContract } from "@/lib/vykup-contract.functions";
 import { resizeImage } from "@/lib/resize-image";
+import { korunySlovy } from "@/lib/cislo-slovy";
 import { cn } from "@/lib/utils";
+
+function parsePrice(raw: string): number {
+  const cleaned = String(raw).replace(/\s|\u00a0/g, "").replace(/[^\d.,-]/g, "").replace(",", ".");
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : 0;
+}
+
 
 export const Route = createFileRoute("/_authenticated/vykupy/$id")({
   component: VykupForm,
