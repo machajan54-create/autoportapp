@@ -432,8 +432,8 @@ export const generateVykupContract = createServerFn({ method: "POST" })
     });
     }
 
-    // ---- Příloha: PLNÁ MOC -------------------------------------------------
-    if (!poaOnly) newPage();
+    // ---- PLNÁ MOC (jen samostatně) -----------------------------------------
+    if (poaOnly) {
     page.drawRectangle({ x: 0, y: A4[1] - 36, width: A4[0], height: 36, color: accent });
     drawAt("AUTOPORT, s.r.o.", marginX, A4[1] - 24, { size: 12, bold: true, color: rgb(1, 1, 1) });
     drawAt("Příloha ke kupní smlouvě", A4[0] - marginX - 130, A4[1] - 24, {
