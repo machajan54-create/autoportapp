@@ -118,6 +118,7 @@ function VykupyList() {
           )}
           {rows.map((v) => {
             const m = marze(v);
+            const p = provize(v);
             return (
               <button
                 key={v.id}
