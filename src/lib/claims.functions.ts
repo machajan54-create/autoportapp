@@ -418,6 +418,7 @@ export const setUserModule = createServerFn({ method: "POST" })
           "tasks",
           "demo_orders",
           "evidence_zakazek",
+          "cleaning",
         ]),
         enable: z.boolean(),
       })
