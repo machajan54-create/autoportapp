@@ -23,10 +23,44 @@ function b64ToBytes(b64: string): Uint8Array {
 
 const DOTS = "...................................................";
 
+const overridesSchema = z
+  .object({
+    seller_name: z.string(),
+    seller_ico: z.string(),
+    seller_address: z.string(),
+    seller_id_doc: z.string(),
+    seller_contact: z.string(),
+    seller_bank: z.string(),
+    vehicle_name: z.string(),
+    rok_vyroby: z.string(),
+    vin: z.string(),
+    spz: z.string(),
+    tp: z.string(),
+    barva: z.string(),
+    palivo: z.string(),
+    first_registration: z.string(),
+    km: z.string(),
+    keys: z.string(),
+    price: z.string(),
+    price_words: z.string(),
+    payment_account: z.string(),
+    payment_due: z.string(),
+    defects: z.string(),
+    place: z.string(),
+    contract_date: z.string(),
+  })
+  .partial();
+
+export type VykupContractOverrides = z.infer<typeof overridesSchema>;
+
 /** Returns a base64-encoded PDF of the kupní smlouva na ojeté motorové vozidlo. */
 export const generateVykupContract = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ vykupId: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) =>
+    z
+      .object({ vykupId: z.string().uuid(), overrides: overridesSchema.optional() })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { data: v, error } = await context.supabase
       .from("vykupy")
@@ -35,6 +69,14 @@ export const generateVykupContract = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!v) throw new Error("Výkup nenalezen");
+
+    const o = data.overrides ?? {};
+    const ov = (key: keyof VykupContractOverrides, fallback?: string | null) => {
+      const val = o[key];
+      if (val != null && String(val).trim()) return String(val).trim();
+      return fallback && String(fallback).trim() ? String(fallback).trim() : null;
+    };
+
 
     const { PDFDocument, rgb } = await import("pdf-lib");
     const fontkit = (await import("@pdf-lib/fontkit")).default;
@@ -174,12 +216,13 @@ export const generateVykupContract = createServerFn({ method: "POST" })
     // ---- Smluvní strany ----------------------------------------------------
     heading("Smluvní strany");
     para("1. Prodávající", { bold: true, size: 10, gap: 6 });
-    field("Jméno a příjmení / obchodní firma:", v.klient);
-    field("Rodné číslo / IČO:");
-    field("Bydliště / sídlo:");
-    field("Číslo OP / zapsán v OR u:");
-    field("Telefon / e-mail:", v.telefon);
-    field("Bankovní spojení (číslo účtu):");
+    field("Jméno a příjmení / obchodní firma:", ov("seller_name", v.klient));
+    field("Rodné číslo / IČO:", ov("seller_ico"));
+    field("Bydliště / sídlo:", ov("seller_address"));
+    field("Číslo OP / zapsán v OR u:", ov("seller_id_doc"));
+    field("Telefon / e-mail:", ov("seller_contact", v.telefon));
+    field("Bankovní spojení (číslo účtu):", ov("seller_bank"));
+
     para("(dále jen „Prodávající“)", { size: 8.5, color: gray, gap: 8 });
 
     para("2. Kupující", { bold: true, size: 10, gap: 6 });
@@ -210,30 +253,40 @@ export const generateVykupContract = createServerFn({ method: "POST" })
     para("Specifikace vozidla", { bold: true, size: 10, gap: 6 });
     field(
       "Tovární značka a model:",
-      [v.znacka, v.model].filter(Boolean).join(" ") || null,
+      ov("vehicle_name", [v.znacka, v.model].filter(Boolean).join(" ")),
     );
-    field("Rok výroby:", v.rok_vyroby ? String(v.rok_vyroby) : null);
-    field("VIN (identifikační číslo vozidla):");
-    field("Registrační značka (SPZ):");
-    field("Číslo technického průkazu:");
-    field("Barva:", v.barva);
-    field("Palivo / objem a výkon motoru:");
-    field("Datum první registrace:");
+    field("Rok výroby:", ov("rok_vyroby", v.rok_vyroby ? String(v.rok_vyroby) : null));
+    field("VIN (identifikační číslo vozidla):", ov("vin"));
+    field("Registrační značka (SPZ):", ov("spz"));
+    field("Číslo technického průkazu:", ov("tp"));
+    field("Barva:", ov("barva", v.barva));
+    field("Palivo / objem a výkon motoru:", ov("palivo"));
+    field("Datum první registrace:", ov("first_registration"));
     field(
       "Stav tachometru (km) ke dni předání:",
-      v.pocet_km != null ? `${new Intl.NumberFormat("cs-CZ").format(v.pocet_km)} km` : null,
+      ov("km", v.pocet_km != null ? `${new Intl.NumberFormat("cs-CZ").format(v.pocet_km)} km` : null),
     );
-    field("Počet klíčů předaných Kupujícímu:");
+    field("Počet klíčů předaných Kupujícímu:", ov("keys"));
+
     y -= 4;
 
     // ---- Článek II ---------------------------------------------------------
     heading("Článek II. Kupní cena a platební podmínky");
+    const priceText = (() => {
+      const raw = ov("price");
+      if (raw) {
+        const num = Number(raw.replace(/[^\d.,-]/g, "").replace(/\s/g, "").replace(",", "."));
+        return Number.isFinite(num) && num > 0 ? fmtKc(num) : raw;
+      }
+      return fmtKc(v.vykoupeno_za);
+    })();
     para(
-      `2.1  Kupní cena Vozidla byla Smluvními stranami dohodou sjednána ve výši ${fmtKc(v.vykoupeno_za)} (slovy: ${DOTS}). Cena je uvedena včetně DPH.`,
+      `2.1  Kupní cena Vozidla byla Smluvními stranami dohodou sjednána ve výši ${priceText} (slovy: ${ov("price_words") ?? DOTS}). Cena je uvedena včetně DPH.`,
     );
     para(
-      `2.2  Kupní cena bude uhrazena [ ] v hotovosti při podpisu této smlouvy   [ ] bezhotovostním převodem na účet Prodávajícího č. ${DOTS}, a to nejpozději do ………………… ode dne podpisu této smlouvy.`,
+      `2.2  Kupní cena bude uhrazena [ ] v hotovosti při podpisu této smlouvy   [ ] bezhotovostním převodem na účet Prodávajícího č. ${ov("payment_account") ?? DOTS}, a to nejpozději do ${ov("payment_due") ?? "…………………"} ode dne podpisu této smlouvy.`,
     );
+
     para(
       "2.3  Prodávající svým podpisem potvrzuje přijetí kupní ceny, případně vystaví Kupujícímu doklad o zaplacení (příjmový doklad / fakturu).",
       { gap: 8 },
@@ -274,12 +327,14 @@ export const generateVykupContract = createServerFn({ method: "POST" })
       size: 9.5,
       gap: 4,
     });
-    if (v.poznamka && String(v.poznamka).trim()) {
-      para(String(v.poznamka).trim(), { gap: 6 });
+    const defectsText = ov("defects", v.poznamka);
+    if (defectsText) {
+      para(defectsText, { gap: 6 });
     } else {
       para(`${DOTS}${DOTS}`, { gap: 6 });
       para(`${DOTS}${DOTS}`, { gap: 6 });
     }
+
     para(
       "4.4  Prodávající prohlašuje, že údaj o stavu tachometru uvedený v čl. I této smlouvy odpovídá skutečnému počtu ujetých kilometrů, pokud je mu známo, a že s tímto stavem nebylo manipulováno.",
     );
@@ -335,8 +390,9 @@ export const generateVykupContract = createServerFn({ method: "POST" })
 
     ensure(90);
     para(
-      `V .................................... dne ${fmtDate(v.datum_vykupu ?? new Date().toISOString())}`,
+      `V ${ov("place") ?? "...................................."} dne ${fmtDate(ov("contract_date", v.datum_vykupu) ?? new Date().toISOString())}`,
       { gap: 30 },
+
     );
 
     // ---- Podpisy -----------------------------------------------------------

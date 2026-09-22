@@ -16,7 +16,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ArrowLeft, FileText, Loader2, Upload, AlertTriangle, Trash2, Eye } from "lucide-react";
+
 import { supabase } from "@/integrations/supabase/client";
 import {
   getVykup,
@@ -836,13 +845,134 @@ function daysSince(iso: string): number {
   return Math.max(0, Math.floor((Date.now() - start) / 86_400_000));
 }
 
+type ContractFields = {
+  seller_name: string;
+  seller_ico: string;
+  seller_address: string;
+  seller_id_doc: string;
+  seller_contact: string;
+  seller_bank: string;
+  vehicle_name: string;
+  rok_vyroby: string;
+  vin: string;
+  spz: string;
+  tp: string;
+  barva: string;
+  palivo: string;
+  first_registration: string;
+  km: string;
+  keys: string;
+  price: string;
+  price_words: string;
+  payment_account: string;
+  payment_due: string;
+  defects: string;
+  place: string;
+  contract_date: string;
+};
+
+const CONTRACT_GROUPS: {
+  title: string;
+  fields: { key: keyof ContractFields; label: string; required?: boolean; area?: boolean }[];
+}[] = [
+  {
+    title: "Prodávající (klient)",
+    fields: [
+      { key: "seller_name", label: "Jméno a příjmení / firma", required: true },
+      { key: "seller_ico", label: "Rodné číslo / IČO", required: true },
+      { key: "seller_address", label: "Bydliště / sídlo", required: true },
+      { key: "seller_id_doc", label: "Číslo OP / zápis v OR" },
+      { key: "seller_contact", label: "Telefon / e-mail", required: true },
+      { key: "seller_bank", label: "Bankovní spojení" },
+    ],
+  },
+  {
+    title: "Vozidlo",
+    fields: [
+      { key: "vehicle_name", label: "Značka a model", required: true },
+      { key: "rok_vyroby", label: "Rok výroby", required: true },
+      { key: "vin", label: "VIN", required: true },
+      { key: "spz", label: "Registrační značka (SPZ)", required: true },
+      { key: "tp", label: "Číslo technického průkazu", required: true },
+      { key: "barva", label: "Barva" },
+      { key: "palivo", label: "Palivo / motor" },
+      { key: "first_registration", label: "Datum první registrace" },
+      { key: "km", label: "Stav tachometru", required: true },
+      { key: "keys", label: "Počet klíčů" },
+    ],
+  },
+  {
+    title: "Cena a platba",
+    fields: [
+      { key: "price", label: "Kupní cena (Kč)", required: true },
+      { key: "price_words", label: "Cena slovy", required: true },
+      { key: "payment_account", label: "Účet pro převod" },
+      { key: "payment_due", label: "Splatnost (např. 5 dnů)" },
+    ],
+  },
+  {
+    title: "Ostatní",
+    fields: [
+      { key: "defects", label: "Známé vady / nehodová historie", area: true },
+      { key: "place", label: "Místo podpisu", required: true },
+      { key: "contract_date", label: "Datum smlouvy", required: true },
+    ],
+  },
+];
+
 function ContractPdfButton({ vykupId }: { vykupId: string }) {
   const generate = useServerFn(generateVykupContract);
+  const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState<ContractFields | null>(null);
+
+  async function openDialog() {
+    setOpen(true);
+    if (form) return;
+    try {
+      const v = await getVykup(vykupId);
+      setForm({
+        seller_name: v?.klient ?? "",
+        seller_ico: "",
+        seller_address: "",
+        seller_id_doc: "",
+        seller_contact: v?.telefon ?? "",
+        seller_bank: "",
+        vehicle_name: [v?.znacka, v?.model].filter(Boolean).join(" "),
+        rok_vyroby: v?.rok_vyroby ? String(v.rok_vyroby) : "",
+        vin: "",
+        spz: "",
+        tp: "",
+        barva: v?.barva ?? "",
+        palivo: "",
+        first_registration: "",
+        km: v?.pocet_km != null ? `${new Intl.NumberFormat("cs-CZ").format(v.pocet_km)} km` : "",
+        keys: "",
+        price: v?.vykoupeno_za != null ? String(v.vykoupeno_za) : "",
+        price_words: "",
+        payment_account: "",
+        payment_due: "",
+        defects: v?.poznamka ?? "",
+        place: "Praha",
+        contract_date: v?.datum_vykupu ?? new Date().toISOString().slice(0, 10),
+      });
+    } catch (e: any) {
+      toast.error(e?.message || "Nepodařilo se načíst údaje");
+      setOpen(false);
+    }
+  }
+
+  const missing = form
+    ? CONTRACT_GROUPS.flatMap((g) => g.fields)
+        .filter((f) => f.required && !String(form[f.key] ?? "").trim())
+        .map((f) => f.label)
+    : [];
+
   async function handle() {
+    if (!form) return;
     setBusy(true);
     try {
-      const { base64, file_name } = await generate({ data: { vykupId } });
+      const { base64, file_name } = await generate({ data: { vykupId, overrides: form } });
       const bin = atob(base64);
       const buf = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
@@ -853,23 +983,119 @@ function ContractPdfButton({ vykupId }: { vykupId: string }) {
       a.download = file_name;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setOpen(false);
     } catch (e: any) {
       toast.error(e?.message || "Nepodařilo se vygenerovat PDF");
     } finally {
       setBusy(false);
     }
   }
+
   return (
-    <Button type="button" variant="outline" onClick={handle} disabled={busy}>
-      {busy ? (
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-      ) : (
+    <>
+      <Button type="button" variant="outline" onClick={openDialog}>
         <FileText className="mr-2 h-4 w-4" />
-      )}
-      Smlouva (PDF)
-    </Button>
+        Smlouva (PDF)
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Náhled kupní smlouvy</DialogTitle>
+            <DialogDescription>
+              Zkontrolujte a doplňte údaje. Prázdná pole se ve smlouvě vytisknou jako tečkovaná
+              místa k ručnímu doplnění.
+            </DialogDescription>
+          </DialogHeader>
+
+          {!form ? (
+            <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Načítám údaje…
+            </div>
+          ) : (
+            <div className="space-y-5">
+              <div
+                className={cn(
+                  "rounded-md border p-3 text-sm",
+                  missing.length
+                    ? "border-amber-300 bg-amber-50 text-amber-900"
+                    : "border-emerald-300 bg-emerald-50 text-emerald-900",
+                )}
+              >
+                {missing.length ? (
+                  <>
+                    <div className="mb-1 flex items-center gap-2 font-medium">
+                      <AlertTriangle className="h-4 w-4" />
+                      Chybí {missing.length} povinných údajů
+                    </div>
+                    <ul className="list-inside list-disc">
+                      {missing.map((m) => (
+                        <li key={m}>{m}</li>
+                      ))}
+                    </ul>
+                  </>
+                ) : (
+                  <div className="font-medium">Všechny povinné údaje jsou vyplněné.</div>
+                )}
+              </div>
+
+              {CONTRACT_GROUPS.map((g) => (
+                <div key={g.title} className="space-y-3">
+                  <div className="text-sm font-semibold">{g.title}</div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {g.fields.map((f) => {
+                      const val = form[f.key] ?? "";
+                      const isMissing = Boolean(f.required) && !String(val).trim();
+                      return (
+                        <div key={f.key} className={f.area ? "sm:col-span-2" : undefined}>
+                          <Label className="mb-1.5 block text-sm">
+                            {f.label}
+                            {f.required && <span className="ml-1 text-destructive">*</span>}
+                          </Label>
+                          {f.area ? (
+                            <Textarea
+                              value={val}
+                              rows={3}
+                              onChange={(e) =>
+                                setForm({ ...form, [f.key]: e.target.value } as ContractFields)
+                              }
+                            />
+                          ) : (
+                            <Input
+                              value={val}
+                              className={isMissing ? "border-amber-400" : undefined}
+                              onChange={(e) =>
+                                setForm({ ...form, [f.key]: e.target.value } as ContractFields)
+                              }
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Zavřít
+            </Button>
+            <Button type="button" onClick={handle} disabled={busy || !form}>
+              {busy ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <FileText className="mr-2 h-4 w-4" />
+              )}
+              {missing.length ? "Přesto vygenerovat PDF" : "Vygenerovat PDF"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
+
 
 function PhotoGallery({ vykupId }: { vykupId: string }) {
   const qc = useQueryClient();
