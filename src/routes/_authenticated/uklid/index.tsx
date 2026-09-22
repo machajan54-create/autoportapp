@@ -34,6 +34,7 @@ import {
   toggleCleaningTask,
   saveCleaningTask,
   deleteCleaningTask,
+  setCleaningAssignee,
   isTaskDueOn,
   pragueToday,
   CLEANING_CATEGORY_LABEL,
