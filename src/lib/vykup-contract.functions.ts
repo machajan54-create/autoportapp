@@ -23,10 +23,44 @@ function b64ToBytes(b64: string): Uint8Array {
 
 const DOTS = "...................................................";
 
+const overridesSchema = z
+  .object({
+    seller_name: z.string(),
+    seller_ico: z.string(),
+    seller_address: z.string(),
+    seller_id_doc: z.string(),
+    seller_contact: z.string(),
+    seller_bank: z.string(),
+    vehicle_name: z.string(),
+    rok_vyroby: z.string(),
+    vin: z.string(),
+    spz: z.string(),
+    tp: z.string(),
+    barva: z.string(),
+    palivo: z.string(),
+    first_registration: z.string(),
+    km: z.string(),
+    keys: z.string(),
+    price: z.string(),
+    price_words: z.string(),
+    payment_account: z.string(),
+    payment_due: z.string(),
+    defects: z.string(),
+    place: z.string(),
+    contract_date: z.string(),
+  })
+  .partial();
+
+export type VykupContractOverrides = z.infer<typeof overridesSchema>;
+
 /** Returns a base64-encoded PDF of the kupní smlouva na ojeté motorové vozidlo. */
 export const generateVykupContract = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ vykupId: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) =>
+    z
+      .object({ vykupId: z.string().uuid(), overrides: overridesSchema.optional() })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { data: v, error } = await context.supabase
       .from("vykupy")
@@ -35,6 +69,14 @@ export const generateVykupContract = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!v) throw new Error("Výkup nenalezen");
+
+    const o = data.overrides ?? {};
+    const ov = (key: keyof VykupContractOverrides, fallback?: string | null) => {
+      const val = o[key];
+      if (val != null && String(val).trim()) return String(val).trim();
+      return fallback && String(fallback).trim() ? String(fallback).trim() : null;
+    };
+
 
     const { PDFDocument, rgb } = await import("pdf-lib");
     const fontkit = (await import("@pdf-lib/fontkit")).default;
