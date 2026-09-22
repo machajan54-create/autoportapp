@@ -27,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getMyAccess } from "@/lib/claims.functions";
+import { getMyAccess, listUsers } from "@/lib/claims.functions";
 import {
   listCleaning,
   listCleaningHistory,
@@ -84,6 +84,8 @@ type Task = {
   category: string;
   note: string | null;
   active: boolean;
+  assignee_id?: string | null;
+  assignee_name?: string | null;
 };
 
 function CleaningPage() {
