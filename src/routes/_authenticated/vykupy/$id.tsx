@@ -1050,6 +1050,14 @@ function ContractPdfButton({ vykupId }: { vykupId: string }) {
         <FileText className="mr-2 h-4 w-4" />
         Smlouva (PDF)
       </Button>
+      <Button type="button" variant="outline" disabled={busy} onClick={() => run("poa")}>
+        {busy ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <FileText className="mr-2 h-4 w-4" />
+        )}
+        Plná moc (PDF)
+      </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
           <DialogHeader>
@@ -1131,7 +1139,7 @@ function ContractPdfButton({ vykupId }: { vykupId: string }) {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Zavřít
             </Button>
-            <Button type="button" onClick={handle} disabled={busy || !form}>
+            <Button type="button" onClick={() => run("full")} disabled={busy || !form}>
               {busy ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
