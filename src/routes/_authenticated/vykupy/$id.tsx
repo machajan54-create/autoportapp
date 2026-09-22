@@ -32,6 +32,7 @@ import {
   upsertVykup,
   formatKc,
   marze,
+  provize,
   ZNACKY,
   ZDROJE,
   STAVY,
@@ -80,6 +81,7 @@ type FormState = {
   prodano_za: string;
   naklady: string;
   naklady_popis: string;
+  provize_vyplacena: boolean;
   datum_vykupu: string;
   stav: string;
   poznamka: string;
@@ -111,6 +113,7 @@ const empty: FormState = {
   prodano_za: "",
   naklady: "0",
   naklady_popis: "",
+  provize_vyplacena: false,
   datum_vykupu: "",
   stav: "Nacenění",
   poznamka: "",
@@ -149,6 +152,7 @@ function fromVykup(v: Vykup): FormState {
     prodano_za: v.prodano_za?.toString() ?? "",
     naklady: (v.naklady ?? 0).toString(),
     naklady_popis: v.naklady_popis ?? "",
+    provize_vyplacena: v.provize_vyplacena === true,
     datum_vykupu: v.datum_vykupu ?? "",
     stav: v.stav,
     poznamka: v.poznamka ?? "",
@@ -243,6 +247,12 @@ function VykupForm() {
     naklady: toNum(form.naklady) ?? 0,
   });
 
+  const liveProvize = provize({
+    prodano_za: toNum(form.prodano_za),
+    vykoupeno_za: toNum(form.vykoupeno_za),
+    naklady: toNum(form.naklady) ?? 0,
+  });
+
   function set<K extends keyof FormState>(k: K, v: FormState[K]) {
     setForm((f) => ({ ...f, [k]: v }));
   }
@@ -270,6 +280,10 @@ function VykupForm() {
       prodano_za: toNum(form.prodano_za) ?? null,
       naklady: toNum(form.naklady) ?? 0,
       naklady_popis: form.naklady_popis.trim() || null,
+      provize_vyplacena: form.provize_vyplacena,
+      provize_vyplacena_at: form.provize_vyplacena
+        ? (existing?.provize_vyplacena_at ?? new Date().toISOString())
+        : null,
       datum_vykupu: autoDatumVykupu,
       stav: form.stav,
       poznamka: form.poznamka.trim() || null,
@@ -655,6 +669,25 @@ function VykupForm() {
                       ? "vyplňte prodáno, vykoupeno; náklady se odečtou"
                       : formatKc(liveMarze)}
                   </span>
+                </div>
+              </div>
+              <div className="sm:col-span-2">
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-violet-200 bg-violet-50 p-3 text-sm text-violet-900">
+                  <div>
+                    <span className="font-medium">Provize (10 % ze zisku bez DPH): </span>
+                    <span className="tabular-nums font-bold">
+                      {liveProvize == null ? "—" : formatKc(liveProvize)}
+                    </span>
+                  </div>
+                  <label className="flex cursor-pointer items-center gap-2 font-medium">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 accent-violet-600"
+                      checked={form.provize_vyplacena}
+                      onChange={(e) => set("provize_vyplacena", e.target.checked)}
+                    />
+                    Vyrovnáno / vyplaceno
+                  </label>
                 </div>
               </div>
             </Section>

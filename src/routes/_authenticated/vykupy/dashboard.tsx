@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { AdminShell } from "@/components/AdminShell";
-import { listVykupy, formatKc, formatDate, marze, type Vykup } from "@/lib/vykupy";
-import { listEmployees } from "@/lib/claims.functions";
+import { listVykupy, formatKc, formatDate, marze, provize, type Vykup } from "@/lib/vykupy";
+import { listEmployees, getMyAccess } from "@/lib/claims.functions";
 import {
   Car,
   Coins,
@@ -26,6 +26,9 @@ type Period = "30d" | "90d" | "ytd" | "all";
 
 function VykupyDashboard() {
   const fetchEmployees = useServerFn(listEmployees);
+  const fetchAccess = useServerFn(getMyAccess);
+  const { data: access } = useQuery({ queryKey: ["my-access"], queryFn: () => fetchAccess({}) });
+  const isAdmin = !!access?.isAdmin;
   const { data: vykupy, isLoading } = useQuery({ queryKey: ["vykupy"], queryFn: listVykupy });
   const { data: employees } = useQuery({
     queryKey: ["employees"],
@@ -54,6 +57,15 @@ function VykupyDashboard() {
     .filter((v) => (marze(v) ?? 0) < 0)
     .sort((a, b) => (marze(a) ?? 0) - (marze(b) ?? 0))
     .slice(0, 5);
+
+  const provizeTotal = sum(prodano.map((v) => provize(v) ?? 0));
+  const provizeVyplacena = sum(
+    prodano.filter((v) => v.provize_vyplacena).map((v) => provize(v) ?? 0),
+  );
+  const provizeKVyplate = provizeTotal - provizeVyplacena;
+  const nevyplacene = prodano
+    .filter((v) => !v.provize_vyplacena && (provize(v) ?? 0) > 0)
+    .sort((a, b) => (provize(b) ?? 0) - (provize(a) ?? 0));
 
   const empName = (id: string | null) => employees?.find((e) => e.id === id)?.name ?? "—";
   const pricerStats = pricerLeaderboard(prodano, empName);
@@ -201,6 +213,61 @@ function VykupyDashboard() {
                 )}
               </Panel>
             </div>
+
+            {isAdmin && (
+              <div className="mt-6 space-y-3">
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+                  <Stat
+                    label="Provize celkem"
+                    value={formatKc(provizeTotal)}
+                    sub="10 % ze zisku bez DPH"
+                    icon={<Coins className="h-5 w-5 text-violet-600" />}
+                    tint="bg-violet-100"
+                  />
+                  <Stat
+                    label="Vyplaceno"
+                    value={formatKc(provizeVyplacena)}
+                    icon={<Award className="h-5 w-5 text-emerald-600" />}
+                    tint="bg-emerald-100"
+                  />
+                  <Stat
+                    label="K vyrovnání"
+                    value={formatKc(provizeKVyplate)}
+                    sub={`${nevyplacene.length} vozů`}
+                    icon={<Clock className="h-5 w-5 text-amber-600" />}
+                    tint="bg-amber-100"
+                  />
+                </div>
+                <Panel title="Nevyplacené provize">
+                  {nevyplacene.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Vše je vyrovnáno.</p>
+                  ) : (
+                    <div className="divide-y">
+                      {nevyplacene.map((v) => (
+                        <Link
+                          key={v.id}
+                          to="/vykupy/$id"
+                          params={{ id: v.id }}
+                          className="flex items-center justify-between py-2 text-sm hover:bg-muted/40"
+                        >
+                          <div className="min-w-0">
+                            <div className="truncate font-medium">
+                              {v.znacka} {v.model}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {v.klient} · {formatDate(v.datum_vykupu)}
+                            </div>
+                          </div>
+                          <div className="tabular-nums font-semibold text-violet-700">
+                            {formatKc(provize(v) ?? 0)}
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </Panel>
+              </div>
+            )}
 
             <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
               <Panel title="TOP 5 obchodů">

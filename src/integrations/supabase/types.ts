@@ -2381,6 +2381,8 @@ export type Database = {
           pocet_km: number | null
           poznamka: string | null
           prodano_za: number | null
+          provize_vyplacena: boolean
+          provize_vyplacena_at: string | null
           rok_vyroby: number | null
           service_history: boolean | null
           stav: string
@@ -2418,6 +2420,8 @@ export type Database = {
           pocet_km?: number | null
           poznamka?: string | null
           prodano_za?: number | null
+          provize_vyplacena?: boolean
+          provize_vyplacena_at?: string | null
           rok_vyroby?: number | null
           service_history?: boolean | null
           stav?: string
@@ -2455,6 +2459,8 @@ export type Database = {
           pocet_km?: number | null
           poznamka?: string | null
           prodano_za?: number | null
+          provize_vyplacena?: boolean
+          provize_vyplacena_at?: string | null
           rok_vyroby?: number | null
           service_history?: boolean | null
           stav?: string

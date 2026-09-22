@@ -33,7 +33,14 @@ export type Vykup = {
   new_in_cz: boolean | null;
   service_history: boolean | null;
   barva: string | null;
+  provize_vyplacena: boolean | null;
+  provize_vyplacena_at: string | null;
 };
+
+/** Sazba DPH použitá pro výpočet zisku bez DPH. */
+export const DPH_SAZBA = 0.21;
+/** Podíl provize ze zisku bez DPH. */
+export const PROVIZE_PODIL = 0.1;
 
 export const ZNACKY = [
   "Škoda",
@@ -74,6 +81,17 @@ export function formatDate(s: string | null | undefined): string {
 export function marze(v: Pick<Vykup, "prodano_za" | "vykoupeno_za" | "naklady">): number | null {
   if (v.prodano_za == null || v.vykoupeno_za == null) return null;
   return v.prodano_za - v.vykoupeno_za - (v.naklady ?? 0);
+}
+
+/**
+ * Provize = 10 % ze zisku bez DPH (marže se nejprve očistí o DPH).
+ * Vrací null, pokud marži nelze spočítat, a 0 při záporné marži.
+ */
+export function provize(v: Pick<Vykup, "prodano_za" | "vykoupeno_za" | "naklady">): number | null {
+  const m = marze(v);
+  if (m == null) return null;
+  if (m <= 0) return 0;
+  return Math.round((m / (1 + DPH_SAZBA)) * PROVIZE_PODIL);
 }
 
 export const stavBadge: Record<string, string> = {
