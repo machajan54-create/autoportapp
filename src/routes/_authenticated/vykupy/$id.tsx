@@ -80,6 +80,7 @@ type FormState = {
   prodano_za: string;
   naklady: string;
   naklady_popis: string;
+  provize_vyplacena: boolean;
   datum_vykupu: string;
   stav: string;
   poznamka: string;
