@@ -99,6 +99,34 @@ function CleaningPage() {
   const toggleFn = useServerFn(toggleCleaningTask);
   const saveFn = useServerFn(saveCleaningTask);
   const deleteFn = useServerFn(deleteCleaningTask);
+  const assignFn = useServerFn(setCleaningAssignee);
+  const fetchUsers = useServerFn(listUsers);
+  const { data: users } = useQuery({
+    queryKey: ["cleaning-users"],
+    queryFn: () => fetchUsers({}),
+    enabled: isAdmin,
+    staleTime: 5 * 60_000,
+  });
+  const userOptions = ((users ?? []) as any[])
+    .filter((u) => u.approved !== false)
+    .map((u) => ({ id: u.id as string, name: (u.full_name || u.email || "—") as string }));
+
+  async function assign(taskId: string, userId: string) {
+    const picked = userOptions.find((u) => u.id === userId);
+    try {
+      await assignFn({
+        data: {
+          id: taskId,
+          assignee_id: userId === "none" ? null : userId,
+          assignee_name: picked?.name ?? null,
+        },
+      });
+      await qc.invalidateQueries({ queryKey: ["cleaning"] });
+      toast.success("Přiřazení uloženo");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Uložení selhalo");
+    }
+  }
 
   const doneMap = useMemo(() => {
     const m = new Map<string, { done_by_name: string | null }>();
