@@ -253,20 +253,21 @@ export const generateVykupContract = createServerFn({ method: "POST" })
     para("Specifikace vozidla", { bold: true, size: 10, gap: 6 });
     field(
       "Tovární značka a model:",
-      [v.znacka, v.model].filter(Boolean).join(" ") || null,
+      ov("vehicle_name", [v.znacka, v.model].filter(Boolean).join(" ")),
     );
-    field("Rok výroby:", v.rok_vyroby ? String(v.rok_vyroby) : null);
-    field("VIN (identifikační číslo vozidla):");
-    field("Registrační značka (SPZ):");
-    field("Číslo technického průkazu:");
-    field("Barva:", v.barva);
-    field("Palivo / objem a výkon motoru:");
-    field("Datum první registrace:");
+    field("Rok výroby:", ov("rok_vyroby", v.rok_vyroby ? String(v.rok_vyroby) : null));
+    field("VIN (identifikační číslo vozidla):", ov("vin"));
+    field("Registrační značka (SPZ):", ov("spz"));
+    field("Číslo technického průkazu:", ov("tp"));
+    field("Barva:", ov("barva", v.barva));
+    field("Palivo / objem a výkon motoru:", ov("palivo"));
+    field("Datum první registrace:", ov("first_registration"));
     field(
       "Stav tachometru (km) ke dni předání:",
-      v.pocet_km != null ? `${new Intl.NumberFormat("cs-CZ").format(v.pocet_km)} km` : null,
+      ov("km", v.pocet_km != null ? `${new Intl.NumberFormat("cs-CZ").format(v.pocet_km)} km` : null),
     );
-    field("Počet klíčů předaných Kupujícímu:");
+    field("Počet klíčů předaných Kupujícímu:", ov("keys"));
+
     y -= 4;
 
     // ---- Článek II ---------------------------------------------------------
