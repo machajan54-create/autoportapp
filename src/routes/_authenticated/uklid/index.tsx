@@ -167,7 +167,13 @@ function CleaningPage() {
               onChange={(e) => setDate(e.target.value || pragueToday())}
               className="w-[160px]"
             />
-            {isAdmin && <TaskDialog onSave={saveFn} onDone={() => qc.invalidateQueries({ queryKey: ["cleaning"] })} />}
+            {isAdmin && (
+              <TaskDialog
+                onSave={saveFn}
+                users={userOptions}
+                onDone={() => qc.invalidateQueries({ queryKey: ["cleaning"] })}
+              />
+            )}
           </div>
         </div>
 
@@ -337,7 +343,15 @@ function HistoryList() {
   );
 }
 
-function TaskDialog({ onSave, onDone }: { onSave: any; onDone: () => void }) {
+function TaskDialog({
+  onSave,
+  onDone,
+  users,
+}: {
+  onSave: any;
+  onDone: () => void;
+  users: Array<{ id: string; name: string }>;
+}) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [frequency, setFrequency] = useState("Dle potřeby");
