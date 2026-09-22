@@ -152,6 +152,8 @@ export const saveCleaningTask = createServerFn({ method: "POST" })
       category: data.category,
       note: data.note || null,
       active: data.active,
+      assignee_id: data.assignee_id || null,
+      assignee_name: data.assignee_name || null,
     };
     if (data.id) {
       const { error } = await supabase.from("cleaning_tasks").update(patch).eq("id", data.id);
