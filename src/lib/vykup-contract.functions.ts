@@ -58,7 +58,11 @@ export const generateVykupContract = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z
-      .object({ vykupId: z.string().uuid(), overrides: overridesSchema.optional() })
+      .object({
+        vykupId: z.string().uuid(),
+        overrides: overridesSchema.optional(),
+        mode: z.enum(["full", "poa"]).optional(),
+      })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
@@ -193,7 +197,11 @@ export const generateVykupContract = createServerFn({ method: "POST" })
       y -= 15;
     };
 
+    const poaOnly = data.mode === "poa";
+    const colW = 200;
+
     // ---- Title -------------------------------------------------------------
+    if (!poaOnly) {
     page.drawRectangle({ x: 0, y: A4[1] - 36, width: A4[0], height: 36, color: accent });
     drawAt("AUTOPORT, s.r.o.", marginX, A4[1] - 24, { size: 12, bold: true, color: rgb(1, 1, 1) });
     drawAt(`Č. ${v.id.slice(0, 8).toUpperCase()}`, A4[0] - marginX - 90, A4[1] - 24, {
@@ -392,7 +400,6 @@ export const generateVykupContract = createServerFn({ method: "POST" })
 
     // ---- Podpisy -----------------------------------------------------------
     ensure(70);
-    const colW = 200;
     const rightX = A4[0] - marginX - colW;
     page.drawLine({ start: { x: marginX, y }, end: { x: marginX + colW, y }, thickness: 0.6 });
     page.drawLine({ start: { x: rightX, y }, end: { x: rightX + colW, y }, thickness: 0.6 });
@@ -420,9 +427,10 @@ export const generateVykupContract = createServerFn({ method: "POST" })
         color: gray,
       });
     });
+    }
 
     // ---- Příloha: PLNÁ MOC -------------------------------------------------
-    newPage();
+    if (!poaOnly) newPage();
     page.drawRectangle({ x: 0, y: A4[1] - 36, width: A4[0], height: 36, color: accent });
     drawAt("AUTOPORT, s.r.o.", marginX, A4[1] - 24, { size: 12, bold: true, color: rgb(1, 1, 1) });
     drawAt("Příloha ke kupní smlouvě", A4[0] - marginX - 130, A4[1] - 24, {
@@ -502,7 +510,7 @@ export const generateVykupContract = createServerFn({ method: "POST" })
         .toLowerCase()
         .replace(/\s+/g, "-")
         .replace(/[^a-z0-9-]/g, "");
-    const safeName = `kupni-smlouva-${slug(v.znacka ?? "")}-${slug(v.model ?? "")}-${v.id.slice(0, 8)}.pdf`
+    const safeName = `${poaOnly ? "plna-moc" : "kupni-smlouva"}-${slug(v.znacka ?? "")}-${slug(v.model ?? "")}-${v.id.slice(0, 8)}.pdf`
       .replace(/-+/g, "-")
       .replace(/-\./g, ".");
     return { base64, file_name: safeName };

@@ -993,7 +993,7 @@ function ContractPdfButton({ vykupId }: { vykupId: string }) {
         price_words: v?.vykoupeno_za != null ? korunySlovy(Number(v.vykoupeno_za)) : "",
         payment_account: "",
         payment_due: "",
-        defects: v?.poznamka ?? "",
+        defects: "",
         place: "Praha",
         contract_date: v?.datum_vykupu ?? new Date().toISOString().slice(0, 10),
       });
@@ -1019,11 +1019,13 @@ function ContractPdfButton({ vykupId }: { vykupId: string }) {
         .map((f) => f.label)
     : [];
 
-  async function handle() {
-    if (!form) return;
+  async function run(mode: "full" | "poa") {
+    if (mode === "full" && !form) return;
     setBusy(true);
     try {
-      const { base64, file_name } = await generate({ data: { vykupId, overrides: form } });
+      const { base64, file_name } = await generate({
+        data: { vykupId, overrides: form ?? undefined, mode },
+      });
       const bin = atob(base64);
       const buf = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
@@ -1047,6 +1049,14 @@ function ContractPdfButton({ vykupId }: { vykupId: string }) {
       <Button type="button" variant="outline" onClick={openDialog}>
         <FileText className="mr-2 h-4 w-4" />
         Smlouva (PDF)
+      </Button>
+      <Button type="button" variant="outline" disabled={busy} onClick={() => run("poa")}>
+        {busy ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <FileText className="mr-2 h-4 w-4" />
+        )}
+        Plná moc (PDF)
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
@@ -1129,7 +1139,7 @@ function ContractPdfButton({ vykupId }: { vykupId: string }) {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Zavřít
             </Button>
-            <Button type="button" onClick={handle} disabled={busy || !form}>
+            <Button type="button" onClick={() => run("full")} disabled={busy || !form}>
               {busy ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
