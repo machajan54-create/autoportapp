@@ -436,7 +436,8 @@ export const generateVykupContract = createServerFn({ method: "POST" })
     drawAt(pmTitle, (A4[0] - widthOf(pmTitle, 18, true)) / 2, y, { size: 18, bold: true });
     y -= 34;
 
-    para("Patrik Hrubý, RČ: 910418/0162, bytem Malířská 609/5, Praha 7, 170 00", {
+    const sellerName = ov("seller_name", v.klient) ?? DOTS;
+    para(sellerName, {
       size: 10,
       gap: 14,
     });
@@ -476,7 +477,7 @@ export const generateVykupContract = createServerFn({ method: "POST" })
     );
 
     page.drawLine({ start: { x: marginX, y }, end: { x: marginX + colW, y }, thickness: 0.6 });
-    drawAt("Patrik Hrubý", marginX, y - 13, { size: 9, bold: true });
+    drawAt(sellerName, marginX, y - 13, { size: 9, bold: true });
 
     page.drawText("AUTOPORT, s.r.o. — plná moc", {
       x: marginX,
