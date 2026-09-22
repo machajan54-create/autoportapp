@@ -64,7 +64,8 @@ type ModuleKey =
   | "logbook"
   | "tasks"
   | "demo_orders"
-  | "evidence_zakazek";
+  | "evidence_zakazek"
+  | "cleaning";
 type DepartmentKey = "vedeni" | "obchod" | "servis" | "nahradni_dily";
 
 const DEPARTMENT_LIST: { key: DepartmentKey; label: string }[] = [
@@ -89,6 +90,7 @@ const MODULE_LIST: { key: ModuleKey; label: string }[] = [
   { key: "evidence_zakazek", label: "Evidence mytí" },
   { key: "logbook", label: "Kniha jízd" },
   { key: "tasks", label: "Úkoly" },
+  { key: "uklid", label: "Úklid" },
   { key: "approvals", label: "Schvalování" },
   { key: "users", label: "Uživatelé" },
 ];
