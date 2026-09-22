@@ -216,12 +216,13 @@ export const generateVykupContract = createServerFn({ method: "POST" })
     // ---- Smluvní strany ----------------------------------------------------
     heading("Smluvní strany");
     para("1. Prodávající", { bold: true, size: 10, gap: 6 });
-    field("Jméno a příjmení / obchodní firma:", v.klient);
-    field("Rodné číslo / IČO:");
-    field("Bydliště / sídlo:");
-    field("Číslo OP / zapsán v OR u:");
-    field("Telefon / e-mail:", v.telefon);
-    field("Bankovní spojení (číslo účtu):");
+    field("Jméno a příjmení / obchodní firma:", ov("seller_name", v.klient));
+    field("Rodné číslo / IČO:", ov("seller_ico"));
+    field("Bydliště / sídlo:", ov("seller_address"));
+    field("Číslo OP / zapsán v OR u:", ov("seller_id_doc"));
+    field("Telefon / e-mail:", ov("seller_contact", v.telefon));
+    field("Bankovní spojení (číslo účtu):", ov("seller_bank"));
+
     para("(dále jen „Prodávající“)", { size: 8.5, color: gray, gap: 8 });
 
     para("2. Kupující", { bold: true, size: 10, gap: 6 });
