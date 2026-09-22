@@ -390,8 +390,9 @@ export const generateVykupContract = createServerFn({ method: "POST" })
 
     ensure(90);
     para(
-      `V .................................... dne ${fmtDate(v.datum_vykupu ?? new Date().toISOString())}`,
+      `V ${ov("place") ?? "...................................."} dne ${fmtDate(ov("contract_date", v.datum_vykupu) ?? new Date().toISOString())}`,
       { gap: 30 },
+
     );
 
     // ---- Podpisy -----------------------------------------------------------
