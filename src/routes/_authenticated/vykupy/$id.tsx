@@ -48,7 +48,15 @@ import {
 } from "@/lib/vykup-photos.functions";
 import { generateVykupContract } from "@/lib/vykup-contract.functions";
 import { resizeImage } from "@/lib/resize-image";
+import { korunySlovy } from "@/lib/cislo-slovy";
 import { cn } from "@/lib/utils";
+
+function parsePrice(raw: string): number {
+  const cleaned = String(raw).replace(/\s|\u00a0/g, "").replace(/[^\d.,-]/g, "").replace(",", ".");
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : 0;
+}
+
 
 export const Route = createFileRoute("/_authenticated/vykupy/$id")({
   component: VykupForm,
@@ -949,7 +957,7 @@ function ContractPdfButton({ vykupId }: { vykupId: string }) {
         km: v?.pocet_km != null ? `${new Intl.NumberFormat("cs-CZ").format(v.pocet_km)} km` : "",
         keys: "",
         price: v?.vykoupeno_za != null ? String(v.vykoupeno_za) : "",
-        price_words: "",
+        price_words: v?.vykoupeno_za != null ? korunySlovy(Number(v.vykoupeno_za)) : "",
         payment_account: "",
         payment_due: "",
         defects: v?.poznamka ?? "",
@@ -961,6 +969,16 @@ function ContractPdfButton({ vykupId }: { vykupId: string }) {
       setOpen(false);
     }
   }
+
+  function updateField(key: keyof ContractFields, value: string) {
+    setForm((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, [key]: value } as ContractFields;
+      if (key === "price") next.price_words = korunySlovy(parsePrice(value));
+      return next;
+    });
+  }
+
 
   const missing = form
     ? CONTRACT_GROUPS.flatMap((g) => g.fields)
@@ -1055,19 +1073,16 @@ function ContractPdfButton({ vykupId }: { vykupId: string }) {
                             <Textarea
                               value={val}
                               rows={3}
-                              onChange={(e) =>
-                                setForm({ ...form, [f.key]: e.target.value } as ContractFields)
-                              }
+                              onChange={(e) => updateField(f.key, e.target.value)}
                             />
                           ) : (
                             <Input
                               value={val}
                               className={isMissing ? "border-amber-400" : undefined}
-                              onChange={(e) =>
-                                setForm({ ...form, [f.key]: e.target.value } as ContractFields)
-                              }
+                              onChange={(e) => updateField(f.key, e.target.value)}
                             />
                           )}
+
                         </div>
                       );
                     })}
