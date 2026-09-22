@@ -200,6 +200,7 @@ function VykupyList() {
               )}
               {rows.map((v) => {
                 const m = marze(v);
+                const p = provize(v);
                 return (
                   <TableRow
                     key={v.id}
