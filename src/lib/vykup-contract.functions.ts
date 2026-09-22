@@ -284,7 +284,7 @@ export const generateVykupContract = createServerFn({ method: "POST" })
       `2.1  Kupní cena Vozidla byla Smluvními stranami dohodou sjednána ve výši ${priceText} (slovy: ${ov("price_words") ?? DOTS}). Cena je uvedena včetně DPH.`,
     );
     para(
-      `2.2  Kupní cena bude uhrazena [ ] v hotovosti při podpisu této smlouvy   [ ] bezhotovostním převodem na účet Prodávajícího č. ${ov("payment_account") ?? DOTS}, a to nejpozději do ${ov("payment_due") ?? "…………………"} ode dne podpisu této smlouvy.`,
+      `2.2  Kupní cena bude uhrazena [ ] v hotovosti při předání Vozidla   [ ] bezhotovostním převodem na účet Prodávajícího č. ${ov("payment_account") ?? DOTS}, a to nejpozději do ${ov("payment_due") ?? "…………………"} ode dne podpisu této smlouvy, vždy však před předáním Vozidla Kupujícímu.`,
     );
 
     para(
