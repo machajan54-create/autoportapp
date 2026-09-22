@@ -10,6 +10,7 @@ import { listClaims, getPendingApprovalsCount } from "@/lib/claims.functions";
 import { listDefects } from "@/lib/defects.functions";
 import { listPurchases } from "@/lib/approvals.functions";
 import { listTasks } from "@/lib/tasks.functions";
+import { listCleaning, isTaskDueOn, pragueToday } from "@/lib/cleaning.functions";
 import { supabase } from "@/integrations/supabase/client";
 import {
   listAbsences as listDochAbsences,
