@@ -1019,11 +1019,13 @@ function ContractPdfButton({ vykupId }: { vykupId: string }) {
         .map((f) => f.label)
     : [];
 
-  async function handle() {
-    if (!form) return;
+  async function run(mode: "full" | "poa") {
+    if (mode === "full" && !form) return;
     setBusy(true);
     try {
-      const { base64, file_name } = await generate({ data: { vykupId, overrides: form } });
+      const { base64, file_name } = await generate({
+        data: { vykupId, overrides: form ?? undefined, mode },
+      });
       const bin = atob(base64);
       const buf = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
