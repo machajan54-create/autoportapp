@@ -272,12 +272,21 @@ export const generateVykupContract = createServerFn({ method: "POST" })
 
     // ---- Článek II ---------------------------------------------------------
     heading("Článek II. Kupní cena a platební podmínky");
+    const priceText = (() => {
+      const raw = ov("price");
+      if (raw) {
+        const num = Number(raw.replace(/[^\d.,-]/g, "").replace(/\s/g, "").replace(",", "."));
+        return Number.isFinite(num) && num > 0 ? fmtKc(num) : raw;
+      }
+      return fmtKc(v.vykoupeno_za);
+    })();
     para(
-      `2.1  Kupní cena Vozidla byla Smluvními stranami dohodou sjednána ve výši ${fmtKc(v.vykoupeno_za)} (slovy: ${DOTS}). Cena je uvedena včetně DPH.`,
+      `2.1  Kupní cena Vozidla byla Smluvními stranami dohodou sjednána ve výši ${priceText} (slovy: ${ov("price_words") ?? DOTS}). Cena je uvedena včetně DPH.`,
     );
     para(
-      `2.2  Kupní cena bude uhrazena [ ] v hotovosti při podpisu této smlouvy   [ ] bezhotovostním převodem na účet Prodávajícího č. ${DOTS}, a to nejpozději do ………………… ode dne podpisu této smlouvy.`,
+      `2.2  Kupní cena bude uhrazena [ ] v hotovosti při podpisu této smlouvy   [ ] bezhotovostním převodem na účet Prodávajícího č. ${ov("payment_account") ?? DOTS}, a to nejpozději do ${ov("payment_due") ?? "…………………"} ode dne podpisu této smlouvy.`,
     );
+
     para(
       "2.3  Prodávající svým podpisem potvrzuje přijetí kupní ceny, případně vystaví Kupujícímu doklad o zaplacení (příjmový doklad / fakturu).",
       { gap: 8 },
