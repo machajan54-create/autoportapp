@@ -962,6 +962,16 @@ function ContractPdfButton({ vykupId }: { vykupId: string }) {
     }
   }
 
+  function updateField(key: keyof ContractFields, value: string) {
+    setForm((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, [key]: value } as ContractFields;
+      if (key === "price") next.price_words = korunySlovy(parsePrice(value));
+      return next;
+    });
+  }
+
+
   const missing = form
     ? CONTRACT_GROUPS.flatMap((g) => g.fields)
         .filter((f) => f.required && !String(form[f.key] ?? "").trim())
