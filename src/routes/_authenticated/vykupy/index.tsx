@@ -222,6 +222,20 @@ function VykupyList() {
                     >
                       {m == null ? "—" : formatKc(m)}
                     </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {p == null ? (
+                        "—"
+                      ) : (
+                        <span className="inline-flex items-center gap-1">
+                          {formatKc(p)}
+                          {v.provize_vyplacena ? (
+                            <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800">
+                              vyplaceno
+                            </span>
+                          ) : null}
+                        </span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-0.5">
                         <span
