@@ -843,6 +843,8 @@ export type Database = {
       cleaning_tasks: {
         Row: {
           active: boolean
+          assignee_id: string | null
+          assignee_name: string | null
           category: string
           created_at: string
           frequency: string
@@ -855,6 +857,8 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          assignee_id?: string | null
+          assignee_name?: string | null
           category?: string
           created_at?: string
           frequency?: string
@@ -867,6 +871,8 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          assignee_id?: string | null
+          assignee_name?: string | null
           category?: string
           created_at?: string
           frequency?: string

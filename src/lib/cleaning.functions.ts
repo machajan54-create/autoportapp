@@ -136,6 +136,8 @@ const taskInput = z.object({
   category: z.enum(["daily", "weekly", "as_needed", "monthly"]).default("daily"),
   note: z.string().trim().max(500).optional().nullable(),
   active: z.boolean().default(true),
+  assignee_id: z.string().uuid().optional().nullable(),
+  assignee_name: z.string().trim().max(200).optional().nullable(),
 });
 
 export const saveCleaningTask = createServerFn({ method: "POST" })
@@ -150,6 +152,8 @@ export const saveCleaningTask = createServerFn({ method: "POST" })
       category: data.category,
       note: data.note || null,
       active: data.active,
+      assignee_id: data.assignee_id || null,
+      assignee_name: data.assignee_name || null,
     };
     if (data.id) {
       const { error } = await supabase.from("cleaning_tasks").update(patch).eq("id", data.id);
@@ -170,6 +174,30 @@ export const deleteCleaningTask = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("cleaning_tasks").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Rychlé přiřazení úklidového úkolu konkrétnímu uživateli. */
+export const setCleaningAssignee = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        assignee_id: z.string().uuid().nullable(),
+        assignee_name: z.string().trim().max(200).nullable().optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("cleaning_tasks")
+      .update({
+        assignee_id: data.assignee_id,
+        assignee_name: data.assignee_id ? (data.assignee_name ?? null) : null,
+      })
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

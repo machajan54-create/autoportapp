@@ -10,6 +10,7 @@ import { listClaims, getPendingApprovalsCount } from "@/lib/claims.functions";
 import { listDefects } from "@/lib/defects.functions";
 import { listPurchases } from "@/lib/approvals.functions";
 import { listTasks } from "@/lib/tasks.functions";
+import { listCleaning, isTaskDueOn, pragueToday } from "@/lib/cleaning.functions";
 import { supabase } from "@/integrations/supabase/client";
 import {
   listAbsences as listDochAbsences,
@@ -102,6 +103,14 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
   const fetchPending = useServerFn(getPendingApprovalsCount);
   const fetchPurchases = useServerFn(listPurchases);
   const fetchTasks = useServerFn(listTasks);
+  const fetchCleaning = useServerFn(listCleaning);
+  const cleaningDate = pragueToday();
+  const { data: cleaning } = useQuery({
+    queryKey: ["notif", "cleaning", cleaningDate],
+    queryFn: () => fetchCleaning({ data: { date: cleaningDate } }),
+    enabled: !!userId,
+    refetchInterval: 5 * 60_000,
+  });
 
   const { data: claims } = useQuery({
     queryKey: ["notif", "claims"],
@@ -198,6 +207,28 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
           detail: t.creator_name ? `Od: ${t.creator_name}` : undefined,
           to: "/ukoly",
           tone: t.priority === "high" ? "danger" : "info",
+        });
+      }
+
+      // Úklid: moje dnešní nesplněné úkoly
+      const doneCleaning = new Set(((cleaning?.logs ?? []) as any[]).map((l) => l.task_id));
+      const myCleaning = ((cleaning?.tasks ?? []) as any[]).filter(
+        (t) =>
+          t.assignee_id === userId &&
+          (t.weekdays?.length ?? 0) > 0 &&
+          isTaskDueOn(t.weekdays, cleaning?.date ?? cleaningDate) &&
+          !doneCleaning.has(t.id),
+      );
+      if (myCleaning.length > 0) {
+        out.push({
+          key: `cleaning-${cleaning?.date ?? cleaningDate}-${myCleaning.length}`,
+          title: `Úklid na dnešek: ${myCleaning.length} úkolů`,
+          detail: myCleaning
+            .slice(0, 3)
+            .map((t: any) => t.title)
+            .join(" · "),
+          to: "/uklid",
+          tone: "warn",
         });
       }
 
@@ -347,6 +378,8 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
     myPurchases,
     myAbsences,
     tasksData,
+    cleaning,
+    cleaningDate,
     userId,
     lastSeen,
   ]);

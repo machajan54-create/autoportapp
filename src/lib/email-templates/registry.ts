@@ -19,6 +19,7 @@ import { template as washAssignment } from "./wash-assignment";
 import { template as washReminder } from "./wash-reminder";
 import { template as defectNotification } from "./defect-notification";
 import { template as absenceNotification } from "./absence-notification";
+import { template as cleaningDaily } from "./cleaning-daily";
 
 export interface TemplateEntry {
   component: ComponentType<any>;
@@ -58,4 +59,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   "wash-reminder": washReminder,
   "defect-notification": defectNotification,
   "absence-notification": absenceNotification,
+  "cleaning-daily": cleaningDaily,
 };

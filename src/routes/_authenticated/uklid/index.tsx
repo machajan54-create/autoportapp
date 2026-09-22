@@ -27,13 +27,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getMyAccess } from "@/lib/claims.functions";
+import { getMyAccess, listUsers } from "@/lib/claims.functions";
 import {
   listCleaning,
   listCleaningHistory,
   toggleCleaningTask,
   saveCleaningTask,
   deleteCleaningTask,
+  setCleaningAssignee,
   isTaskDueOn,
   pragueToday,
   CLEANING_CATEGORY_LABEL,
@@ -84,6 +85,8 @@ type Task = {
   category: string;
   note: string | null;
   active: boolean;
+  assignee_id?: string | null;
+  assignee_name?: string | null;
 };
 
 function CleaningPage() {
@@ -96,6 +99,34 @@ function CleaningPage() {
   const toggleFn = useServerFn(toggleCleaningTask);
   const saveFn = useServerFn(saveCleaningTask);
   const deleteFn = useServerFn(deleteCleaningTask);
+  const assignFn = useServerFn(setCleaningAssignee);
+  const fetchUsers = useServerFn(listUsers);
+  const { data: users } = useQuery({
+    queryKey: ["cleaning-users"],
+    queryFn: () => fetchUsers({}),
+    enabled: isAdmin,
+    staleTime: 5 * 60_000,
+  });
+  const userOptions = ((users ?? []) as any[])
+    .filter((u) => u.approved !== false)
+    .map((u) => ({ id: u.id as string, name: (u.full_name || u.email || "—") as string }));
+
+  async function assign(taskId: string, userId: string) {
+    const picked = userOptions.find((u) => u.id === userId);
+    try {
+      await assignFn({
+        data: {
+          id: taskId,
+          assignee_id: userId === "none" ? null : userId,
+          assignee_name: picked?.name ?? null,
+        },
+      });
+      await qc.invalidateQueries({ queryKey: ["cleaning"] });
+      toast.success("Přiřazení uloženo");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Uložení selhalo");
+    }
+  }
 
   const doneMap = useMemo(() => {
     const m = new Map<string, { done_by_name: string | null }>();
@@ -136,7 +167,13 @@ function CleaningPage() {
               onChange={(e) => setDate(e.target.value || pragueToday())}
               className="w-[160px]"
             />
-            {isAdmin && <TaskDialog onSave={saveFn} onDone={() => qc.invalidateQueries({ queryKey: ["cleaning"] })} />}
+            {isAdmin && (
+              <TaskDialog
+                onSave={saveFn}
+                users={userOptions}
+                onDone={() => qc.invalidateQueries({ queryKey: ["cleaning"] })}
+              />
+            )}
           </div>
         </div>
 
@@ -193,8 +230,29 @@ function CleaningPage() {
                                   {log.done_by_name ?? "Splněno"}
                                 </span>
                               )}
+                              {t.assignee_name && (
+                                <Badge variant="outline">{t.assignee_name}</Badge>
+                              )}
                             </div>
                           </div>
+                          {isAdmin && (
+                            <Select
+                              value={t.assignee_id ?? "none"}
+                              onValueChange={(v) => assign(t.id, v)}
+                            >
+                              <SelectTrigger className="h-8 w-[170px] shrink-0">
+                                <SelectValue placeholder="Bez přiřazení" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">Bez přiřazení</SelectItem>
+                                {userOptions.map((u) => (
+                                  <SelectItem key={u.id} value={u.id}>
+                                    {u.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
                           {isAdmin && (
                             <Button
                               variant="ghost"
@@ -285,25 +343,47 @@ function HistoryList() {
   );
 }
 
-function TaskDialog({ onSave, onDone }: { onSave: any; onDone: () => void }) {
+function TaskDialog({
+  onSave,
+  onDone,
+  users,
+}: {
+  onSave: any;
+  onDone: () => void;
+  users: Array<{ id: string; name: string }>;
+}) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [frequency, setFrequency] = useState("Dle potřeby");
   const [category, setCategory] = useState<"daily" | "weekly" | "as_needed" | "monthly">("weekly");
   const [weekdays, setWeekdays] = useState<number[]>([]);
   const [note, setNote] = useState("");
+  const [assignee, setAssignee] = useState("none");
   const [saving, setSaving] = useState(false);
 
   async function submit() {
     if (!title.trim()) return toast.error("Zadejte název úkolu");
     setSaving(true);
     try {
-      await onSave({ data: { title, frequency, category, weekdays, note, active: true } });
+      const picked = users.find((u) => u.id === assignee);
+      await onSave({
+        data: {
+          title,
+          frequency,
+          category,
+          weekdays,
+          note,
+          active: true,
+          assignee_id: assignee === "none" ? null : assignee,
+          assignee_name: picked?.name ?? null,
+        },
+      });
       toast.success("Úkol přidán");
       setOpen(false);
       setTitle("");
       setNote("");
       setWeekdays([]);
+      setAssignee("none");
       onDone();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Uložení selhalo");
@@ -364,6 +444,22 @@ function TaskDialog({ onSave, onDone }: { onSave: any; onDone: () => void }) {
                 </Button>
               ))}
             </div>
+          </div>
+          <div>
+            <Label>Přiřazeno</Label>
+            <Select value={assignee} onValueChange={setAssignee}>
+              <SelectTrigger>
+                <SelectValue placeholder="Bez přiřazení" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Bez přiřazení</SelectItem>
+                {users.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label>Poznámka</Label>
