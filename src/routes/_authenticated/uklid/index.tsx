@@ -224,8 +224,29 @@ function CleaningPage() {
                                   {log.done_by_name ?? "Splněno"}
                                 </span>
                               )}
+                              {t.assignee_name && (
+                                <Badge variant="outline">{t.assignee_name}</Badge>
+                              )}
                             </div>
                           </div>
+                          {isAdmin && (
+                            <Select
+                              value={t.assignee_id ?? "none"}
+                              onValueChange={(v) => assign(t.id, v)}
+                            >
+                              <SelectTrigger className="h-8 w-[170px] shrink-0">
+                                <SelectValue placeholder="Bez přiřazení" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">Bez přiřazení</SelectItem>
+                                {userOptions.map((u) => (
+                                  <SelectItem key={u.id} value={u.id}>
+                                    {u.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
                           {isAdmin && (
                             <Button
                               variant="ghost"
