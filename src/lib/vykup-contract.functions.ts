@@ -263,7 +263,7 @@ export const generateVykupContract = createServerFn({ method: "POST" })
     field("Palivo / objem a výkon motoru:", ov("palivo"));
     field("Datum první registrace:", ov("first_registration"));
     field(
-      "Stav tachometru (km) ke dni předání:",
+      "Stav tachometru (najeté km) ke dni předání:",
       ov("km", v.pocet_km != null ? `${new Intl.NumberFormat("cs-CZ").format(v.pocet_km)} km` : null),
     );
     field("Počet klíčů předaných Kupujícímu:", ov("keys"));
