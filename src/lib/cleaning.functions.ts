@@ -177,3 +177,27 @@ export const deleteCleaningTask = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/** Rychlé přiřazení úklidového úkolu konkrétnímu uživateli. */
+export const setCleaningAssignee = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        assignee_id: z.string().uuid().nullable(),
+        assignee_name: z.string().trim().max(200).nullable().optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("cleaning_tasks")
+      .update({
+        assignee_id: data.assignee_id,
+        assignee_name: data.assignee_id ? (data.assignee_name ?? null) : null,
+      })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
