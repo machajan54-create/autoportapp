@@ -26,6 +26,9 @@ type Period = "30d" | "90d" | "ytd" | "all";
 
 function VykupyDashboard() {
   const fetchEmployees = useServerFn(listEmployees);
+  const fetchAccess = useServerFn(getMyAccess);
+  const { data: access } = useQuery({ queryKey: ["my-access"], queryFn: () => fetchAccess({}) });
+  const isAdmin = !!access?.isAdmin;
   const { data: vykupy, isLoading } = useQuery({ queryKey: ["vykupy"], queryFn: listVykupy });
   const { data: employees } = useQuery({
     queryKey: ["employees"],
@@ -54,6 +57,15 @@ function VykupyDashboard() {
     .filter((v) => (marze(v) ?? 0) < 0)
     .sort((a, b) => (marze(a) ?? 0) - (marze(b) ?? 0))
     .slice(0, 5);
+
+  const provizeTotal = sum(prodano.map((v) => provize(v) ?? 0));
+  const provizeVyplacena = sum(
+    prodano.filter((v) => v.provize_vyplacena).map((v) => provize(v) ?? 0),
+  );
+  const provizeKVyplate = provizeTotal - provizeVyplacena;
+  const nevyplacene = prodano
+    .filter((v) => !v.provize_vyplacena && (provize(v) ?? 0) > 0)
+    .sort((a, b) => (provize(b) ?? 0) - (provize(a) ?? 0));
 
   const empName = (id: string | null) => employees?.find((e) => e.id === id)?.name ?? "—";
   const pricerStats = pricerLeaderboard(prodano, empName);
