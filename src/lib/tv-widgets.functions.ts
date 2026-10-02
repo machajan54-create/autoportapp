@@ -248,6 +248,19 @@ export const getTvWidgetData = createServerFn({ method: "POST" })
     throw new Error("Unknown widget");
   });
 
+// Public read of the first display token (TV preview page runs without login).
+export const getTvPublicToken = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("display_config")
+    .select("token")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return { token: (data?.token as string | undefined) ?? null };
+});
+
 // Public, token-scoped read of TV config + active slides (TV runs without login).
 export const getTvDisplayData = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ token: z.string().min(4).max(200) }).parse(d))

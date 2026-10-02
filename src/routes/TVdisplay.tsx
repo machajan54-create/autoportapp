@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { TvDisplay } from "@/components/tv/TvDisplay";
+import { getTvPublicToken } from "@/lib/tv-widgets.functions";
 
 export const Route = createFileRoute("/TVdisplay")({
   ssr: false,
@@ -23,15 +23,9 @@ function TvDisplayPreview() {
     let cancelled = false;
     async function load() {
       try {
-        const { data, error } = await supabase
-          .from("display_config")
-          .select("token")
-          .order("created_at", { ascending: true })
-          .limit(1)
-          .maybeSingle();
+        const { token } = await getTvPublicToken();
         if (cancelled) return;
-        if (error) throw error;
-        if (data?.token) setToken(data.token);
+        if (token) setToken(token);
       } catch {
         // fail silently – the display will show a config error state
       } finally {

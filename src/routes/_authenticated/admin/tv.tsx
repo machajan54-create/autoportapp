@@ -281,7 +281,7 @@ function TvAdmin() {
 
   const tvUrl = useMemo(() => {
     if (typeof window === "undefined" || !activeConfig) return "";
-    return `${window.location.origin}/TVdisplay`;
+    return `${window.location.origin}/tv/${activeConfig.token}`;
   }, [activeConfig]);
 
   return (
