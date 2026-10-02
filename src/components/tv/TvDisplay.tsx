@@ -335,6 +335,12 @@ export function TvDisplay({ token }: { token: string }) {
 
       <div
         className="tv-root"
+        data-video={
+          slides.length > 0 &&
+          ["youtube", "video"].includes(slides[index % slides.length]?.kind ?? "")
+            ? "true"
+            : "false"
+        }
         style={{
           position: "relative",
           width: TV_W,
@@ -710,6 +716,9 @@ export function TvDisplay({ token }: { token: string }) {
           z-index: 11; overflow: hidden;
         }
         .tv-side-card { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 22px 24px; }
+        /* Během přehrávání videa vypnout náročné rozmazání (způsobuje sekání) */
+        .tv-root[data-video="true"] * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+        .tv-root[data-video="true"] .tv-sidebar { background: rgba(4,8,16,0.92); }
         .tv-side-label { color: #ffffff; font-size: var(--tv-fs-sm); font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 18px; }
         .tv-stat-val { font-family: 'Space Grotesk', system-ui; font-size: 56px; font-weight: 700; line-height: 1; }
         .tv-stat-lbl { font-size: var(--tv-fs-md); opacity: 0.95; margin-top: 8px; line-height: 1.2; }
