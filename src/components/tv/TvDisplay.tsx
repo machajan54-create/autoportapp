@@ -7,7 +7,7 @@ import citroenAutoportLogo from "@/assets/citroen-autoport-logo-white.png.asset.
 import { SlideRenderer, type TvSlide } from "@/components/tv/SlideRenderer";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { getTvWidgetData } from "@/lib/tv-widgets.functions";
+import { getTvWidgetData, getTvDisplayData } from "@/lib/tv-widgets.functions";
 
 type Slide = TvSlide;
 
@@ -163,26 +163,16 @@ export function TvDisplay({ token }: { token: string }) {
 
   const [error, setError] = useState<string | null>(null);
 
+  const loadDisplay = useServerFn(getTvDisplayData);
   // Load config + slides
   const load = useCallback(async () => {
     try {
-      const { data: cfg, error: cfgErr } = await supabase
-        .from("display_config")
-        .select("*")
-        .eq("token", token)
-        .maybeSingle();
-      if (cfgErr) throw cfgErr;
+      const { cfg, rows } = await loadDisplay({ data: { token } });
       if (cfg) {
         setConfig(cfg as DisplayConfig);
         localStorage.setItem(LS_CONFIG + ":" + token, JSON.stringify(cfg));
       }
 
-      const { data: rows, error: sErr } = await supabase
-        .from("slides")
-        .select("*")
-        .eq("active", true)
-        .order("sort_order", { ascending: true });
-      if (sErr) throw sErr;
       const filtered = (rows ?? [])
         .map(
           (r: any): Slide => ({
@@ -228,10 +218,12 @@ export function TvDisplay({ token }: { token: string }) {
       if (cachedSlides) setSlides(JSON.parse(cachedSlides));
       setError(msg);
     }
-  }, [token]);
+  }, [token, loadDisplay]);
 
   useEffect(() => {
     load();
+    const t = setInterval(load, 60_000);
+    return () => clearInterval(t);
   }, [load]);
 
   // Realtime updates

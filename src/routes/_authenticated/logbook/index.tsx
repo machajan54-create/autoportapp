@@ -65,7 +65,7 @@ export const Route = createFileRoute("/_authenticated/logbook/")({
   pendingComponent: () => (
     <div className="p-8 text-sm text-muted-foreground">Načítám knihu jízd…</div>
   ),
-  errorComponent: ({ error }: { error: Error }) => (
+  errorComponent: ({ error }: { error: any }) => (
     <div role="alert" className="p-8 text-red-600">
       {error instanceof Error ? error.message : "Načítání selhalo"}
     </div>
