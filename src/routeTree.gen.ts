@@ -9,59 +9,84 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as TvdisplayRouteImport } from './routes/tvdisplay'
+import { Route as TerminalRouteImport } from './routes/terminal'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as NahlasitRouteImport } from './routes/nahlasit'
+import { Route as ManifestDotwebmanifestRouteImport } from './routes/manifest[.]webmanifest'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as TVdisplayRouteImport } from './routes/TVdisplay'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as ManifestDotwebmanifestRouteImport } from './routes/manifest[.]webmanifest'
-import { Route as NahlasitRouteImport } from './routes/nahlasit'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as TerminalRouteImport } from './routes/terminal'
-import { Route as TvdisplayRouteImport } from './routes/tvdisplay'
-import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as FeedbackTokenRouteImport } from './routes/feedback.$token'
-import { Route as SignTokenRouteImport } from './routes/sign.$token'
-import { Route as TvTokenRouteImport } from './routes/tv.$token'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as UploadTokenRouteImport } from './routes/upload.$token'
-import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
-import { Route as AuthenticatedAdminIdRouteImport } from './routes/_authenticated/admin/$id'
-import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin/audit'
-import { Route as AuthenticatedAdminEmailyRouteImport } from './routes/_authenticated/admin/emaily'
-import { Route as AuthenticatedAdminGoogleDriveRouteImport } from './routes/_authenticated/admin/google-drive'
-import { Route as AuthenticatedAdminStorageRouteImport } from './routes/_authenticated/admin/storage'
-import { Route as AuthenticatedAdminTemplatesRouteImport } from './routes/_authenticated/admin/templates'
-import { Route as AuthenticatedAdminTvRouteImport } from './routes/_authenticated/admin/tv'
-import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
-import { Route as AuthenticatedDealsIndexRouteImport } from './routes/_authenticated/deals/index'
-import { Route as AuthenticatedDemoOrdersIndexRouteImport } from './routes/_authenticated/demo-orders/index'
-import { Route as AuthenticatedDemoOrdersIdRouteImport } from './routes/_authenticated/demo-orders/$id'
-import { Route as AuthenticatedDochazkaIndexRouteImport } from './routes/_authenticated/dochazka/index'
-import { Route as AuthenticatedEvidenceZakazekIndexRouteImport } from './routes/_authenticated/evidence-zakazek/index'
-import { Route as AuthenticatedLogbookIndexRouteImport } from './routes/_authenticated/logbook/index'
-import { Route as AuthenticatedUklidIndexRouteImport } from './routes/_authenticated/uklid/index'
-import { Route as AuthenticatedUkolyIndexRouteImport } from './routes/_authenticated/ukoly/index'
-import { Route as AuthenticatedVykupyIndexRouteImport } from './routes/_authenticated/vykupy/index'
-import { Route as AuthenticatedVykupyIdRouteImport } from './routes/_authenticated/vykupy/$id'
-import { Route as AuthenticatedVykupyDashboardRouteImport } from './routes/_authenticated/vykupy/dashboard'
+import { Route as TvTokenRouteImport } from './routes/tv.$token'
+import { Route as SignTokenRouteImport } from './routes/sign.$token'
+import { Route as FeedbackTokenRouteImport } from './routes/feedback.$token'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
 import { Route as AuthenticatedZavadyIndexRouteImport } from './routes/_authenticated/zavady/index'
-import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
+import { Route as AuthenticatedVykupyIndexRouteImport } from './routes/_authenticated/vykupy/index'
+import { Route as AuthenticatedUkolyIndexRouteImport } from './routes/_authenticated/ukoly/index'
+import { Route as AuthenticatedUklidIndexRouteImport } from './routes/_authenticated/uklid/index'
+import { Route as AuthenticatedLogbookIndexRouteImport } from './routes/_authenticated/logbook/index'
+import { Route as AuthenticatedEvidenceZakazekIndexRouteImport } from './routes/_authenticated/evidence-zakazek/index'
+import { Route as AuthenticatedDochazkaIndexRouteImport } from './routes/_authenticated/dochazka/index'
+import { Route as AuthenticatedDemoOrdersIndexRouteImport } from './routes/_authenticated/demo-orders/index'
+import { Route as AuthenticatedDealsIndexRouteImport } from './routes/_authenticated/deals/index'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as WashRespondActionTokenRouteImport } from './routes/wash-respond.$action.$token'
-import { Route as ApiPublicCronBackupRouteImport } from './routes/api/public/cron/backup'
-import { Route as ApiPublicCronCleaningRemindersRouteImport } from './routes/api/public/cron/cleaning-reminders'
-import { Route as ApiPublicCronFollowupRemindersRouteImport } from './routes/api/public/cron/followup-reminders'
-import { Route as ApiPublicCronGithubSnapshotRouteImport } from './routes/api/public/cron/github-snapshot'
-import { Route as ApiPublicCronTaskDailyDigestRouteImport } from './routes/api/public/cron/task-daily-digest'
-import { Route as ApiPublicCronTaskRemindersRouteImport } from './routes/api/public/cron/task-reminders'
-import { Route as ApiPublicHooksWashRemindersRouteImport } from './routes/api/public/hooks/wash-reminders'
-import { Route as ApiPublicHooksWeeklyReportRouteImport } from './routes/api/public/hooks/weekly-report'
-import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
-import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
+import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
+import { Route as AuthenticatedVykupyDashboardRouteImport } from './routes/_authenticated/vykupy/dashboard'
+import { Route as AuthenticatedVykupyIdRouteImport } from './routes/_authenticated/vykupy/$id'
+import { Route as AuthenticatedDemoOrdersIdRouteImport } from './routes/_authenticated/demo-orders/$id'
+import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
+import { Route as AuthenticatedAdminTvRouteImport } from './routes/_authenticated/admin/tv'
+import { Route as AuthenticatedAdminTemplatesRouteImport } from './routes/_authenticated/admin/templates'
+import { Route as AuthenticatedAdminStorageRouteImport } from './routes/_authenticated/admin/storage'
+import { Route as AuthenticatedAdminGoogleDriveRouteImport } from './routes/_authenticated/admin/google-drive'
+import { Route as AuthenticatedAdminEmailyRouteImport } from './routes/_authenticated/admin/emaily'
+import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin/audit'
+import { Route as AuthenticatedAdminIdRouteImport } from './routes/_authenticated/admin/$id'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
+import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
+import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as ApiPublicHooksWeeklyReportRouteImport } from './routes/api/public/hooks/weekly-report'
+import { Route as ApiPublicHooksWashRemindersRouteImport } from './routes/api/public/hooks/wash-reminders'
+import { Route as ApiPublicCronTaskRemindersRouteImport } from './routes/api/public/cron/task-reminders'
+import { Route as ApiPublicCronTaskDailyDigestRouteImport } from './routes/api/public/cron/task-daily-digest'
+import { Route as ApiPublicCronGithubSnapshotRouteImport } from './routes/api/public/cron/github-snapshot'
+import { Route as ApiPublicCronFollowupRemindersRouteImport } from './routes/api/public/cron/followup-reminders'
+import { Route as ApiPublicCronCleaningRemindersRouteImport } from './routes/api/public/cron/cleaning-reminders'
+import { Route as ApiPublicCronBackupRouteImport } from './routes/api/public/cron/backup'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const TvdisplayRoute = TvdisplayRouteImport.update({
+  id: '/tvdisplay',
+  path: '/tvdisplay',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TerminalRoute = TerminalRouteImport.update({
+  id: '/terminal',
+  path: '/terminal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NahlasitRoute = NahlasitRouteImport.update({
+  id: '/nahlasit',
+  path: '/nahlasit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManifestDotwebmanifestRoute = ManifestDotwebmanifestRouteImport.update({
+  id: '/manifest.webmanifest',
+  path: '/manifest.webmanifest',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TVdisplayRoute = TVdisplayRouteImport.update({
@@ -73,59 +98,9 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ManifestDotwebmanifestRoute = ManifestDotwebmanifestRouteImport.update({
-  id: '/manifest.webmanifest',
-  path: '/manifest.webmanifest',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NahlasitRoute = NahlasitRouteImport.update({
-  id: '/nahlasit',
-  path: '/nahlasit',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TerminalRoute = TerminalRouteImport.update({
-  id: '/terminal',
-  path: '/terminal',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TvdisplayRoute = TvdisplayRouteImport.update({
-  id: '/tvdisplay',
-  path: '/tvdisplay',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedApprovalsRoute = AuthenticatedApprovalsRouteImport.update({
-  id: '/approvals',
-  path: '/approvals',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const FeedbackTokenRoute = FeedbackTokenRouteImport.update({
-  id: '/feedback/$token',
-  path: '/feedback/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SignTokenRoute = SignTokenRouteImport.update({
-  id: '/sign/$token',
-  path: '/sign/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TvTokenRoute = TvTokenRouteImport.update({
-  id: '/tv/$token',
-  path: '/tv/$token',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UploadTokenRoute = UploadTokenRouteImport.update({
@@ -133,76 +108,57 @@ const UploadTokenRoute = UploadTokenRouteImport.update({
   path: '/upload/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
-  id: '/admin/',
-  path: '/admin/',
+const TvTokenRoute = TvTokenRouteImport.update({
+  id: '/tv/$token',
+  path: '/tv/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignTokenRoute = SignTokenRouteImport.update({
+  id: '/sign/$token',
+  path: '/sign/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedbackTokenRoute = FeedbackTokenRouteImport.update({
+  id: '/feedback/$token',
+  path: '/feedback/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAdminIdRoute = AuthenticatedAdminIdRouteImport.update({
-  id: '/admin/$id',
-  path: '/admin/$id',
+const AuthenticatedApprovalsRoute = AuthenticatedApprovalsRouteImport.update({
+  id: '/approvals',
+  path: '/approvals',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAdminAuditRoute = AuthenticatedAdminAuditRouteImport.update({
-  id: '/admin/audit',
-  path: '/admin/audit',
+const AuthenticatedZavadyIndexRoute =
+  AuthenticatedZavadyIndexRouteImport.update({
+    id: '/zavady/',
+    path: '/zavady/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedVykupyIndexRoute =
+  AuthenticatedVykupyIndexRouteImport.update({
+    id: '/vykupy/',
+    path: '/vykupy/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedUkolyIndexRoute = AuthenticatedUkolyIndexRouteImport.update({
+  id: '/ukoly/',
+  path: '/ukoly/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAdminEmailyRoute =
-  AuthenticatedAdminEmailyRouteImport.update({
-    id: '/admin/emaily',
-    path: '/admin/emaily',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminGoogleDriveRoute =
-  AuthenticatedAdminGoogleDriveRouteImport.update({
-    id: '/admin/google-drive',
-    path: '/admin/google-drive',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminStorageRoute =
-  AuthenticatedAdminStorageRouteImport.update({
-    id: '/admin/storage',
-    path: '/admin/storage',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminTemplatesRoute =
-  AuthenticatedAdminTemplatesRouteImport.update({
-    id: '/admin/templates',
-    path: '/admin/templates',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminTvRoute = AuthenticatedAdminTvRouteImport.update({
-  id: '/admin/tv',
-  path: '/admin/tv',
+const AuthenticatedUklidIndexRoute = AuthenticatedUklidIndexRouteImport.update({
+  id: '/uklid/',
+  path: '/uklid/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
-  id: '/admin/users',
-  path: '/admin/users',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedDealsIndexRoute = AuthenticatedDealsIndexRouteImport.update({
-  id: '/deals/',
-  path: '/deals/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedDemoOrdersIndexRoute =
-  AuthenticatedDemoOrdersIndexRouteImport.update({
-    id: '/demo-orders/',
-    path: '/demo-orders/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedDemoOrdersIdRoute =
-  AuthenticatedDemoOrdersIdRouteImport.update({
-    id: '/demo-orders/$id',
-    path: '/demo-orders/$id',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedDochazkaIndexRoute =
-  AuthenticatedDochazkaIndexRouteImport.update({
-    id: '/dochazka/',
-    path: '/dochazka/',
+const AuthenticatedLogbookIndexRoute =
+  AuthenticatedLogbookIndexRouteImport.update({
+    id: '/logbook/',
+    path: '/logbook/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedEvidenceZakazekIndexRoute =
@@ -211,32 +167,37 @@ const AuthenticatedEvidenceZakazekIndexRoute =
     path: '/evidence-zakazek/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedLogbookIndexRoute =
-  AuthenticatedLogbookIndexRouteImport.update({
-    id: '/logbook/',
-    path: '/logbook/',
+const AuthenticatedDochazkaIndexRoute =
+  AuthenticatedDochazkaIndexRouteImport.update({
+    id: '/dochazka/',
+    path: '/dochazka/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedUklidIndexRoute = AuthenticatedUklidIndexRouteImport.update({
-  id: '/uklid/',
-  path: '/uklid/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedUkolyIndexRoute = AuthenticatedUkolyIndexRouteImport.update({
-  id: '/ukoly/',
-  path: '/ukoly/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedVykupyIndexRoute =
-  AuthenticatedVykupyIndexRouteImport.update({
-    id: '/vykupy/',
-    path: '/vykupy/',
+const AuthenticatedDemoOrdersIndexRoute =
+  AuthenticatedDemoOrdersIndexRouteImport.update({
+    id: '/demo-orders/',
+    path: '/demo-orders/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedVykupyIdRoute = AuthenticatedVykupyIdRouteImport.update({
-  id: '/vykupy/$id',
-  path: '/vykupy/$id',
+const AuthenticatedDealsIndexRoute = AuthenticatedDealsIndexRouteImport.update({
+  id: '/deals/',
+  path: '/deals/',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const WashRespondActionTokenRoute = WashRespondActionTokenRouteImport.update({
+  id: '/wash-respond/$action/$token',
+  path: '/wash-respond/$action/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailEventsRoute = LovableEmailEventsRouteImport.update({
+  id: '/lovable/email/events',
+  path: '/lovable/email/events',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedVykupyDashboardRoute =
   AuthenticatedVykupyDashboardRouteImport.update({
@@ -244,55 +205,81 @@ const AuthenticatedVykupyDashboardRoute =
     path: '/vykupy/dashboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedZavadyIndexRoute =
-  AuthenticatedZavadyIndexRouteImport.update({
-    id: '/zavady/',
-    path: '/zavady/',
+const AuthenticatedVykupyIdRoute = AuthenticatedVykupyIdRouteImport.update({
+  id: '/vykupy/$id',
+  path: '/vykupy/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDemoOrdersIdRoute =
+  AuthenticatedDemoOrdersIdRouteImport.update({
+    id: '/demo-orders/$id',
+    path: '/demo-orders/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const LovableEmailEventsRoute = LovableEmailEventsRouteImport.update({
-  id: '/lovable/email/events',
-  path: '/lovable/email/events',
+const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminTvRoute = AuthenticatedAdminTvRouteImport.update({
+  id: '/admin/tv',
+  path: '/admin/tv',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminTemplatesRoute =
+  AuthenticatedAdminTemplatesRouteImport.update({
+    id: '/admin/templates',
+    path: '/admin/templates',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminStorageRoute =
+  AuthenticatedAdminStorageRouteImport.update({
+    id: '/admin/storage',
+    path: '/admin/storage',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminGoogleDriveRoute =
+  AuthenticatedAdminGoogleDriveRouteImport.update({
+    id: '/admin/google-drive',
+    path: '/admin/google-drive',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminEmailyRoute =
+  AuthenticatedAdminEmailyRouteImport.update({
+    id: '/admin/emaily',
+    path: '/admin/emaily',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminAuditRoute = AuthenticatedAdminAuditRouteImport.update({
+  id: '/admin/audit',
+  path: '/admin/audit',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminIdRoute = AuthenticatedAdminIdRouteImport.update({
+  id: '/admin/$id',
+  path: '/admin/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
+  id: '/lovable/email/auth/webhook',
+  path: '/lovable/email/auth/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WashRespondActionTokenRoute = WashRespondActionTokenRouteImport.update({
-  id: '/wash-respond/$action/$token',
-  path: '/wash-respond/$action/$token',
+const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
+  id: '/lovable/email/auth/preview',
+  path: '/lovable/email/auth/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicCronBackupRoute = ApiPublicCronBackupRouteImport.update({
-  id: '/api/public/cron/backup',
-  path: '/api/public/cron/backup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicCronCleaningRemindersRoute =
-  ApiPublicCronCleaningRemindersRouteImport.update({
-    id: '/api/public/cron/cleaning-reminders',
-    path: '/api/public/cron/cleaning-reminders',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicCronFollowupRemindersRoute =
-  ApiPublicCronFollowupRemindersRouteImport.update({
-    id: '/api/public/cron/followup-reminders',
-    path: '/api/public/cron/followup-reminders',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicCronGithubSnapshotRoute =
-  ApiPublicCronGithubSnapshotRouteImport.update({
-    id: '/api/public/cron/github-snapshot',
-    path: '/api/public/cron/github-snapshot',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicCronTaskDailyDigestRoute =
-  ApiPublicCronTaskDailyDigestRouteImport.update({
-    id: '/api/public/cron/task-daily-digest',
-    path: '/api/public/cron/task-daily-digest',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicCronTaskRemindersRoute =
-  ApiPublicCronTaskRemindersRouteImport.update({
-    id: '/api/public/cron/task-reminders',
-    path: '/api/public/cron/task-reminders',
+const ApiPublicHooksWeeklyReportRoute =
+  ApiPublicHooksWeeklyReportRouteImport.update({
+    id: '/api/public/hooks/weekly-report',
+    path: '/api/public/hooks/weekly-report',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksWashRemindersRoute =
@@ -301,28 +288,41 @@ const ApiPublicHooksWashRemindersRoute =
     path: '/api/public/hooks/wash-reminders',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksWeeklyReportRoute =
-  ApiPublicHooksWeeklyReportRouteImport.update({
-    id: '/api/public/hooks/weekly-report',
-    path: '/api/public/hooks/weekly-report',
+const ApiPublicCronTaskRemindersRoute =
+  ApiPublicCronTaskRemindersRouteImport.update({
+    id: '/api/public/cron/task-reminders',
+    path: '/api/public/cron/task-reminders',
     getParentRoute: () => rootRouteImport,
   } as any)
-const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
-  id: '/lovable/email/auth/preview',
-  path: '/lovable/email/auth/preview',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
-  id: '/lovable/email/auth/webhook',
-  path: '/lovable/email/auth/webhook',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LovableEmailTransactionalPreviewRoute =
-  LovableEmailTransactionalPreviewRouteImport.update({
-    id: '/lovable/email/transactional/preview',
-    path: '/lovable/email/transactional/preview',
+const ApiPublicCronTaskDailyDigestRoute =
+  ApiPublicCronTaskDailyDigestRouteImport.update({
+    id: '/api/public/cron/task-daily-digest',
+    path: '/api/public/cron/task-daily-digest',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronGithubSnapshotRoute =
+  ApiPublicCronGithubSnapshotRouteImport.update({
+    id: '/api/public/cron/github-snapshot',
+    path: '/api/public/cron/github-snapshot',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronFollowupRemindersRoute =
+  ApiPublicCronFollowupRemindersRouteImport.update({
+    id: '/api/public/cron/followup-reminders',
+    path: '/api/public/cron/followup-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronCleaningRemindersRoute =
+  ApiPublicCronCleaningRemindersRouteImport.update({
+    id: '/api/public/cron/cleaning-reminders',
+    path: '/api/public/cron/cleaning-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronBackupRoute = ApiPublicCronBackupRouteImport.update({
+  id: '/api/public/cron/backup',
+  path: '/api/public/cron/backup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -661,11 +661,46 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/tvdisplay': {
+      id: '/tvdisplay'
+      path: '/tvdisplay'
+      fullPath: '/tvdisplay'
+      preLoaderRoute: typeof TvdisplayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terminal': {
+      id: '/terminal'
+      path: '/terminal'
+      fullPath: '/terminal'
+      preLoaderRoute: typeof TerminalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/nahlasit': {
+      id: '/nahlasit'
+      path: '/nahlasit'
+      fullPath: '/nahlasit'
+      preLoaderRoute: typeof NahlasitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/manifest.webmanifest': {
+      id: '/manifest.webmanifest'
+      path: '/manifest.webmanifest'
+      fullPath: '/manifest.webmanifest'
+      preLoaderRoute: typeof ManifestDotwebmanifestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/TVdisplay': {
@@ -682,81 +717,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/manifest.webmanifest': {
-      id: '/manifest.webmanifest'
-      path: '/manifest.webmanifest'
-      fullPath: '/manifest.webmanifest'
-      preLoaderRoute: typeof ManifestDotwebmanifestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/nahlasit': {
-      id: '/nahlasit'
-      path: '/nahlasit'
-      fullPath: '/nahlasit'
-      preLoaderRoute: typeof NahlasitRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/terminal': {
-      id: '/terminal'
-      path: '/terminal'
-      fullPath: '/terminal'
-      preLoaderRoute: typeof TerminalRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/tvdisplay': {
-      id: '/tvdisplay'
-      path: '/tvdisplay'
-      fullPath: '/tvdisplay'
-      preLoaderRoute: typeof TvdisplayRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/approvals': {
-      id: '/_authenticated/approvals'
-      path: '/approvals'
-      fullPath: '/approvals'
-      preLoaderRoute: typeof AuthenticatedApprovalsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/feedback/$token': {
-      id: '/feedback/$token'
-      path: '/feedback/$token'
-      fullPath: '/feedback/$token'
-      preLoaderRoute: typeof FeedbackTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sign/$token': {
-      id: '/sign/$token'
-      path: '/sign/$token'
-      fullPath: '/sign/$token'
-      preLoaderRoute: typeof SignTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/tv/$token': {
-      id: '/tv/$token'
-      path: '/tv/$token'
-      fullPath: '/tv/$token'
-      preLoaderRoute: typeof TvTokenRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/upload/$token': {
@@ -766,144 +731,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UploadTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/admin/': {
-      id: '/_authenticated/admin/'
-      path: '/admin'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+    '/tv/$token': {
+      id: '/tv/$token'
+      path: '/tv/$token'
+      fullPath: '/tv/$token'
+      preLoaderRoute: typeof TvTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign/$token': {
+      id: '/sign/$token'
+      path: '/sign/$token'
+      fullPath: '/sign/$token'
+      preLoaderRoute: typeof SignTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feedback/$token': {
+      id: '/feedback/$token'
+      path: '/feedback/$token'
+      fullPath: '/feedback/$token'
+      preLoaderRoute: typeof FeedbackTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin/$id': {
-      id: '/_authenticated/admin/$id'
-      path: '/admin/$id'
-      fullPath: '/admin/$id'
-      preLoaderRoute: typeof AuthenticatedAdminIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/audit': {
-      id: '/_authenticated/admin/audit'
-      path: '/admin/audit'
-      fullPath: '/admin/audit'
-      preLoaderRoute: typeof AuthenticatedAdminAuditRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/emaily': {
-      id: '/_authenticated/admin/emaily'
-      path: '/admin/emaily'
-      fullPath: '/admin/emaily'
-      preLoaderRoute: typeof AuthenticatedAdminEmailyRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/google-drive': {
-      id: '/_authenticated/admin/google-drive'
-      path: '/admin/google-drive'
-      fullPath: '/admin/google-drive'
-      preLoaderRoute: typeof AuthenticatedAdminGoogleDriveRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/storage': {
-      id: '/_authenticated/admin/storage'
-      path: '/admin/storage'
-      fullPath: '/admin/storage'
-      preLoaderRoute: typeof AuthenticatedAdminStorageRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/templates': {
-      id: '/_authenticated/admin/templates'
-      path: '/admin/templates'
-      fullPath: '/admin/templates'
-      preLoaderRoute: typeof AuthenticatedAdminTemplatesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/tv': {
-      id: '/_authenticated/admin/tv'
-      path: '/admin/tv'
-      fullPath: '/admin/tv'
-      preLoaderRoute: typeof AuthenticatedAdminTvRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/users': {
-      id: '/_authenticated/admin/users'
-      path: '/admin/users'
-      fullPath: '/admin/users'
-      preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/deals/': {
-      id: '/_authenticated/deals/'
-      path: '/deals'
-      fullPath: '/deals/'
-      preLoaderRoute: typeof AuthenticatedDealsIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/demo-orders/': {
-      id: '/_authenticated/demo-orders/'
-      path: '/demo-orders'
-      fullPath: '/demo-orders/'
-      preLoaderRoute: typeof AuthenticatedDemoOrdersIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/demo-orders/$id': {
-      id: '/_authenticated/demo-orders/$id'
-      path: '/demo-orders/$id'
-      fullPath: '/demo-orders/$id'
-      preLoaderRoute: typeof AuthenticatedDemoOrdersIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/dochazka/': {
-      id: '/_authenticated/dochazka/'
-      path: '/dochazka'
-      fullPath: '/dochazka/'
-      preLoaderRoute: typeof AuthenticatedDochazkaIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/evidence-zakazek/': {
-      id: '/_authenticated/evidence-zakazek/'
-      path: '/evidence-zakazek'
-      fullPath: '/evidence-zakazek/'
-      preLoaderRoute: typeof AuthenticatedEvidenceZakazekIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/logbook/': {
-      id: '/_authenticated/logbook/'
-      path: '/logbook'
-      fullPath: '/logbook/'
-      preLoaderRoute: typeof AuthenticatedLogbookIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/uklid/': {
-      id: '/_authenticated/uklid/'
-      path: '/uklid'
-      fullPath: '/uklid/'
-      preLoaderRoute: typeof AuthenticatedUklidIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/ukoly/': {
-      id: '/_authenticated/ukoly/'
-      path: '/ukoly'
-      fullPath: '/ukoly/'
-      preLoaderRoute: typeof AuthenticatedUkolyIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/vykupy/': {
-      id: '/_authenticated/vykupy/'
-      path: '/vykupy'
-      fullPath: '/vykupy/'
-      preLoaderRoute: typeof AuthenticatedVykupyIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/vykupy/$id': {
-      id: '/_authenticated/vykupy/$id'
-      path: '/vykupy/$id'
-      fullPath: '/vykupy/$id'
-      preLoaderRoute: typeof AuthenticatedVykupyIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/vykupy/dashboard': {
-      id: '/_authenticated/vykupy/dashboard'
-      path: '/vykupy/dashboard'
-      fullPath: '/vykupy/dashboard'
-      preLoaderRoute: typeof AuthenticatedVykupyDashboardRouteImport
+    '/_authenticated/approvals': {
+      id: '/_authenticated/approvals'
+      path: '/approvals'
+      fullPath: '/approvals'
+      preLoaderRoute: typeof AuthenticatedApprovalsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/zavady/': {
@@ -913,12 +773,68 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedZavadyIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/lovable/email/events': {
-      id: '/lovable/email/events'
-      path: '/lovable/email/events'
-      fullPath: '/lovable/email/events'
-      preLoaderRoute: typeof LovableEmailEventsRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/vykupy/': {
+      id: '/_authenticated/vykupy/'
+      path: '/vykupy'
+      fullPath: '/vykupy/'
+      preLoaderRoute: typeof AuthenticatedVykupyIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ukoly/': {
+      id: '/_authenticated/ukoly/'
+      path: '/ukoly'
+      fullPath: '/ukoly/'
+      preLoaderRoute: typeof AuthenticatedUkolyIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/uklid/': {
+      id: '/_authenticated/uklid/'
+      path: '/uklid'
+      fullPath: '/uklid/'
+      preLoaderRoute: typeof AuthenticatedUklidIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/logbook/': {
+      id: '/_authenticated/logbook/'
+      path: '/logbook'
+      fullPath: '/logbook/'
+      preLoaderRoute: typeof AuthenticatedLogbookIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/evidence-zakazek/': {
+      id: '/_authenticated/evidence-zakazek/'
+      path: '/evidence-zakazek'
+      fullPath: '/evidence-zakazek/'
+      preLoaderRoute: typeof AuthenticatedEvidenceZakazekIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dochazka/': {
+      id: '/_authenticated/dochazka/'
+      path: '/dochazka'
+      fullPath: '/dochazka/'
+      preLoaderRoute: typeof AuthenticatedDochazkaIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/demo-orders/': {
+      id: '/_authenticated/demo-orders/'
+      path: '/demo-orders'
+      fullPath: '/demo-orders/'
+      preLoaderRoute: typeof AuthenticatedDemoOrdersIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/deals/': {
+      id: '/_authenticated/deals/'
+      path: '/deals'
+      fullPath: '/deals/'
+      preLoaderRoute: typeof AuthenticatedDealsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/wash-respond/$action/$token': {
       id: '/wash-respond/$action/$token'
@@ -927,67 +843,95 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WashRespondActionTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/cron/backup': {
-      id: '/api/public/cron/backup'
-      path: '/api/public/cron/backup'
-      fullPath: '/api/public/cron/backup'
-      preLoaderRoute: typeof ApiPublicCronBackupRouteImport
+    '/lovable/email/events': {
+      id: '/lovable/email/events'
+      path: '/lovable/email/events'
+      fullPath: '/lovable/email/events'
+      preLoaderRoute: typeof LovableEmailEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/cron/cleaning-reminders': {
-      id: '/api/public/cron/cleaning-reminders'
-      path: '/api/public/cron/cleaning-reminders'
-      fullPath: '/api/public/cron/cleaning-reminders'
-      preLoaderRoute: typeof ApiPublicCronCleaningRemindersRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/vykupy/dashboard': {
+      id: '/_authenticated/vykupy/dashboard'
+      path: '/vykupy/dashboard'
+      fullPath: '/vykupy/dashboard'
+      preLoaderRoute: typeof AuthenticatedVykupyDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/api/public/cron/followup-reminders': {
-      id: '/api/public/cron/followup-reminders'
-      path: '/api/public/cron/followup-reminders'
-      fullPath: '/api/public/cron/followup-reminders'
-      preLoaderRoute: typeof ApiPublicCronFollowupRemindersRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/vykupy/$id': {
+      id: '/_authenticated/vykupy/$id'
+      path: '/vykupy/$id'
+      fullPath: '/vykupy/$id'
+      preLoaderRoute: typeof AuthenticatedVykupyIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/api/public/cron/github-snapshot': {
-      id: '/api/public/cron/github-snapshot'
-      path: '/api/public/cron/github-snapshot'
-      fullPath: '/api/public/cron/github-snapshot'
-      preLoaderRoute: typeof ApiPublicCronGithubSnapshotRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/demo-orders/$id': {
+      id: '/_authenticated/demo-orders/$id'
+      path: '/demo-orders/$id'
+      fullPath: '/demo-orders/$id'
+      preLoaderRoute: typeof AuthenticatedDemoOrdersIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/api/public/cron/task-daily-digest': {
-      id: '/api/public/cron/task-daily-digest'
-      path: '/api/public/cron/task-daily-digest'
-      fullPath: '/api/public/cron/task-daily-digest'
-      preLoaderRoute: typeof ApiPublicCronTaskDailyDigestRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/admin/users': {
+      id: '/_authenticated/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/api/public/cron/task-reminders': {
-      id: '/api/public/cron/task-reminders'
-      path: '/api/public/cron/task-reminders'
-      fullPath: '/api/public/cron/task-reminders'
-      preLoaderRoute: typeof ApiPublicCronTaskRemindersRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/admin/tv': {
+      id: '/_authenticated/admin/tv'
+      path: '/admin/tv'
+      fullPath: '/admin/tv'
+      preLoaderRoute: typeof AuthenticatedAdminTvRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/api/public/hooks/wash-reminders': {
-      id: '/api/public/hooks/wash-reminders'
-      path: '/api/public/hooks/wash-reminders'
-      fullPath: '/api/public/hooks/wash-reminders'
-      preLoaderRoute: typeof ApiPublicHooksWashRemindersRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/admin/templates': {
+      id: '/_authenticated/admin/templates'
+      path: '/admin/templates'
+      fullPath: '/admin/templates'
+      preLoaderRoute: typeof AuthenticatedAdminTemplatesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/api/public/hooks/weekly-report': {
-      id: '/api/public/hooks/weekly-report'
-      path: '/api/public/hooks/weekly-report'
-      fullPath: '/api/public/hooks/weekly-report'
-      preLoaderRoute: typeof ApiPublicHooksWeeklyReportRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/admin/storage': {
+      id: '/_authenticated/admin/storage'
+      path: '/admin/storage'
+      fullPath: '/admin/storage'
+      preLoaderRoute: typeof AuthenticatedAdminStorageRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/lovable/email/auth/preview': {
-      id: '/lovable/email/auth/preview'
-      path: '/lovable/email/auth/preview'
-      fullPath: '/lovable/email/auth/preview'
-      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
+    '/_authenticated/admin/google-drive': {
+      id: '/_authenticated/admin/google-drive'
+      path: '/admin/google-drive'
+      fullPath: '/admin/google-drive'
+      preLoaderRoute: typeof AuthenticatedAdminGoogleDriveRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/emaily': {
+      id: '/_authenticated/admin/emaily'
+      path: '/admin/emaily'
+      fullPath: '/admin/emaily'
+      preLoaderRoute: typeof AuthenticatedAdminEmailyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/audit': {
+      id: '/_authenticated/admin/audit'
+      path: '/admin/audit'
+      fullPath: '/admin/audit'
+      preLoaderRoute: typeof AuthenticatedAdminAuditRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/$id': {
+      id: '/_authenticated/admin/$id'
+      path: '/admin/$id'
+      fullPath: '/admin/$id'
+      preLoaderRoute: typeof AuthenticatedAdminIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lovable/email/auth/webhook': {
@@ -997,11 +941,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/lovable/email/transactional/preview': {
-      id: '/lovable/email/transactional/preview'
-      path: '/lovable/email/transactional/preview'
-      fullPath: '/lovable/email/transactional/preview'
-      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+    '/lovable/email/auth/preview': {
+      id: '/lovable/email/auth/preview'
+      path: '/lovable/email/auth/preview'
+      fullPath: '/lovable/email/auth/preview'
+      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/weekly-report': {
+      id: '/api/public/hooks/weekly-report'
+      path: '/api/public/hooks/weekly-report'
+      fullPath: '/api/public/hooks/weekly-report'
+      preLoaderRoute: typeof ApiPublicHooksWeeklyReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/wash-reminders': {
+      id: '/api/public/hooks/wash-reminders'
+      path: '/api/public/hooks/wash-reminders'
+      fullPath: '/api/public/hooks/wash-reminders'
+      preLoaderRoute: typeof ApiPublicHooksWashRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/task-reminders': {
+      id: '/api/public/cron/task-reminders'
+      path: '/api/public/cron/task-reminders'
+      fullPath: '/api/public/cron/task-reminders'
+      preLoaderRoute: typeof ApiPublicCronTaskRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/task-daily-digest': {
+      id: '/api/public/cron/task-daily-digest'
+      path: '/api/public/cron/task-daily-digest'
+      fullPath: '/api/public/cron/task-daily-digest'
+      preLoaderRoute: typeof ApiPublicCronTaskDailyDigestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/github-snapshot': {
+      id: '/api/public/cron/github-snapshot'
+      path: '/api/public/cron/github-snapshot'
+      fullPath: '/api/public/cron/github-snapshot'
+      preLoaderRoute: typeof ApiPublicCronGithubSnapshotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/followup-reminders': {
+      id: '/api/public/cron/followup-reminders'
+      path: '/api/public/cron/followup-reminders'
+      fullPath: '/api/public/cron/followup-reminders'
+      preLoaderRoute: typeof ApiPublicCronFollowupRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/cleaning-reminders': {
+      id: '/api/public/cron/cleaning-reminders'
+      path: '/api/public/cron/cleaning-reminders'
+      fullPath: '/api/public/cron/cleaning-reminders'
+      preLoaderRoute: typeof ApiPublicCronCleaningRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/backup': {
+      id: '/api/public/cron/backup'
+      path: '/api/public/cron/backup'
+      fullPath: '/api/public/cron/backup'
+      preLoaderRoute: typeof ApiPublicCronBackupRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
