@@ -2,7 +2,25 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { TvDisplay } from "@/components/tv/TvDisplay";
 import { getTvPublicToken } from "@/lib/tv-widgets.functions";
-...
+
+export const Route = createFileRoute("/TVdisplay")({
+  ssr: false,
+  head: () => ({
+    meta: [
+      { title: "Autoport TV Display" },
+      { name: "robots", content: "noindex, nofollow" },
+      { name: "viewport", content: "width=1920, initial-scale=1" },
+    ],
+  }),
+  component: TvDisplayPreview,
+});
+
+function TvDisplayPreview() {
+  const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
     async function load() {
       try {
         const { token } = await getTvPublicToken();
