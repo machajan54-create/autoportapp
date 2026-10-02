@@ -685,7 +685,7 @@ function YouTubeSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
   const p = slide.payload as { video_id?: string };
   const id = p.video_id || "";
   const src = id
-    ? `https://www.youtube-nocookie.com/embed/${id}?autoplay=${active ? 1 : 0}&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&loop=1&playlist=${id}`
+    ? `https://www.youtube-nocookie.com/embed/${id}?autoplay=${active ? 1 : 0}&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&loop=1&playlist=${id}&vq=hd1080&iv_load_policy=3&disablekb=1`
     : null;
   return (
     <div className="tv-layer" data-active={active}>
@@ -694,7 +694,7 @@ function YouTubeSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
           key={active ? "on" : "off"}
           src={src}
           title={slide.title ?? "YouTube"}
-          allow="autoplay; encrypted-media"
+          allow="autoplay; encrypted-media; fullscreen"
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0 }}
         />
       )}
