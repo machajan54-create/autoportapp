@@ -721,6 +721,11 @@ export function TvDisplay({ token }: { token: string }) {
         /* Během přehrávání videa vypnout náročné rozmazání (způsobuje sekání) */
         .tv-root[data-video="true"] * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
         .tv-root[data-video="true"] .tv-sidebar { background: rgba(4,8,16,0.92); }
+        /* Slabý hardware TV: rozmazání vypnout vždy, během videa zastavit všechny animace */
+        .tv-root * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+        .tv-root .tv-sidebar { background: rgba(4,8,16,0.92); }
+        .tv-root[data-video="true"] *:not(iframe) { animation-play-state: paused !important; }
+        .tv-root[data-video="true"] .tv-ticker { animation: none !important; }
         .tv-side-label { color: #ffffff; font-size: var(--tv-fs-sm); font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 18px; }
         .tv-stat-val { font-family: 'Space Grotesk', system-ui; font-size: 56px; font-weight: 700; line-height: 1; }
         .tv-stat-lbl { font-size: var(--tv-fs-md); opacity: 0.95; margin-top: 8px; line-height: 1.2; }
