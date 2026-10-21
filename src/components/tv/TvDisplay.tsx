@@ -363,8 +363,7 @@ export function TvDisplay({ token }: { token: string }) {
           right: "-10%",
           width: 800,
           height: 800,
-          background: "rgba(108, 92, 231, 0.10)",
-          filter: "blur(150px)",
+          background: "radial-gradient(circle, rgba(108, 92, 231, 0.10) 0%, transparent 70%)",
           display: slides[index % slides.length]?.kind === "youtube" || slides[index % slides.length]?.kind === "video" ? "none" : undefined,
           borderRadius: "50%",
           pointerEvents: "none",
@@ -378,8 +377,7 @@ export function TvDisplay({ token }: { token: string }) {
           left: "10%",
           width: 600,
           height: 600,
-          background: "rgba(255, 107, 53, 0.06)",
-          filter: "blur(120px)",
+          background: "radial-gradient(circle, rgba(255, 107, 53, 0.06) 0%, transparent 70%)",
           display: slides[index % slides.length]?.kind === "youtube" || slides[index % slides.length]?.kind === "video" ? "none" : undefined,
           borderRadius: "50%",
           pointerEvents: "none",
@@ -721,6 +719,11 @@ export function TvDisplay({ token }: { token: string }) {
         /* Během přehrávání videa vypnout náročné rozmazání (způsobuje sekání) */
         .tv-root[data-video="true"] * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
         .tv-root[data-video="true"] .tv-sidebar { background: rgba(4,8,16,0.92); }
+        /* Slabý hardware TV: rozmazání vypnout vždy, během videa zastavit všechny animace */
+        .tv-root * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+        .tv-root .tv-sidebar { background: rgba(4,8,16,0.92); }
+        .tv-root[data-video="true"] *:not(iframe) { animation-play-state: paused !important; }
+        .tv-root[data-video="true"] .tv-ticker { animation: none !important; }
         .tv-side-label { color: #ffffff; font-size: var(--tv-fs-sm); font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 18px; }
         .tv-stat-val { font-family: 'Space Grotesk', system-ui; font-size: 56px; font-weight: 700; line-height: 1; }
         .tv-stat-lbl { font-size: var(--tv-fs-md); opacity: 0.95; margin-top: 8px; line-height: 1.2; }

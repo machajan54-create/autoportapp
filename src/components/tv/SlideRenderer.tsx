@@ -129,7 +129,6 @@ function BuyoutSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
           width: 520,
           height: 520,
           background: "hsl(200 90% 55% / 0.20)",
-          filter: "blur(120px)",
           borderRadius: "50%",
           pointerEvents: "none",
         }}
@@ -313,7 +312,6 @@ function LoungeSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
           width: 520,
           height: 520,
           background: "hsl(24 95% 55% / 0.18)",
-          filter: "blur(120px)",
           borderRadius: "50%",
           pointerEvents: "none",
         }}
@@ -685,7 +683,7 @@ function YouTubeSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
   const p = slide.payload as { video_id?: string };
   const id = p.video_id || "";
   const src = id
-    ? `https://www.youtube-nocookie.com/embed/${id}?autoplay=${active ? 1 : 0}&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&loop=1&playlist=${id}&vq=hd1080&iv_load_policy=3&disablekb=1`
+    ? `https://www.youtube-nocookie.com/embed/${id}?autoplay=${active ? 1 : 0}&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&loop=1&playlist=${id}&vq=hd720&iv_load_policy=3&disablekb=1`
     : null;
   return (
     <div className="tv-layer" data-active={active}>
