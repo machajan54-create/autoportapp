@@ -129,7 +129,6 @@ function BuyoutSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
           width: 520,
           height: 520,
           background: "hsl(200 90% 55% / 0.20)",
-          filter: "blur(120px)",
           borderRadius: "50%",
           pointerEvents: "none",
         }}
@@ -313,7 +312,6 @@ function LoungeSlide({ slide, active }: { slide: TvSlide; active: boolean }) {
           width: 520,
           height: 520,
           background: "hsl(24 95% 55% / 0.18)",
-          filter: "blur(120px)",
           borderRadius: "50%",
           pointerEvents: "none",
         }}
