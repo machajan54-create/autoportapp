@@ -29,6 +29,13 @@
       "when": 1790077644064,
       "tag": "0003_add_vykup_provize",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793619518460,
+      "tag": "0004_storage_usage_fn",
+      "breakpoints": true
     }
   ]
 }

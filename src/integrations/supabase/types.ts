@@ -2511,6 +2511,13 @@ export type Database = {
       can_approve_attendance: { Args: { _uid: string }; Returns: boolean }
       get_attendance_pin_pepper: { Args: never; Returns: string }
       get_cron_auth_secret: { Args: never; Returns: string }
+      get_storage_usage: {
+        Args: never
+        Returns: {
+          db_bytes: number
+          files_bytes: number
+        }[]
+      }
       has_module: {
         Args: {
           _module: Database["public"]["Enums"]["app_module"]
