@@ -11,6 +11,7 @@ import { listDefects } from "@/lib/defects.functions";
 import { listPurchases } from "@/lib/approvals.functions";
 import { listTasks } from "@/lib/tasks.functions";
 import { listCleaning, isTaskDueOn, pragueToday } from "@/lib/cleaning.functions";
+import { getStorageUsage } from "@/lib/storage-usage.functions";
 import { supabase } from "@/integrations/supabase/client";
 import {
   listAbsences as listDochAbsences,
@@ -155,6 +156,13 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
     enabled: isAdmin,
     refetchInterval: 5 * 60_000,
   });
+  const fetchStorage = useServerFn(getStorageUsage);
+  const { data: storageUsage } = useQuery({
+    queryKey: ["notif", "storage-usage"],
+    queryFn: () => fetchStorage(),
+    enabled: isAdmin,
+    refetchInterval: 30 * 60 * 1000,
+  });
   const { data: pending } = useQuery({
     queryKey: ["notif", "pending"],
     queryFn: () => fetchPending({}),
@@ -285,6 +293,16 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
     }
 
     // ===== Admin-only operational notifications =====
+
+    if (isAdmin && storageUsage && storageUsage.level !== "ok") {
+      out.push({
+        key: "db-storage",
+        title: `Místo v databázi: ${storageUsage.pct} % využito`,
+        detail: storageUsage.level === "critical" ? "Kriticky málo místa — zvětšete disk" : "Blíží se limitu",
+        to: "/dashboard",
+        tone: storageUsage.level === "critical" ? "danger" : "warn",
+      });
+    }
 
     if (isAdmin && (pending?.count ?? 0) > 0) {
       out.push({
