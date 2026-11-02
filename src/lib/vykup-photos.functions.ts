@@ -13,7 +13,7 @@ async function lookupName(supabase: any, userId: string) {
 
 export const listVykupPhotos = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ vykupId: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ vykupId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
       .from("vykup_photos")
@@ -26,7 +26,7 @@ export const listVykupPhotos = createServerFn({ method: "GET" })
 
 export const recordVykupPhoto = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         vykupId: z.string().uuid(),
@@ -63,7 +63,7 @@ export const recordVykupPhoto = createServerFn({ method: "POST" })
 
 export const updateVykupPhotoDefect = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         id: z.string().uuid(),
@@ -86,14 +86,14 @@ export const updateVykupPhotoDefect = createServerFn({ method: "POST" })
 
 export const deleteVykupPhoto = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async () => {
     throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
   });
 
 export const getVykupPhotoUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const { data: row, error } = await supabase

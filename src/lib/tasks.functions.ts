@@ -208,7 +208,7 @@ export const listTasks = createServerFn({ method: "GET" })
 
 export const createTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => createInput.parse(d))
+  .validator((d: unknown) => createInput.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const creator_name = await lookupName(supabase, userId);
@@ -250,7 +250,7 @@ export const createTask = createServerFn({ method: "POST" })
 
 export const updateTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => updateInput.parse(d))
+  .validator((d: unknown) => updateInput.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const prev = (
@@ -418,7 +418,7 @@ export const updateTask = createServerFn({ method: "POST" })
 
 export const deleteTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async () => {
     throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
   });

@@ -76,7 +76,7 @@ export const listDeals = createServerFn({ method: "GET" })
 
 export const listDealStageHistory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ deal_id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ deal_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
       .from("deal_stage_history" as never)
@@ -98,7 +98,7 @@ export const listDealStageHistory = createServerFn({ method: "GET" })
 
 export const createDeal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => createInput.parse(d))
+  .validator((d: unknown) => createInput.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: profile } = await supabase
@@ -130,7 +130,7 @@ export const createDeal = createServerFn({ method: "POST" })
 
 export const updateDeal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => updateInput.parse(d))
+  .validator((d: unknown) => updateInput.parse(d))
   .handler(async ({ data, context }) => {
     const { id, ...rest } = data;
     const { supabase, userId } = context;
@@ -197,14 +197,14 @@ export const updateDeal = createServerFn({ method: "POST" })
 
 export const deleteDeal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async () => {
     throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
   });
 
 export const importDeals = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => importInput.parse(d))
+  .validator((d: unknown) => importInput.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: profile } = await supabase

@@ -42,7 +42,7 @@ const claimInput = z.object({
 });
 
 export const createClaim = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => claimInput.parse(d))
+  .validator((d: unknown) => claimInput.parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { attachments, email, event_at, ...rest } = data;
@@ -113,7 +113,7 @@ export const listClaims = createServerFn({ method: "GET" })
 
 export const getClaim = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { data: claim, error } = await context.supabase
       .from("claims")
@@ -149,7 +149,7 @@ export const getClaim = createServerFn({ method: "POST" })
 
 export const updateClaimStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         id: z.string().uuid(),
@@ -209,7 +209,7 @@ export const updateClaimStatus = createServerFn({ method: "POST" })
 
 export const setVatPaid = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), paid: z.boolean() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid(), paid: z.boolean() }).parse(d))
   .handler(async ({ context, data }) => {
     const { error } = await context.supabase
       .from("claims")
@@ -236,7 +236,7 @@ export const setVatPaid = createServerFn({ method: "POST" })
 
 export const addTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({ claim_id: z.string().uuid(), title: z.string().min(1).max(500) }).parse(d),
   )
   .handler(async ({ context, data }) => {
@@ -249,7 +249,7 @@ export const addTask = createServerFn({ method: "POST" })
 
 export const toggleTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), done: z.boolean() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid(), done: z.boolean() }).parse(d))
   .handler(async ({ context, data }) => {
     const { error } = await context.supabase
       .from("claim_tasks")
@@ -261,21 +261,21 @@ export const toggleTask = createServerFn({ method: "POST" })
 
 export const deleteTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async () => {
     throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
   });
 
 export const deleteClaim = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async () => {
     throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
   });
 
 export const notifyClient = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { data: claim } = await context.supabase
       .from("claims")
@@ -357,7 +357,7 @@ export const listUsers = createServerFn({ method: "GET" })
 
 export const setUserRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         user_id: z.string().uuid(),
@@ -400,7 +400,7 @@ export const setUserRole = createServerFn({ method: "POST" })
 
 export const setUserModule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         user_id: z.string().uuid(),
@@ -510,7 +510,7 @@ export const getMyAccess = createServerFn({ method: "GET" })
 
 export const setUserApproved = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({ user_id: z.string().uuid(), approved: z.boolean() }).parse(d),
   )
   .handler(async ({ context, data }) => {
@@ -540,7 +540,7 @@ export const setUserApproved = createServerFn({ method: "POST" })
 
 export const adminCreateUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         email: z.string().email().max(255),
@@ -581,7 +581,7 @@ export const adminCreateUser = createServerFn({ method: "POST" })
 
 export const adminSetUserPassword = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         user_id: z.string().uuid(),
@@ -614,7 +614,7 @@ export const adminSetUserPassword = createServerFn({ method: "POST" })
 
 export const adminSetUserEmail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         user_id: z.string().uuid(),
@@ -654,7 +654,7 @@ export const adminSetUserEmail = createServerFn({ method: "POST" })
 
 export const adminSetUserActive = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({ user_id: z.string().uuid(), active: z.boolean() }).parse(d),
   )
   .handler(async ({ context, data }) => {
@@ -684,7 +684,7 @@ export const adminSetUserActive = createServerFn({ method: "POST" })
 
 export const adminDeleteUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ user_id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ user_id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { data: meRoles } = await context.supabase
       .from("user_roles")
@@ -710,7 +710,7 @@ export const adminDeleteUser = createServerFn({ method: "POST" })
 
 export const adminSendWelcomeEmail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         user_id: z.string().uuid(),
@@ -763,7 +763,7 @@ export const adminSendWelcomeEmail = createServerFn({ method: "POST" })
 
 export const generatePoaPdf = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({ id: z.string().uuid(), kind: z.enum(["jednani", "plneni"]) }).parse(d),
   )
   .handler(async ({ context, data }) => {
@@ -860,7 +860,7 @@ export const listTemplates = createServerFn({ method: "GET" })
 
 export const updateTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         id: z.string().uuid(),
@@ -885,7 +885,7 @@ export const updateTemplate = createServerFn({ method: "POST" })
 
 // Public photo upload (used by mobile via QR code). No auth required — gated by upload_token.
 export const publicGetClaimByToken = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ token: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ token: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: claim, error } = await supabaseAdmin
@@ -899,7 +899,7 @@ export const publicGetClaimByToken = createServerFn({ method: "POST" })
   });
 
 export const publicUploadPhoto = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         token: z.string().uuid(),
@@ -964,7 +964,7 @@ export const listEmployees = createServerFn({ method: "GET" })
 // tempId; uploads are performed via the service role so the storage INSERT
 // policy can stay locked down. Validates mime type and file size.
 export const publicSubmissionUpload = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         temp_id: z.string().uuid(),
@@ -1004,7 +1004,7 @@ export const publicSubmissionUpload = createServerFn({ method: "POST" })
 
 export const setUserDepartment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         user_id: z.string().uuid(),

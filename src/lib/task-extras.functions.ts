@@ -15,7 +15,7 @@ async function lookupName(supabase: any, userId: string) {
 
 export const listTaskParticipants = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ taskId: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ taskId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
       .from("task_participants")
@@ -28,7 +28,7 @@ export const listTaskParticipants = createServerFn({ method: "GET" })
 
 export const listTaskComments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ taskId: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ taskId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
       .from("task_comments")
@@ -41,7 +41,7 @@ export const listTaskComments = createServerFn({ method: "GET" })
 
 export const addTaskComment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         taskId: z.string().uuid(),
@@ -153,7 +153,7 @@ export const listTaskActivitySummary = createServerFn({ method: "GET" })
 
 export const deleteTaskComment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async () => {
     throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
   });
@@ -162,7 +162,7 @@ export const deleteTaskComment = createServerFn({ method: "POST" })
 
 export const listTaskAttachments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ taskId: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ taskId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
       .from("task_attachments")
@@ -175,7 +175,7 @@ export const listTaskAttachments = createServerFn({ method: "GET" })
 
 export const recordTaskAttachment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         taskId: z.string().uuid(),
@@ -212,14 +212,14 @@ export const recordTaskAttachment = createServerFn({ method: "POST" })
 
 export const deleteTaskAttachment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async () => {
     throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
   });
 
 export const getTaskAttachmentUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const { data: row, error } = await supabase

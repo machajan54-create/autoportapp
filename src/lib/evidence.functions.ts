@@ -57,7 +57,7 @@ export const listEvidenceOrders = createServerFn({ method: "GET" })
 
 export const createEvidenceOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => orderInput.parse(d))
+  .validator((d: unknown) => orderInput.parse(d))
   .handler(async ({ context, data }) => {
     const { error, data: row } = await context.supabase
       .from("evidence_orders")
@@ -70,7 +70,7 @@ export const createEvidenceOrder = createServerFn({ method: "POST" })
 
 export const updateEvidenceOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({ id: z.string().uuid(), patch: orderInput.partial() }).parse(d),
   )
   .handler(async ({ context, data }) => {
@@ -104,7 +104,7 @@ const washerInput = z.object({
 
 export const createWasher = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => washerInput.parse(d))
+  .validator((d: unknown) => washerInput.parse(d))
   .handler(async ({ context, data }) => {
     const { error } = await context.supabase
       .from("washers")
@@ -115,7 +115,7 @@ export const createWasher = createServerFn({ method: "POST" })
 
 export const updateWasher = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({ id: z.string().uuid(), patch: washerInput.partial() }).parse(d),
   )
   .handler(async ({ context, data }) => {
@@ -126,7 +126,7 @@ export const updateWasher = createServerFn({ method: "POST" })
 
 export const deleteWasher = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { error } = await context.supabase.from("washers").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -146,7 +146,7 @@ function fmtDen(d?: string | null) {
 
 export const assignWasher = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({ order_id: z.string().uuid(), washer_id: z.string().uuid() }).parse(d),
   )
   .handler(async ({ context, data }) => {
@@ -212,7 +212,7 @@ export const assignWasher = createServerFn({ method: "POST" })
 
 export const removeWashAssignment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { error } = await context.supabase
       .from("evidence_wash_assignments")
@@ -225,7 +225,7 @@ export const removeWashAssignment = createServerFn({ method: "POST" })
 /* ============ PUBLIC RESPONSE (no auth) ============ */
 
 export const respondToWashAssignment = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         token: z

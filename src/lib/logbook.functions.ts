@@ -44,7 +44,7 @@ export const listVehicles = createServerFn({ method: "GET" })
 
 export const upsertVehicle = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => vehicleInput.parse(d))
+  .validator((d: unknown) => vehicleInput.parse(d))
   .handler(async ({ data, context }) => {
     const { id, ...rest } = data;
     const payload = {
@@ -73,14 +73,14 @@ export const upsertVehicle = createServerFn({ method: "POST" })
 
 export const deleteVehicle = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async () => {
     throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
   });
 
 export const listEntries = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({ vehicle_id: z.string().uuid().optional() })
       .partial()
@@ -101,7 +101,7 @@ export const listEntries = createServerFn({ method: "GET" })
 
 export const upsertEntry = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => entryInput.parse(d))
+  .validator((d: unknown) => entryInput.parse(d))
   .handler(async ({ data, context }) => {
     const { id, ...rest } = data;
     const payload = {
@@ -138,14 +138,14 @@ export const upsertEntry = createServerFn({ method: "POST" })
 
 export const deleteEntry = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async () => {
     throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
   });
 
 export const getReceiptUrls = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({ paths: z.array(z.string().min(1).max(500)).max(100) }).parse(d),
   )
   .handler(async ({ data, context }) => {

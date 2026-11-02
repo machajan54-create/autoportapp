@@ -50,7 +50,7 @@ const dateInput = z.object({
 
 export const listCleaning = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => dateInput.parse(d ?? {}))
+  .validator((d: unknown) => dateInput.parse(d ?? {}))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const date = data.date ?? pragueToday();
@@ -71,7 +71,7 @@ export const listCleaning = createServerFn({ method: "GET" })
 
 export const listCleaningHistory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ days: z.number().int().min(1).max(60).default(14) }).parse(d ?? {}))
+  .validator((d: unknown) => z.object({ days: z.number().int().min(1).max(60).default(14) }).parse(d ?? {}))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const from = new Date(Date.now() - data.days * 86400000).toISOString().slice(0, 10);
@@ -94,7 +94,7 @@ const toggleInput = z.object({
 
 export const toggleCleaningTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => toggleInput.parse(d))
+  .validator((d: unknown) => toggleInput.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
@@ -142,7 +142,7 @@ const taskInput = z.object({
 
 export const saveCleaningTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => taskInput.parse(d))
+  .validator((d: unknown) => taskInput.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const patch = {
@@ -171,7 +171,7 @@ export const saveCleaningTask = createServerFn({ method: "POST" })
 
 export const deleteCleaningTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("cleaning_tasks").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -181,7 +181,7 @@ export const deleteCleaningTask = createServerFn({ method: "POST" })
 /** Rychlé přiřazení úklidového úkolu konkrétnímu uživateli. */
 export const setCleaningAssignee = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         id: z.string().uuid(),
