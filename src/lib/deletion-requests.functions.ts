@@ -304,7 +304,7 @@ const requestInput = z.object({
 
 export const requestDeletion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => requestInput.parse(d))
+  .validator((d: unknown) => requestInput.parse(d))
   .handler(async ({ context, data }) => {
     const reg = ENTITY_REGISTRY[data.entity_type];
     if (!reg) throw new Error("Neznámý typ záznamu");
@@ -434,7 +434,7 @@ export const countPendingDeletionRequests = createServerFn({ method: "GET" })
 
 export const cancelDeletionRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { error } = await context.supabase
       .from("deletion_requests" as any)
@@ -448,7 +448,7 @@ export const cancelDeletionRequest = createServerFn({ method: "POST" })
 
 export const decideDeletionRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         id: z.string().uuid(),

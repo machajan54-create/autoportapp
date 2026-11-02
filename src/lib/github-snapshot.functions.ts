@@ -140,7 +140,7 @@ export const getGithubSnapshotStatus = createServerFn({ method: "GET" })
 
 export const saveGithubSnapshotSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (data: {
       github_owner?: string | null;
       github_repo?: string | null;

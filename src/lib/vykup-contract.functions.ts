@@ -56,7 +56,7 @@ export type VykupContractOverrides = z.infer<typeof overridesSchema>;
 /** Returns a base64-encoded PDF of the kupní smlouva na ojeté motorové vozidlo. */
 export const generateVykupContract = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         vykupId: z.string().uuid(),

@@ -24,7 +24,7 @@ export interface EmailDeliveryRow {
 /** Delivery log recorded by the app for every outgoing e-mail. */
 export const listEmailDeliveries = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => listInput.parse(d ?? {}))
+  .validator((d: unknown) => listInput.parse(d ?? {}))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
@@ -78,7 +78,7 @@ const platformInput = z
 /** Delivery events reported by the e-mail platform (sent, rejected, bounced, ...). */
 export const listPlatformEmailEvents = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => platformInput.parse(d ?? {}))
+  .validator((d: unknown) => platformInput.parse(d ?? {}))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });

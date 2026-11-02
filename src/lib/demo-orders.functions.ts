@@ -113,7 +113,7 @@ export const listDemoOrders = createServerFn({ method: "GET" })
 
 export const getDemoOrder = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: order, error } = await context.supabase
       .from("demo_orders" as never)
@@ -154,7 +154,7 @@ export const getDemoOrder = createServerFn({ method: "GET" })
 
 export const createDemoOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => orderInput.parse(d))
+  .validator((d: unknown) => orderInput.parse(d))
   .handler(async ({ data, context }) => {
     const totals = calcTotals(data.line_items);
     const { data: row, error } = await context.supabase
@@ -186,7 +186,7 @@ export const createDemoOrder = createServerFn({ method: "POST" })
 
 export const updateDemoOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => orderInput.partial().extend({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => orderInput.partial().extend({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { id, ...rest } = data as any;
     // Lock editing once signature flow has started, except for super admin.
@@ -227,7 +227,7 @@ export const updateDemoOrder = createServerFn({ method: "POST" })
 
 export const deleteDemoOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async () => {
     throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
   });
@@ -861,7 +861,7 @@ async function uploadAndRecord(args: {
 
 export const generateOrderPdf = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: order } = await context.supabase
       .from("demo_orders" as never)
@@ -894,7 +894,7 @@ export const generateOrderPdf = createServerFn({ method: "POST" })
 
 export const generateInvoicePdf = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: order } = await context.supabase
       .from("demo_orders" as never)
@@ -993,7 +993,7 @@ async function fetchLatestDoc(orderId: string, kind: "order" | "invoice") {
 
 export const signOrderInPerson = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orderId: z.string().uuid(),
@@ -1043,7 +1043,7 @@ export const signOrderInPerson = createServerFn({ method: "POST" })
 
 export const saveSellerSignature = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orderId: z.string().uuid(),
@@ -1073,7 +1073,7 @@ export const saveSellerSignature = createServerFn({ method: "POST" })
 
 export const clearSellerSignature = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
       .from("demo_orders" as never)
@@ -1095,7 +1095,7 @@ export const clearSellerSignature = createServerFn({ method: "POST" })
 
 export const createRemoteSignatureLink = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: order } = await context.supabase
       .from("demo_orders" as never)
@@ -1151,7 +1151,7 @@ export const createRemoteSignatureLink = createServerFn({ method: "POST" })
 // ============= Public (no auth) endpoints for remote sign =============
 
 export const getOrderByToken = createServerFn({ method: "GET" })
-  .inputValidator((d: unknown) => z.object({ token: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ token: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: sig } = await supabaseAdmin
@@ -1188,7 +1188,7 @@ export const getOrderByToken = createServerFn({ method: "GET" })
   });
 
 export const signOrderRemote = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         token: z.string().uuid(),
@@ -1251,7 +1251,7 @@ export const signOrderRemote = createServerFn({ method: "POST" })
 
 export const sendDocumentsToClient = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: order } = await context.supabase
       .from("demo_orders" as never)
@@ -1330,7 +1330,7 @@ export const sendDocumentsToClient = createServerFn({ method: "POST" })
 
 export const getDocumentDownloadUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ documentId: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ documentId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: row } = await context.supabase
       .from("demo_order_documents" as never)

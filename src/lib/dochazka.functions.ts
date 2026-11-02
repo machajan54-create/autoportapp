@@ -142,7 +142,7 @@ export const listEmployees = createServerFn({ method: "GET" })
 
 export const upsertEmployee = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => employeeInput.parse(d))
+  .validator((d: unknown) => employeeInput.parse(d))
   .handler(async ({ data, context }) => {
     const access = await getDochazkaAccess(context.supabase, context.userId);
     if (!access.isAdmin) throw new Error("Pouze super admin");
@@ -217,7 +217,7 @@ export const upsertEmployee = createServerFn({ method: "POST" })
 
 export const deleteEmployee = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async () => {
     throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
   });
@@ -245,7 +245,7 @@ export const listShifts = createServerFn({ method: "GET" })
 
 export const upsertShift = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => shiftInput.parse(d))
+  .validator((d: unknown) => shiftInput.parse(d))
   .handler(async ({ data, context }) => {
     const access = await getDochazkaAccess(context.supabase, context.userId);
     if (!access.isAdmin) throw new Error("Úpravy směn může provádět pouze super admin.");
@@ -269,7 +269,7 @@ export const upsertShift = createServerFn({ method: "POST" })
 
 export const deleteShift = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async () => {
     throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
   });
@@ -306,7 +306,7 @@ async function getRoundingMinutes(supabase: any): Promise<number> {
 
 export const listRecords = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         from: z.string().optional(),
@@ -350,7 +350,7 @@ export const listRecords = createServerFn({ method: "GET" })
 
 export const upsertRecord = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => recordInput.parse(d))
+  .validator((d: unknown) => recordInput.parse(d))
   .handler(async ({ data, context }) => {
     const access = await getDochazkaAccess(context.supabase, context.userId);
     if (!access.isAdmin) {
@@ -392,7 +392,7 @@ export const upsertRecord = createServerFn({ method: "POST" })
 
 export const deleteRecord = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async () => {
     throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
   });
@@ -404,7 +404,7 @@ export const deleteRecord = createServerFn({ method: "POST" })
  */
 export const requestRecord = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         employee_id: z.string().uuid().optional(),
@@ -479,7 +479,7 @@ export const requestRecord = createServerFn({ method: "POST" })
 
 // Terminal check-in: PUBLIC endpoint authenticated by PIN; uses admin client
 export const terminalCheckIn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         pin: z.string().regex(/^\d{4,8}$/, "PIN musí být 4–8 číslic"),
@@ -628,7 +628,7 @@ export const listAbsences = createServerFn({ method: "GET" })
 
 export const upsertAbsence = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => absenceInput.parse(d))
+  .validator((d: unknown) => absenceInput.parse(d))
   .handler(async ({ data, context }) => {
     const access = await getDochazkaAccess(context.supabase, context.userId);
     // Běžný zaměstnanec smí podat žádost pouze za sebe a nesmí měnit existující záznam.
@@ -737,7 +737,7 @@ export const upsertAbsence = createServerFn({ method: "POST" })
 
 export const resolveAbsence = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         id: z.string().uuid(),
@@ -857,7 +857,7 @@ export const resolveAbsence = createServerFn({ method: "POST" })
 
 export const deleteAbsence = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async () => {
     throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
   });
@@ -878,7 +878,7 @@ export const listNotifications = createServerFn({ method: "GET" })
 
 export const markNotificationRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({ id: z.string().uuid(), read: z.boolean().default(true) }).parse(d),
   )
   .handler(async ({ data, context }) => {
@@ -945,7 +945,7 @@ const settingsInput = z.object({
 
 export const updateDochazkaSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => settingsInput.parse(d))
+  .validator((d: unknown) => settingsInput.parse(d))
   .handler(async ({ data, context }) => {
     const access = await getDochazkaAccess(context.supabase, context.userId);
     if (!access.isAdmin) throw new Error("Nastavení docházky může měnit pouze super admin.");
@@ -961,7 +961,7 @@ export const updateDochazkaSettings = createServerFn({ method: "POST" })
 
 export const getMonthCalendar = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         year: z.number().int().min(2020).max(2100),
@@ -1045,7 +1045,7 @@ export const DPP_YEAR_LIMIT = 300;
 
 export const getDppYearOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({ year: z.number().int().min(2020).max(2100) })
       .parse(d ?? { year: new Date().getFullYear() }),
@@ -1099,7 +1099,7 @@ export const getDppYearOverview = createServerFn({ method: "GET" })
 // Přeskočí dny, kde už existuje záznam nebo schválená/čekající absence.
 export const autoFillMonth = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         employee_id: z.string().uuid(),
@@ -1364,7 +1364,7 @@ function buildAttendanceCsv(
 
 export const submitRecord = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const access = await getDochazkaAccess(context.supabase, context.userId);
     // Ověř, že záznam patří aktuálnímu uživateli (nebo je admin/schvalovatel)
@@ -1398,7 +1398,7 @@ export const submitRecord = createServerFn({ method: "POST" })
 
 export const decideRecord = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         id: z.string().uuid(),
@@ -1425,7 +1425,7 @@ export const decideRecord = createServerFn({ method: "POST" })
 
 export const bulkDecideRecords = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         ids: z.array(z.string().uuid()).min(1).max(1000),
@@ -1489,7 +1489,7 @@ export const bulkDecideRecords = createServerFn({ method: "POST" })
 
 export const listEmployeeReports = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ employee_id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ employee_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const access = await getDochazkaAccess(context.supabase, context.userId);
     if (!access.canApproveAll) {
@@ -1513,7 +1513,7 @@ export const listEmployeeReports = createServerFn({ method: "GET" })
 
 export const getEmployeeReportUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ path: z.string().min(1).max(500) }).parse(d))
+  .validator((d: unknown) => z.object({ path: z.string().min(1).max(500) }).parse(d))
   .handler(async ({ data, context }) => {
     const access = await getDochazkaAccess(context.supabase, context.userId);
     const folder = data.path.split("/")[0];

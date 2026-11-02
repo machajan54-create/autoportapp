@@ -52,7 +52,7 @@ export const listDefects = createServerFn({ method: "GET" })
 
 export const createDefect = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => createInput.parse(d))
+  .validator((d: unknown) => createInput.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: profile } = await supabase
@@ -99,7 +99,7 @@ export const createDefect = createServerFn({ method: "POST" })
 
 export const updateDefect = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => updateInput.parse(d))
+  .validator((d: unknown) => updateInput.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     type UpdatePatch = {
@@ -185,14 +185,14 @@ export const updateDefect = createServerFn({ method: "POST" })
 
 export const deleteDefect = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async () => {
     throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
   });
 
 export const getDefectPhotoUrls = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({ paths: z.array(z.string().min(1).max(500)).max(50) }).parse(d),
   )
   .handler(async ({ data, context }) => {

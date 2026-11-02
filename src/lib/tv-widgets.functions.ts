@@ -47,7 +47,7 @@ export type TvSautoAd = {
 const SAUTO_PREMISE_ID = 161030;
 
 export const getTvWidgetData = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => InputSchema.parse(d))
+  .validator((d: unknown) => InputSchema.parse(d))
   .handler(async ({ data }): Promise<TvWidgetResult> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -263,7 +263,7 @@ export const getTvPublicToken = createServerFn({ method: "GET" }).handler(async 
 
 // Public, token-scoped read of TV config + active slides (TV runs without login).
 export const getTvDisplayData = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ token: z.string().min(4).max(200) }).parse(d))
+  .validator((d: unknown) => z.object({ token: z.string().min(4).max(200) }).parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: cfg, error } = await supabaseAdmin

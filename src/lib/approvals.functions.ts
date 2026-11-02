@@ -153,7 +153,7 @@ const supplierInput = z.object({
 
 export const createSupplier = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => supplierInput.parse(d))
+  .validator((d: unknown) => supplierInput.parse(d))
   .handler(async ({ context, data }) => {
     const { error } = await context.supabase.from("suppliers").insert({
       ...data,
@@ -189,7 +189,7 @@ export const createSupplier = createServerFn({ method: "POST" })
 
 export const decideSupplier = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         id: z.string().uuid(),
@@ -241,7 +241,7 @@ export const decideSupplier = createServerFn({ method: "POST" })
 
 export const deleteSupplier = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async () => {
     throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
   });
@@ -277,7 +277,7 @@ const purchaseInput = z.object({
 
 export const createPurchase = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => purchaseInput.parse(d))
+  .validator((d: unknown) => purchaseInput.parse(d))
   .handler(async ({ context, data }) => {
     const vat = data.vat_rate ?? 21;
     let amount = data.amount;
@@ -331,7 +331,7 @@ export const createPurchase = createServerFn({ method: "POST" })
 
 export const decidePurchase = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         id: z.string().uuid(),
@@ -395,7 +395,7 @@ export const decidePurchase = createServerFn({ method: "POST" })
 
 export const deletePurchase = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async () => {
     throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
   });

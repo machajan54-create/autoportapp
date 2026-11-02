@@ -89,7 +89,7 @@ export const getGoogleDriveStatus = createServerFn({ method: "GET" })
 
 export const listGoogleDriveFolders = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { parentId?: string; query?: string } | undefined) =>
+  .validator((data: { parentId?: string; query?: string } | undefined) =>
     z
       .object({
         parentId: z.string().optional(),
@@ -111,7 +111,7 @@ export const listGoogleDriveFolders = createServerFn({ method: "GET" })
 
 export const createGoogleDriveFolder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { name: string; parentId?: string }) =>
+  .validator((data: { name: string; parentId?: string }) =>
     z.object({ name: z.string().min(1), parentId: z.string().optional() }).parse(data),
   )
   .handler(async ({ context, data }) => {
@@ -130,7 +130,7 @@ export const createGoogleDriveFolder = createServerFn({ method: "POST" })
 
 export const saveBackupSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (data: {
       drive_folder_id?: string | null;
       drive_folder_name?: string | null;
@@ -379,7 +379,7 @@ async function downloadDriveFile(fileId: string): Promise<Buffer> {
 
 export const validateBackupArchive = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { fileId: string; fileName: string }) =>
+  .validator((data: { fileId: string; fileName: string }) =>
     z.object({ fileId: z.string().min(1), fileName: z.string().min(1) }).parse(data),
   )
   .handler(async ({ data, context }) => {
@@ -390,7 +390,7 @@ export const validateBackupArchive = createServerFn({ method: "POST" })
 
 export const restoreBackupFromDrive = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { fileId: string; fileName?: string; confirm: string }) =>
+  .validator((data: { fileId: string; fileName?: string; confirm: string }) =>
     z
       .object({
         fileId: z.string().min(1),
@@ -564,7 +564,7 @@ export const listStorageBackupFiles = createServerFn({ method: "GET" })
 
 export const restoreStorageFromDrive = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { fileId: string; fileName: string; overwrite?: boolean; confirm: string }) =>
+  .validator((data: { fileId: string; fileName: string; overwrite?: boolean; confirm: string }) =>
     z
       .object({
         fileId: z.string().min(1),

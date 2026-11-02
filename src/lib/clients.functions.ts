@@ -26,7 +26,7 @@ export const listClients = createServerFn({ method: "GET" })
 
 export const getClient = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
       .from("clients" as never)
@@ -54,7 +54,7 @@ export const getClient = createServerFn({ method: "GET" })
 
 export const createClient = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => clientInput.parse(d))
+  .validator((d: unknown) => clientInput.parse(d))
   .handler(async ({ data, context }) => {
     const payload = { ...data, email: data.email || null, owner_id: context.userId };
     const { data: row, error } = await context.supabase
@@ -68,7 +68,7 @@ export const createClient = createServerFn({ method: "POST" })
 
 export const updateClient = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => clientInput.partial().extend({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => clientInput.partial().extend({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { id, ...rest } = data as any;
     if ("email" in rest && rest.email === "") rest.email = null;
@@ -82,7 +82,7 @@ export const updateClient = createServerFn({ method: "POST" })
 
 export const deleteClient = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async () => {
     throw new Error("Smazání musí schválit super admin – odešlete žádost o smazání.");
   });
