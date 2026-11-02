@@ -36,6 +36,47 @@ import {
   ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getStorageUsage } from "@/lib/storage-usage.functions";
+import { formatBytes, WARN_PCT } from "@/lib/storage-usage";
+
+function StorageUsageCard() {
+  const fetchUsage = useServerFn(getStorageUsage);
+  const { data } = useQuery({
+    queryKey: ["dashboard", "storage-usage"],
+    queryFn: () => fetchUsage(),
+    refetchInterval: 30 * 60 * 1000,
+  });
+  if (!data) return null;
+  const bar =
+    data.level === "critical" ? "bg-rose-500" : data.level === "warn" ? "bg-amber-500" : "bg-emerald-500";
+  return (
+    <div
+      className={cn(
+        "mt-6 rounded-2xl border bg-white p-4 shadow-sm",
+        data.level === "critical" ? "border-rose-300" : data.level === "warn" ? "border-amber-300" : "border-slate-200",
+      )}
+    >
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="text-sm font-bold text-slate-900">Místo v databázi</p>
+        <p className="text-sm font-semibold text-slate-700">
+          {formatBytes(data.dbBytes)} z {formatBytes(data.limitBytes)} ({data.pct} %)
+        </p>
+      </div>
+      <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+        <div className={cn("h-full rounded-full", bar)} style={{ width: `${Math.min(100, data.pct)}%` }} />
+      </div>
+      <p className="mt-2 text-xs text-slate-500">
+        Soubory (fotky, dokumenty): {formatBytes(data.filesBytes)}.{" "}
+        {data.level === "critical"
+          ? "Kriticky málo místa — je potřeba zvětšit disk databáze."
+          : data.level === "warn"
+            ? "Místo se blíží limitu — naplánujte zvětšení disku."
+            : `Upozornění se zobrazí od ${WARN_PCT} % využití.`}
+      </p>
+    </div>
+  );
+}
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
@@ -297,6 +338,9 @@ function DashboardPage() {
             Aktualizováno: Právě teď
           </div>
         </header>
+
+        <StorageUsageCard />
+
 
         <div className="mt-6 flex flex-wrap gap-2">
           <Link

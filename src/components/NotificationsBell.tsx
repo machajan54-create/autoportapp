@@ -392,6 +392,7 @@ export function NotificationsBell({ isAdmin }: { isAdmin: boolean }) {
     emps,
     recs,
     pending,
+    storageUsage,
     isAdmin,
     myPurchases,
     myAbsences,
