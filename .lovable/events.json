@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "events": {
+    "project.vin_lookup_failed": {
+      "event_schema_version": 1,
+      "description": "VIN lookup failed in the contract preview.",
+      "privacy": {
+        "contains_pii": false,
+        "purpose": "product_analytics"
+      },
+      "properties_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "reason"
+        ],
+        "properties": {
+          "reason": {
+            "type": "string",
+            "enum": [
+              "invalid_vin",
+              "not_found",
+              "service_unavailable",
+              "other"
+            ]
+          }
+        }
+      }
+    },
+    "project.vin_lookup_started": {
+      "event_schema_version": 1,
+      "description": "User clicked \"Načíst údaje podle VIN\" in the purchase contract preview.",
+      "privacy": {
+        "contains_pii": false,
+        "purpose": "product_analytics"
+      },
+      "properties_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      }
+    },
+    "project.vin_lookup_succeeded": {
+      "event_schema_version": 1,
+      "description": "VIN lookup returned data and filled vehicle fields in the contract preview.",
+      "privacy": {
+        "contains_pii": false,
+        "purpose": "product_analytics"
+      },
+      "properties_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source",
+          "fields_filled"
+        ],
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "registr",
+              "nhtsa"
+            ]
+          },
+          "fields_filled": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  }
+}

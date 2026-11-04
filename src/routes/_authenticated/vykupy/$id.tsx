@@ -1009,8 +1009,16 @@ function ContractPdfButton({ vykupId }: { vykupId: string }) {
   async function fillFromVin() {
     if (!form) return;
     setVinBusy(true);
+    window.__lovableEvents?.track?.("project.vin_lookup_started", {});
     try {
       const res = await vinLookup({ data: { vin: form.vin } });
+      const filled = (
+        ["vehicle_name", "rok_vyroby", "barva", "palivo", "first_registration", "tp"] as const
+      ).filter((k) => Boolean(res[k])).length;
+      window.__lovableEvents?.track?.("project.vin_lookup_succeeded", {
+        source: res.source,
+        fields_filled: filled,
+      });
       setForm((prev) => {
         if (!prev) return prev;
         const next = { ...prev };
@@ -1028,6 +1036,15 @@ function ContractPdfButton({ vykupId }: { vykupId: string }) {
           : "Údaje načteny z mezinárodní databáze VIN — zkontrolujte je.",
       );
     } catch (e: any) {
+      const msg = String(e?.message ?? "");
+      const reason = msg.includes("17 znaků")
+        ? "invalid_vin"
+        : msg.includes("nepodařilo najít")
+          ? "not_found"
+          : msg.includes("nedostupná")
+            ? "service_unavailable"
+            : "other";
+      window.__lovableEvents?.track?.("project.vin_lookup_failed", { reason });
       toast.error(e?.message || "Údaje k VIN se nepodařilo načíst.");
     } finally {
       setVinBusy(false);
