@@ -24,7 +24,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, FileText, Loader2, Upload, AlertTriangle, Trash2, Eye } from "lucide-react";
+import { ArrowLeft, FileText, Loader2, Upload, AlertTriangle, Trash2, Eye, Search } from "lucide-react";
+import { lookupVin } from "@/lib/vin-lookup.functions";
 
 import { supabase } from "@/integrations/supabase/client";
 import {
