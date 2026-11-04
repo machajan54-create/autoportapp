@@ -224,10 +224,12 @@ function TvAdmin() {
     if (draft?.id === s.id) setDraft({ ...draft, active: !s.active });
   }
 
-  async function uploadImage(file: File) {
+  async function uploadImage(original: File) {
     if (!draft?.id) return;
     setUploading(true);
     try {
+      const { resizeImage } = await import("@/lib/resize-image");
+      const file = await resizeImage(original, { maxWidth: 1920, maxHeight: 1920 });
       const ext = file.name.split(".").pop() || "jpg";
       const path = `${draft.id}/${Date.now()}.${ext}`;
       const { error } = await supabase.storage.from("slides").upload(path, file, {
