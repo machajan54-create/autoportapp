@@ -45,6 +45,7 @@ import { Route as AuthenticatedVykupyIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedVykupyIdRouteImport } from './routes/_authenticated/vykupy/$id'
 import { Route as AuthenticatedVykupyDashboardRouteImport } from './routes/_authenticated/vykupy/dashboard'
 import { Route as AuthenticatedZavadyIndexRouteImport } from './routes/_authenticated/zavady/index'
+import { Route as ApiPublicInboundEmailRouteImport } from './routes/api/public/inbound-email'
 import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
 import { Route as WashRespondActionTokenRouteImport } from './routes/wash-respond.$action.$token'
 import { Route as ApiPublicCronBackupRouteImport } from './routes/api/public/cron/backup'
@@ -250,6 +251,11 @@ const AuthenticatedZavadyIndexRoute =
     path: '/zavady/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicInboundEmailRoute = ApiPublicInboundEmailRouteImport.update({
+  id: '/api/public/inbound-email',
+  path: '/api/public/inbound-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailEventsRoute = LovableEmailEventsRouteImport.update({
   id: '/lovable/email/events',
   path: '/lovable/email/events',
@@ -350,6 +356,7 @@ export interface FileRoutesByFullPath {
   '/demo-orders/$id': typeof AuthenticatedDemoOrdersIdRoute
   '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
+  '/api/public/inbound-email': typeof ApiPublicInboundEmailRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/wash-respond/$action/$token': typeof WashRespondActionTokenRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -400,6 +407,7 @@ export interface FileRoutesByTo {
   '/demo-orders/$id': typeof AuthenticatedDemoOrdersIdRoute
   '/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
+  '/api/public/inbound-email': typeof ApiPublicInboundEmailRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/wash-respond/$action/$token': typeof WashRespondActionTokenRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -452,6 +460,7 @@ export interface FileRoutesById {
   '/_authenticated/demo-orders/$id': typeof AuthenticatedDemoOrdersIdRoute
   '/_authenticated/vykupy/$id': typeof AuthenticatedVykupyIdRoute
   '/_authenticated/vykupy/dashboard': typeof AuthenticatedVykupyDashboardRoute
+  '/api/public/inbound-email': typeof ApiPublicInboundEmailRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/wash-respond/$action/$token': typeof WashRespondActionTokenRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -504,6 +513,7 @@ export interface FileRouteTypes {
     | '/demo-orders/$id'
     | '/vykupy/$id'
     | '/vykupy/dashboard'
+    | '/api/public/inbound-email'
     | '/lovable/email/events'
     | '/wash-respond/$action/$token'
     | '/admin/'
@@ -554,6 +564,7 @@ export interface FileRouteTypes {
     | '/demo-orders/$id'
     | '/vykupy/$id'
     | '/vykupy/dashboard'
+    | '/api/public/inbound-email'
     | '/lovable/email/events'
     | '/wash-respond/$action/$token'
     | '/admin'
@@ -605,6 +616,7 @@ export interface FileRouteTypes {
     | '/_authenticated/demo-orders/$id'
     | '/_authenticated/vykupy/$id'
     | '/_authenticated/vykupy/dashboard'
+    | '/api/public/inbound-email'
     | '/lovable/email/events'
     | '/wash-respond/$action/$token'
     | '/_authenticated/admin/'
@@ -644,6 +656,7 @@ export interface RootRouteChildren {
   SignTokenRoute: typeof SignTokenRoute
   TvTokenRoute: typeof TvTokenRoute
   UploadTokenRoute: typeof UploadTokenRoute
+  ApiPublicInboundEmailRoute: typeof ApiPublicInboundEmailRoute
   LovableEmailEventsRoute: typeof LovableEmailEventsRoute
   WashRespondActionTokenRoute: typeof WashRespondActionTokenRoute
   ApiPublicCronBackupRoute: typeof ApiPublicCronBackupRoute
@@ -913,6 +926,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedZavadyIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/inbound-email': {
+      id: '/api/public/inbound-email'
+      path: '/api/public/inbound-email'
+      fullPath: '/api/public/inbound-email'
+      preLoaderRoute: typeof ApiPublicInboundEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/events': {
       id: '/lovable/email/events'
       path: '/lovable/email/events'
@@ -1077,6 +1097,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignTokenRoute: SignTokenRoute,
   TvTokenRoute: TvTokenRoute,
   UploadTokenRoute: UploadTokenRoute,
+  ApiPublicInboundEmailRoute: ApiPublicInboundEmailRoute,
   LovableEmailEventsRoute: LovableEmailEventsRoute,
   WashRespondActionTokenRoute: WashRespondActionTokenRoute,
   ApiPublicCronBackupRoute: ApiPublicCronBackupRoute,
