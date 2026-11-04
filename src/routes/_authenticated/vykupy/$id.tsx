@@ -24,7 +24,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, FileText, Loader2, Upload, AlertTriangle, Trash2, Eye } from "lucide-react";
+import { ArrowLeft, FileText, Loader2, Upload, AlertTriangle, Trash2, Eye, Search } from "lucide-react";
+import { lookupVin } from "@/lib/vin-lookup.functions";
 
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -1003,6 +1004,36 @@ function ContractPdfButton({ vykupId }: { vykupId: string }) {
     }
   }
 
+  const vinLookup = useServerFn(lookupVin);
+  const [vinBusy, setVinBusy] = useState(false);
+  async function fillFromVin() {
+    if (!form) return;
+    setVinBusy(true);
+    try {
+      const res = await vinLookup({ data: { vin: form.vin } });
+      setForm((prev) => {
+        if (!prev) return prev;
+        const next = { ...prev };
+        (["vehicle_name", "rok_vyroby", "barva", "palivo", "first_registration", "tp"] as const).forEach(
+          (k) => {
+            const val = res[k];
+            if (val) next[k] = val;
+          },
+        );
+        return next;
+      });
+      toast.success(
+        res.source === "registr"
+          ? "Údaje načteny z registru vozidel ČR."
+          : "Údaje načteny z mezinárodní databáze VIN — zkontrolujte je.",
+      );
+    } catch (e: any) {
+      toast.error(e?.message || "Údaje k VIN se nepodařilo načíst.");
+    } finally {
+      setVinBusy(false);
+    }
+  }
+
   function updateField(key: keyof ContractFields, value: string) {
     setForm((prev) => {
       if (!prev) return prev;
@@ -1124,6 +1155,23 @@ function ContractPdfButton({ vykupId }: { vykupId: string }) {
                               className={isMissing ? "border-amber-400" : undefined}
                               onChange={(e) => updateField(f.key, e.target.value)}
                             />
+                          )}
+                          {f.key === "vin" && (
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              className="mt-1.5"
+                              disabled={vinBusy || val.trim().length !== 17}
+                              onClick={fillFromVin}
+                            >
+                              {vinBusy ? (
+                                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Search className="mr-2 h-3.5 w-3.5" />
+                              )}
+                              Načíst údaje podle VIN
+                            </Button>
                           )}
 
                         </div>
