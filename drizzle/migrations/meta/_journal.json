@@ -36,6 +36,13 @@
       "when": 1793619518460,
       "tag": "0004_storage_usage_fn",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794043345468,
+      "tag": "0005_migration",
+      "breakpoints": true
     }
   ]
 }

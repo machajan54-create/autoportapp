@@ -279,5 +279,18 @@ export const getTvDisplayData = createServerFn({ method: "POST" })
       .eq("active", true)
       .order("sort_order", { ascending: true });
     if (sErr) throw new Error(sErr.message);
-    return { cfg: cfg as any, rows: (rows ?? []) as any[] };
+    // Pre-sign storage paths server-side (slides bucket is not readable anonymously).
+    const sign = async (raw: unknown): Promise<unknown> => {
+      if (typeof raw !== "string" || !raw || /^https?:\/\//i.test(raw) || raw.startsWith("data:")) return raw;
+      const { data: s } = await supabaseAdmin.storage.from("slides").createSignedUrl(raw, 60 * 60 * 6);
+      return s?.signedUrl ?? null;
+    };
+    const signed = await Promise.all(
+      (rows ?? []).map(async (r: any) => {
+        const payload = r.payload && typeof r.payload === "object" ? { ...r.payload } : r.payload;
+        if (payload && typeof payload.storage_path === "string") payload.storage_path = await sign(payload.storage_path);
+        return { ...r, image_url: await sign(r.image_url), payload };
+      }),
+    );
+    return { cfg: cfg as any, rows: signed as any[] };
   });
